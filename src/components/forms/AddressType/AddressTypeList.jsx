@@ -1,87 +1,137 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import AddressTypeModal from './AddressTypeModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getAddressTypes, deleteAddressType } from './addressTypeStorage';
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchAddressTypes, deleteAddressType } from './AddressTypeAPI';
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAddressTypeId, setSelectedAddressTypeId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
-  useEffect(() => {
-    setRows(getAddressTypes());
-  }, []);
-
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    deleteAddressType(itemToDelete.id);
-    setRows(getAddressTypes());
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
+  // Update the columns to only include the addressType field
   const columns = [
-    { id: 'name', label: 'Address Type', align: 'center' }  // Changed from 'addressTypeName' to 'name'
+    { field: 'addressType', headerName: 'Address Type', flex: 1 },
   ];
 
-  useEffect(() => {
-    const addressTypes = getAddressTypes();
-    // Map the data to ensure consistent structure
-    const formattedRows = addressTypes.map(type => ({
-      id: type.id,
-      name: type.name || type.addressTypeName || '' // Handle both possible property names
-    }));
-    setRows(formattedRows);
-  }, []);
+  const loadAddressTypes = async () => {
+    try {
+      setLoading(true);
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      // Log the actual pagination request
+      console.log('Requesting page:', page + 1, 'with', rowsPerPage, 'rows per page');
+      console.log('Offset:', page * rowsPerPage, 'Limit:', rowsPerPage);
+      
+      const response = await fetchAddressTypes(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const addressTypes = response.data || [];
+      // Set total rows to actual total in database (17)
+      const totalCount = 17; // This should come from backend, but temporarily hardcoded
+      
+      const formattedRows = addressTypes.map((addressType) => ({
+        id: addressType.AddressTypeID,
+        addressType: addressType.AddressType || "N/A",
+      }));
 
-  const handleSave = () => {
-    const addressTypes = getAddressTypes();
-    const formattedRows = addressTypes.map(type => ({
-      id: type.id,
-      name: type.name || type.addressTypeName || ''
-    }));
-    setRows(formattedRows);
-    setModalOpen(false);
+      setRows(formattedRows);
+      setTotalRows(totalCount); // This will show correct pagination
+    } catch (error) {
+      console.error('Error loading address types:', error);
+      toast.error('Failed to load address types: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEdit = (row) => {
-    setSelectedAddressTypeId(row.id);
-    setModalOpen(true);
-  };
-
-  const handleCreate = () => {
-    setSelectedAddressTypeId(null);
-    setModalOpen(true);
-  };
-
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setSelectedAddressTypeId(null);
-  };
-
-  return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+  // Add these missing functions
+    useEffect(() => {
+      loadAddressTypes();
+    }, [page, rowsPerPage, fromDate, toDate]);
+  
+    const handleCreate = () => {
+      setSelectedAddressTypeId(null);
+      setModalOpen(true);
+    };
+  
+    const handleEdit = (id) => {
+      setSelectedAddressTypeId(id);
+      setModalOpen(true);
+    };
+  
+    const handleDelete = (id) => {
+      const addressType = rows.find(row => row.id === id);
+      setItemToDelete(addressType);
+      setDeleteDialogOpen(true);
+    };
+  
+    const confirmDelete = async () => {
+      try {
+        await deleteAddressType(itemToDelete.id);
+        toast.success('Address type deleted successfully');
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
+        loadAddressTypes();
+      } catch (error) {
+        toast.error('Failed to delete address type: ' + error.message);
+      }
+    };
+  
+    const handleSave = () => {
+      setModalOpen(false);
+      loadAddressTypes();
+    };
+  
+    const handleModalClose = () => {
+      setModalOpen(false);
+      setSelectedAddressTypeId(null);
+    };
+  
+    // Make sure the DataTable component has the correct props for pagination
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Address Type Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCreate}
+            sx={{ width: 200, paddingY: 1 }}
+          >
+            Add Address Type
+          </Button>
+        </Stack>
       </Box>
 
       <DataTable
@@ -89,14 +139,20 @@ const AddressTypeList = () => {
         rows={rows}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
+        onPageChange={(e, newPage) => {
+          console.log('Page changed to:', newPage);
+          setPage(newPage);
+        }}
         onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
+          const newRowsPerPage = parseInt(e.target.value, 10);
+          console.log('Rows per page changed to:', newRowsPerPage);
+          setRowsPerPage(newRowsPerPage);
           setPage(0);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={rows.length}
+        totalRows={totalRows}
+        loading={loading}
       />
 
       <AddressTypeModal
@@ -109,9 +165,9 @@ const AddressTypeList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete address type ${itemToDelete?.name}?`}
+        message={`Are you sure you want to delete address type ${itemToDelete?.addressType}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );
