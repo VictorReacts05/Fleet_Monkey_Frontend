@@ -8,7 +8,7 @@ export const fetchAddressTypes = async (page = 1, limit = 10, fromDate = null, t
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    console.log('API Request URL:', url);
+    // console.log('API Request URL:', url);
     const response = await axios.get(url);
     return response.data;
   } catch (error) {

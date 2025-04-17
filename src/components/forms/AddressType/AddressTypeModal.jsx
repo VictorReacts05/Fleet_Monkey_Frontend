@@ -16,22 +16,20 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
   });
 
   useEffect(() => {
-    if (addressTypeId) {
-      loadAddressType();
-    } else {
-      setFormData({ addressType: '' });
+    if (open) {
+      if (addressTypeId) {
+        loadAddressType();
+      } else {
+        // Reset form when opening for create
+        setFormData({ addressType: '' });
+      }
     }
-  }, [addressTypeId]);
+  }, [open, addressTypeId]);
 
-  const loadAddressType = async () => {
-    try {
-      const response = await getAddressTypeById(addressTypeId);
-      setFormData({
-        addressType: response.data.AddressType || '',
-      });
-    } catch (error) {
-      toast.error('Failed to load address type: ' + error.message);
-    }
+  const handleClose = () => {
+    // Reset form when closing
+    setFormData({ addressType: '' });
+    onClose();
   };
 
   const handleSubmit = async (e) => {
@@ -44,6 +42,8 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
         await createAddressType(formData);
         toast.success('Address type created successfully');
       }
+      // Reset form after successful submission
+      setFormData({ addressType: '' });
       onSave();
     } catch (error) {
       toast.error('Failed to save address type: ' + error.message);
@@ -51,7 +51,7 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{addressTypeId ? 'Edit Address Type' : 'Create Address Type'}</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
@@ -65,7 +65,7 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleClose}>Cancel</Button>
           <Button type="submit" variant="contained" color="primary">
             Save
           </Button>

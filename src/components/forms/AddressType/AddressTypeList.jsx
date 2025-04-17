@@ -32,10 +32,12 @@ const AddressTypeList = () => {
       const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
       const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
       
-      // Log the actual pagination request
-      console.log('Requesting page:', page + 1, 'with', rowsPerPage, 'rows per page');
-      console.log('Offset:', page * rowsPerPage, 'Limit:', rowsPerPage);
+      // Fetch all address types to get the actual count
+      const allResponse = await fetchAddressTypes(1, 1000, formattedFromDate, formattedToDate);
+      const allAddressTypes = allResponse.data || [];
+      const actualTotalCount = allAddressTypes.length;
       
+      // Now fetch the paginated data
       const response = await fetchAddressTypes(
         page + 1,
         rowsPerPage,
@@ -44,8 +46,6 @@ const AddressTypeList = () => {
       );
       
       const addressTypes = response.data || [];
-      // Set total rows to actual total in database (17)
-      const totalCount = 17; // This should come from backend, but temporarily hardcoded
       
       const formattedRows = addressTypes.map((addressType) => ({
         id: addressType.AddressTypeID,
@@ -53,7 +53,7 @@ const AddressTypeList = () => {
       }));
 
       setRows(formattedRows);
-      setTotalRows(totalCount); // This will show correct pagination
+      setTotalRows(actualTotalCount);
     } catch (error) {
       console.error('Error loading address types:', error);
       toast.error('Failed to load address types: ' + error.message);
@@ -140,12 +140,12 @@ const AddressTypeList = () => {
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={(e, newPage) => {
-          console.log('Page changed to:', newPage);
+          // console.log('Page changed to:', newPage);
           setPage(newPage);
         }}
         onRowsPerPageChange={(e) => {
           const newRowsPerPage = parseInt(e.target.value, 10);
-          console.log('Rows per page changed to:', newRowsPerPage);
+          // console.log('Rows per page changed to:', newRowsPerPage);
           setRowsPerPage(newRowsPerPage);
           setPage(0);
         }}
