@@ -40,7 +40,9 @@ const DataTable = ({
   loading,
 }) => {
   const renderCellContent = (row, column) => {
-    const value = row[column.id];
+    // Support both field and id properties for column identification
+    const columnId = column.field || column.id;
+    const value = row[columnId];
     return column.format ? column.format(value) : value;
   };
 
@@ -51,8 +53,8 @@ const DataTable = ({
           <TableHead>
             <TableRow>
               {columns.map((column) => (
-                <StyledTableHeaderCell key={column.id}>
-                  {column.label}
+                <StyledTableHeaderCell key={column.field || column.id}>
+                  {column.headerName || column.label}
                 </StyledTableHeaderCell>
               ))}
               <StyledTableHeaderCell>Actions</StyledTableHeaderCell>
@@ -81,17 +83,17 @@ const DataTable = ({
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow hover key={row.SalesRFQID}>
+                <TableRow hover key={row.id || row.SalesRFQID}>
                   {columns.map((column) => (
-                    <StyledTableBodyCell key={column.id}>
+                    <StyledTableBodyCell key={`${row.id || row.SalesRFQID}-${column.field || column.id}`}>
                       {renderCellContent(row, column)}
                     </StyledTableBodyCell>
                   ))}
                   <StyledTableBodyCell>
-                    <IconButton size="small" onClick={() => onEdit(row)}>
+                    <IconButton size="small" onClick={() => onEdit(row.id || row.SalesRFQID)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton size="small" onClick={() => onDelete(row)}>
+                    <IconButton size="small" onClick={() => onDelete(row.id || row.SalesRFQID)}>
                       <DeleteIcon />
                     </IconButton>
                   </StyledTableBodyCell>

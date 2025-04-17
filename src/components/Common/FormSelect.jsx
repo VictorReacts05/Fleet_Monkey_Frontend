@@ -5,14 +5,13 @@ const FormSelect = ({ label, value, onChange, options, error, helperText, ...pro
   return (
     <FormControl fullWidth margin="normal" error={error}>
       <InputLabel>{label}</InputLabel>
-      <Select
-        value={value}
-        label={label}
-        onChange={onChange}
-        {...props}
-      >
+      <Select value={value} label={label} onChange={onChange} {...props}>
         {options.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
+          <MenuItem
+            key={option.value}
+            value={option.value}
+            disabled={option.value === ""}
+          >
             {option.label}
           </MenuItem>
         ))}

@@ -1,216 +1,327 @@
 import React, { useState, useEffect } from "react";
+import { Box, Grid } from "@mui/material";
+import { createSupplier, updateSupplier, getSupplierById } from "./SupplierAPI";
+import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
+import FormCheckbox from "../../Common/FormCheckbox";
 import FormSelect from "../../Common/FormSelect";
+import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
-import { getSupplierById } from "./supplierStorage";
-import { getCompanies } from "../Company/companyStorage";
-import { getCurrencies } from "../Currency/currencyStorage";
-import { getAddressTypes } from "../../forms/AddressType/addressTypeStorage";
+import dayjs from "dayjs";
 
-const SupplierForm = ({ supplierId, onSave, onClose }) => {
+const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    supplierName: "",
-    supplierType: "",
-    addressTypeId: "",
-    companyId: "",
-    exportCode: "",
-    currencyId: "",
+    SupplierName: "",
+    SupplierGroupID: "",
+    SupplierTypeID: "",
+    SupplierAddressID: "",
+    SupplierExportCode: "",
+    SAPartner: "",
+    SAPartnerExportCode: "",
+    BillingCurrencyID: "",
+    CompanyID: "",
+    ExternalSupplierYN: "",
+    CreatedByID: "",
+    CreatedDateTime: null,
+    IsDeleted: false,
+    DeletedDateTime: null,
+    DeletedByID: "",
   });
-
-  const [errors, setErrors] = useState({
-    supplierName: "",
-    supplierType: "",
-    addressTypeId: "",
-    companyId: "",
-    exportCode: "",
-    currencyId: "",
-  });
-
-  const [companies, setCompanies] = useState([]);
-  const [currencies, setCurrencies] = useState([]);
-  const [addressTypes, setAddressTypes] = useState([]);
-  const [supplierTypes] = useState([
-    { value: "local", label: "Local" },
-    { value: "international", label: "International" },
-  ]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
-    setCompanies(
-      getCompanies().map((company) => ({
-        value: company.id,
-        label: company.companyName,
-      }))
-    );
-
-    setCurrencies(
-      getCurrencies().map((currency) => ({
-        value: currency.id,
-        label: currency.currencyName,
-      }))
-    );
-
-    const addressTypeData = getAddressTypes();
-    setAddressTypes(
-      addressTypeData.map((type) => ({
-        value: type.id,
-        label: type.name || type.addressTypeName,
-      }))
-    );
-
     if (supplierId) {
-      const supplier = getSupplierById(supplierId);
-      if (supplier) {
-        setFormData(supplier);
-      }
+      loadSupplier();
     }
   }, [supplierId]);
 
+  const loadSupplier = async () => {
+    try {
+      const data = await getSupplierById(supplierId);
+      setFormData({
+        ...data,
+        ExternalSupplierYN: data.ExternalSupplierYN ? "1" : "0", // Convert boolean to string for FormSelect
+        CreatedDateTime: data.CreatedDateTime
+          ? dayjs(data.CreatedDateTime)
+          : null,
+        DeletedDateTime: data.DeletedDateTime
+          ? dayjs(data.DeletedDateTime)
+          : null,
+      });
+    } catch (error) {
+      toast.error("Failed to load supplier: " + error.message);
+    }
+  };
+
+  const [errors, setErrors] = useState({});
+
   const validateForm = () => {
-    let isValid = true;
-    const newErrors = { ...errors };
+    const newErrors = {};
 
-    // Supplier Name validation
-    if (!formData.supplierName.trim()) {
-      newErrors.supplierName = "Supplier name is required";
-      isValid = false;
-    } else if (!/^[A-Za-z\s-]{2,}$/.test(formData.supplierName)) {
-      newErrors.supplierName =
-        "Supplier name must be at least 2 characters (letters only)";
-      isValid = false;
+    // Required field validation
+    if (!formData.SupplierName.trim()) {
+      newErrors.SupplierName = "Supplier Name is required";
     }
 
-    // Supplier Type validation
-    if (!formData.supplierType) {
-      newErrors.supplierType = "Supplier type is required";
-      isValid = false;
+    if (!formData.SupplierGroupID.trim()) {
+      newErrors.SupplierGroupID = "Supplier Group ID is required";
     }
 
-    // Address Type validation
-    if (!formData.addressTypeId) {
-      newErrors.addressTypeId = "Address type is required";
-      isValid = false;
+    if (!formData.SupplierAddressID.trim()) {
+      newErrors.SupplierAddressID = "Supplier Address ID is required";
     }
 
-    // Company validation
-    if (!formData.companyId) {
-      newErrors.companyId = "Company is required";
-      isValid = false;
+    if (!formData.SupplierTypeID.trim()) {
+      newErrors.SupplierTypeID = "Supplier Type ID is required";
     }
 
-    // Export Code validation
-    if (!formData.exportCode.trim()) {
-      newErrors.exportCode = "Export code is required";
-      isValid = false;
-    } else if (!/^[A-Z0-9]{3,10}$/.test(formData.exportCode)) {
-      newErrors.exportCode = "Export code must be 3-10 alphanumeric characters";
-      isValid = false;
+    if (!formData.SupplierExportCode.trim()) {
+      newErrors.SupplierExportCode = "Supplier Export Code is required";
     }
 
-    // Currency validation
-    if (!formData.currencyId) {
-      newErrors.currencyId = "Currency is required";
-      isValid = false;
+    if (!formData.SAPartner.trim()) {
+      newErrors.SAPartner = "South Africa Partner is required";
+    }
+
+    if (!formData.BillingCurrencyID.trim()) {
+      newErrors.BillingCurrencyID = "Billing Currency ID is required";
+    }
+
+    if (!formData.CompanyID.trim()) {
+      newErrors.CompanyID = "Company ID is required";
+    }
+
+    if (formData.ExternalSupplierYN === "") {
+      newErrors.ExternalSupplierYN = "External Supplier selection is required";
+    }
+
+    // Number field validations
+    const numberFields = [
+      "SupplierGroupID",
+      "SupplierTypeID",
+      "SupplierAddressID",
+      "SAPartner",
+      "BillingCurrencyID",
+      "CompanyID",
+    ];
+
+    numberFields.forEach((field) => {
+      if (
+        formData[field] &&
+        (isNaN(formData[field]) || parseInt(formData[field]) < 0)
+      ) {
+        newErrors[field] = "Must be a valid positive number";
+      }
+    });
+
+    // Export code validations
+    const exportCodeRegex = /^[A-Z0-9-_]+$/;
+
+    if (!formData.SupplierExportCode.trim()) {
+      newErrors.SupplierExportCode = "Export Code is required";
+    } else if (formData.SupplierExportCode.length > 50) {
+      newErrors.SupplierExportCode = "Export Code cannot exceed 50 characters";
+    } else if (!exportCodeRegex.test(formData.SupplierExportCode)) {
+      newErrors.SupplierExportCode =
+        "Export Code can only contain uppercase letters, numbers, hyphens and underscores";
+    }
+
+    if (!formData.SAPartnerExportCode.trim()) {
+      newErrors.SAPartnerExportCode = "SA Partner Export Code is required";
+    } else if (formData.SAPartnerExportCode.length > 50) {
+      newErrors.SAPartnerExportCode =
+        "SA Partner Export Code cannot exceed 50 characters";
+    } else if (!exportCodeRegex.test(formData.SAPartnerExportCode)) {
+      newErrors.SAPartnerExportCode =
+        "SA Partner Export Code can only contain uppercase letters, numbers, hyphens and underscores";
     }
 
     setErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
 
     if (!validateForm()) {
+      toast.error("Please fix the form errors");
       return;
     }
 
-    const suppliers = JSON.parse(localStorage.getItem("suppliers") || "[]");
-
-    if (supplierId) {
-      const updatedSuppliers = suppliers.map((supplier) =>
-        supplier.id === supplierId ? { ...formData, id: supplierId } : supplier
-      );
-      localStorage.setItem("suppliers", JSON.stringify(updatedSuppliers));
-    } else {
-      const newSupplier = {
-        ...formData,
-        id: Date.now(),
+    try {
+      const submitData = {
+        supplierName: formData.SupplierName,
+        supplierGroupID: parseInt(formData.SupplierGroupID),
+        supplierTypeID: parseInt(formData.SupplierTypeID),
+        supplierAddressID: parseInt(formData.SupplierAddressID),
+        supplierExportCode: formData.SupplierExportCode,
+        saPartner: parseInt(formData.SAPartner),
+        saPartnerExportCode: formData.SAPartnerExportCode,
+        billingCurrencyID: parseInt(formData.BillingCurrencyID),
+        companyID: parseInt(formData.CompanyID),
+        externalSupplierYN: formData.ExternalSupplierYN === "1",
+        userID: 1
       };
-      localStorage.setItem(
-        "suppliers",
-        JSON.stringify([...suppliers, newSupplier])
+
+      if (supplierId) {
+        await updateSupplier(supplierId, submitData);
+        toast.success("Supplier updated successfully");
+      } else {
+        await createSupplier(submitData);
+        toast.success("Supplier created successfully");
+      }
+      onSave();
+    } catch (error) {
+      toast.error(
+        `Failed to ${supplierId ? "update" : "create"} supplier: ` +
+          error.message
       );
     }
-
-    onSave();
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDateChange = (name, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
     <FormPage
-      title={supplierId ? "Edit Supplier" : "Add Supplier"}
+      title={supplierId ? "Edit Supplier" : "Create Supplier"}
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <FormInput
-        label="Supplier Name"
-        name="supplierName"
-        value={formData.supplierName}
-        onChange={handleChange}
-        error={isSubmitted && errors.supplierName}
-        helperText={isSubmitted && errors.supplierName}
-      />
-      <FormSelect
-        label="Supplier Type"
-        name="supplierType"
-        value={formData.supplierType}
-        onChange={handleChange}
-        options={supplierTypes}
-        error={isSubmitted && errors.supplierType}
-        helperText={isSubmitted && errors.supplierType}
-      />
-      <FormSelect
-        label="Address Type"
-        name="addressTypeId"
-        value={formData.addressTypeId}
-        onChange={handleChange}
-        options={addressTypes}
-        error={isSubmitted && errors.addressTypeId}
-        helperText={isSubmitted && errors.addressTypeId}
-      />
-      <FormSelect
-        label="Company Name"
-        name="companyId"
-        value={formData.companyId}
-        onChange={handleChange}
-        options={companies}
-        error={isSubmitted && errors.companyId}
-        helperText={isSubmitted && errors.companyId}
-      />
-      <FormInput
-        label="Export Code"
-        name="exportCode"
-        value={formData.exportCode}
-        onChange={handleChange}
-        error={isSubmitted && errors.exportCode}
-        helperText={isSubmitted && errors.exportCode}
-      />
-      <FormSelect
-        label="Currency Name"
-        name="currencyId"
-        value={formData.currencyId}
-        onChange={handleChange}
-        options={currencies}
-        error={isSubmitted && errors.currencyId}
-        helperText={isSubmitted && errors.currencyId}
-      />
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <FormInput
+            name="SupplierName"
+            label="Supplier Name"
+            value={formData.SupplierName}
+            onChange={handleChange}
+            error={!!errors.SupplierName}
+            helperText={errors.SupplierName}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SupplierGroupID"
+            label="Supplier Group ID"
+            type="number"
+            value={formData.SupplierGroupID}
+            onChange={handleChange}
+            error={!!errors.SupplierGroupID}
+            helperText={errors.SupplierGroupID}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SupplierTypeID"
+            label="Supplier Type ID"
+            type="number"
+            value={formData.SupplierTypeID}
+            onChange={handleChange}
+            error={!!errors.SupplierTypeID}
+            helperText={errors.SupplierTypeID}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SupplierAddressID"
+            label="Supplier Address ID"
+            type="number"
+            value={formData.SupplierAddressID}
+            onChange={handleChange}
+            error={!!errors.SupplierAddressID}
+            helperText={errors.SupplierAddressID}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SupplierExportCode"
+            label="Supplier Export Code"
+            value={formData.SupplierExportCode}
+            onChange={handleChange}
+            error={!!errors.SupplierExportCode}
+            helperText={errors.SupplierExportCode}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SAPartner"
+            label="SA Partner"
+            type="number"
+            value={formData.SAPartner}
+            onChange={handleChange}
+            error={!!errors.SAPartner}
+            helperText={errors.SAPartner}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="SAPartnerExportCode"
+            label="SA Partner Export Code"
+            value={formData.SAPartnerExportCode}
+            onChange={handleChange}
+            error={!!errors.SAPartnerExportCode}
+            helperText={errors.SAPartnerExportCode}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="BillingCurrencyID"
+            label="Billing Currency ID"
+            type="number"
+            value={formData.BillingCurrencyID}
+            onChange={handleChange}
+            error={!!errors.BillingCurrencyID}
+            helperText={errors.BillingCurrencyID}
+          />
+        </Grid>
+
+        <Grid item xs={6}>
+          <FormInput
+            name="CompanyID"
+            label="Company ID"
+            type="number"
+            value={formData.CompanyID}
+            onChange={handleChange}
+            error={!!errors.CompanyID}
+            helperText={errors.CompanyID}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <FormSelect
+            name="ExternalSupplierYN"
+            label="External Supplier"
+            value={formData.ExternalSupplierYN}
+            onChange={handleChange}
+            options={[
+              { value: "1", label: "Yes" },
+              { value: "0", label: "No" },
+            ]}
+            error={!!errors.ExternalSupplierYN}
+            helperText={errors.ExternalSupplierYN}
+            fullWidth
+            sx={{ minWidth: "200px" }}
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };

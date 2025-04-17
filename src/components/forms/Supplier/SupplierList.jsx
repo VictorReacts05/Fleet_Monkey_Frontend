@@ -1,95 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import SupplierModal from './SupplierModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getSuppliers, deleteSupplier } from './supplierStorage';
-import { getCompanies } from '../Company/companyStorage';
-import { getCurrencies } from '../Currency/currencyStorage';
-import { getAddressTypes } from '../AddressType/addressTypeStorage';
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchSuppliers, deleteSupplier } from './SupplierAPI';
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
 
 const SupplierList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0); // Add this line
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  useEffect(() => {
-    const suppliers = getSuppliers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const addressTypes = getAddressTypes();
-
-    const formattedRows = suppliers.map(supplier => ({
-      id: supplier.id,
-      supplierName: supplier.supplierName || '',
-      supplierType: supplier.supplierType || '',
-      exportCode: supplier.exportCode || '',
-      companyName: companies.find(c => c.id === parseInt(supplier.companyId))?.companyName || '',
-      addressTypeName: addressTypes.find(a => a.id === parseInt(supplier.addressTypeId))?.name || '',
-      currencyName: currencies.find(c => c.id === parseInt(supplier.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { id: 'supplierName', label: 'Supplier Name', align: 'center' },
-    { id: 'supplierType', label: 'Supplier Type', align: 'center' },
-    { id: 'exportCode', label: 'Export Code', align: 'center' },
-    { id: 'companyName', label: 'Company', align: 'center' },
-    { id: 'addressTypeName', label: 'Address Type', align: 'center' },
-    { id: 'currencyName', label: 'Currency', align: 'center' }
+    { field: "supplierName", headerName: "Supplier Name", flex: 1 },
+    { field: "supplierTypeName", headerName: "Supplier Type", flex: 1 },
+    { field: "exportCode", headerName: "Export Code", flex: 1 },
+    { field: "companyName", headerName: "Company Name", flex: 1 },
+    { field: "addressTypeId", headerName: "Address Type", flex: 1 },
+    { field: "billingCurrencyName", headerName: "Currency Name", flex: 1 },
+    { field: "createdDateTime", headerName: "Created Date", flex: 1 },
   ];
 
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
+  const loadSuppliers = async () => {
+    try {
+      setLoading(true);
+      // Format dates to start of day and end of day
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      console.log('Date range:', { formattedFromDate, formattedToDate }); // Debug dates
+      
+      const response = await fetchSuppliers(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const suppliers = response.data || [];
+      const totalCount = response.pagination?.totalRecords || suppliers.length;
+      
+      const formattedRows = suppliers.map((supplier) => ({
+        id: supplier.SupplierID,
+        supplierName: supplier.SupplierName || "N/A",
+        supplierTypeName: supplier.SupplierTypeName || "N/A",
+        exportCode: supplier.SupplierExportCode || "N/A",
+        companyName: supplier.CompanyName || "N/A",
+        addressTypeId: supplier.SupplierAddressID || "N/A",
+        billingCurrencyName: supplier.BillingCurrencyName || "N/A",
+        createdDateTime:
+          dayjs(supplier.CreatedDateTime).format("YYYY-MM-DD HH:mm:ss") ||
+          "N/A",
+      }));
+
+      setRows(formattedRows);
+      setTotalRows(totalCount);
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+      toast.error('Failed to load suppliers: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    deleteSupplier(itemToDelete.id);
-    const suppliers = getSuppliers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const addressTypes = getAddressTypes();
-
-    const formattedRows = suppliers.map(supplier => ({
-      id: supplier.id,
-      supplierName: supplier.supplierName || '',
-      supplierType: supplier.supplierType || '',
-      exportCode: supplier.exportCode || '',
-      companyName: companies.find(c => c.id === parseInt(supplier.companyId))?.companyName || '',
-      addressTypeName: addressTypes.find(a => a.id === parseInt(supplier.addressTypeId))?.name || '',
-      currencyName: currencies.find(c => c.id === parseInt(supplier.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  // Remove this duplicate columns declaration
-  // const columns = [
-  //   { id: 'supplierName', label: 'Supplier Name', align: 'center' },
-  //   { id: 'companyName', label: 'Company', align: 'center' }
-  // ];
-
-  const handleEdit = (row) => {
-    setSelectedSupplierId(row.id);
-    setModalOpen(true);
-  };
+  useEffect(() => {
+    loadSuppliers();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   const handleCreate = () => {
     setSelectedSupplierId(null);
     setModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedSupplierId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    const supplier = rows.find(row => row.id === id);
+    setItemToDelete(supplier);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteSupplier(itemToDelete.id);
+      toast.success('Supplier deleted successfully');
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadSuppliers();
+    } catch (error) {
+      toast.error('Failed to delete supplier: ' + error.message);
+    }
+  };
+
+  const handleSave = () => {
+    setModalOpen(false);
+    loadSuppliers();
   };
 
   const handleModalClose = () => {
@@ -97,33 +115,49 @@ const SupplierList = () => {
     setSelectedSupplierId(null);
   };
 
-  const handleSave = () => {
-    const suppliers = getSuppliers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const addressTypes = getAddressTypes();
-
-    const formattedRows = suppliers.map(supplier => ({
-      id: supplier.id,
-      supplierName: supplier.supplierName || '',
-      supplierType: supplier.supplierType || '',
-      exportCode: supplier.exportCode || '',
-      companyName: companies.find(c => c.id === parseInt(supplier.companyId))?.companyName || '',
-      addressTypeName: addressTypes.find(a => a.id === parseInt(supplier.addressTypeId))?.name || '',
-      currencyName: currencies.find(c => c.id === parseInt(supplier.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-    setModalOpen(false);
-  };
-
   return (
     <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography variant="h5">Supplier Management</Typography>
+        <Stack direction="row" spacing={-1} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCreate}
+            sx={{width: 200, height: 56}}
+          >
+            Add Supplier
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* Remove this duplicate section
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h5">Supplier Management</Typography>
         <Button variant="contained" color="primary" onClick={handleCreate}>
           Create New
         </Button>
       </Box>
+      */}
 
       <DataTable
         columns={columns}
@@ -137,7 +171,8 @@ const SupplierList = () => {
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={rows.length}
+        totalRows={totalRows} // Use the totalRows state instead of rows.length
+        loading={loading}
       />
 
       <SupplierModal
@@ -152,7 +187,7 @@ const SupplierList = () => {
         title="Confirm Delete"
         message={`Are you sure you want to delete supplier ${itemToDelete?.supplierName}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );
