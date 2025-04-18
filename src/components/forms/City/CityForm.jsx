@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormPage from "../../Common/FormPage";
-import { getCountries } from "../Country/countryStorage";
+import { createCity, updateCity, getCityById, fetchCountries } from "./CityAPI";
+import { toast } from "react-toastify";
 
 const CityForm = ({ cityId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     cityName: "",
     countryId: "",
-    countryName: "", // Stores country name for display/saving
   });
 
   const [errors, setErrors] = useState({
@@ -18,34 +18,65 @@ const CityForm = ({ cityId, onSave, onClose }) => {
 
   const [countries, setCountries] = useState([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // Load countries for dropdown
   useEffect(() => {
-    const countryList = getCountries();
-    setCountries(
-      countryList.map((country) => ({
-        value: country.id,
-        label: country.countryName,
-      }))
-    );
-
-    if (cityId) {
-      const cities = JSON.parse(localStorage.getItem("cities") || "[]");
-      const city = cities.find((c) => c.id === cityId);
-      if (city) {
-        const selectedCountry = countryList.find(
-          (c) => c.id === city.countryId
-        );
-        setFormData({
-          ...city,
-          countryName: selectedCountry ? selectedCountry.countryName : "",
-        });
+    const loadCountries = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchCountries();
+        const countryOptions = (response.data || []).map(country => ({
+          value: country.CountryOfOriginID,
+          label: country.CountryOfOrigin,
+        }));
+        setCountries(countryOptions);
+      } catch (error) {
+        console.error('Error loading countries:', error);
+        toast.error('Failed to load countries');
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    loadCountries();
+  }, []);
+
+  // Load city data if editing
+  useEffect(() => {
+    if (cityId) {
+      loadCity();
     }
   }, [cityId]);
+
+  const loadCity = async () => {
+    try {
+      setLoading(true);
+      const response = await getCityById(cityId);
+      setFormData({
+        cityName: response.CityName || '',
+        countryId: response.CountryID || '',
+      });
+    } catch (error) {
+      console.error('Error loading city:', error);
+      toast.error('Failed to load city details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateForm = () => {
     let isValid = true;
     const newErrors = { ...errors };
+
+    // City Name validation
+    if (!formData.cityName.trim()) {
+      newErrors.cityName = "City name is required";
+      isValid = false;
+    } else if (!/^[A-Za-z\s-]{2,}$/.test(formData.cityName)) {
+      newErrors.cityName = "City name must be at least 2 characters and contain only letters, spaces, and hyphens";
+      isValid = false;
+    }
 
     // Country validation
     if (!formData.countryId) {
@@ -53,64 +84,51 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       isValid = false;
     }
 
-    // City Name validation
-    if (!formData.cityName.trim()) {
-      newErrors.cityName = "City name is required";
-      isValid = false;
-    } else if (!/^[A-Za-z\s-]{2,}$/.test(formData.cityName)) {
-      newErrors.cityName =
-        "City name must be at least 2 characters (letters only)";
-      isValid = false;
-    } else if (formData.cityName.length > 100) {
-      newErrors.cityName = "City name cannot exceed 100 characters";
-      isValid = false;
-    }
-
     setErrors(newErrors);
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    if (!validateForm()) {
-      return;
+    if (validateForm()) {
+      try {
+        setLoading(true);
+        
+        const cityData = {
+          CityName: formData.cityName,
+          CountryID: formData.countryId
+        };
+        
+        if (cityId) {
+          // Update existing city
+          await updateCity(cityId, cityData);
+          toast.success("City updated successfully");
+        } else {
+          // Create new city
+          await createCity(cityData);
+          toast.success("City created successfully");
+        }
+        
+        if (onSave) onSave();
+        if (onClose) onClose();
+      } catch (error) {
+        console.error('Error saving city:', error);
+        toast.error(`Failed to save city: ${error.message || 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
     }
-
-    const cities = JSON.parse(localStorage.getItem("cities") || "[]");
-
-    // Get country name before saving
-    const selectedCountry = countries.find(
-      (c) => c.value === formData.countryId
-    );
-    const cityData = {
-      ...formData,
-      countryName: selectedCountry ? selectedCountry.label : "",
-    };
-
-    if (cityId) {
-      const updatedCities = cities.map((city) =>
-        city.id === cityId ? { ...cityData, id: cityId } : city
-      );
-      localStorage.setItem("cities", JSON.stringify(updatedCities));
-    } else {
-      const newCity = {
-        ...cityData,
-        id: Date.now(),
-      };
-      localStorage.setItem("cities", JSON.stringify([...cities, newCity]));
-    }
-
-    onSave();
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (isSubmitted) {
+      validateForm();
+    }
   };
 
   return (
@@ -118,23 +136,24 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       title={cityId ? "Edit City" : "Add City"}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
+      <FormInput
+        label="City Name"
+        name="cityName"
+        value={formData.cityName}
+        onChange={handleChange}
+        error={errors.cityName}
+        required
+      />
       <FormSelect
         label="Country"
         name="countryId"
         value={formData.countryId}
         onChange={handleChange}
         options={countries}
-        error={isSubmitted && errors.countryId}
-        helperText={isSubmitted && errors.countryId}
-      />
-      <FormInput
-        label="City Name"
-        name="cityName"
-        value={formData.cityName}
-        onChange={handleChange}
-        error={isSubmitted && errors.cityName}
-        helperText={isSubmitted && errors.cityName}
+        error={errors.countryId}
+        required
       />
     </FormPage>
   );

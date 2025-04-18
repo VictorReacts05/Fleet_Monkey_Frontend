@@ -1,91 +1,58 @@
 import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
-import FormSelect from "../../Common/FormSelect";
 import FormPage from "../../Common/FormPage";
-import { getWarehouseById } from "./warehouseStorage";
+import { createWarehouse, updateWarehouse, fetchWarehouses } from "./WarehouseAPI";
+import { toast } from "react-toastify";
 
 const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
-    planName: "",
-    description: "",
-    fees: "",
-    billingType: "",
+    warehouseName: "",
   });
 
   const [errors, setErrors] = useState({
-    planName: "",
-    description: "",
-    fees: "",
-    billingType: "",
+    warehouseName: "",
   });
 
+  const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const billingTypes = [
-    { value: "monthly", label: "Monthly" },
-    { value: "quarterly", label: "Quarterly" },
-    { value: "yearly", label: "Yearly" },
-  ];
 
   useEffect(() => {
     if (warehouseId) {
-      const warehouse = getWarehouseById(warehouseId);
-      if (warehouse) {
-        setFormData(warehouse);
-      }
+      loadWarehouse();
     }
   }, [warehouseId]);
+
+  const loadWarehouse = async () => {
+    try {
+      setLoading(true);
+      // Since there's no direct getWarehouseById, we'll fetch all and filter
+      const response = await fetchWarehouses(1, 100);
+      const warehouses = response.data || [];
+      const warehouse = warehouses.find(w => w.WarehouseID === warehouseId);
+      
+      if (warehouse) {
+        setFormData({
+          warehouseName: warehouse.WarehouseName || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading warehouse:', error);
+      toast.error('Failed to load warehouse details');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateForm = () => {
     let isValid = true;
     const newErrors = { ...errors };
 
-    // Plan Name validation
-    if (!formData.planName.trim()) {
-      newErrors.planName = "Plan name is required";
+    // Warehouse Name validation
+    if (!formData.warehouseName.trim()) {
+      newErrors.warehouseName = "Warehouse name is required";
       isValid = false;
-    } else if (!/^[A-Za-z0-9\s-]{2,}$/.test(formData.planName)) {
-      newErrors.planName =
-        "Plan name must be at least 2 characters (alphanumeric)";
-      isValid = false;
-    } else if (formData.planName.length > 50) {
-      newErrors.planName = "Plan name cannot exceed 50 characters";
-      isValid = false;
-    }
-
-    // Description validation
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
-      isValid = false;
-    } else if (formData.description.length < 5) {
-      newErrors.description = "Description must be at least 5 characters";
-      isValid = false;
-    } else if (formData.description.length > 200) {
-      newErrors.description = "Description cannot exceed 200 characters";
-      isValid = false;
-    }
-
-    // Fees validation
-    if (!formData.fees) {
-      newErrors.fees = "Fees are required";
-      isValid = false;
-    } else {
-      const feesNum = parseFloat(formData.fees);
-      if (isNaN(feesNum)) {
-        newErrors.fees = "Fees must be a valid number";
-        isValid = false;
-      } else if (feesNum <= 0) {
-        newErrors.fees = "Fees must be greater than 0";
-        isValid = false;
-      } else if (feesNum > 1000000) {
-        newErrors.fees = "Fees cannot exceed 1,000,000";
-        isValid = false;
-      }
-    }
-
-    // Billing Type validation
-    if (!formData.billingType) {
-      newErrors.billingType = "Billing type is required";
+    } else if (formData.warehouseName.length < 2) {
+      newErrors.warehouseName = "Warehouse name must be at least 2 characters";
       isValid = false;
     }
 
@@ -93,42 +60,46 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
 
-    if (!validateForm()) {
-      return;
+    if (validateForm()) {
+      try {
+        setLoading(true);
+        
+        const warehouseData = {
+          WarehouseName: formData.warehouseName
+        };
+        
+        if (warehouseId) {
+          // Update existing warehouse
+          await updateWarehouse(warehouseId, warehouseData);
+          toast.success("Warehouse updated successfully");
+        } else {
+          // Create new warehouse
+          await createWarehouse(warehouseData);
+          toast.success("Warehouse created successfully");
+        }
+        
+        if (onSave) onSave();
+        if (onClose) onClose();
+      } catch (error) {
+        console.error('Error saving warehouse:', error);
+        toast.error(`Failed to save warehouse: ${error.message || 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
     }
-
-    const warehouses = JSON.parse(localStorage.getItem("warehouses") || "[]");
-
-    if (warehouseId) {
-      const updatedWarehouses = warehouses.map((warehouse) =>
-        warehouse.id === warehouseId
-          ? { ...formData, id: warehouseId }
-          : warehouse
-      );
-      localStorage.setItem("warehouses", JSON.stringify(updatedWarehouses));
-    } else {
-      const newWarehouse = {
-        ...formData,
-        id: Date.now(),
-      };
-      localStorage.setItem(
-        "warehouses",
-        JSON.stringify([...warehouses, newWarehouse])
-      );
-    }
-
-    onSave();
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    if (isSubmitted) {
+      validateForm();
+    }
   };
 
   return (
@@ -136,40 +107,15 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
       title={warehouseId ? "Edit Warehouse" : "Add Warehouse"}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
       <FormInput
-        label="Subscription Plan Name"
-        name="planName"
-        value={formData.planName}
+        label="Warehouse Name"
+        name="warehouseName"
+        value={formData.warehouseName}
         onChange={handleChange}
-        error={isSubmitted && errors.planName}
-        helperText={isSubmitted && errors.planName}
-      />
-      <FormInput
-        label="Description"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        error={isSubmitted && errors.description}
-        helperText={isSubmitted && errors.description}
-      />
-      <FormInput
-        label="Fees"
-        name="fees"
-        type="number"
-        value={formData.fees}
-        onChange={handleChange}
-        error={isSubmitted && errors.fees}
-        helperText={isSubmitted && errors.fees}
-      />
-      <FormSelect
-        label="Select Billing"
-        name="billingType"
-        value={formData.billingType}
-        onChange={handleChange}
-        options={billingTypes}
-        error={isSubmitted && errors.billingType}
-        helperText={isSubmitted && errors.billingType}
+        error={errors.warehouseName}
+        required
       />
     </FormPage>
   );
