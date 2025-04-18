@@ -5,50 +5,59 @@ import { createCurrency, updateCurrency, getCurrencyById } from './CurrencyAPI';
 import { toast } from 'react-toastify';
 
 const CurrencyForm = ({ currencyId, onSave, onClose }) => {
+  // Initialize with empty strings to maintain controlled inputs
   const [formData, setFormData] = useState({
-    currencyName: ''
+    CurrencyName: '',
+    RowVersionColumn: ''
   });
 
+  // Match error state key casing
   const [errors, setErrors] = useState({
-    currencyName: ''
+    CurrencyName: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
+    const loadCurrencyData = async () => {
+      try {
+        setLoading(true);
+        // console.log('Fetching currency with ID:', currencyId);
+        const response = await getCurrencyById(currencyId);
+        // console.log('Raw API response:', response);
+        // console.log('Response type:', typeof response);
+        
+        // Handle potential casing differences
+        setFormData({
+          CurrencyName: response?.CurrencyName || response?.currencyName || '',
+          RowVersionColumn: response?.RowVersionColumn || response?.rowVersionColumn || ''
+        });
+      } catch (error) {
+        console.error('Error loading currency:', error);
+        toast.error('Failed to load currency details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (currencyId) {
-      loadCurrency();
+      loadCurrencyData();
     }
   }, [currencyId]);
 
-  const loadCurrency = async () => {
-    try {
-      setLoading(true);
-      const response = await getCurrencyById(currencyId);
-      setFormData({
-        currencyName: response.CurrencyName || ''
-      });
-    } catch (error) {
-      console.error('Error loading currency:', error);
-      toast.error('Failed to load currency details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { currencyName: '' };
+    const newErrors = { CurrencyName: '' }; // Fixed casing
 
-    if (!formData.currencyName.trim()) {
-      newErrors.currencyName = 'Currency name is required';
+    if (!formData.CurrencyName.trim()) { // Use correct casing
+      newErrors.CurrencyName = 'Currency name is required';
       isValid = false;
-    } else if (formData.currencyName.length < 2) {
-      newErrors.currencyName = 'Currency name must be at least 2 characters';
+    } else if (formData.CurrencyName.length < 2) {
+      newErrors.CurrencyName = 'Currency name must be at least 2 characters';
       isValid = false;
-    } else if (!/^[a-zA-Z\s-]+$/.test(formData.currencyName)) {
-      newErrors.currencyName = 'Currency name can only contain letters, spaces, and hyphens';
+    } else if (!/^[a-zA-Z\s-]+$/.test(formData.CurrencyName)) {
+      newErrors.CurrencyName = 'Currency name can only contain letters, spaces, and hyphens';
       isValid = false;
     }
 
@@ -65,7 +74,8 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
         setLoading(true);
         
         const currencyData = {
-          CurrencyName: formData.currencyName
+          CurrencyName: formData.CurrencyName, // Fix casing here
+          RowVersionColumn: formData.RowVersionColumn
         };
         
         if (currencyId) {
@@ -107,10 +117,10 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
     >
       <FormInput
         label="Currency Name"
-        name="currencyName"
-        value={formData.currencyName}
+        name="CurrencyName" // Match state key casing
+        value={formData.CurrencyName}
         onChange={handleChange}
-        error={errors.currencyName}
+        error={errors.CurrencyName}
         required
       />
     </FormPage>

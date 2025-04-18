@@ -1,32 +1,43 @@
 import axios from 'axios';
 
-// Base URL for fetching all currencies
+// Base URLs
 const API_BASE_URL_GET = 'http://localhost:7000/api/currencies/all';
-// Base URL for other operations (create, update, delete)
 const API_BASE_URL = 'http://localhost:7000/api/currencies';
 
-export const fetchCurrencies = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
+// Add axios interceptor to include auth token
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Remove localStorage-based interceptor
+// Add API endpoint for user context
+const USER_API_URL = 'http://localhost:7000/api/users/current';
+
+const getCurrentUser = async () => {
   try {
-    let url = `${API_BASE_URL_GET}?pageNumber=${page}&pageSize=${limit}`;
-    if (fromDate) url += `&fromDate=${fromDate}`;
-    if (toDate) url += `&toDate=${toDate}`;
-    
-    console.log('API Request URL:', url);
-    const response = await axios.get(url);
+    const response = await axios.get(USER_API_URL);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    throw new Error('Failed to fetch user context');
   }
 };
 
 export const createCurrency = async (currencyData) => {
   try {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-    const createdById = currentUser.userId || 1;
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    // console.log('User data:', user);
     
+    if (!user.personId) {
+      throw new Error('User authentication data not found');
+    }
+
     const response = await axios.post(API_BASE_URL, {
-      currencyName: currencyData.CurrencyName, // Convert to lowercase
-      createdById: createdById
+      currencyName: currencyData.CurrencyName,
+      createdById: user.personId
     });
     return response.data;
   } catch (error) {
@@ -34,20 +45,22 @@ export const createCurrency = async (currencyData) => {
   }
 };
 
+// Update similar in updateCurrency and deleteCurrency:
+
 export const updateCurrency = async (currencyId, data) => {
   try {
-    console.log(`Updating currency ${currencyId} with data:`, data);
+    const user = JSON.parse(localStorage.getItem('user')) || {};
     
-    // Get current user ID from localStorage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-    const createdById = currentUser.userId || 1;
+    if (!user.personId) {
+      throw new Error('User authentication data not found');
+    }
 
     const payload = {
-      currencyName: data.CurrencyName, // Convert to lowercase
-      createdById: createdById,
-      rowVersionColumn: data.RowVersionColumn // Include version column for concurrency
+      currencyName: data.CurrencyName,
+      createdById: user.personId,
+      rowVersionColumn: data.RowVersionColumn
     };
-
+    
     const response = await axios.put(`${API_BASE_URL}/${currencyId}`, payload);
     return response.data;
   } catch (error) {
@@ -56,30 +69,22 @@ export const updateCurrency = async (currencyId, data) => {
   }
 };
 
-export const deleteCurrency = async (id, deletedById) => {
+export const deleteCurrency = async (id) => {
   try {
-    console.log(`Deleting currency with ID: ${id}`);
+    const user = JSON.parse(localStorage.getItem('user')) || {};
     
-    // If no deletedById is provided, try to get it from auth context or localStorage
-    if (!deletedById) {
-      // Try to get the current user ID from localStorage or a user context
-      const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-      deletedById = currentUser.userId || 1; // Fallback to 1 if no user ID found
+    if (!user.personId) {
+      throw new Error('User authentication data not found');
     }
-    
+
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       data: {
-        deletedById: deletedById
+        deletedById: user.personId
       }
     });
-    console.log('Delete response:', response);
     return response.data;
   } catch (error) {
     console.error('Error in deleteCurrency:', error);
-    if (error.response) {
-      console.error('Error response data:', error.response.data);
-      console.error('Error response status:', error.response.status);
-    }
     throw error.response?.data || error;
   }
 };
@@ -87,6 +92,29 @@ export const deleteCurrency = async (id, deletedById) => {
 export const getCurrencyById = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}`);
+    // console.log('Raw API response data:', response.data);
+    
+    // Match the backend field names
+    return {
+      CurrencyName: response.data.CurrencyName || response.data.currencyName,
+      RowVersionColumn: response.data.RowVersionColumn || response.data.rowVersionColumn,
+      CurrencyID: response.data.CurrencyID || response.data.currencyId
+    };
+  } catch (error) {
+    console.error('Error in getCurrencyById:', error);
+    throw error.response?.data || error.message;
+  }
+};
+
+// Make sure this export exists
+export const fetchCurrencies = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
+  try {
+    let url = `${API_BASE_URL_GET}?pageNumber=${page}&pageSize=${limit}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    
+    // console.log('API Request URL:', url);
+    const response = await axios.get(url);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
