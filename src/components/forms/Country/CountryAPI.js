@@ -1,0 +1,58 @@
+import axios from 'axios';
+
+// Update the API endpoint to match your backend structure
+// The endpoint should match what's registered in your backend
+const API_BASE_URL = "http://localhost:7000/api/country-Of-Origin";
+
+export const fetchCountries = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
+  try {
+    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    
+    // console.log('API Request URL:', url);
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const createCountry = async (countryData) => {
+  try {
+    const response = await axios.post(API_BASE_URL, countryData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const updateCountry = async (countryId, data) => {
+  try {
+    // console.log(`Updating country ${countryId} with data:`, data);
+    const response = await axios.put(`${API_BASE_URL}/${countryId}`, data);
+    // console.log('Update response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error updating country:', error);
+    throw error;
+  }
+};
+
+export const deleteCountry = async (id) => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getCountryById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

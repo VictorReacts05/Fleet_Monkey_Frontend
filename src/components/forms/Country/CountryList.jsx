@@ -1,63 +1,129 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CountryModal from './CountryModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getCountries, deleteCountry } from './countryStorage';
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchCountries, deleteCountry } from './CountryAPI';
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
 
 const CountryList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCountryId, setSelectedCountryId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  useEffect(() => {
-    const countries = getCountries();
-    const formattedRows = countries.map(country => ({
-      id: country.id,
-      countryName: country.countryName || country.name || '' // Handle both possible property names
-    }));
-    setRows(formattedRows);
-  }, []);
-
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    deleteCountry(itemToDelete.id);
-    const countries = getCountries();
-    const formattedRows = countries.map(country => ({
-      id: country.id,
-      countryName: country.countryName || country.name || '' // Match the same format as in useEffect
-    }));
-    setRows(formattedRows);
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { id: 'countryName', label: 'Country Name', align: 'center' }
+    { field: 'countryName', headerName: 'Country Name', flex: 1 },
   ];
 
-  const handleEdit = (row) => {
-    setSelectedCountryId(row.id);
-    setModalOpen(true);
+  const loadCountries = async () => {
+    try {
+      setLoading(true);
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      // Get current page data
+      const response = await fetchCountries(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const countries = response.data || [];
+      
+      // Get total count from backend if available
+      let totalCount = response.pagination?.totalRecords;
+      
+      // If backend doesn't provide total count
+      if (totalCount === undefined) {
+        try {
+          // Use the maximum of current rowsPerPage * 5 as a dynamic limit
+          const dynamicLimit = Math.max(rowsPerPage * 5, 20);
+          const countResponse = await fetchCountries(
+            1,
+            dynamicLimit,
+            formattedFromDate,
+            formattedToDate
+          );
+          
+          totalCount = countResponse.data?.length || 0;
+          
+          // If we got exactly the dynamic limit of records, there might be more
+          if (countResponse.data?.length === dynamicLimit) {
+            // Add a small buffer to indicate there might be more
+            totalCount += rowsPerPage;
+          }
+        } catch (err) {
+          // Fallback: estimate based on current page
+          const hasFullPage = countries.length === rowsPerPage;
+          totalCount = (page * rowsPerPage) + countries.length;
+          
+          // If we have a full page, there might be more
+          if (hasFullPage) {
+            totalCount += rowsPerPage; // Add one more page worth to enable next page
+          }
+        }
+      }
+      
+      const formattedRows = countries.map((country) => ({
+        id: country.CountryOfOriginID,
+        countryName: country.CountryOfOrigin || "N/A",
+      }));
+  
+      setRows(formattedRows);
+      setTotalRows(totalCount);
+    } catch (error) {
+      console.error('Error loading countries:', error);
+      toast.error('Failed to load countries: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadCountries();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   const handleCreate = () => {
     setSelectedCountryId(null);
     setModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedCountryId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    const country = rows.find(row => row.id === id);
+    setItemToDelete(country);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteCountry(itemToDelete.id);
+      toast.success('Country deleted successfully');
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadCountries();
+    } catch (error) {
+      toast.error('Failed to delete country: ' + error.message);
+    }
+  };
+
+  const handleSave = () => {
+    loadCountries();
   };
 
   const handleModalClose = () => {
@@ -65,23 +131,32 @@ const CountryList = () => {
     setSelectedCountryId(null);
   };
 
-  const handleSave = () => {
-    const countries = getCountries();
-    const formattedRows = countries.map(country => ({
-      id: country.id,
-      countryName: country.countryName || country.name || ''
-    }));
-    setRows(formattedRows);
-    setModalOpen(false);
-  };
-
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Country Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCreate}
+            sx={{ width: 200, paddingY: 1 }}
+          >
+            Add Country
+          </Button>
+        </Stack>
       </Box>
 
       <DataTable
@@ -91,12 +166,14 @@ const CountryList = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(e, newPage) => setPage(newPage)}
         onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
+          const newRowsPerPage = parseInt(e.target.value, 10);
+          setRowsPerPage(newRowsPerPage);
           setPage(0);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={rows.length}
+        totalRows={totalRows}
+        loading={loading}
       />
 
       <CountryModal
@@ -104,6 +181,7 @@ const CountryList = () => {
         onClose={handleModalClose}
         countryId={selectedCountryId}
         onSave={handleSave}
+        initialData={rows.find(row => row.id === selectedCountryId)}
       />
 
       <ConfirmDialog
@@ -111,7 +189,7 @@ const CountryList = () => {
         title="Confirm Delete"
         message={`Are you sure you want to delete country ${itemToDelete?.countryName}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );
