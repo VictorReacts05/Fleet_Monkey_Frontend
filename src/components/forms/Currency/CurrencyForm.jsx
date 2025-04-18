@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import FormInput from '../../Common/FormInput';
 import FormPage from '../../Common/FormPage';
-import { createCurrency, updateCurrency, getCurrencyById } from './CurrencyAPI';
+import {
+  createCurrency,
+  updateCurrency,
+  getCurrencyById,
+  fetchCurrencies,
+} from "./CurrencyAPI";
 import { toast } from 'react-toastify';
 
 const CurrencyForm = ({ currencyId, onSave, onClose }) => {

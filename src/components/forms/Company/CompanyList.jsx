@@ -4,7 +4,7 @@ import DataTable from '../../Common/DataTable';
 import CompanyModal from './CompanyModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getCompanies, deleteCompany } from "../Company/companyStorage";
-import { getCurrencies } from "../Currency/currencyStorage";
+// import { getCurrencies } from "../Currency/currencyStorage";
 
 const CompanyList = () => {
   const [rows, setRows] = useState([]);

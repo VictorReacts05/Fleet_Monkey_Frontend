@@ -5,7 +5,7 @@ import FormTextArea from "../../Common/FormTextArea";
 import FormPage from "../../Common/FormPage";
 import { getCustomerById } from "./customerStorage";
 import { getCompanies } from "../Company/companyStorage";
-import { getCurrencies } from "../Currency/currencyStorage";
+// import { getCurrencies } from "../Currency/currencyStorage";
 
 const CustomerForm = ({ customerId, onSave, onClose }) => {
   const [formData, setFormData] = useState({

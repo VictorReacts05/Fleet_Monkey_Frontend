@@ -5,7 +5,7 @@ import CustomerModal from './CustomerModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getCustomers, deleteCustomer } from './customerStorage';
 import { getCompanies } from "../Company/companyStorage";
-import { getCurrencies } from '../Currency/currencyStorage';
+// import { getCurrencies } from '../Currency/currencyStorage';
 
 const CustomerList = () => {
   const [rows, setRows] = useState([]);

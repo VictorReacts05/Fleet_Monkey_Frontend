@@ -3,7 +3,7 @@ import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormTextArea from "../../Common/FormTextArea";
 import FormPage from "../../Common/FormPage";
-import { getCurrencies } from "../Currency/currencyStorage";
+// import { getCurrencies } from "../Currency/currencyStorage";
 import { getCompanyById } from "../Company/companyStorage";
 
 const CompanyForm = ({ companyId, onSave, onClose }) => {
