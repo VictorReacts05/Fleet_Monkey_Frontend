@@ -1,106 +1,99 @@
 import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
 import FormPage from "../../Common/FormPage";
-import { getCertificationById } from "./certificationStorage";
+import { createCertification, updateCertification, getCertificationById } from "./CertificationAPI";
+import { toast } from "react-toastify";
 
 const CertificationForm = ({ certificationId, onSave, onClose }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ 
     certificationName: "",
+    rowVersionColumn: null 
   });
-
-  const [errors, setErrors] = useState({
-    certificationName: "",
-  });
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (certificationId) {
-      const certification = getCertificationById(Number(certificationId)); // Ensure ID is a number
-      if (certification) {
-        setFormData({
-          certificationName: certification.certificationName || "",
-        });
-      } else {
-        console.warn(`Certification with ID ${certificationId} not found`);
+    const loadCertification = async () => {
+      if (certificationId) {
+        try {
+          setLoading(true);
+          console.log('Fetching certification ID:', certificationId);
+          const response = await getCertificationById(certificationId);
+          console.log('API response data:', response);
+          
+          // Access nested data property from response
+          const certificationData = response.data || {};
+          
+          setFormData({
+            certificationName: certificationData.CertificationName || '',
+            rowVersionColumn: certificationData.RowVersionColumn || null
+          });
+        } catch (error) {
+          console.error('Error loading certification:', error);
+          toast.error('Failed to load certification');
+        } finally {
+          setLoading(false);
+        }
       }
-    }
+    };
+    loadCertification();
   }, [certificationId]);
+  const [errors, setErrors] = useState({ certificationName: "" });
+  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const validateForm = () => {
-    let isValid = true;
-    const newErrors = { certificationName: "" };
-
+    const newErrors = {};
     if (!formData.certificationName.trim()) {
       newErrors.certificationName = "Certification name is required";
-      isValid = false;
-    } else if (formData.certificationName.length < 2) {
-      newErrors.certificationName =
-        "Certification name must be at least 2 characters";
-      isValid = false;
-    } else if (!/^[a-zA-Z0-9\s-]+$/.test(formData.certificationName)) {
-      newErrors.certificationName =
-        "Only letters, numbers, spaces and hyphens are allowed";
-      isValid = false;
     }
-
     setErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
+    
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem('user')) || {};
+
+      if (certificationId) {
+        await updateCertification(certificationId, {
+          CertificationName: formData.certificationName,
+          RowVersionColumn: formData.rowVersionColumn
+        });
+        toast.success('Certification updated successfully');
+      } else {
+        await createCertification({
+          CertificationName: formData.certificationName,
+          CreatedByID: user.personId || 1 // Fallback to 1 if user not available
+        });
+        toast.success('Certification created successfully');
+      }
+      
+      onSave();
+      onClose();
+    } catch (error) {
+      toast.error(`Failed to ${certificationId ? 'update' : 'create'} certification: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-
-    const certifications = JSON.parse(
-      localStorage.getItem("certifications") || "[]"
-    );
-
-    if (certificationId) {
-      const updatedCertifications = certifications.map((cert) =>
-        cert.id === Number(certificationId)
-          ? { ...formData, id: Number(certificationId) }
-          : cert
-      );
-      localStorage.setItem(
-        "certifications",
-        JSON.stringify(updatedCertifications)
-      );
-    } else {
-      const newCertification = {
-        ...formData,
-        id: Date.now(),
-      };
-      localStorage.setItem(
-        "certifications",
-        JSON.stringify([...certifications, newCertification])
-      );
-    }
-
-    setMessage(
-      certificationId
-        ? "Certification updated successfully"
-        : "Certification created successfully"
-    );
-    onSave();
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value,
-    });
+    }));
 
     if (isSubmitted) {
-      setErrors({
-        ...errors,
+      setErrors(prev => ({
+        ...prev,
         [name]: "",
-      });
+      }));
     }
   };
 
@@ -109,28 +102,16 @@ const CertificationForm = ({ certificationId, onSave, onClose }) => {
       title={certificationId ? "Edit Certification" : "Add Certification"}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
       <FormInput
         label="Certification Name *"
         name="certificationName"
         value={formData.certificationName}
         onChange={handleChange}
-        error={isSubmitted && errors.certificationName}
-        helperText={isSubmitted && errors.certificationName}
+        error={errors.certificationName}
+        helperText={errors.certificationName}
       />
-      {isSubmitted &&
-        !Object.values(errors).some((error) => error) &&
-        message && (
-          <div
-            style={{
-              marginTop: "10px",
-              color: "#2e7d32",
-              fontSize: "0.875rem",
-            }}
-          >
-            {message}
-          </div>
-        )}
     </FormPage>
   );
 };
