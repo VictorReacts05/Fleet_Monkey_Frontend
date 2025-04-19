@@ -28,7 +28,7 @@ const BankList = () => {
       console.log("Received banks:", banks);
 
       const mappedRows = banks.map((bank) => ({
-        id: bank.BankAccountID,
+        id: bank.BankAccountID || "N/A",
         accountName: bank.AccountName,
         accountType: bank.AccountType,
         bankName: bank.BankName,

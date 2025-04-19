@@ -26,9 +26,11 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       if (bankId) {
         try {
           setLoading(true);
-          // console.log(`Loading bank ID ${bankId}`);
+          console.log(`Loading bank ID ${bankId}`); // Debug log
           const data = await getBankById(bankId);
-          // console.log("Loaded bank data:", JSON.stringify(data, null, 2));
+          console.log("Loaded bank data:", JSON.stringify(data, null, 2)); // Debug log
+          
+          // Make sure we're setting the form data with the correct property names
           setFormData({
             AccountName: data.AccountName || "",
             AccountType: data.AccountType || "",

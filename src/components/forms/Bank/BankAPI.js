@@ -93,16 +93,22 @@ export const deleteBank = async (id) => {
 
 export const getBankById = async (id) => {
   try {
-    console.log(`Fetching bank ID ${id}`); // Debug log
+    console.log(`Fetching bank ID ${id}`);
     const response = await axios.get(`${API_BASE_URL}/${id}`);
-    console.log("Get bank response:", response.data); // Debug log
-    return response.data;
+    console.log("Get bank response:", response.data);
+    
+    if (response.data.result === 0 && response.data.data) {
+      // The API returns an array, so we need to get the first item
+      if (Array.isArray(response.data.data) && response.data.data.length > 0) {
+        return response.data.data[0]; // Return the first item in the array
+      } else {
+        return response.data.data; // If it's not an array, return as is
+      }
+    } else {
+      throw new Error(response.data.message || "Failed to retrieve bank account");
+    }
   } catch (error) {
-    console.error("Get bank error:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    }); // Debug log
-    throw error.response?.data || error.message;
+    console.error("Get bank error:", error);
+    throw error;
   }
 };
