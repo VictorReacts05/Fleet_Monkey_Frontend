@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Alert } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import SalesRFQModal from './SalesRFQModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import { format } from 'date-fns';
-import { fetchSalesRFQs, deleteSalesRFQ } from '../../../utils/api';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Button, Alert } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import SalesRFQModal from "./SalesRFQModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import { format } from "date-fns";
+import { fetchSalesRFQs, deleteSalesRFQ } from "../../../utils/api";
+// import { useSelector } from "react-redux";
 
 const SalesRFQList = () => {
+  // const userDetails = useSelector(           ----------For your reference to fetch data from redux
+  //   (state) => state.loginReducer.loginDetials
+  // );
+  // console.log(userDetails, "____userDetails");
+
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -15,26 +21,26 @@ const SalesRFQList = () => {
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSalesRFQId, setSelectedSalesRFQId] = useState(null);
-  
+
   // Add state for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const columns = [
-    { id: 'SalesRFQID', label: 'ID' },
-    { id: 'Series', label: 'Series' },
-    { id: 'ExternalRefNo', label: 'External Ref No' },
-    { id: 'Status', label: 'Status' },
-    { 
-      id: 'DeliveryDate', 
-      label: 'Delivery Date',
-      format: (value) => value ? format(new Date(value), 'dd/MM/yyyy') : '-'
+    { id: "SalesRFQID", label: "ID" },
+    { id: "Series", label: "Series" },
+    { id: "ExternalRefNo", label: "External Ref No" },
+    { id: "Status", label: "Status" },
+    {
+      id: "DeliveryDate",
+      label: "Delivery Date",
+      format: (value) => (value ? format(new Date(value), "dd/MM/yyyy") : "-"),
     },
-    { 
-      id: 'RequiredByDate', 
-      label: 'Required By',
-      format: (value) => value ? format(new Date(value), 'dd/MM/yyyy') : '-'
-    }
+    {
+      id: "RequiredByDate",
+      label: "Required By",
+      format: (value) => (value ? format(new Date(value), "dd/MM/yyyy") : "-"),
+    },
   ];
 
   const fetchData = async () => {
@@ -42,34 +48,39 @@ const SalesRFQList = () => {
       setLoading(true);
       setError(null);
       const response = await fetchSalesRFQs();
-      
+
       if (response.success) {
         let data = response.data;
-        if (data && typeof data === 'object' && !Array.isArray(data) && data.data) {
+        if (
+          data &&
+          typeof data === "object" &&
+          !Array.isArray(data) &&
+          data.data
+        ) {
           data = data.data;
         }
 
         if (!Array.isArray(data)) {
-          data = data && typeof data === 'object' ? [data] : [];
+          data = data && typeof data === "object" ? [data] : [];
         }
 
-        const formattedRows = data.map(row => ({
+        const formattedRows = data.map((row) => ({
           ...row,
-          Status: row.Status || 'Pending',
-          ExternalRefNo: row.ExternalRefNo || '-',
-          Series: row.Series || '-',
+          Status: row.Status || "Pending",
+          ExternalRefNo: row.ExternalRefNo || "-",
+          Series: row.Series || "-",
           DeliveryDate: row.DeliveryDate || null,
-          RequiredByDate: row.RequiredByDate || null
+          RequiredByDate: row.RequiredByDate || null,
         }));
-        
+
         setRows(formattedRows);
         setTotalRows(formattedRows.length);
       } else {
-        setError(response.error || 'Failed to fetch data');
+        setError(response.error || "Failed to fetch data");
       }
     } catch (error) {
-      console.error('Error fetching Sales RFQs:', error);
-      setError(error.message || 'An unexpected error occurred');
+      console.error("Error fetching Sales RFQs:", error);
+      setError(error.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -93,19 +104,19 @@ const SalesRFQList = () => {
   // Add a new function to handle the actual deletion after confirmation
   const confirmDelete = async () => {
     if (!itemToDelete) return;
-    
+
     try {
       setLoading(true);
       const response = await deleteSalesRFQ(itemToDelete.SalesRFQID);
-      
+
       if (response.success) {
         fetchData(); // Refresh the list
       } else {
-        setError(response.error || 'Failed to delete Sales RFQ');
+        setError(response.error || "Failed to delete Sales RFQ");
       }
     } catch (error) {
-      console.error('Error deleting Sales RFQ:', error);
-      setError('An unexpected error occurred while deleting');
+      console.error("Error deleting Sales RFQ:", error);
+      setError("An unexpected error occurred while deleting");
     } finally {
       setLoading(false);
       setDeleteDialogOpen(false);
@@ -136,13 +147,13 @@ const SalesRFQList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h5">Sales RFQ Management</Typography>
         <Button variant="contained" color="primary" onClick={handleCreate}>
           Create New
         </Button>
       </Box>
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
@@ -171,12 +182,14 @@ const SalesRFQList = () => {
         salesRFQId={selectedSalesRFQId}
         onSave={handleSave}
       />
-      
+
       {/* Add the confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete Sales RFQ ${itemToDelete?.Series || itemToDelete?.SalesRFQID}?`}
+        message={`Are you sure you want to delete Sales RFQ ${
+          itemToDelete?.Series || itemToDelete?.SalesRFQID
+        }?`}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />

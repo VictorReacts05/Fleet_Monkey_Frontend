@@ -1,46 +1,52 @@
-import { createContext, useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { createContext, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setLoginDetails } from "../redux/actions/login/loginActions";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const login = async (loginId, password) => {
     try {
-      const response = await axios.post('http://localhost:5173/api/auth/login', {
-        loginId,
-        password
-      });
-
+      const response = await axios.post(
+        "http://localhost:5173/api/auth/login",
+        {
+          loginId,
+          password,
+        }
+      );
       if (response.data.data) {
-        localStorage.setItem('user', JSON.stringify(response.data.data));
+        let finalResponse = response.data.data;
+        dispatch(setLoginDetails(finalResponse));
         setIsAuthenticated(true);
-        navigate('/sales-rfq', { replace: true });
+        navigate("/sales-rfq", { replace: true });
         return { success: true };
       } else {
-        return { success: false, error: 'Authentication failed' };
+        return { success: false, error: "Authentication failed" };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Authentication failed'
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: error.response?.data?.error || "Authentication failed",
       };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
     setIsAuthenticated(false);
-    navigate('/login');
+    navigate("/login");
   };
 
   // Check if user is already logged in on app load
   useState(() => {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     if (user) {
       setIsAuthenticated(true);
     }
