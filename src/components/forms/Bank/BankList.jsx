@@ -23,7 +23,6 @@ const BankList = () => {
       setLoading(true);
 
       const response = await fetchBanks(page + 1, rowsPerPage);
-      console.log("API response:", JSON.stringify(response, null, 2)); // Detailed debug log
 
       const banks = response.data || [];
       console.log("Received banks:", banks);
@@ -39,16 +38,37 @@ const BankList = () => {
         micra: bank.MICRA,
       }));
       setRows(mappedRows);
-      console.log("Mapped rows:", JSON.stringify(mappedRows, null, 2)); // Detailed debug log
 
-      setTotalRows(response.pagination?.totalRecords || 0);
-      console.log("Total rows:", response.pagination?.totalRecords); // Debug log
+      // The API is returning the count of records on the current page, not the total
+      // We need to use a fixed total count or make a separate API call to get the total
+      if (response.totalRecords) {
+        // For now, we'll use a workaround - if we get fewer records than requested,
+        // we're on the last page, so calculate total based on that
+        const currentPageCount = response.data.length;
+        if (currentPageCount < rowsPerPage) {
+          // We're on the last page
+          const calculatedTotal = page * rowsPerPage + currentPageCount;
+          setTotalRows(calculatedTotal);
+          console.log("Calculated total rows:", calculatedTotal);
+        } else {
+          // We need to assume there are more pages
+          // Set a higher number to ensure pagination works
+          const minimumTotal = (page + 1) * rowsPerPage + 1;
+          setTotalRows(Math.max(minimumTotal, response.totalRecords));
+          console.log("Set minimum total rows:", minimumTotal);
+        }
+      } else {
+        // Fallback
+        setTotalRows(mappedRows.length);
+      }
+      
+      console.log("Response structure:", Object.keys(response));
     } catch (error) {
       console.error("Load banks error:", {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
-      }); // Debug log
+      });
       toast.error("Failed to load bank accounts");
     } finally {
       setLoading(false);
