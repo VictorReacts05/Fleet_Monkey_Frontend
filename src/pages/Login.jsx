@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -20,7 +20,6 @@ const Login = () => {
   const [rememberPassword, setRememberPassword] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
