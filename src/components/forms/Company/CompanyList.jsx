@@ -1,152 +1,240 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CompanyModal from './CompanyModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getCompanies, deleteCompany } from "../Company/companyStorage";
-// import { getCurrencies } from "../Currency/currencyStorage";
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchCompanies, deleteCompany } from "./CompanyAPI";
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
+import axios from 'axios';
 
 const CompanyList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
-  // Add state for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  useEffect(() => {
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const formattedRows = companies.map(company => ({
-      id: company.id,
-      companyName: company.companyName || '',
-      companyType: company.companyType || '',
-      websiteLink: company.websiteLink || '',
-      addressType: company.addressType || '',
-      notes: company.companyNotes || '', // Updated to use companyNotes instead of notes
-      currencyName: currencies.find(c => c.id === parseInt(company.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-  }, []);
-
-  // Also update the handleSave function with the same change
-  const handleSave = () => {
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const formattedRows = companies.map(company => ({
-      id: company.id,
-      companyName: company.companyName || '',
-      companyType: company.companyType || '',
-      websiteLink: company.websiteLink || '',
-      addressType: company.addressType || '',
-      notes: company.companyNotes || '', // Updated to use companyNotes instead of notes
-      currencyName: currencies.find(c => c.id === parseInt(company.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-    setModalOpen(false);
-  };
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { id: 'companyName', label: 'Company Name', align: 'center' },
-    { id: 'companyType', label: 'Company Type', align: 'center' },
-    { id: 'websiteLink', label: 'Website', align: 'center' },
-    { id: 'addressType', label: 'Address Type', align: 'center' },
-    { id: 'notes', label: 'Notes', align: 'center' },
-    { id: 'currencyName', label: 'Currency', align: 'center' }
+    { field: 'companyName', headerName: 'Company Name', flex: 1 },
+    { field: 'currencyName', headerName: 'Currency', flex: 1 },
+    { field: 'vatAccount', headerName: 'VAT Account', flex: 1 },
+    { field: 'website', headerName: 'Website', flex: 1 },
+    { field: 'companyNotes', headerName: 'Notes', flex: 1 },
+    // Remove the custom actions column - DataTable will add its own
   ];
 
-  /* const handleSave = () => {
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-    const formattedRows = companies.map(company => ({
-      id: company.id,
-      companyName: company.companyName || '',
-      companyType: company.companyType || '',
-      websiteLink: company.websiteLink || '',
-      addressType: company.addressType || '',
-      notes: company.notes || '',
-      currencyName: currencies.find(c => c.id === parseInt(company.currencyId))?.currencyName || ''
-    }));
-    setRows(formattedRows);
-    setModalOpen(false);
-  }; */
+  useEffect(() => {
+    loadCompanies();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
-  const handleEdit = (row) => {
-    setSelectedCompanyId(row.id);
-    setModalOpen(true);
+  const loadCompanies = async () => {
+    try {
+      setLoading(true);
+      const formattedFromDate = fromDate ? dayjs(fromDate).format('YYYY-MM-DD') : null;
+      const formattedToDate = toDate ? dayjs(toDate).format('YYYY-MM-DD') : null;
+      
+      // Fetch currencies first to have them available for mapping
+      let currencyMap = {};
+      try {
+        const currencyResponse = await axios.get('http://localhost:7000/api/currencies/all');
+        if (currencyResponse.data && currencyResponse.data.data) {
+          // Create a map of currency ID to currency name
+          currencyResponse.data.data.forEach(currency => {
+            currencyMap[currency.CurrencyID] = currency.CurrencyName;
+          });
+        }
+        console.log('Currency map:', currencyMap);
+      } catch (error) {
+        console.error('Error fetching currencies:', error);
+      }
+      
+      const response = await fetchCompanies(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+  
+      console.log('Companies response:', response);
+      const companies = response.data || [];
+      
+      const mappedRows = companies.map((company) => {
+        console.log('Processing company:', company);
+        // Look up currency name from the map
+        const currencyName = company.BillingCurrencyID ? 
+          currencyMap[company.BillingCurrencyID] || 'Unknown' : 
+          'N/A';
+        
+        return {
+          id: company.CompanyID,
+          companyName: company.CompanyName,
+          currencyName: currencyName,
+          vatAccount: company.VAT_Account || company.VatAccount || 'N/A',
+          website: company.Website || 'N/A',
+          companyNotes: company.CompanyNotes || 'N/A',
+        };
+      });
+      
+      console.log('Mapped company rows:', mappedRows);
+      setRows(mappedRows);
+      
+      // Set total rows for pagination
+      setTotalRows(response.totalRecords || companies.length);
+    } catch (error) {
+      console.error("Error loading companies:", error);
+      toast.error("Failed to load companies");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Update the handleDelete function to open the confirmation dialog
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
   };
 
-  // Add a new function to handle the actual deletion after confirmation
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    
-    deleteCompany(itemToDelete.id);
-    setRows(getCompanies());
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
   };
 
-  // Add a function to handle dialog cancellation
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const handleCreate = () => {
+  const handleAdd = () => {
     setSelectedCompanyId(null);
     setModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setSelectedCompanyId(null);
+  // Make sure these functions are defined correctly
+  const handleEdit = (id) => {
+    console.log(`Edit clicked for ID: ${id}`);
+    setSelectedCompanyId(id);
+    setModalOpen(true);
   };
 
+  const handleDeleteClick = (id) => {
+    console.log(`Delete clicked for ID: ${id}`);
+    const item = rows.find(row => row.id === id);
+    if (item) {
+      setItemToDelete(item);
+      setDeleteDialogOpen(true);
+    } else {
+      toast.error("Company not found");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      setLoading(true);
+      await deleteCompany(itemToDelete.id);
+      toast.success("Company deleted successfully");
+      loadCompanies();
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      toast.error("Failed to delete company");
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleSave = () => {
+    loadCompanies();
+  };
+
+  const handleFromDateChange = (date) => {
+    setFromDate(date);
+    setPage(0);
+  };
+
+  const handleToDateChange = (date) => {
+    setToDate(date);
+    setPage(0);
+  };
+
+  const handleClearDates = () => {
+    setFromDate(null);
+    setToDate(null);
+    setPage(0);
+  };
+
+  // Update the ConfirmDialog component where it's used in the return statement
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h5">Company Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" gutterBottom>
+        Companies
+      </Typography>
+  
+      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+        <FormDatePicker
+          label="From Date"
+          value={fromDate}
+          onChange={handleFromDateChange}
+        />
+        <FormDatePicker
+          label="To Date"
+          value={toDate}
+          onChange={handleToDateChange}
+        />
+        <Button
+          variant="outlined"
+          onClick={handleClearDates}
+          sx={{ mt: 1 }}
+        >
+          Clear Dates
         </Button>
-      </Box>
-
+      </Stack>
+  
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleAdd}
+        sx={{ mb: 2 }}
+      >
+        Add Company
+      </Button>
+  
       <DataTable
-        columns={columns}
         rows={rows}
+        columns={columns}
+        loading={loading}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
+        totalRows={totalRows}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={handleDeleteClick}
       />
-
+  
       <CompanyModal
         open={modalOpen}
-        onClose={handleModalClose}
+        onClose={() => setModalOpen(false)}
         companyId={selectedCompanyId}
         onSave={handleSave}
       />
-
-      {/* Add the confirmation dialog */}
+  
       <ConfirmDialog
         open={deleteDialogOpen}
-        title="Confirm Delete"
-        message={`Are you sure you want to delete company ${itemToDelete?.companyName}?`}
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        title="Delete Company"
+        message={`Are you sure you want to delete ${itemToDelete?.companyName}?`}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            width: '400px',
+            minHeight: '200px',
+            padding: '16px'
+          }
+        }}
       />
     </Box>
   );
