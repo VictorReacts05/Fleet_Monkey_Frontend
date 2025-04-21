@@ -1,313 +1,453 @@
+// Remove vehicle type related imports
 import React, { useState, useEffect } from "react";
-import { RadioGroup, FormControlLabel, Radio } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
-import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
-import dayjs from "dayjs";
-import { format } from 'date-fns';
+import {
+  fetchCompanies,
+  getVehicleById,
+  createVehicle,
+  updateVehicle,
+} from "./VehicleAPI";
+import { toast } from "react-toastify";
 
 const VehicleForm = ({ vehicleId, onSave, onClose }) => {
   const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false); // Add this line
   const [formData, setFormData] = useState({
-    numberPlate: "",
+    truckNumberPlate: "",
     vin: "",
     companyId: "",
-    lastName: "",
-    salutation: "",
-    designation: "",
-    gender: "",
-    dob: null,
-    joiningDate: null,
-    companyId2: "",
+    maxWeight: "",
+    length: "",
+    width: "",
+    height: "",
+    // Removed vehicleTypeId
   });
 
   const [errors, setErrors] = useState({
-    numberPlate: "",
+    truckNumberPlate: "",
     vin: "",
     companyId: "",
-    lastName: "",
-    salutation: "",
-    designation: "",
-    gender: "",
-    dob: "",
-    joiningDate: "",
-    companyId2: "",
+    maxWeight: "",
+    length: "",
+    width: "",
+    height: "",
+    // Removed vehicleTypeId
   });
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  // Predefined salutation options
-  const salutationOptions = [
-    { value: "Ms.", label: "Ms." },
-    { value: "Mr.", label: "Mr." },
-  ];
-
+  // In the useEffect hook:
   useEffect(() => {
-    // Load companies
-    const storedCompanies = JSON.parse(
-      localStorage.getItem("companies") || "[]"
-    );
-    const formattedCompanies = storedCompanies.map((company) => ({
-      value: company.id,
-      label: company.companyName,
-    }));
-    setCompanies(formattedCompanies);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Remove debug logs for fetching data
+        const companiesResponse = await fetchCompanies();
+        
+        let companyData = [];
+        if (Array.isArray(companiesResponse)) {
+          companyData = companiesResponse;
+        } else if (companiesResponse.data) {
+          companyData = companiesResponse.data;
+        }
 
-    // Load vehicle data for editing
-    if (vehicleId) {
-      const vehicles = JSON.parse(localStorage.getItem("vehicles") || "[]");
-      const vehicle = vehicles.find((v) => v.id === Number(vehicleId));
-      if (vehicle) {
-        setFormData({
-          ...vehicle,
-          numberPlate: vehicle.numberPlate || "",
-          vin: vehicle.vin || "",
-          companyId: vehicle.companyId || "",
-          lastName: vehicle.lastName || "",
-          salutation: vehicle.salutation || "",
-          designation: vehicle.designation || "",
-          gender: vehicle.gender || "",
-          dob: vehicle.dob ? dayjs(vehicle.dob) : null,
-          joiningDate: vehicle.joiningDate ? dayjs(vehicle.joiningDate) : null,
-          companyId2: vehicle.companyId2 || "",
-        });
-      } else {
-        console.warn(`Vehicle with ID ${vehicleId} not found`);
+        const companyOptions = companyData.map((company) => ({
+          value: company.CompanyID.toString(),  // Convert to string
+          label: company.CompanyName || 'Unnamed Company',
+        }));
+
+        setCompanies([
+          { value: "", label: "Select an option", disabled: true },
+          ...companyOptions,
+        ]);
+
+        // In the useEffect hook's vehicle data loading section:
+        if (vehicleId) {
+          const vehicleResponse = await getVehicleById(vehicleId);
+          const vehicle = vehicleResponse.data?.data || vehicleResponse.data || vehicleResponse;
+          
+          setFormData({
+            truckNumberPlate: vehicle?.TruckNumberPlate || "",
+            vin: vehicle?.VIN || "",
+            companyId: vehicle?.CompanyID?.toString() || "",  // Convert to string
+            maxWeight: vehicle?.MaxWeight ? vehicle.MaxWeight.toString() : "",
+            length: vehicle?.Length ? vehicle.Length.toString() : "",
+            width: vehicle?.Width ? vehicle.Width.toString() : "",
+            height: vehicle?.Height ? vehicle.Height.toString() : "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading form data:", error);
+        toast.error("Failed to load dropdown data: " + (error.message || "Unknown error"));
+        
+        if (companies.length === 0) {
+          setCompanies([{ value: "", label: "Select an option", disabled: true }]);
+        }
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+    loadData();
   }, [vehicleId]);
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = { ...errors };
-    const currentDate = dayjs();
+  /* const validateField = (name, value) => {
+    let error = "";
 
-    // Truck Number Plate validation
-    if (!formData.numberPlate.trim()) {
-      newErrors.numberPlate = "Truck number plate is required";
-      isValid = false;
-    } else if (!/^[A-Z0-9\s-]{5,}$/i.test(formData.numberPlate)) {
-      newErrors.numberPlate =
-        "Please enter a valid truck number plate (min 5 characters)";
-      isValid = false;
+    switch (name) {
+      case "truckNumberPlate":
+        if (!value.trim()) {
+          error = "Truck Number Plate is required";
+        } else if (!/^[A-Z0-9\s-]{5,}$/i.test(value)) {
+          error =
+            "Truck Number Plate must be at least 5 characters (letters, numbers, spaces, hyphens)";
+        } else if (value.length > 20) {
+          error = "Truck Number Plate must be 20 characters or less";
+        }
+        break;
+
+      case "vin":
+        if (!value.trim()) {
+          error = "VIN is required";
+        } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(value)) {
+          error = "VIN must be exactly 17 characters (A-H, J-N, P, R-Z, 0-9)";
+        }
+        break;
+
+      case "companyId":
+        if (!value) {
+          error = "Company is required";
+        } else if (
+          !companies.some(
+            (company) => company.value === value && !company.disabled
+          )
+        ) {
+          error = "Invalid company selected";
+        }
+        break;
+
+      case "vehicleTypeId":
+        if (!value) {
+          error = "Vehicle Type is required";
+        } else if (
+          !vehicleTypes.some((type) => type.value === value && !type.disabled)
+        ) {
+          error = "Invalid vehicle type selected";
+        }
+        break;
+
+      case "maxWeight":
+        if (!value.trim()) {
+          error = "Max Weight is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Max Weight must be a positive number";
+        }
+        break;
+
+      case "length":
+        if (!value.trim()) {
+          error = "Length is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Length must be a positive number";
+        }
+        break;
+
+      case "width":
+        if (!value.trim()) {
+          error = "Width is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Width must be a positive number";
+        }
+        break;
+
+      case "height":
+        if (!value.trim()) {
+          error = "Height is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Height must be a positive number";
+        }
+        break;
+
+      default:
+        break;
     }
 
-    // VIN validation
-    if (!formData.vin.trim()) {
-      newErrors.vin = "VIN is required";
-      isValid = false;
-    } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(formData.vin)) {
-      newErrors.vin = "Please enter a valid 17-character VIN";
-      isValid = false;
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === "";
+  }; */
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "truckNumberPlate":
+        if (!value.trim()) {
+          error = "Truck Number Plate is required";
+        } else if (!/^[A-Z0-9\s-]{5,}$/i.test(value)) {
+          error =
+            "Truck Number Plate must be at least 5 characters (letters, numbers, spaces, hyphens)";
+        } else if (value.length > 20) {
+          error = "Truck Number Plate must be 20 characters or less";
+        }
+        break;
+
+      case "vin":
+        if (!value.trim()) {
+          error = "VIN is required";
+        } else if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(value)) {
+          error = "VIN must be exactly 17 characters (A-H, J-N, P, R-Z, 0-9)";
+        }
+        break;
+
+      case "companyId":
+        if (!value) {
+          error = "Company is required";
+        } else if (
+          !companies.some(
+            (company) => company.value === value && !company.disabled
+          )
+        ) {
+          error = "Invalid company selected";
+        }
+        break;
+
+      case "maxWeight":
+        if (!value.trim()) {
+          error = "Max Weight is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Max Weight must be a positive number";
+        }
+        break;
+
+      case "length":
+        if (!value.trim()) {
+          error = "Length is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Length must be a positive number";
+        }
+        break;
+
+      case "width":
+        if (!value.trim()) {
+          error = "Width is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Width must be a positive number";
+        }
+        break;
+
+      case "height":
+        if (!value.trim()) {
+          error = "Height is required";
+        } else if (isNaN(value) || Number(value) <= 0) {
+          error = "Height must be a positive number";
+        }
+        break;
+
+      default:
+        break;
     }
 
-    // Company 1 validation
-    if (!formData.companyId) {
-      newErrors.companyId = "Company is required";
-      isValid = false;
-    }
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === "";
+  };
 
-    // Last Name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-      isValid = false;
-    } else if (!/^[A-Za-z\s-]{2,}$/.test(formData.lastName)) {
-      newErrors.lastName =
-        "Last name must be at least 2 characters (letters only)";
-      isValid = false;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (isSubmitted) {
+      validateField(name, value);
     }
+  };
 
-    // Salutation validation
-    if (!formData.salutation) {
-      newErrors.salutation = "Salutation is required";
-      isValid = false;
-    }
-
-    // Designation validation
-    if (!formData.designation.trim()) {
-      newErrors.designation = "Designation is required";
-      isValid = false;
-    } else if (formData.designation.length < 2) {
-      newErrors.designation = "Designation must be at least 2 characters";
-      isValid = false;
-    }
-
-    // Gender validation
-    if (!formData.gender) {
-      newErrors.gender = "Gender is required";
-      isValid = false;
-    }
-
-    // DOB validation
-    if (!formData.dob) {
-      newErrors.dob = "Date of birth is required";
-      isValid = false;
-    } else if (dayjs(formData.dob).isAfter(currentDate, "day")) {
-      newErrors.dob = "Date of birth cannot be in the future";
-      isValid = false;
-    } else if (dayjs().diff(formData.dob, "year") < 18) {
-      newErrors.dob = "Must be at least 18 years old";
-      isValid = false;
-    }
-
-    // Joining Date validation
-    if (!formData.joiningDate) {
-      newErrors.joiningDate = "Joining date is required";
-      isValid = false;
-    } else if (dayjs(formData.joiningDate).isBefore(formData.dob, "day")) {
-      newErrors.joiningDate = "Joining date cannot be before date of birth";
-      isValid = false;
-    } else if (dayjs(formData.joiningDate).isAfter(currentDate, "day")) {
-      newErrors.joiningDate = "Joining date cannot be in the future";
-      isValid = false;
-    }
-
-    // Company 2 validation
-    if (!formData.companyId2) {
-      newErrors.companyId2 = "Second company is required";
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      setIsSubmitted(true);
-      
-      if (!validateForm()) {
-        return;
-      }
-  
-      const vehicles = JSON.parse(localStorage.getItem('vehicles') || '[]');
-      const formattedData = {
-        ...formData,
-        dob: formData.dob ? format(formData.dob, 'yyyy-MM-dd') : null
-      };
-      
-      if (vehicleId) {
-        const updatedVehicles = vehicles.map(vehicle =>
-          vehicle.id === vehicleId ? { ...formattedData, id: vehicleId } : vehicle
-        );
-        localStorage.setItem('vehicles', JSON.stringify(updatedVehicles));
-      } else {
-        const newVehicle = {
-          ...formattedData,
-          id: Date.now()
-        };
-        localStorage.setItem('vehicles', JSON.stringify([...vehicles, newVehicle]));
-      }
-      
-      onSave();
-    } catch (error) {
-      console.error('Error saving vehicle:', error);
+    setIsSubmitted(true);
+
+    const validationErrors = {};
+
+    validationErrors.truckNumberPlate = validateField(
+      "truckNumberPlate",
+      formData.truckNumberPlate
+    )
+      ? ""
+      : errors.truckNumberPlate || "Truck Number Plate is required";
+    validationErrors.vin = validateField("vin", formData.vin)
+      ? ""
+      : errors.vin || "VIN is required";
+    validationErrors.companyId = validateField("companyId", formData.companyId)
+      ? ""
+      : errors.companyId || "Company is required";
+    validationErrors.vehicleTypeId = validateField(
+      "vehicleTypeId",
+      formData.vehicleTypeId
+    )
+      ? ""
+      : errors.vehicleTypeId || "Vehicle Type is required";
+    validationErrors.maxWeight = validateField("maxWeight", formData.maxWeight)
+      ? ""
+      : errors.maxWeight || "Max Weight is required";
+    validationErrors.length = validateField("length", formData.length)
+      ? ""
+      : errors.length || "Length is required";
+    validationErrors.width = validateField("width", formData.width)
+      ? ""
+      : errors.width || "Width is required";
+    validationErrors.height = validateField("height", formData.height)
+      ? ""
+      : errors.height || "Height is required";
+
+    const hasErrors = Object.values(validationErrors).some(
+      (error) => error !== ""
+    );
+
+    if (hasErrors) {
+      setErrors(validationErrors);
+      toast.error("Please fix the validation errors");
+      return;
     }
-  };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    try {
+      setLoading(true);
 
-  const handleDateChange = (name, date) => {
-    setFormData({ ...formData, [name]: date });
+      const payload = {
+        truckNumberPlate: formData.truckNumberPlate,
+        vin: formData.vin.toUpperCase(),
+        companyID: formData.companyId,
+        maxWeight: formData.maxWeight ? Number(formData.maxWeight) : null,
+        length: formData.length ? Number(formData.length) : null,
+        width: formData.width ? Number(formData.width) : null,
+        height: formData.height ? Number(formData.height) : null,
+      };
+
+      if (vehicleId) {
+        await updateVehicle(vehicleId, payload);
+        toast.success("Vehicle updated successfully");
+      } else {
+        await createVehicle(payload);
+        toast.success("Vehicle created successfully");
+      }
+
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error saving vehicle:", error);
+      toast.error(
+        `Failed to ${vehicleId ? "update" : "create"} vehicle: ${error.message}`
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <FormPage
-      title={vehicleId ? "Edit Vehicle/Driver Info" : "Add Vehicle/Driver Info"}
+      title={vehicleId ? "Edit Vehicle" : "Create Vehicle"}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
+      <Typography variant="h6" gutterBottom>
+        Vehicle Details
+      </Typography>
+
       <FormInput
-        label="Truck Number Plate"
-        name="numberPlate"
-        value={formData.numberPlate}
+        label="Truck Number Plate *"
+        name="truckNumberPlate"
+        value={formData.truckNumberPlate}
         onChange={handleChange}
-        error={isSubmitted && errors.numberPlate}
-        helperText={isSubmitted && errors.numberPlate}
+        onBlur={handleBlur}
+        error={!!errors.truckNumberPlate}
+        helperText={errors.truckNumberPlate}
+        placeholder="Enter truck number plate"
       />
+
       <FormInput
-        label="Vehicle Identification Number (VIN)"
+        label="VIN *"
         name="vin"
         value={formData.vin}
         onChange={handleChange}
-        error={isSubmitted && errors.vin}
-        helperText={isSubmitted && errors.vin}
+        onBlur={handleBlur}
+        error={!!errors.vin}
+        helperText={errors.vin}
+        placeholder="Enter 17-character VIN"
       />
+
       <FormSelect
-        label="Select Company"
+        label="Company *"
         name="companyId"
         value={formData.companyId}
         onChange={handleChange}
+        onBlur={handleBlur}
         options={companies}
-        error={isSubmitted && errors.companyId}
-        helperText={isSubmitted && errors.companyId}
+        error={!!errors.companyId}
+        helperText={errors.companyId}
+        placeholder="Select an option"
       />
+
+      {/* <FormSelect
+        label="Vehicle Type *"
+        name="vehicleTypeId"
+        value={formData.vehicleTypeId}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        options={vehicleTypes}
+        error={!!errors.vehicleTypeId}
+        helperText={errors.vehicleTypeId}
+        placeholder="Select an option"
+      /> */}
+
+      <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+        Dimensions
+      </Typography>
+
       <FormInput
-        label="Last Name"
-        name="lastName"
-        value={formData.lastName}
+        label="Max Weight (kg) *"
+        name="maxWeight"
+        value={formData.maxWeight}
         onChange={handleChange}
-        error={isSubmitted && errors.lastName}
-        helperText={isSubmitted && errors.lastName}
+        onBlur={handleBlur}
+        error={!!errors.maxWeight}
+        helperText={errors.maxWeight}
+        placeholder="Enter max weight"
       />
-      <FormSelect
-        label="Salutation"
-        name="salutation"
-        value={formData.salutation}
-        onChange={handleChange}
-        options={salutationOptions}
-        error={isSubmitted && errors.salutation}
-        helperText={isSubmitted && errors.salutation}
-      />
+
       <FormInput
-        label="Designation"
-        name="designation"
-        value={formData.designation}
+        label="Length (m) *"
+        name="length"
+        value={formData.length}
         onChange={handleChange}
-        error={isSubmitted && errors.designation}
-        helperText={isSubmitted && errors.designation}
+        onBlur={handleBlur}
+        error={!!errors.length}
+        helperText={errors.length}
+        placeholder="Enter length"
       />
-      <RadioGroup
-        row
-        name="gender"
-        value={formData.gender}
+
+      <FormInput
+        label="Width (m) *"
+        name="width"
+        value={formData.width}
         onChange={handleChange}
-      >
-        <FormControlLabel value="male" control={<Radio />} label="Male" />
-        <FormControlLabel value="female" control={<Radio />} label="Female" />
-      </RadioGroup>
-      {isSubmitted && errors.gender && (
-        <p style={{ color: "red", fontSize: "12px" }}>{errors.gender}</p>
-      )}
-      <FormDatePicker
-        label="Date of Birth"
-        name="dob"
-        value={formData.dob}
-        onChange={(date) => handleDateChange("dob", date)}
-        error={isSubmitted && errors.dob}
-        helperText={isSubmitted && errors.dob}
+        onBlur={handleBlur}
+        error={!!errors.width}
+        helperText={errors.width}
+        placeholder="Enter width"
       />
-      <FormDatePicker
-        label="Joining Date"
-        name="joiningDate"
-        value={formData.joiningDate}
-        onChange={(date) => handleDateChange("joiningDate", date)}
-        error={isSubmitted && errors.joiningDate}
-        helperText={isSubmitted && errors.joiningDate}
-      />
-      <FormSelect
-        label="Select Second Company"
-        name="companyId2"
-        value={formData.companyId2}
+
+      <FormInput
+        label="Height (m) *"
+        name="height"
+        value={formData.height}
         onChange={handleChange}
-        options={companies}
-        error={isSubmitted && errors.companyId2}
-        helperText={isSubmitted && errors.companyId2}
+        onBlur={handleBlur}
+        error={!!errors.height}
+        helperText={errors.height}
+        placeholder="Enter height"
       />
     </FormPage>
   );

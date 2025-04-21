@@ -1,63 +1,112 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, Stack } from "@mui/material";
 import DataTable from "../../Common/DataTable";
 import VehicleModal from "./VehicleModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import { getVehicles, deleteVehicle } from "./vehicleStorage";
-import { getCompanies } from "../Company/companyStorage";
+import FormDatePicker from "../../Common/FormDatePicker";
+import { fetchVehicles, deleteVehicle } from "./VehicleAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
 
 const VehicleList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  useEffect(() => {
-    setRows(getVehicles());
-  }, []);
-
-  const handleDelete = (row) => {
-    console.log("handleDelete called with row:", row); // Debug
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (!itemToDelete) {
-      console.log("No item to delete"); // Debug
-      return;
-    }
-    console.log("Deleting vehicle:", itemToDelete.id); // Debug
-    deleteVehicle(itemToDelete.id);
-    setRows(getVehicles());
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    console.log("Cancel delete"); // Debug
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { id: "numberPlate", label: "Number Plate", align: "center" },
-    { id: "vin", label: "VIN", align: "center" },
-    { id: "companyId", label: "Company", align: "center" },
-    { id: "companyId2", label: "Company 2", align: "center" },
+    { field: "truckNumberPlate", headerName: "Truck Number Plate", flex: 1 },
+    { field: "vin", headerName: "VIN", flex: 1 },
+    { field: "companyName", headerName: "Company", flex: 1 },
+    { field: "maxWeight", headerName: "Max Weight (kg)", flex: 1 },
+    { field: "length", headerName: "Length (m)", flex: 1 },
+    { field: "width", headerName: "Width (m)", flex: 1 },
+    { field: "height", headerName: "Height (m)", flex: 1 },
+    { field: "vehicleTypeName", headerName: "Vehicle Type", flex: 1 },
   ];
 
-  const handleEdit = (row) => {
-    setSelectedVehicleId(row.id);
-    setModalOpen(true);
+  const loadVehicles = async () => {
+    try {
+      setLoading(true);
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      const response = await fetchVehicles(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const vehicles = response.data || [];
+      const totalCount = response.pagination?.totalRecords || vehicles.length;
+      
+      const formattedRows = vehicles.map((vehicle) => ({
+        id: vehicle.VehicleID,
+        truckNumberPlate: vehicle.TruckNumberPlate || "N/A",
+        vin: vehicle.VIN || "N/A",
+        companyName: vehicle.CompanyName || "N/A",
+        companyId: vehicle.CompanyID,
+        maxWeight: vehicle.MaxWeight?.toFixed(2) || "N/A",
+        length: vehicle.Length?.toFixed(2) || "N/A",
+        width: vehicle.Width?.toFixed(2) || "N/A",
+        height: vehicle.Height?.toFixed(2) || "N/A",
+        vehicleTypeName: vehicle.VehicleTypeName || "N/A",
+        vehicleTypeId: vehicle.VehicleTypeID,
+      }));
+
+      setRows(formattedRows);
+      setTotalRows(totalCount);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      toast.error('Failed to load vehicles: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    loadVehicles();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   const handleCreate = () => {
     setSelectedVehicleId(null);
     setModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedVehicleId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    const vehicle = rows.find(row => row.id === id);
+    setItemToDelete(vehicle);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteVehicle(itemToDelete.id);
+      toast.success('Vehicle deleted successfully');
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadVehicles();
+    } catch (error) {
+      toast.error('Failed to delete vehicle: ' + error.message);
+    }
+  };
+
+  const handleSave = () => {
+    setModalOpen(false);
+    loadVehicles();
   };
 
   const handleModalClose = () => {
@@ -65,29 +114,32 @@ const VehicleList = () => {
     setSelectedVehicleId(null);
   };
 
-  const handleSave = () => {
-    const vehicles = getVehicles();
-    const companies = getCompanies();
-    const mappedRows = vehicles.map((vehicle) => ({
-      ...vehicle,
-      companyId:
-        companies.find((c) => c.id === Number(vehicle.companyId))
-          ?.companyName || "",
-      companyId2:
-        companies.find((c) => c.id === Number(vehicle.companyId2))
-          ?.companyName || "",
-    }));
-    setRows(mappedRows);
-    setModalOpen(false);
-  };
-
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5">Vehicle Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCreate}
+            sx={{ width: 200, paddingY: 1 }}
+          >
+            Add Vehicle
+          </Button>
+        </Stack>
       </Box>
 
       <DataTable
@@ -97,12 +149,14 @@ const VehicleList = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(e, newPage) => setPage(newPage)}
         onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
+          const newRowsPerPage = parseInt(e.target.value, 10);
+          setRowsPerPage(newRowsPerPage);
           setPage(0);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={rows.length}
+        totalRows={totalRows}
+        loading={loading}
       />
 
       <VehicleModal
@@ -110,19 +164,15 @@ const VehicleList = () => {
         onClose={handleModalClose}
         vehicleId={selectedVehicleId}
         onSave={handleSave}
+        initialData={rows.find(row => row.id === selectedVehicleId)}
       />
+
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={
-          itemToDelete
-            ? `Are you sure you want to delete vehicle ${
-                itemToDelete.vehicleName || itemToDelete.id
-              }?`
-            : "Are you sure you want to delete this vehicle?"
-        }
+        message={`Are you sure you want to delete vehicle ${itemToDelete?.truckNumberPlate || ""}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );
