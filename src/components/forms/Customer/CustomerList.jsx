@@ -1,88 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CustomerModal from './CustomerModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getCustomers, deleteCustomer } from './customerStorage';
-import { getCompanies } from "../Company/companyStorage";
-// import { getCurrencies } from '../Currency/currencyStorage';
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchCustomers, deleteCustomer } from './CustomerAPI';
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
 
 const CustomerList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
-  // Add state for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
-  useEffect(() => {
-    const customers = getCustomers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-
-    // Map the IDs to their actual names
-    const mappedRows = customers.map(customer => ({
-      ...customer,
-      companyId: companies.find(c => c.id === parseInt(customer.companyId))?.companyName || '',
-      currencyId: currencies.find(c => c.id === parseInt(customer.currencyId))?.currencyName || ''
-    }));
-
-    setRows(mappedRows);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { id: 'customerName', label: 'Customer Name', align: 'center' },
-    { id: 'companyId', label: 'Company', align: 'center' },
-    { id: 'importCode', label: 'Import Code', align: 'center' },
-    { id: 'currencyId', label: 'Currency', align: 'center' },
-    { id: 'websiteUrl', label: 'Website', align: 'center' },
-    { id: 'addressType', label: 'Address Type', align: 'center' }
+    { field: "customerName", headerName: "Customer Name", flex: 1 },
+    { field: "companyName", headerName: "Company", flex: 1 },
+    { field: "importCode", headerName: "Import Code", flex: 1 },
+    { field: "currencyName", headerName: "Currency", flex: 1 },
+    { field: "website", headerName: "Website", flex: 1 },
+    // { field: "createdDateTime", headerName: "Created Date", flex: 1 },
   ];
 
-  const handleEdit = (row) => {
-    setSelectedCustomerId(row.id);
-    setModalOpen(true);
+  const loadCustomers = async () => {
+    try {
+      setLoading(true);
+      // Format dates to start of day and end of day
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      const response = await fetchCustomers(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const customers = response.data || [];
+      const totalCount = response.pagination?.totalRecords || customers.length;
+      
+      const formattedRows = customers.map((customer) => ({
+        id: customer.CustomerID,
+        customerName: customer.CustomerName || "N/A",
+        companyName: customer.CompanyName || "N/A",
+        importCode: customer.ImportCode || "N/A",
+        currencyName: customer.CurrencyName || "N/A",
+        website: customer.Website || "N/A",
+        createdDateTime:
+          dayjs(customer.CreatedDateTime).format("YYYY-MM-DD HH:mm:ss") ||
+          "N/A",
+      }));
+
+      setRows(formattedRows);
+      setTotalRows(totalCount);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      toast.error('Failed to load customers: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Update the handleDelete function to open the confirmation dialog
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
-  };
-
-  // Add a new function to handle the actual deletion after confirmation
-  const confirmDelete = () => {
-    if (!itemToDelete) return;
-    
-    deleteCustomer(itemToDelete.id);
-    
-    // Refresh the list
-    const customers = getCustomers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-
-    const mappedRows = customers.map(customer => ({
-      ...customer,
-      companyId: companies.find(c => c.id === parseInt(customer.companyId))?.companyName || '',
-      currencyId: currencies.find(c => c.id === parseInt(customer.currencyId))?.currencyName || ''
-    }));
-
-    setRows(mappedRows);
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  // Add a function to handle dialog cancellation
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
+  useEffect(() => {
+    loadCustomers();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   const handleCreate = () => {
     setSelectedCustomerId(null);
     setModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedCustomerId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    const customer = rows.find(row => row.id === id);
+    setItemToDelete(customer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteCustomer(itemToDelete.id);
+      toast.success('Customer deleted successfully');
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadCustomers();
+    } catch (error) {
+      toast.error('Failed to delete customer: ' + error.message);
+    }
+  };
+
+  const handleSave = () => {
+    setModalOpen(false);
+    loadCustomers();
   };
 
   const handleModalClose = () => {
@@ -90,28 +111,39 @@ const CustomerList = () => {
     setSelectedCustomerId(null);
   };
 
-  const handleSave = () => {
-    const customers = getCustomers();
-    const companies = getCompanies();
-    const currencies = getCurrencies();
-
-    const mappedRows = customers.map(customer => ({
-      ...customer,
-      companyId: companies.find(c => c.id === parseInt(customer.companyId))?.companyName || '',
-      currencyId: currencies.find(c => c.id === parseInt(customer.currencyId))?.currencyName || ''
-    }));
-
-    setRows(mappedRows);
-    setModalOpen(false);
-  };
-
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Customer Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={-1} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleCreate}
+            sx={{width: 200, height: 56}}
+          >
+            Add Customer
+          </Button>
+        </Stack>
       </Box>
 
       <DataTable
@@ -126,6 +158,8 @@ const CustomerList = () => {
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        totalRows={totalRows}
+        loading={loading}
       />
 
       <CustomerModal
@@ -135,13 +169,12 @@ const CustomerList = () => {
         onSave={handleSave}
       />
 
-      {/* Add the confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
         message={`Are you sure you want to delete customer ${itemToDelete?.customerName}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );

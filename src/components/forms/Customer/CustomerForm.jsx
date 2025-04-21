@@ -1,231 +1,310 @@
 import React, { useState, useEffect } from "react";
+import FormPage from "../../Common/FormPage";
 import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormTextArea from "../../Common/FormTextArea";
-import FormPage from "../../Common/FormPage";
-import { getCustomerById } from "./customerStorage";
-import { getCompanies } from "../Company/companyStorage";
-// import { getCurrencies } from "../Currency/currencyStorage";
+import { toast } from "react-toastify";
+import {
+  getCustomerById,
+  createCustomer,
+  updateCustomer,
+  fetchCurrencies,
+  fetchCompanies
+} from "./CustomerAPI";
 
-const CustomerForm = ({ customerId, onSave, onClose }) => {
-  const [formData, setFormData] = useState({
-    customerName: "",
-    companyId: "",
-    importCode: "",
-    currencyId: "",
-    websiteUrl: "",
-    customerNotes: "",
-    addressType: "",
-  });
-
-  const [companies, setCompanies] = useState([]);
+const CustomerForm = ({ customerId, onClose, onSave }) => {
+  const [loading, setLoading] = useState(false);
   const [currencies, setCurrencies] = useState([]);
-  
-  // Add these state declarations
-  const [errors, setErrors] = useState({
-    customerName: '',
-    companyId: '',
-    importCode: '',
-    currencyId: '',
-    websiteUrl: '',
-    customerNotes: '',
-    addressType: ''
-  });
+  const [companies, setCompanies] = useState([]);
+  const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const addressTypes = [
-    { value: "billing", label: "Billing" },
-    { value: "shipping", label: "Shipping" },
-    { value: "both", label: "Both" },
-  ];
+  const [formData, setFormData] = useState({
+    CustomerName: '',
+    CompanyID: '',
+    ImportCode: '',
+    BillingCurrencyID: '',
+    Website: '',
+    CustomerNotes: ''
+  });
 
   useEffect(() => {
-    setCompanies(
-      getCompanies().map((company) => ({
-        value: company.id,
-        label: company.companyName,
-      }))
-    );
-
-    setCurrencies(
-      getCurrencies().map((currency) => ({
-        value: currency.id,
-        label: currency.currencyName,
-      }))
-    );
-
-    if (customerId) {
-      const customer = getCustomerById(customerId);
-      if (customer) {
-        setFormData(customer);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch currencies from the currency table
+        const currenciesResponse = await fetchCurrencies();
+        setCurrencies(currenciesResponse.data || []);
+        
+        // Fetch companies from the company table
+        const companiesResponse = await fetchCompanies();
+        setCompanies(companiesResponse.data || []);
+        
+        // If editing, fetch customer data
+        if (customerId) {
+          const customerData = await getCustomerById(customerId);
+          if (customerData) {
+            setFormData({
+              CustomerName: customerData.CustomerName || '',
+              CompanyID: customerData.CompanyID || '',
+              ImportCode: customerData.ImportCode || '',
+              BillingCurrencyID: customerData.BillingCurrencyID || '',
+              Website: customerData.Website || '',
+              CustomerNotes: customerData.CustomerNotes || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load required data');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [customerId]);
-
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = {
-      customerName: '',
-      companyId: '',
-      importCode: '',
-      currencyId: '',
-      websiteUrl: '',
-      customerNotes: '',
-      addressType: ''
     };
 
-    if (!formData.customerName.trim()) {
-      newErrors.customerName = 'Customer name is required';
-      isValid = false;
-    } else if (formData.customerName.length < 2) {
-      newErrors.customerName = 'Customer name must be at least 2 characters';
-      isValid = false;
+    fetchData();
+  }, [customerId]);
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "CustomerName":
+        if (!value) {
+          error = "Customer Name is required";
+        } else if (value.length < 3) {
+          error = "Customer Name must be at least 3 characters";
+        } else if (value.length > 100) {
+          error = "Customer Name must be 100 characters or less";
+        } else if (!/^[a-zA-Z0-9\s&.,'-]+$/.test(value)) {
+          error =
+            "Customer Name can only contain letters, numbers, spaces, and &.,'-";
+        }
+        break;
+
+      case "CompanyID":
+        if (!value) {
+          error = "Company selection is required";
+        } else if (!companies.some((company) => company.CompanyID === value)) {
+          error = "Invalid company selected";
+        }
+        break;
+
+      case "ImportCode":
+        if (!value) {
+          error = "Import Code is required";
+        } else if (value.length < 3) {
+          error = "Import Code must be at least 3 characters";
+        } else if (value.length > 50) {
+          error = "Import Code must be 50 characters or less";
+        } else if (!/^[a-zA-Z0-9-]+$/.test(value)) {
+          error = "Import Code can only contain letters, numbers, and hyphens";
+        }
+        break;
+
+      case "BillingCurrencyID":
+        if (!value) {
+          error = "Currency selection is required";
+        } else if (
+          !currencies.some((currency) => currency.CurrencyID === value)
+        ) {
+          error = "Invalid currency selected";
+        }
+        break;
+
+      case "Website":
+        if (!value) {
+          error = "Website is required";
+        } else {
+          const urlPattern =
+            /^(https?:\/\/)?([a-z0-9-]+\.)*[a-z0-9-]+\.[a-z]{2,}(\/.*)?$/i;
+          if (!urlPattern.test(value)) {
+            error = "Invalid website format (e.g., https://example.com)";
+          } else if (value.length > 200) {
+            error = "Website must be 200 characters or less";
+          } else if (value.length < 4) {
+            error = "Website must be at least 4 characters";
+          }
+        }
+        break;
+
+      case "CustomerNotes":
+        if (!value) {
+          error = "Customer Notes are required";
+        } else if (value.length > 255) {
+          error = "Notes must be 255 characters or less";
+        } else if (/[<>{}]/g.test(value)) {
+          error = "Notes cannot contain <, >, {, or }";
+        } else if (value.length < 3) {
+          error = "Notes must be at least 3 characters";
+        }
+        break;
+
+      default:
+        break;
     }
 
-    if (!formData.companyId) {
-      newErrors.companyId = 'Company is required';
-      isValid = false;
-    }
-
-    if (!formData.currencyId) {
-      newErrors.currencyId = 'Currency is required';
-      isValid = false;
-    }
-
-    // Update import code validation
-    if (formData.importCode) {
-      if (!/^[A-Z0-9-]{3,15}$/.test(formData.importCode)) {
-        newErrors.importCode = 'Import code must be 3-15 characters (uppercase letters, numbers, hyphens)';
-        isValid = false;
-      }
-    } else {
-      newErrors.importCode = 'Import code is required';
-      isValid = false;
-    }
-
-    if (formData.websiteUrl && !/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/.test(formData.websiteUrl)) {
-      newErrors.websiteUrl = 'Please enter a valid URL';
-      isValid = false;
-    }
-
-    if (!formData.addressType) {
-      newErrors.addressType = 'Address type is required';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitted(true);
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    const customers = JSON.parse(localStorage.getItem("customers") || "[]");
-
-    if (customerId) {
-      const updatedCustomers = customers.map((customer) =>
-        customer.id === customerId ? { ...formData, id: customerId } : customer
-      );
-      localStorage.setItem("customers", JSON.stringify(updatedCustomers));
-    } else {
-      const newCustomer = {
-        ...formData,
-        id: Date.now(),
-      };
-      localStorage.setItem(
-        "customers",
-        JSON.stringify([...customers, newCustomer])
-      );
-    }
-
-    onSave();
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === "";
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (isSubmitted) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitted(true);
+
+    const validationErrors = {};
+
+    validationErrors.CustomerName = validateField(
+      "CustomerName",
+      formData.CustomerName
+    )
+      ? ""
+      : errors.CustomerName || "Customer Name is required";
+    validationErrors.CompanyID = validateField("CompanyID", formData.CompanyID)
+      ? ""
+      : errors.CompanyID || "Company selection is required";
+    validationErrors.ImportCode = validateField(
+      "ImportCode",
+      formData.ImportCode
+    )
+      ? ""
+      : errors.ImportCode || "Import Code is required";
+    validationErrors.BillingCurrencyID = validateField(
+      "BillingCurrencyID",
+      formData.BillingCurrencyID
+    )
+      ? ""
+      : errors.BillingCurrencyID || "Currency selection is required";
+    validationErrors.Website = validateField("Website", formData.Website)
+      ? ""
+      : errors.Website || "Website is required";
+    validationErrors.CustomerNotes = validateField(
+      "CustomerNotes",
+      formData.CustomerNotes
+    )
+      ? ""
+      : errors.CustomerNotes || "Customer Notes are required";
+
+    const hasErrors = Object.values(validationErrors).some(
+      (error) => error !== ""
+    );
+
+    if (hasErrors) {
+      setErrors(validationErrors);
+      toast.error("Please fix the validation errors");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (customerId) {
+        await updateCustomer(customerId, formData);
+        toast.success("Customer updated successfully");
+      } else {
+        await createCustomer(formData);
+        toast.success("Customer created successfully");
+      }
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      toast.error(
+        `Failed to ${customerId ? "update" : "create"} customer: ${
+          error.message || error
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <FormPage
-      title={customerId ? "Edit Customer" : "Add Customer"}
+      title={customerId ? "Edit Customer" : "Add New Customer"}
+      loading={loading}
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
       <FormInput
-        label="Customer Name *"
-        name="customerName"
-        value={formData.customerName}
+        required
+        label="Customer Name"
+        name="CustomerName"
+        value={formData.CustomerName}
         onChange={handleChange}
-        error={isSubmitted && errors.customerName}
-        helperText={isSubmitted && errors.customerName}
+        onBlur={handleBlur}
+        error={errors.CustomerName}
       />
+
       <FormSelect
-        label="Select Company *"
-        name="companyId"
-        value={formData.companyId}
+        required
+        label="Select Company"
+        name="CompanyID"
+        value={formData.CompanyID}
         onChange={handleChange}
-        options={companies}
-        error={isSubmitted && errors.companyId}
-        helperText={isSubmitted && errors.companyId}
+        onBlur={handleBlur}
+        error={errors.CompanyID}
+        options={companies.map(company => ({
+          value: company.CompanyID,
+          label: company.CompanyName
+        }))}
       />
-      <FormSelect
-        label="Select Currency *"
-        name="currencyId"
-        value={formData.currencyId}
-        onChange={handleChange}
-        options={currencies}
-        error={isSubmitted && errors.currencyId}
-        helperText={isSubmitted && errors.currencyId}
-      />
+
       <FormInput
+        required
+        label="Import Code"
+        name="ImportCode"
+        value={formData.ImportCode}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        error={errors.ImportCode}
+      />
+
+      <FormSelect
+        required
+        label="Select Currency"
+        name="BillingCurrencyID"
+        value={formData.BillingCurrencyID}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        error={errors.BillingCurrencyID}
+        options={currencies.map(currency => ({
+          value: currency.CurrencyID,
+          label: currency.CurrencyName
+        }))}
+      />
+
+      <FormInput
+        required
         label="Website URL"
-        name="websiteUrl"
-        value={formData.websiteUrl}
+        name="Website"
+        value={formData.Website}
         onChange={handleChange}
-        error={isSubmitted && errors.websiteUrl}
-        helperText={isSubmitted && errors.websiteUrl}
+        onBlur={handleBlur}
+        error={errors.Website}
       />
+
       <FormTextArea
+        required
         label="Customer Notes"
-        name="customerNotes"
-        value={formData.customerNotes}
+        name="CustomerNotes"
+        value={formData.CustomerNotes}
         onChange={handleChange}
-        error={isSubmitted && errors.customerNotes}
-        helperText={isSubmitted && errors.customerNotes}
-      />
-      <FormSelect
-        label="Select Address *"
-        name="addressType"
-        value={formData.addressType}
-        onChange={handleChange}
-        options={addressTypes}
-        error={isSubmitted && errors.addressType}
-        helperText={isSubmitted && errors.addressType}
-      />
-      <FormInput
-        label="Import Code *"
-        name="importCode"
-        value={formData.importCode}
-        onChange={handleChange}
-        error={isSubmitted && errors.importCode}
-        helperText={isSubmitted && errors.importCode}
+        onBlur={handleBlur}
+        error={errors.CustomerNotes}
+        rows={4}
       />
     </FormPage>
   );
