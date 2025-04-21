@@ -10,7 +10,6 @@ export const fetchSuppliers = async (page = 1, limit = 10, fromDate = null, toDa
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('Fetching suppliers with URL:', url);
     const response = await axios.get(url);
     return response.data;
   } catch (error) {

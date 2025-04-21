@@ -25,7 +25,6 @@ const ProjectParameterList = () => {
   }, []);
 
   const handleDelete = (row) => {
-    console.log('Delete row:', row); // Add this to debug
     setItemToDelete(row);
     setDeleteDialogOpen(true);
   };

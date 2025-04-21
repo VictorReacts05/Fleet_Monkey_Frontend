@@ -38,7 +38,6 @@ const SupplierList = () => {
       const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
       const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
       
-      console.log('Date range:', { formattedFromDate, formattedToDate }); // Debug dates
       
       const response = await fetchSuppliers(
         page + 1,

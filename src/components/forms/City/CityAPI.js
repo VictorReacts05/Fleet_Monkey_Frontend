@@ -10,7 +10,6 @@ export const fetchCities = async (page = 1, limit = 10, fromDate = null, toDate 
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('API Request URL:', url);
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
@@ -29,9 +28,7 @@ export const createCity = async (cityData) => {
 
 export const updateCity = async (cityId, data) => {
   try {
-    // console.log(`Updating city ${cityId} with data:`, data);
     const response = await axios.put(`${API_BASE_URL}/${cityId}`, data);
-    // console.log('Update response:', response);
     return response;
   } catch (error) {
     console.error('Error updating city:', error);
@@ -41,14 +38,12 @@ export const updateCity = async (cityId, data) => {
 
 export const deleteCity = async (id) => {
   try {
-    // console.log(`Deleting city with ID: ${id}`);
     // We need to pass deletedById as a parameter to actually delete the record
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       data: {
         deletedById: 1  // This is required for the actual deletion
       }
     });
-    // console.log('Delete response:', response);
     return response.data;
   } catch (error) {
     console.error('Error in deleteCity:', error);

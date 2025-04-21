@@ -10,7 +10,6 @@ export const fetchCountries = async (page = 1, limit = 10, fromDate = null, toDa
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('API Request URL:', url);
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
@@ -29,9 +28,7 @@ export const createCountry = async (countryData) => {
 
 export const updateCountry = async (countryId, data) => {
   try {
-    // console.log(`Updating country ${countryId} with data:`, data);
     const response = await axios.put(`${API_BASE_URL}/${countryId}`, data);
-    // console.log('Update response:', response);
     return response;
   } catch (error) {
     console.error('Error updating country:', error);
@@ -41,7 +38,6 @@ export const updateCountry = async (countryId, data) => {
 
 export const deleteCountry = async (id, deletedById) => {
   try {
-    console.log(`Deleting country with ID: ${id}`);
     
     // If no deletedById is provided, try to get it from auth context or localStorage
     if (!deletedById) {
@@ -55,7 +51,6 @@ export const deleteCountry = async (id, deletedById) => {
         deletedById: deletedById
       }
     });
-    console.log('Delete response:', response);
     return response.data;
   } catch (error) {
     console.error('Error in deleteCountry:', error);

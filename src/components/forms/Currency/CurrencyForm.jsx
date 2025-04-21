@@ -28,10 +28,7 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
     const loadCurrencyData = async () => {
       try {
         setLoading(true);
-        // console.log('Fetching currency with ID:', currencyId);
         const response = await getCurrencyById(currencyId);
-        // console.log('Raw API response:', response);
-        // console.log('Response type:', typeof response);
         
         // Handle potential casing differences
         setFormData({

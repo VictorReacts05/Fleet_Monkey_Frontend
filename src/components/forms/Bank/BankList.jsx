@@ -19,13 +19,11 @@ const BankList = () => {
 
   const loadBanks = async () => {
     try {
-      console.log(`Loading banks: page=${page + 1}, size=${rowsPerPage}`); // Debug log
       setLoading(true);
 
       const response = await fetchBanks(page + 1, rowsPerPage);
 
       const banks = response.data || [];
-      console.log("Received banks:", banks);
 
       const mappedRows = banks.map((bank) => ({
         id: bank.BankAccountID || "N/A",
@@ -49,20 +47,17 @@ const BankList = () => {
           // We're on the last page
           const calculatedTotal = page * rowsPerPage + currentPageCount;
           setTotalRows(calculatedTotal);
-          console.log("Calculated total rows:", calculatedTotal);
         } else {
           // We need to assume there are more pages
           // Set a higher number to ensure pagination works
           const minimumTotal = (page + 1) * rowsPerPage + 1;
           setTotalRows(Math.max(minimumTotal, response.totalRecords));
-          console.log("Set minimum total rows:", minimumTotal);
         }
       } else {
         // Fallback
         setTotalRows(mappedRows.length);
       }
       
-      console.log("Response structure:", Object.keys(response));
     } catch (error) {
       console.error("Load banks error:", {
         message: error.message,
@@ -90,8 +85,6 @@ const BankList = () => {
   ];
 
   const handleDeleteClick = (id) => {
-    console.log("Delete clicked for ID:", id); // Debug log
-    console.log("Current rows:", JSON.stringify(rows, null, 2)); // Detailed debug log
     if (!id) {
       toast.error("Invalid bank account ID");
       return;
@@ -103,10 +96,6 @@ const BankList = () => {
     }
     setItemToDelete({ id, accountName: row.accountName });
     setDeleteDialogOpen(true);
-    console.log("deleteDialogOpen set to true, itemToDelete:", {
-      id,
-      accountName: row.accountName,
-    }); // Debug log
   };
 
   const confirmDelete = async () => {
@@ -117,9 +106,7 @@ const BankList = () => {
       return;
     }
     try {
-      console.log("Deleting bank with ID:", itemToDelete.id); // Debug log
       await deleteBank(itemToDelete.id);
-      console.log("Deletion successful, reloading banks"); // Debug log
       loadBanks();
       toast.success("Bank account deleted successfully");
     } catch (error) {
@@ -132,7 +119,6 @@ const BankList = () => {
     } finally {
       setDeleteDialogOpen(false);
       setItemToDelete(null);
-      console.log("Dialog closed, itemToDelete cleared"); // Debug log
     }
   };
 
@@ -156,7 +142,6 @@ const BankList = () => {
           setPage(0);
         }}
         onEdit={(id) => {
-          console.log("Edit clicked for ID:", id); // Debug log
           setSelectedBankId(id);
           setModalOpen(true);
         }}

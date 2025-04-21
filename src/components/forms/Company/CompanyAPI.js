@@ -69,9 +69,7 @@ export const deleteCompany = async (id) => {
 
 export const getCompanyById = async (id) => {
   try {
-    // console.log(`Fetching company with ID: ${id}`);
     const response = await axios.get(`${API_BASE_URL}/${id}`);
-    // console.log('Get company response:', response.data);
     
     // Check if the response has data
     if (response.data && response.data.data) {
@@ -114,7 +112,6 @@ export const getCompanyById = async (id) => {
 export const fetchAllCurrencies = async () => {
   try {
     const response = await axios.get('http://localhost:7000/api/currencies/all');
-    // console.log('Currency response:', response.data);
     
     // Check the structure of the response and extract the currency data
     if (response.data && response.data.data) {
@@ -124,7 +121,6 @@ export const fetchAllCurrencies = async () => {
     } else {
       // Try to find currencies in a different format
       const possibleData = response.data.currencies || response.data.result?.data || [];
-      // console.log('Extracted currency data:', possibleData);
       return possibleData;
     }
   } catch (error) {

@@ -55,18 +55,15 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
 
   // Debugging to check if handleChange is being called
   const handleChange = (e) => {
-    console.log('Input changed:', e.target.name, e.target.value);
     const { name, value } = e.target;
     setFormData(prevState => {
       const newState = { ...prevState, [name]: value };
-      console.log('New form state:', newState);
       return newState;
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting form with data:', formData);
     
     try {
       setLoading(true);
@@ -77,7 +74,6 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
           WarehouseID: warehouseId,
           WarehouseName: formData.warehouseName // This matches the backend expectation
         };
-        console.log('Sending update data:', updateData);
         
         await updateWarehouse(warehouseId, updateData);
         toast.success('Warehouse updated successfully');

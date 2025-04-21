@@ -29,7 +29,6 @@ const getCurrentUser = async () => {
 export const createCurrency = async (currencyData) => {
   try {
     const user = JSON.parse(localStorage.getItem('user')) || {};
-    // console.log('User data:', user);
     
     if (!user.personId) {
       throw new Error('User authentication data not found');
@@ -92,7 +91,6 @@ export const deleteCurrency = async (id) => {
 export const getCurrencyById = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}`);
-    // console.log('Raw API response data:', response.data);
     
     // Match the backend field names
     return {
@@ -113,7 +111,6 @@ export const fetchCurrencies = async (page = 1, limit = 10, fromDate = null, toD
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('API Request URL:', url);
     const response = await axios.get(url);
     return response.data;
   } catch (error) {

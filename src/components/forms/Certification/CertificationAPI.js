@@ -19,7 +19,6 @@ export const fetchCertifications = async (
     });
 
     // Log response for debugging
-    console.log("Backend response:", response.data);
 
     // Handle different possible response structures
     const data = Array.isArray(response.data)
@@ -44,12 +43,6 @@ export const fetchCertifications = async (
         cachedTotalRecords ||
         data.length
     );
-
-    console.log("Parsed response:", {
-      dataLength: data.length,
-      totalRecords,
-      cachedTotalRecords,
-    });
 
     return {
       data,

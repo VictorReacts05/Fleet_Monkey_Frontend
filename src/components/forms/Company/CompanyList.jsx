@@ -51,7 +51,6 @@ const CompanyList = () => {
             currencyMap[currency.CurrencyID] = currency.CurrencyName;
           });
         }
-        console.log('Currency map:', currencyMap);
       } catch (error) {
         console.error('Error fetching currencies:', error);
       }
@@ -63,11 +62,9 @@ const CompanyList = () => {
         formattedToDate
       );
   
-      console.log('Companies response:', response);
       const companies = response.data || [];
       
       const mappedRows = companies.map((company) => {
-        console.log('Processing company:', company);
         // Look up currency name from the map
         const currencyName = company.BillingCurrencyID ? 
           currencyMap[company.BillingCurrencyID] || 'Unknown' : 
@@ -83,7 +80,6 @@ const CompanyList = () => {
         };
       });
       
-      console.log('Mapped company rows:', mappedRows);
       setRows(mappedRows);
       
       // Set total rows for pagination
@@ -112,13 +108,11 @@ const CompanyList = () => {
 
   // Make sure these functions are defined correctly
   const handleEdit = (id) => {
-    console.log(`Edit clicked for ID: ${id}`);
     setSelectedCompanyId(id);
     setModalOpen(true);
   };
 
   const handleDeleteClick = (id) => {
-    console.log(`Delete clicked for ID: ${id}`);
     const item = rows.find(row => row.id === id);
     if (item) {
       setItemToDelete(item);

@@ -35,13 +35,6 @@ const CertificationList = () => {
         ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
         : null;
 
-      console.log("Fetching certifications with params:", {
-        page: page + 1,
-        pageSize: rowsPerPage,
-        fromDate: formattedFromDate,
-        toDate: formattedToDate,
-      });
-
       const response = await fetchCertifications(
         page + 1, // Backend expects 1-based page numbers
         rowsPerPage,
@@ -59,16 +52,6 @@ const CertificationList = () => {
 
       setRows(formattedRows);
       setTotalRows(totalRecords);
-      console.log(
-        "Set rows:",
-        formattedRows,
-        "Total rows:",
-        totalRecords,
-        "Page:",
-        page,
-        "Rows per page:",
-        rowsPerPage
-      );
 
       // Reset page if the current page is out of bounds
       if (totalRecords > 0 && page * rowsPerPage >= totalRecords) {
@@ -76,7 +59,6 @@ const CertificationList = () => {
           0,
           Math.floor((totalRecords - 1) / rowsPerPage)
         );
-        console.log("Resetting page to:", newPage);
         setPage(newPage);
       }
     } catch (error) {
@@ -168,12 +150,10 @@ const CertificationList = () => {
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={(event, newPage) => {
-          console.log("Page change to:", newPage);
           setPage(newPage);
         }}
         onRowsPerPageChange={(event) => {
           const newRowsPerPage = parseInt(event.target.value, 10);
-          console.log("Changing rows per page to:", newRowsPerPage);
           setRowsPerPage(newRowsPerPage);
           setPage(0); // Reset to first page when changing page size
         }}

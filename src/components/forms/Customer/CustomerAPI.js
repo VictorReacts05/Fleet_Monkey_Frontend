@@ -32,15 +32,12 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('Fetching customers with URL:', url);
     const response = await axios.get(url);
-    // console.log('Raw customer data from API:', response.data);
     
     // If the response includes data, ensure it has the correct field mappings
     if (response.data && response.data.data) {
       // Map each customer to ensure consistent field names
       response.data.data = response.data.data.map(customer => {
-        // console.log('Processing customer:', customer);
         return {
           id: customer.CustomerID || customer.customerId,
           CustomerID: customer.CustomerID || customer.customerId,
@@ -54,7 +51,6 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
           createdDateTime: customer.CreatedDateTime || customer.createdDateTime || ''
         };
       });
-      // console.log('Mapped customer data:', response.data.data);
     }
     
     return response.data;
@@ -66,9 +62,7 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
 
 export const fetchCurrencies = async () => {
   try {
-    // console.log('Fetching currencies');
     const response = await axios.get('http://localhost:7000/api/currencies/all');
-    // console.log('Currencies data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching currencies:', error);
@@ -78,9 +72,7 @@ export const fetchCurrencies = async () => {
 
 export const fetchCompanies = async () => {
   try {
-    // console.log('Fetching companies');
     const response = await axios.get('http://localhost:7000/api/companies/all');
-    // console.log('Companies data:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching companies:', error);
@@ -91,7 +83,6 @@ export const fetchCompanies = async () => {
 export const createCustomer = async (customerData) => {
   try {
     const user = getUserData();
-    // console.log('Creating customer with form data:', customerData);
     
     // Ensure field names match what the API expects
     const payload = {
@@ -104,7 +95,6 @@ export const createCustomer = async (customerData) => {
       createdById: user.personId
     };
     
-    // console.log('Prepared API payload:', payload);
     
     // Validate required fields before sending
     if (!payload.customerName || !payload.companyId) {
@@ -112,7 +102,6 @@ export const createCustomer = async (customerData) => {
     }
     
     const response = await axios.post(API_BASE_URL, payload);
-    // console.log('Create customer response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error in createCustomer:', error);
@@ -123,7 +112,6 @@ export const createCustomer = async (customerData) => {
 export const updateCustomer = async (id, customerData) => {
   try {
     const user = getUserData();
-    // console.log(`Updating customer ${id} with data:`, customerData);
     
     // Ensure field names match what the API expects
     const payload = {
@@ -136,7 +124,6 @@ export const updateCustomer = async (id, customerData) => {
       updatedById: user.personId
     };
     
-    // console.log('Prepared update payload:', payload);
     
     // Validate required fields before sending
     if (!payload.customerName || !payload.companyId) {
@@ -144,7 +131,6 @@ export const updateCustomer = async (id, customerData) => {
     }
     
     const response = await axios.put(`${API_BASE_URL}/${id}`, payload);
-    // console.log('Update customer response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error in updateCustomer:', error);
@@ -155,14 +141,12 @@ export const updateCustomer = async (id, customerData) => {
 export const deleteCustomer = async (id) => {
   try {
     const user = getUserData();
-    // console.log(`Deleting customer with ID: ${id}`);
     
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       data: {
         deletedById: user.personId
       }
     });
-    // console.log('Delete customer response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error in deleteCustomer:', error);
@@ -172,16 +156,13 @@ export const deleteCustomer = async (id) => {
 
 export const getCustomerById = async (id) => {
   try {
-    // console.log(`Fetching customer with ID: ${id}`);
     const response = await axios.get(`${API_BASE_URL}/${id}`);
-    // console.log('Raw customer data from API:', response.data);
     
     // Check if the data is in an array format
     const customerData = response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0 
       ? response.data.data[0]  // Get the first item from the array
       : response.data.data || response.data;
     
-    // console.log('Extracted customer data:', customerData);
     
     // Map the API response fields to match the form field names
     const mappedData = {
@@ -196,7 +177,6 @@ export const getCustomerById = async (id) => {
       CurrencyName: customerData.BillingCurrencyName || customerData.billingCurrencyName || ''
     };
     
-    // console.log('Mapped customer data for form:', mappedData);
     return mappedData;
   } catch (error) {
     console.error('Error in getCustomerById:', error);

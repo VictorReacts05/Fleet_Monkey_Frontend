@@ -8,7 +8,6 @@ export const fetchWarehouses = async (page = 1, limit = 10, fromDate = null, toD
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
-    // console.log('API Request URL:', url); 
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
@@ -28,12 +27,10 @@ export const createWarehouse = async (warehouseData) => {
 // For the updateWarehouse function in WarehouseAPI.js
 export const updateWarehouse = async (warehouseId, data) => {
   try {
-    console.log(`Updating warehouse ${warehouseId} with data:`, data);
     
     // Fix the API endpoint to use the correct base URL
     const response = await axios.put(`${API_BASE_URL}/${warehouseId}`, data);
     
-    console.log('Update response:', response);
     return response;
   } catch (error) {
     console.error('Error updating warehouse:', error);

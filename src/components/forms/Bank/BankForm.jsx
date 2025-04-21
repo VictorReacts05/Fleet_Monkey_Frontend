@@ -26,9 +26,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       if (bankId) {
         try {
           setLoading(true);
-          console.log(`Loading bank ID ${bankId}`); // Debug log
           const data = await getBankById(bankId);
-          console.log("Loaded bank data:", JSON.stringify(data, null, 2)); // Debug log
           
           // Make sure we're setting the form data with the correct property names
           setFormData({
@@ -224,7 +222,6 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       isValid = false;
     }
 
-    // console.log("Validation errors:", newErrors);
     setErrors(newErrors);
     return isValid;
   };
@@ -232,7 +229,6 @@ const BankForm = ({ bankId, onSave, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
-    // console.log("Form submission started:", formData);
     
     // Store validation errors directly instead of relying on state
     const validationErrors = {};
@@ -317,12 +313,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         ifsc: formData.IFSC,
         micra: formData.MICRA,
         rowVersionColumn: formData.RowVersionColumn,
-      };
-
-      /* console.log(
-        "Sending API request with:",
-        JSON.stringify(payload, null, 2)
-      ); */ 
+      }; 
 
       let response;
       if (bankId) {
@@ -331,7 +322,6 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         response = await createBank(payload);
       }
 
-      // console.log("API response:", JSON.stringify(response, null, 2));
       if (response.result !== 0) {
         throw new Error(response.message || "Operation failed");
       }
@@ -339,7 +329,6 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       toast.success(
         `Bank account ${bankId ? "updated" : "created"} successfully`
       );
-      // console.log("Operation successful, triggering refresh"); 
       onSave();
       onClose();
     } catch (error) {

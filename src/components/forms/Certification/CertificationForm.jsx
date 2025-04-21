@@ -15,9 +15,7 @@ const CertificationForm = ({ certificationId, onSave, onClose }) => {
       if (certificationId) {
         try {
           setLoading(true);
-          console.log('Fetching certification ID:', certificationId);
           const response = await getCertificationById(certificationId);
-          console.log('API response data:', response);
           
           // Access nested data property from response
           const certificationData = response.data || {};
