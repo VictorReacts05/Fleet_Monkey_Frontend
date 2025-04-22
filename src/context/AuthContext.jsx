@@ -1,15 +1,24 @@
-import { createContext, useState, useContext } from "react";
+import { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useDispatch } from "react-redux";
-import { setLoginDetails } from "../redux/actions/login/loginActions";
+import { useDispatch, useSelector } from "react-redux";
+import { setLoginDetails, setLogoutNull } from "../redux/actions/login/loginActions";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  // Get login state from Redux
+  const loginState = useSelector(state => state.loginReducer?.loginDetails);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!loginState);
+  
+  // Log when auth state changes from Redux
+  useEffect(() => {
+    console.log("Auth Context - Login State from Redux:", loginState);
+    setIsAuthenticated(!!loginState);
+  }, [loginState]);
 
   const login = async (loginId, password) => {
     try {
@@ -39,18 +48,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
+    dispatch(setLogoutNull());
     setIsAuthenticated(false);
     navigate("/login");
   };
-
-  // Check if user is already logged in on app load
-  useState(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setIsAuthenticated(true);
-    }
-  }, []);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>

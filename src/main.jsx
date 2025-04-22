@@ -9,10 +9,9 @@ import { persistedStore, store } from "./redux/store.js";
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>
-    <React.StrictMode>
-      <PersistGate loading={null} persistor={persistedStore}>
-        <App />
-      </PersistGate>
-    </React.StrictMode>
+    {/* Removed StrictMode for now to test persistence */}
+    <PersistGate loading={null} persistor={persistedStore}>
+      <App />
+    </PersistGate>
   </Provider>,
 )
