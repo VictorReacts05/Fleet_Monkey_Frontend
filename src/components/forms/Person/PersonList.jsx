@@ -5,6 +5,9 @@ import PersonModal from "./PersonModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
 import { getPersons, deletePerson } from "./personStorage";
 import { getCompanies } from "../Company/companyStorage";
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton, Stack } from '@mui/material';
+import FormDatePicker from "../../Common/FormDatePicker";
 
 const PersonList = () => {
   const [rows, setRows] = useState([]);
@@ -14,6 +17,8 @@ const PersonList = () => {
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   // Load persons and map with company names on component mount
   useEffect(() => {
@@ -104,11 +109,44 @@ const PersonList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Person Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <Tooltip title="Add Person">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Box>
 
       <DataTable

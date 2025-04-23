@@ -7,6 +7,8 @@ import FormDatePicker from "../../Common/FormDatePicker";
 import { fetchVehicles, deleteVehicle } from "./VehicleAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
 
 const VehicleList = () => {
   const [rows, setRows] = useState([]);
@@ -116,9 +118,16 @@ const VehicleList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Vehicle Management</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={1}>
           <FormDatePicker
             label="From Date"
             value={fromDate}
@@ -131,14 +140,21 @@ const VehicleList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
-            Add Vehicle
-          </Button>
+          <Tooltip title="Add Vehicle">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 
@@ -164,13 +180,15 @@ const VehicleList = () => {
         onClose={handleModalClose}
         vehicleId={selectedVehicleId}
         onSave={handleSave}
-        initialData={rows.find(row => row.id === selectedVehicleId)}
+        initialData={rows.find((row) => row.id === selectedVehicleId)}
       />
 
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete vehicle ${itemToDelete?.truckNumberPlate || ""}?`}
+        message={`Are you sure you want to delete vehicle ${
+          itemToDelete?.truckNumberPlate || ""
+        }?`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

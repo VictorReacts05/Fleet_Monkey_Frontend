@@ -13,6 +13,7 @@ import {
   Divider,
   useMediaQuery,
   useTheme as useMuiTheme,
+  Button
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -26,7 +27,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ isMobile, onDrawerToggle }) => {
+// Import the connect function from react-redux
+import { connect } from 'react-redux';
+
+const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const { logout, isAuthenticated } = useAuth();
   const { mode, toggleTheme } = useTheme();
   const muiTheme = useMuiTheme();
@@ -107,6 +111,16 @@ const Header = ({ isMobile, onDrawerToggle }) => {
         
         {isAuthenticated && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Add New Button */}
+            <Button 
+              variant="contained" 
+              color="primary"
+              sx={{ mr: 1, textTransform: 'none' }}
+              onClick={() => {/* Add your create handler here */}}
+            >
+              Create New User
+            </Button>
+
             <Tooltip title={mode === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}>
               <IconButton onClick={toggleTheme} sx={{ ml: 1 }}>
                 {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
@@ -167,8 +181,14 @@ const Header = ({ isMobile, onDrawerToggle }) => {
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
           <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="subtitle1" fontWeight="bold">User Name</Typography>
-            <Typography variant="body2" color="text.secondary">Administrator</Typography>
+            <Typography variant="subtitle1" fontWeight="bold">
+              {userInfo?.firstName && userInfo?.lastName 
+                ? `${userInfo.firstName} ${userInfo.lastName}`
+                : userInfo?.loginId || 'User'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {userInfo?.role || 'Administrator'}
+            </Typography>
           </Box>
           <Divider />
           <MenuItem onClick={handleMenuClose}>
@@ -250,4 +270,21 @@ const Header = ({ isMobile, onDrawerToggle }) => {
   );
 };
 
-export default Header;
+// At the bottom of your file, add this Redux connection:
+const mapStateToProps = (state) => {
+  return {
+    userInfo: {
+      firstName: state.loginReducer.loginDetails?.firstName || 
+                state.loginReducer.loginDetials?.firstName,
+      lastName: state.loginReducer.loginDetails?.lastName || 
+               state.loginReducer.loginDetials?.lastName,
+      loginId: state.loginReducer.loginDetails?.loginId || 
+              state.loginReducer.loginDetials?.loginId,
+      role: state.loginReducer.loginDetails?.role || 
+           state.loginReducer.loginDetials?.role
+    }
+  };
+};
+
+// Export the connected component with the correct component name
+export default connect(mapStateToProps)(Header);

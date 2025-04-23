@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import CountryModal from './CountryModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
-import { fetchCountries, deleteCountry } from './CountryAPI';
-import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
-import StyledButton from '../../Common/StyledButton';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Button, Stack } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import CountryModal from "./CountryModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import FormDatePicker from "../../Common/FormDatePicker";
+import { fetchCountries, deleteCountry } from "./CountryAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import StyledButton from "../../Common/StyledButton";
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const CountryList = () => {
   const [rows, setRows] = useState([]);
@@ -23,15 +25,19 @@ const CountryList = () => {
   const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { field: 'countryName', headerName: 'Country Name', flex: 1 },
+    { field: "countryName", headerName: "Country Name", flex: 1 },
   ];
 
   const loadCountries = async () => {
     try {
       setLoading(true);
-      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      
+      const formattedFromDate = fromDate
+        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+      const formattedToDate = toDate
+        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+
       // Get current page data
       const response = await fetchCountries(
         page + 1,
@@ -39,12 +45,12 @@ const CountryList = () => {
         formattedFromDate,
         formattedToDate
       );
-      
+
       const countries = response.data || [];
-      
+
       // Get total count from backend if available
       let totalCount = response.pagination?.totalRecords;
-      
+
       // If backend doesn't provide total count
       if (totalCount === undefined) {
         try {
@@ -56,9 +62,9 @@ const CountryList = () => {
             formattedFromDate,
             formattedToDate
           );
-          
+
           totalCount = countResponse.data?.length || 0;
-          
+
           // If we got exactly the dynamic limit of records, there might be more
           if (countResponse.data?.length === dynamicLimit) {
             // Add a small buffer to indicate there might be more
@@ -67,25 +73,25 @@ const CountryList = () => {
         } catch (err) {
           // Fallback: estimate based on current page
           const hasFullPage = countries.length === rowsPerPage;
-          totalCount = (page * rowsPerPage) + countries.length;
-          
+          totalCount = page * rowsPerPage + countries.length;
+
           // If we have a full page, there might be more
           if (hasFullPage) {
             totalCount += rowsPerPage; // Add one more page worth to enable next page
           }
         }
       }
-      
+
       const formattedRows = countries.map((country) => ({
         id: country.CountryOfOriginID,
         countryName: country.CountryOfOrigin || "N/A",
       }));
-  
+
       setRows(formattedRows);
       setTotalRows(totalCount);
     } catch (error) {
-      console.error('Error loading countries:', error);
-      toast.error('Failed to load countries: ' + error.message);
+      console.error("Error loading countries:", error);
+      toast.error("Failed to load countries: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -106,7 +112,7 @@ const CountryList = () => {
   };
 
   const handleDelete = (id) => {
-    const country = rows.find(row => row.id === id);
+    const country = rows.find((row) => row.id === id);
     setItemToDelete(country);
     setDeleteDialogOpen(true);
   };
@@ -114,12 +120,12 @@ const CountryList = () => {
   const confirmDelete = async () => {
     try {
       await deleteCountry(itemToDelete.id);
-      toast.success('Country deleted successfully');
+      toast.success("Country deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadCountries();
     } catch (error) {
-      toast.error('Failed to delete country: ' + error.message);
+      toast.error("Failed to delete country: " + error.message);
     }
   };
 
@@ -143,7 +149,7 @@ const CountryList = () => {
         }}
       >
         <Typography variant="h5">Country Management</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={1}>
           <FormDatePicker
             label="From Date"
             value={fromDate}
@@ -156,9 +162,20 @@ const CountryList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <StyledButton onClick={handleCreate}>
-            Add Country
-          </StyledButton>
+          <Tooltip title="Add Country">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

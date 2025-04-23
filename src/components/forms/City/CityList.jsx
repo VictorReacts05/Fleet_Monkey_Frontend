@@ -8,6 +8,10 @@ import { fetchCities, deleteCity, fetchCountries } from './CityAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 
+// Update imports
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
+
 const CityList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -182,29 +186,36 @@ const CityList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: "center", mb: 2 }}>
         <Typography variant="h5">City Management</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={1}>
           <FormDatePicker
             label="From Date"
             value={fromDate}
             onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
+            sx={{ width: 200, mr: 1 }}
           />
           <FormDatePicker
             label="To Date"
             value={toDate}
             onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+            sx={{ width: 200, mr: 1 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
-            Add City
-          </Button>
+          <Tooltip title="Add City">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 56,
+                width: 56,
+                ml: 1
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

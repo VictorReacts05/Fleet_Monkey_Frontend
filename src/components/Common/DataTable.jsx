@@ -143,9 +143,7 @@ const DataTable = ({
                   sx={{
                     fontWeight: "bold",
                     backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "#1f2529"
-                        : alpha(theme.palette.primary.main, 0.05),
+                      theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
                     color: theme.palette.text.primary,
                     zIndex: 10,
                     position: "sticky",
@@ -161,9 +159,7 @@ const DataTable = ({
                   sx={{
                     fontWeight: "bold",
                     backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? "#1f2529"
-                        : alpha(theme.palette.primary.main, 0.05),
+                      theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
                     color: theme.palette.text.primary,
                     zIndex: 10,
                     position: "sticky",
@@ -204,11 +200,11 @@ const DataTable = ({
                   {!hideActions && (
                     <TableCell sx={{ textAlign: "center" }}>
                       <Box
-                        sx={{ 
-                          display: "flex", 
-                          gap: 1, 
+                        sx={{
+                          display: "flex",
+                          gap: 1,
                           justifyContent: "center", // Center the action buttons horizontally
-                          width: "100%" // Ensure the box takes full width of the cell
+                          width: "100%", // Ensure the box takes full width of the cell
                         }}
                       >
                         {onView && (
@@ -223,7 +219,7 @@ const DataTable = ({
                                     theme.palette.info.main,
                                     0.1
                                   ),
-                                }
+                                },
                               }}
                             >
                               <VisibilityIcon fontSize="small" />

@@ -9,6 +9,10 @@ import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import axios from 'axios';
 
+// Update imports
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
+
 const CompanyList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -101,7 +105,7 @@ const CompanyList = () => {
     setPage(0);
   };
 
-  const handleAdd = () => {
+  const handleCreate = () => {
     setSelectedCompanyId(null);
     setModalOpen(true);
   };
@@ -160,39 +164,47 @@ const CompanyList = () => {
 
   // Update the ConfirmDialog component where it's used in the return statement
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Companies
-      </Typography>
+    <Box>
   
-      <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-        <FormDatePicker
-          label="From Date"
-          value={fromDate}
-          onChange={handleFromDateChange}
-        />
-        <FormDatePicker
-          label="To Date"
-          value={toDate}
-          onChange={handleToDateChange}
-        />
-        <Button
-          variant="outlined"
-          onClick={handleClearDates}
-          sx={{ mt: 1 }}
-        >
-          Clear Dates
-        </Button>
-      </Stack>
-  
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleAdd}
-        sx={{ mb: 2 }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
       >
-        Add Company
-      </Button>
+        <Typography variant="h5">Company Management</Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200, mr: 1 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200, mr: 1 }}
+          />
+          <Tooltip title="Add Company">
+            <IconButton 
+              color="primary"
+              onClick={handleCreate}
+              sx={{ 
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 56,
+                width: 56
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
   
       <DataTable
         rows={rows}

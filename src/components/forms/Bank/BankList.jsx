@@ -5,6 +5,8 @@ import BankModal from "./BankModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
 import { fetchBanks, deleteBank } from "./BankAPI";
 import { toast } from "react-toastify";
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
 
 const BankList = () => {
   const [rows, setRows] = useState([]);
@@ -124,11 +126,33 @@ const BankList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h5">Bank Account Management</Typography>
-        <Button variant="contained" onClick={() => setModalOpen(true)}>
+        {/* <Button variant="contained" onClick={() => setModalOpen(true)}>
           Create New
-        </Button>
+        </Button> */}
+        <Tooltip title="Add Bank">
+          <IconButton
+            onClick={() => setModalOpen(true)}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              "&:hover": { backgroundColor: "primary.dark" },
+              height: 56,
+              width: 56,
+              ml: 1,
+            }}
+          >
+            <Add />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <DataTable

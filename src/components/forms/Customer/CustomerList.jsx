@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
+import { 
+  Typography, 
+  Box, 
+  Button, 
+  Stack, 
+  Tooltip, 
+  IconButton 
+} from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CustomerModal from './CustomerModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
@@ -7,6 +14,7 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCustomers, deleteCustomer } from './CustomerAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import { Add } from '@mui/icons-material';
 
 const CustomerList = () => {
   const [rows, setRows] = useState([]);
@@ -122,27 +130,35 @@ const CustomerList = () => {
         }}
       >
         <Typography variant="h5">Customer Management</Typography>
-        <Stack direction="row" spacing={-1} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center">
           <FormDatePicker
             label="From Date"
             value={fromDate}
             onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
+            sx={{ width: 200, mr: 1 }}
           />
           <FormDatePicker
             label="To Date"
             value={toDate}
             onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+            sx={{ width: 200, mr: 1 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{width: 200, height: 56}}
-          >
-            Add Customer
-          </Button>
+          <Tooltip title="Add Customer">
+            <IconButton 
+              color="primary"
+              onClick={handleCreate}
+              sx={{ 
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 56,
+                width: 56,
+                ml: 1
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

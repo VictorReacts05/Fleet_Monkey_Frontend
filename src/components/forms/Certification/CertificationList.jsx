@@ -7,6 +7,8 @@ import FormDatePicker from "../../Common/FormDatePicker";
 import { fetchCertifications, deleteCertification } from "./CertificationAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const CertificationList = () => {
   const [rows, setRows] = useState([]);
@@ -120,7 +122,7 @@ const CertificationList = () => {
         }}
       >
         <Typography variant="h5">Certification Management</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center">
           <FormDatePicker
             label="From Date"
             value={fromDate}
@@ -133,14 +135,20 @@ const CertificationList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
-            Add Certification
-          </Button>
+          <Tooltip title="Add Certification">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

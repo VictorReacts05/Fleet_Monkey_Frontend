@@ -8,6 +8,9 @@ import { fetchCurrencies, deleteCurrency } from './CurrencyAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { connect } from "react-redux";
+// Add imports
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
 
 const CurrencyList = ({ userId }) => {
   // Add this line to debug
@@ -180,14 +183,23 @@ const CurrencyList = ({ userId }) => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
-            Add Currency
-          </Button>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Tooltip title="Add Currency">
+              <IconButton
+                onClick={handleCreate}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': { backgroundColor: 'primary.dark' },
+                  height: 56,
+                  width: 56,
+                  ml: 1
+                }}
+              >
+                <Add />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Stack>
       </Box>
 

@@ -4,6 +4,8 @@ import DataTable from '../../Common/DataTable';
 import ProjectParameterModal from './ProjectParameterModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getProjectParameters, deleteProjectParameter } from './projectParameterStorage';
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const ProjectParameterList = () => {
   const [rows, setRows] = useState([]);
@@ -81,11 +83,32 @@ const ProjectParameterList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h5">Project Parameter Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
+        {/* <Button variant="contained" color="primary" onClick={handleCreate}>
           Create New
-        </Button>
+        </Button> */}
+        <Tooltip title="Add Project Parameters">
+          <IconButton
+            onClick={handleCreate}
+            sx={{
+              backgroundColor: "primary.main",
+              color: "white",
+              "&:hover": { backgroundColor: "primary.dark" },
+              height: 56,
+              width: 56,
+            }}
+          >
+            <Add />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <DataTable
@@ -113,7 +136,11 @@ const ProjectParameterList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={itemToDelete ? `Are you sure you want to delete parameter ${itemToDelete.parameterName}?` : ''}
+        message={
+          itemToDelete
+            ? `Are you sure you want to delete parameter ${itemToDelete.parameterName}?`
+            : ""
+        }
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />

@@ -7,6 +7,8 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchSuppliers, deleteSupplier } from './SupplierAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const SupplierList = () => {
   const [rows, setRows] = useState([]);
@@ -125,7 +127,7 @@ const SupplierList = () => {
         }}
       >
         <Typography variant="h5">Supplier Management</Typography>
-        <Stack direction="row" spacing={-1} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center">
           <FormDatePicker
             label="From Date"
             value={fromDate}
@@ -138,14 +140,28 @@ const SupplierList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
+          {/* <Button
             variant="contained"
             color="primary"
             onClick={handleCreate}
             sx={{width: 200, height: 56}}
           >
             Add Supplier
-          </Button>
+          </Button> */}
+          <Tooltip title="Add Supplier">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

@@ -6,6 +6,8 @@ import ConfirmDialog from "../../Common/ConfirmDialog";
 import { format } from "date-fns";
 import { fetchSalesRFQs, deleteSalesRFQ } from "../../../utils/api";
 // import { useSelector } from "react-redux";
+import { Add } from '@mui/icons-material';
+import { Tooltip, IconButton } from '@mui/material';
 
 const SalesRFQList = () => {
   // const userDetails = useSelector(           ----------For your reference to fetch data from redux
@@ -149,9 +151,22 @@ const SalesRFQList = () => {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h5">Sales RFQ Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Tooltip title="Add Sales RFQ">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
+                height: 56,
+                width: 56
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {error && (

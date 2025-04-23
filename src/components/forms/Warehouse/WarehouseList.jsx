@@ -7,6 +7,8 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchWarehouses, deleteWarehouse } from './WarehouseAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const WarehouseList = () => {
   const [rows, setRows] = useState([]);
@@ -134,9 +136,16 @@ const WarehouseList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Warehouse Management</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center">
           <FormDatePicker
             label="From Date"
             value={fromDate}
@@ -149,14 +158,20 @@ const WarehouseList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
-            Add Warehouse
-          </Button>
+          <Tooltip title="Add Warehouse">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 56,
+                width: 56,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 
@@ -182,7 +197,7 @@ const WarehouseList = () => {
         onClose={handleModalClose}
         warehouseId={selectedWarehouseId}
         onSave={handleSave}
-        initialData={rows.find(row => row.id === selectedWarehouseId)}
+        initialData={rows.find((row) => row.id === selectedWarehouseId)}
       />
 
       <ConfirmDialog
