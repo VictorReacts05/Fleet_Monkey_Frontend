@@ -8,13 +8,13 @@ function loginReducer(loginState = initialState, action) {
   const { type, payload } = action;
   
   // Add debug logs
-  console.log("Login Reducer - Action:", type, payload);
-  console.log("Login Reducer - Current State:", loginState);
+  // console.log("Login Reducer - Action:", type, payload);
+  // console.log("Login Reducer - Current State:", loginState);
   
   switch (type) {
     case SET_LOGIN:
       const newLoginState = { ...loginState, loginDetails: payload };
-      console.log("Login Reducer - New State after LOGIN:", newLoginState);
+      // console.log("Login Reducer - New State after LOGIN:", newLoginState);
       return newLoginState;
     case SET_LOGOUT:
       return { ...loginState, loginDetails: null };

@@ -1,42 +1,96 @@
 import axios from 'axios';
 
-// Base URLs
-const API_BASE_URL_GET = 'http://localhost:7000/api/currencies/all';
-const API_BASE_URL = 'http://localhost:7000/api/currencies';
+// Update the API endpoint to match your backend structure
+const API_BASE_URL = "http://localhost:7000/api/currencies"; // Changed from "currency" to "currencies"
 
-// Add axios interceptor to include auth token
-axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Remove localStorage-based interceptor
-// Add API endpoint for user context
-const USER_API_URL = 'http://localhost:7000/api/users/current';
-
-const getCurrentUser = async () => {
+// Helper function to get auth token
+const getAuthHeader = () => {
   try {
-    const response = await axios.get(USER_API_URL);
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.token) {
+      console.warn('User authentication data not found, proceeding without auth token');
+      return {};
+    }
+    return {
+      Authorization: `Bearer ${user.token}`
+    };
+  } catch (error) {
+    console.error('Error parsing user data from localStorage:', error);
+    return {};
+  }
+};
+
+export const fetchCurrencies = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
+  try {
+    let url = `${API_BASE_URL}/all?pageNumber=${page}&pageSize=${limit}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    
+    // console.log('Fetching currencies from:', url); 
+    
+    const response = await axios.get(url, {
+      headers: getAuthHeader()
+    });
     return response.data;
   } catch (error) {
-    throw new Error('Failed to fetch user context');
+    console.error('Error fetching currencies:', error);
+    throw error.response?.data || error.message;
   }
 };
 
 export const createCurrency = async (currencyData) => {
+  // Add immediate console log outside try/catch
+  // console.log('CREATE CURRENCY FUNCTION CALLED', new Date().toISOString());
+  
   try {
-    const user = JSON.parse(localStorage.getItem('user')) || {};
+    // Try a simpler endpoint without the /create suffix
+    const url = `${API_BASE_URL}`;
+    // console.log('Creating currency with data:', JSON.stringify(currencyData));
+    // console.log('POST request to:', url);
     
-    if (!user.personId) {
-      throw new Error('User authentication data not found');
+    // Force console to display immediately
+    // console.log('%c Attempting to create currency', 'background: #222; color: #bada55');
+    
+    const headers = {
+      ...getAuthHeader(),
+      'Content-Type': 'application/json'
+    };
+    // console.log('Request headers:', JSON.stringify(headers));
+    
+    // Use a timeout to ensure we see logs even if axios hangs
+    /* setTimeout(() => {
+      console.log('Still waiting for axios response after 2 seconds...');
+    }, 2000); */
+    
+    const response = await axios.post(url, currencyData, {
+      headers: headers
+    });
+    
+    // console.log('Create currency response:', response.data);
+    return response.data;
+  } catch (error) {
+    // Force error to display prominently
+    // console.log('%c Currency creation failed', 'background: red; color: white; font-size: 16px');
+    console.error('Error creating currency:', error);
+    
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    } else if (error.request) {
+      console.error('No response received, request:', error.request);
+    } else {
+      console.error('Error message:', error.message);
     }
+    
+    // Re-throw with more details
+    throw error.response?.data || error.message || 'Unknown error creating currency';
+  }
+};
 
-    const response = await axios.post(API_BASE_URL, {
-      currencyName: currencyData.CurrencyName,
-      createdById: user.personId
+export const updateCurrency = async (id, currencyData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/${id}`, currencyData, {
+      headers: getAuthHeader()
     });
     return response.data;
   } catch (error) {
@@ -44,74 +98,27 @@ export const createCurrency = async (currencyData) => {
   }
 };
 
-// Update similar in updateCurrency and deleteCurrency:
-
-export const updateCurrency = async (currencyId, data) => {
+export const deleteCurrency = async (id, userId) => {
   try {
-    const user = JSON.parse(localStorage.getItem('user')) || {};
+    // Use a default value if userId is not provided
+    const deletedById = userId || 1; // Temporarily use 1 as fallback
     
-    if (!user.personId) {
-      throw new Error('User authentication data not found');
-    }
-
-    const payload = {
-      currencyName: data.CurrencyName,
-      createdById: user.personId,
-      rowVersionColumn: data.RowVersionColumn
-    };
-    
-    const response = await axios.put(`${API_BASE_URL}/${currencyId}`, payload);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating currency:', error);
-    throw error;
-  }
-};
-
-export const deleteCurrency = async (id) => {
-  try {
-    const user = JSON.parse(localStorage.getItem('user')) || {};
-    
-    if (!user.personId) {
-      throw new Error('User authentication data not found');
-    }
-
+    // Send the deletedById in the request body
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
-      data: {
-        deletedById: user.personId
-      }
+      headers: getAuthHeader(),
+      data: { deletedById: deletedById }
     });
     return response.data;
   } catch (error) {
-    console.error('Error in deleteCurrency:', error);
-    throw error.response?.data || error;
+    throw error.response?.data || error.message;
   }
 };
 
 export const getCurrencyById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
-    
-    // Match the backend field names
-    return {
-      CurrencyName: response.data.CurrencyName || response.data.currencyName,
-      RowVersionColumn: response.data.RowVersionColumn || response.data.rowVersionColumn,
-      CurrencyID: response.data.CurrencyID || response.data.currencyId
-    };
-  } catch (error) {
-    console.error('Error in getCurrencyById:', error);
-    throw error.response?.data || error.message;
-  }
-};
-
-// Make sure this export exists
-export const fetchCurrencies = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
-  try {
-    let url = `${API_BASE_URL_GET}?pageNumber=${page}&pageSize=${limit}`;
-    if (fromDate) url += `&fromDate=${fromDate}`;
-    if (toDate) url += `&toDate=${toDate}`;
-    
-    const response = await axios.get(url);
+    const response = await axios.get(`${API_BASE_URL}/${id}`, {
+      headers: getAuthHeader()
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

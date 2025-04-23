@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   
   // Log when auth state changes from Redux
   useEffect(() => {
-    console.log("Auth Context - Login State from Redux:", loginState);
+    // console.log("Auth Context - Login State from Redux:", loginState);
     setIsAuthenticated(!!loginState);
   }, [loginState]);
 

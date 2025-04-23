@@ -7,6 +7,7 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCountries, deleteCountry } from './CountryAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import StyledButton from '../../Common/StyledButton';
 
 const CountryList = () => {
   const [rows, setRows] = useState([]);
@@ -133,7 +134,14 @@ const CountryList = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Country Management</Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <FormDatePicker
@@ -148,14 +156,9 @@ const CountryList = () => {
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{ width: 200, paddingY: 1 }}
-          >
+          <StyledButton onClick={handleCreate}>
             Add Country
-          </Button>
+          </StyledButton>
         </Stack>
       </Box>
 
@@ -181,7 +184,7 @@ const CountryList = () => {
         onClose={handleModalClose}
         countryId={selectedCountryId}
         onSave={handleSave}
-        initialData={rows.find(row => row.id === selectedCountryId)}
+        initialData={rows.find((row) => row.id === selectedCountryId)}
       />
 
       <ConfirmDialog

@@ -36,7 +36,6 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
           RowVersionColumn: response?.RowVersionColumn || response?.rowVersionColumn || ''
         });
       } catch (error) {
-        console.error('Error loading currency:', error);
         toast.error('Failed to load currency details');
       } finally {
         setLoading(false);
@@ -69,35 +68,36 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
-
-    if (validateForm()) {
-      try {
-        setLoading(true);
-        
-        const currencyData = {
-          CurrencyName: formData.CurrencyName, // Fix casing here
-          RowVersionColumn: formData.RowVersionColumn
-        };
-        
-        if (currencyId) {
-          // Update existing currency
-          await updateCurrency(currencyId, currencyData);
-          toast.success('Currency updated successfully');
-        } else {
-          // Create new currency
-          await createCurrency(currencyData);
-          toast.success('Currency created successfully');
-        }
-        
-        if (onSave) onSave();
-        if (onClose) onClose();
-      } catch (error) {
-        console.error('Error saving currency:', error);
-        toast.error(`Failed to save currency: ${error.message || 'Unknown error'}`);
-      } finally {
-        setLoading(false);
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Transform data to match backend expectations
+      const transformedData = {
+        currencyName: formData.CurrencyName,
+        createdById: 1, // Use a default value for now
+        rowVersionColumn: formData.RowVersionColumn
+      };
+      
+      if (currencyId) {
+        await updateCurrency(currencyId, transformedData);
+        toast.success('Currency updated successfully');
+      } else {
+        await createCurrency(transformedData);
+        toast.success('Currency created successfully');
       }
+      
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      toast.error(`Error saving currency: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
     }
   };
 

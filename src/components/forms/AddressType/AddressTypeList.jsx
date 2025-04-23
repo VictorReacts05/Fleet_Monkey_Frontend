@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import AddressTypeModal from './AddressTypeModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
-import { fetchAddressTypes, deleteAddressType } from './AddressTypeAPI';
-import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Button, Stack } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import AddressTypeModal from "./AddressTypeModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import FormDatePicker from "../../Common/FormDatePicker";
+import { fetchAddressTypes, deleteAddressType } from "./AddressTypeAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import StyledButton from "../../Common/StyledButton";
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
@@ -23,20 +24,29 @@ const AddressTypeList = () => {
 
   // Update the columns to only include the addressType field
   const columns = [
-    { field: 'addressType', headerName: 'Address Type', flex: 1 },
+    { field: "addressType", headerName: "Address Type", flex: 1 },
   ];
 
   const loadAddressTypes = async () => {
     try {
       setLoading(true);
-      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      
+      const formattedFromDate = fromDate
+        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+      const formattedToDate = toDate
+        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+
       // Fetch all address types to get the actual count
-      const allResponse = await fetchAddressTypes(1, 1000, formattedFromDate, formattedToDate);
+      const allResponse = await fetchAddressTypes(
+        1,
+        1000,
+        formattedFromDate,
+        formattedToDate
+      );
       const allAddressTypes = allResponse.data || [];
       const actualTotalCount = allAddressTypes.length;
-      
+
       // Now fetch the paginated data
       const response = await fetchAddressTypes(
         page + 1,
@@ -44,9 +54,9 @@ const AddressTypeList = () => {
         formattedFromDate,
         formattedToDate
       );
-      
+
       const addressTypes = response.data || [];
-      
+
       const formattedRows = addressTypes.map((addressType) => ({
         id: addressType.AddressTypeID,
         addressType: addressType.AddressType || "N/A",
@@ -55,60 +65,67 @@ const AddressTypeList = () => {
       setRows(formattedRows);
       setTotalRows(actualTotalCount);
     } catch (error) {
-      console.error('Error loading address types:', error);
-      toast.error('Failed to load address types: ' + error.message);
+      console.error("Error loading address types:", error);
+      toast.error("Failed to load address types: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   // Add these missing functions
-    useEffect(() => {
+  useEffect(() => {
+    loadAddressTypes();
+  }, [page, rowsPerPage, fromDate, toDate]);
+
+  const handleCreate = () => {
+    setSelectedAddressTypeId(null);
+    setModalOpen(true);
+  };
+
+  const handleEdit = (id) => {
+    setSelectedAddressTypeId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id) => {
+    const addressType = rows.find((row) => row.id === id);
+    setItemToDelete(addressType);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteAddressType(itemToDelete.id);
+      toast.success("Address type deleted successfully");
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
       loadAddressTypes();
-    }, [page, rowsPerPage, fromDate, toDate]);
-  
-    const handleCreate = () => {
-      setSelectedAddressTypeId(null);
-      setModalOpen(true);
-    };
-  
-    const handleEdit = (id) => {
-      setSelectedAddressTypeId(id);
-      setModalOpen(true);
-    };
-  
-    const handleDelete = (id) => {
-      const addressType = rows.find(row => row.id === id);
-      setItemToDelete(addressType);
-      setDeleteDialogOpen(true);
-    };
-  
-    const confirmDelete = async () => {
-      try {
-        await deleteAddressType(itemToDelete.id);
-        toast.success('Address type deleted successfully');
-        setDeleteDialogOpen(false);
-        setItemToDelete(null);
-        loadAddressTypes();
-      } catch (error) {
-        toast.error('Failed to delete address type: ' + error.message);
-      }
-    };
-  
-    const handleSave = () => {
-      setModalOpen(false);
-      loadAddressTypes();
-    };
-  
-    const handleModalClose = () => {
-      setModalOpen(false);
-      setSelectedAddressTypeId(null);
-    };
-  
-    // Make sure the DataTable component has the correct props for pagination
-    return (
-      <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+    } catch (error) {
+      toast.error("Failed to delete address type: " + error.message);
+    }
+  };
+
+  const handleSave = () => {
+    setModalOpen(false);
+    loadAddressTypes();
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedAddressTypeId(null);
+  };
+
+  // Make sure the DataTable component has the correct props for pagination
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Address Type Management</Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <FormDatePicker
@@ -131,6 +148,7 @@ const AddressTypeList = () => {
           >
             Add Address Type
           </Button>
+          <StyledButton onClick={handleCreate}>Add Address Type</StyledButton>
         </Stack>
       </Box>
 

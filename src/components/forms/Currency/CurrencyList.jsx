@@ -7,8 +7,12 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCurrencies, deleteCurrency } from './CurrencyAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import { connect } from "react-redux";
 
-const CurrencyList = () => {
+const CurrencyList = ({ userId }) => {
+  // Add this line to debug
+  console.log('Current userId from Redux:', userId);
+  
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -104,10 +108,14 @@ const CurrencyList = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = (id) => {
-    const currency = rows.find(row => row.id === id);
-    setItemToDelete(currency);
-    setDeleteDialogOpen(true);
+  const handleDelete = async (id) => {
+    try {
+      const currency = rows.find((row) => row.id === id);
+      setItemToDelete(currency);
+      setDeleteDialogOpen(true);
+    } catch (error) {
+      console.error('Error deleting currency:', error);
+    }
   };
 
   const confirmDelete = async () => {
@@ -122,7 +130,7 @@ const CurrencyList = () => {
       setDeleteDialogOpen(false);
       
       // Then perform the actual delete operation
-      await deleteCurrency(deletedItemId);
+      await deleteCurrency(deletedItemId, userId);
       
       // Show success message
       toast.success('Currency deleted successfully');
@@ -219,4 +227,48 @@ const CurrencyList = () => {
   );
 };
 
-export default CurrencyList;
+const mapStateToProps = (state) => {
+  // Get the entire loginReducer state for debugging
+  const loginState = state.loginReducer;
+  console.log('Full login state:', loginState);
+  
+  // Try to find the user ID by exploring all properties
+  let userId = null;
+  
+  // If loginState exists and is an object
+  if (loginState && typeof loginState === 'object') {
+    // Look for common user ID properties at all levels
+    if (loginState.personId) userId = loginState.personId;
+    else if (loginState.id) userId = loginState.id;
+    else if (loginState.userId) userId = loginState.userId;
+    else if (loginState.user) {
+      // Check user object
+      if (loginState.user.personId) userId = loginState.user.personId;
+      else if (loginState.user.id) userId = loginState.user.id;
+      else if (loginState.user.userId) userId = loginState.user.userId;
+    }
+    else if (loginState.userData) {
+      // Check userData object
+      if (loginState.userData.personId) userId = loginState.userData.personId;
+      else if (loginState.userData.id) userId = loginState.userData.id;
+      else if (loginState.userData.userId) userId = loginState.userData.userId;
+    }
+    // Check for any property that might contain "id" in its name
+    else {
+      for (const key in loginState) {
+        if (key.toLowerCase().includes('id') && typeof loginState[key] === 'number') {
+          userId = loginState[key];
+          break;
+        }
+      }
+    }
+  }
+  
+  console.log('Found userId:', userId);
+  
+  return {
+    userId: userId
+  };
+};
+
+export default connect(mapStateToProps)(CurrencyList);

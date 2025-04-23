@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Box, CssBaseline } from '@mui/material';  // Keep only this CssBaseline import
+import { Box, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import Sidebar from './components/Layout/Sidebar';
@@ -23,7 +23,6 @@ import AddressTypeList from './components/forms/AddressType/AddressTypeList';
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
-// Remove the duplicate CssBaseline import from here
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -31,7 +30,7 @@ function AppContent() {
   const isLoginPage = location.pathname === '/';
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <CssBaseline />
       {!isLoginPage && <Header />}
       {isAuthenticated && !isLoginPage && <Sidebar variant="permanent" open={true} />}
@@ -39,8 +38,13 @@ function AppContent() {
         component="main" 
         sx={{ 
           flexGrow: 1, 
-          p: 3, 
-          mt: isLoginPage ? 0 : 8 
+          p: isLoginPage ? 0 : 3, 
+          mt: isLoginPage ? 0 : 8,
+          overflow: 'auto',
+          height: '100%',
+          backgroundColor: 'background.default',
+          borderRadius: isLoginPage ? 0 : 2,
+          transition: 'all 0.3s ease-in-out'
         }}
       >
         <Routes>

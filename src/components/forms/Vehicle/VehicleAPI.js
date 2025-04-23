@@ -56,7 +56,7 @@ export const getVehicleById = async (id) => {
 // Fetch companies for dropdown
 export const fetchCompanies = async () => {
   try {
-    console.log("Calling companies API...");
+    // console.log("Calling companies API...");
     const response = await axios.get('http://localhost:7000/api/companies/all');
     return response.data;
   } catch (error) {
@@ -68,14 +68,14 @@ export const fetchCompanies = async () => {
 // Fetch vehicle types for dropdown
 export const fetchVehicleTypes = async () => {
   try {
-    console.log("Calling vehicle types API...");
+    // console.log("Calling vehicle types API...");
     // Corrected endpoint path
     const response = await axios.get('http://localhost:7000/api/vehicletype');
     return response.data;
   } catch (error) {
     console.error("Error fetching vehicle types:", error);
     try {
-      console.log("Trying alternative vehicle types endpoint...");
+      // console.log("Trying alternative vehicle types endpoint...");
       // Alternative endpoint with /all
       const response = await axios.get('http://localhost:7000/api/vehicletype/all');
       return response.data;

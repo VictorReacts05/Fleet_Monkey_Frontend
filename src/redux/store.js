@@ -5,7 +5,7 @@ import reducer from "./reducers/index";
 import storage from "redux-persist/lib/storage";
 
 // Add debug logs
-console.log("Configuring Redux store with persistence");
+// console.log("Configuring Redux store with persistence");
 
 const persistConfig = {
   key: "rootData",
@@ -19,11 +19,11 @@ const store = createStore(persistedReducer, applyMiddleware(thunk));
 const persistedStore = persistStore(store);
 
 // Log initial state
-console.log("Initial Redux State:", store.getState());
+// console.log("Initial Redux State:", store.getState());
 
 // Subscribe to state changes
-store.subscribe(() => {
-  console.log("Redux State Updated:", store.getState());
-});
+// store.subscribe(() => {
+//   console.log("Redux State Updated:", store.getState());
+// });
 
 export { persistedStore, store };
