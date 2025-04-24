@@ -30,7 +30,6 @@ const SupplierList = () => {
     { field: "companyName", headerName: "Company Name", flex: 1 },
     { field: "addressTypeId", headerName: "Address Type", flex: 1 },
     { field: "billingCurrencyName", headerName: "Currency Name", flex: 1 },
-    { field: "createdDateTime", headerName: "Created Date", flex: 1 },
   ];
 
   const loadSuppliers = async () => {
@@ -59,9 +58,6 @@ const SupplierList = () => {
         companyName: supplier.CompanyName || "N/A",
         addressTypeId: supplier.SupplierAddressID || "N/A",
         billingCurrencyName: supplier.BillingCurrencyName || "N/A",
-        createdDateTime:
-          dayjs(supplier.CreatedDateTime).format("YYYY-MM-DD HH:mm:ss") ||
-          "N/A",
       }));
 
       setRows(formattedRows);
