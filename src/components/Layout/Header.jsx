@@ -270,18 +270,21 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   );
 };
 
-// At the bottom of your file, add this Redux connection:
+// At the bottom of your file, update the Redux connection:
 const mapStateToProps = (state) => {
+  // Add console log to see what's in the state
+  console.log("Redux state in Header:", state.loginReducer);
+  
   return {
     userInfo: {
-      firstName: state.loginReducer.loginDetails?.firstName || 
-                state.loginReducer.loginDetials?.firstName,
-      lastName: state.loginReducer.loginDetails?.lastName || 
-               state.loginReducer.loginDetials?.lastName,
-      loginId: state.loginReducer.loginDetails?.loginId || 
-              state.loginReducer.loginDetials?.loginId,
-      role: state.loginReducer.loginDetails?.role || 
-           state.loginReducer.loginDetials?.role
+      // Use the loginId from the token if available
+      firstName: state.loginReducer?.loginDetails?.firstName,
+      lastName: state.loginReducer?.loginDetails?.lastName,
+      // Use the personId as a fallback for display
+      loginId: state.loginReducer?.loginDetails?.loginId || 
+              (state.loginReducer?.loginDetails?.personId ? 
+                `User-${state.loginReducer.loginDetails.personId}` : null),
+      role: state.loginReducer?.loginDetails?.role || 'Administrator'
     }
   };
 };
