@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -15,11 +15,11 @@ import {
   Typography,
   Skeleton,
   useTheme,
-  alpha
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+  alpha,
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 const DataTable = ({
   columns,
@@ -36,89 +36,127 @@ const DataTable = ({
   emptyMessage = "No data available",
   hideActions = false,
   actionColumn = {
-    id: 'actions',
-    label: 'Actions',
-  }
+    id: "actions",
+    label: "Actions",
+  },
 }) => {
   const theme = useTheme();
 
+  // Define Sr. No. column
+  const srNoColumn = {
+    id: "srNo",
+    label: "Sr. No.",
+    headerName: "Sr. No.",
+  };
+
+  // Combine Sr. No. column with existing columns
+  const allColumns = [srNoColumn, ...columns];
+
   const getStatusColor = (status) => {
     if (!status) return {};
-    
+
     const statusLower = status.toLowerCase();
-    
-    if (statusLower.includes('active') || statusLower.includes('completed') || statusLower.includes('approved')) {
+
+    if (
+      statusLower.includes("active") ||
+      statusLower.includes("completed") ||
+      statusLower.includes("approved")
+    ) {
       return {
         bgcolor: alpha(theme.palette.success.main, 0.1),
         color: theme.palette.success.main,
       };
-    } else if (statusLower.includes('pending') || statusLower.includes('in progress')) {
+    } else if (
+      statusLower.includes("pending") ||
+      statusLower.includes("in progress")
+    ) {
       return {
         bgcolor: alpha(theme.palette.warning.main, 0.1),
         color: theme.palette.warning.main,
       };
-    } else if (statusLower.includes('inactive') || statusLower.includes('cancelled') || statusLower.includes('rejected')) {
+    } else if (
+      statusLower.includes("inactive") ||
+      statusLower.includes("cancelled") ||
+      statusLower.includes("rejected")
+    ) {
       return {
         bgcolor: alpha(theme.palette.error.main, 0.1),
         color: theme.palette.error.main,
       };
     }
-    
+
     return {
       bgcolor: alpha(theme.palette.info.main, 0.1),
       color: theme.palette.info.main,
     };
   };
 
-  const renderCellContent = (row, column) => {
+  const renderCellContent = (row, column, rowIndex) => {
+    // Handle Sr. No. column
+    if (column.id === "srNo") {
+      return page * rowsPerPage + rowIndex + 1;
+    }
+
     // Support both field and id properties for backward compatibility
     const fieldName = column.field || column.id;
     if (!fieldName) return "—";
-    
+
     const value = row[fieldName];
-    
+
     // Handle status fields with special styling
-    if (fieldName.toLowerCase().includes('status') && value) {
+    if (fieldName.toLowerCase().includes("status") && value) {
       return (
-        <Chip 
-          label={value} 
-          size="small" 
-          sx={{ 
+        <Chip
+          label={value}
+          size="small"
+          sx={{
             ...getStatusColor(value),
             fontWeight: 500,
-            fontSize: '0.75rem',
-            height: 24
-          }} 
+            fontSize: "0.75rem",
+            height: 24,
+          }}
         />
       );
     }
-    
+
     // Handle date fields
-    if (fieldName.toLowerCase().includes('date') && value) {
+    if (fieldName.toLowerCase().includes("date") && value) {
       return value;
     }
-    
+
     return value || "—";
   };
 
   const renderLoadingSkeleton = () => {
-    return Array(rowsPerPage).fill(0).map((_, index) => (
-      <TableRow key={`skeleton-${index}`}>
-        {columns.map((column, colIndex) => (
-          <TableCell key={`skeleton-cell-${colIndex}`}>
-            <Skeleton animation="wave" height={24} />
-          </TableCell>
-        ))}
-        {!hideActions && (
-          <TableCell>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Skeleton animation="wave" variant="circular" width={30} height={30} />
-              <Skeleton animation="wave" variant="circular" width={30} height={30} />
-            </Box>
-          </TableCell>
-        )}
-      </TableRow>
-    ));
+    return Array(rowsPerPage)
+      .fill(0)
+      .map((_, index) => (
+        <TableRow key={`skeleton-${index}`}>
+          {allColumns.map((column, colIndex) => (
+            <TableCell key={`skeleton-cell-${colIndex}`} align="center">
+              <Skeleton animation="wave" height={24} />
+            </TableCell>
+          ))}
+          {!hideActions && (
+            <TableCell align="center">
+              <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                <Skeleton
+                  animation="wave"
+                  variant="circular"
+                  width={30}
+                  height={30}
+                />
+                <Skeleton
+                  animation="wave"
+                  variant="circular"
+                  width={30}
+                  height={30}
+                />
+              </Box>
+            </TableCell>
+          )}
+        </TableRow>
+      ));
   };
 
   return (
@@ -137,7 +175,7 @@ const DataTable = ({
         <Table stickyHeader aria-label="data table">
           <TableHead>
             <TableRow>
-              {columns.map((column, index) => (
+              {allColumns.map((column, index) => (
                 <TableCell
                   key={column.field || column.id || `column-${index}`}
                   sx={{
@@ -150,6 +188,7 @@ const DataTable = ({
                     top: 0,
                     textAlign: "center",
                   }}
+                  align="center"
                 >
                   {column.headerName || column.label}
                 </TableCell>
@@ -166,6 +205,7 @@ const DataTable = ({
                     top: 0,
                     textAlign: "center",
                   }}
+                  align="center"
                 >
                   {actionColumn.label}
                 </TableCell>
@@ -187,24 +227,25 @@ const DataTable = ({
                     textAlign: "center",
                   }}
                 >
-                  {columns.map((column, colIndex) => (
+                  {allColumns.map((column, colIndex) => (
                     <TableCell
                       key={`cell-${rowIndex}-${colIndex}`}
                       sx={{
                         textAlign: "center",
                       }}
+                      align="center"
                     >
-                      {renderCellContent(row, column)}
+                      {renderCellContent(row, column, rowIndex)}
                     </TableCell>
                   ))}
                   {!hideActions && (
-                    <TableCell sx={{ textAlign: "center" }}>
+                    <TableCell sx={{ textAlign: "center" }} align="center">
                       <Box
                         sx={{
                           display: "flex",
                           gap: 1,
-                          justifyContent: "center", // Center the action buttons horizontally
-                          width: "100%", // Ensure the box takes full width of the cell
+                          justifyContent: "center",
+                          width: "100%",
                         }}
                       >
                         {onView && (
@@ -239,7 +280,6 @@ const DataTable = ({
                                     0.1
                                   ),
                                 },
-                                textAlign: "center",
                               }}
                             >
                               <EditIcon fontSize="small" />
@@ -259,7 +299,6 @@ const DataTable = ({
                                     0.1
                                   ),
                                 },
-                                textAlign: "center",
                               }}
                             >
                               <DeleteIcon fontSize="small" />
@@ -274,7 +313,7 @@ const DataTable = ({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (hideActions ? 0 : 1)}
+                  colSpan={allColumns.length + (hideActions ? 0 : 1)}
                   align="center"
                   sx={{ py: 8, textAlign: "center" }}
                 >
