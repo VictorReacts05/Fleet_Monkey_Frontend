@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import FormInput from "../../Common/FormInput";
-import FormSelect from "../../Common/FormSelect";
-import FormTextArea from "../../Common/FormTextArea";
-import FormPage from "../../Common/FormPage";
+import { Grid } from "@mui/material";
 import {
   createCompany,
   updateCompany,
@@ -10,27 +7,25 @@ import {
   fetchAllCurrencies,
 } from "./CompanyAPI";
 import { toast } from "react-toastify";
+import FormInput from "../../Common/FormInput";
+import FormSelect from "../../Common/FormSelect";
+import FormTextArea from "../../Common/FormTextArea";
+import FormPage from "../../Common/FormPage";
 
-const CompanyForm = ({ companyId, onSave, onClose }) => {
+const CompanyForm = ({ companyId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     CompanyName: "",
     BillingCurrencyID: "",
     VAT_Account: "",
     Website: "",
     CompanyNotes: "",
-    RowVersionColumn: null,
+    CreatedByID: "",
+    CreatedDateTime: null,
+    IsDeleted: false,
+    DeletedDateTime: null,
+    DeletedByID: "",
   });
 
-  const [errors, setErrors] = useState({
-    CompanyName: "",
-    BillingCurrencyID: "",
-    VAT_Account: "",
-    Website: "",
-    CompanyNotes: "",
-  });
-
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
@@ -43,8 +38,7 @@ const CompanyForm = ({ companyId, onSave, onClose }) => {
         }));
         setCurrencies(formattedCurrencies);
       } catch (error) {
-        console.error("Error loading currencies:", error);
-        toast.error("Failed to load currencies");
+        toast.error("Failed to load currencies: " + error.message);
       }
     };
 
@@ -57,7 +51,6 @@ const CompanyForm = ({ companyId, onSave, onClose }) => {
 
   const loadCompany = async () => {
     try {
-      setLoading(true);
       const data = await getCompanyById(companyId);
       setFormData({
         CompanyName: data.CompanyName || "",
@@ -65,231 +58,217 @@ const CompanyForm = ({ companyId, onSave, onClose }) => {
         VAT_Account: data.VAT_Account || "",
         Website: data.Website || "",
         CompanyNotes: data.CompanyNotes || "",
-        RowVersionColumn: data.RowVersionColumn,
+        CreatedByID: data.CreatedByID || "",
+        CreatedDateTime: data.CreatedDateTime ? data.CreatedDateTime : null,
+        IsDeleted: data.IsDeleted || false,
+        DeletedDateTime: data.DeletedDateTime ? data.DeletedDateTime : null,
+        DeletedByID: data.DeletedByID || "",
       });
     } catch (error) {
-      console.error("Error loading company:", error);
-      toast.error(
-        `Failed to load company details: ${error.message || "Unknown error"}`
-      );
-    } finally {
-      setLoading(false);
+      toast.error("Failed to load company: " + error.message);
     }
   };
 
-  const validateField = (name, value) => {
-    let error = "";
+  const [errors, setErrors] = useState({});
 
-    switch (name) {
-      case "CompanyName":
-        if (!value) {
-          error = "Company Name is required";
-        } else if (value.length < 3) {
-          error = "Company Name must be at least 3 characters";
-        } else if (value.length > 100) {
-          error = "Company Name must be 100 characters or less";
-        } else if (!/^[a-zA-Z0-9\s&.,'-]+$/.test(value)) {
-          error =
-            "Company Name can only contain letters, numbers, spaces, and &.,'-";
-        }
-        break;
+  const validateForm = () => {
+    const newErrors = {};
 
-      case "BillingCurrencyID":
-        if (!value) {
-          error = "Currency selection is required";
-        } else if (!currencies.some((currency) => currency.value === value)) {
-          error = "Invalid currency selected";
-        }
-        break;
-
-      case "VAT_Account":
-        if (!value) {
-          error = "VAT Account is required";
-        } else if (value.length < 3) {
-          error = "VAT Account must be at least 3 characters";
-        } else if (value.length > 50) {
-          error = "VAT Account must be 50 characters or less";
-        } else if (!/^[a-zA-Z0-9\s-]+$/.test(value)) {
-          error =
-            "VAT Account can only contain letters, numbers, spaces, and hyphens";
-        }
-        break;
-
-      case "Website":
-        if (!value) {
-          error = "Website is required";
-        } else {
-          const urlPattern =
-            /^(https?:\/\/)?([a-z0-9-]+\.)*[a-z0-9-]+\.[a-z]{2,}(\/.*)?$/i;
-          if (!urlPattern.test(value)) {
-            error = "Invalid website format (e.g., https://example.com)";
-          } else if (value.length > 200) {
-            error = "Website must be 200 characters or less";
-          } else if (value.length < 4) {
-            error = "Website must be at least 4 characters";
-          }
-        }
-        break;
-
-      case "CompanyNotes":
-        if (!value) {
-          error = "Company Notes are required";
-        } else if (value.length > 255) {
-          error = "Notes must be 255 characters or less";
-        } else if (/[<>{}]/g.test(value)) {
-          error = "Notes cannot contain <, >, {, or }";
-        } else if (value.length < 3) {
-          error = "Notes must be at least 3 characters";
-        }
-        break;
-
-      default:
-        break;
+    // Required field validation
+    if (!formData.CompanyName.trim()) {
+      newErrors.CompanyName = "Company Name is required";
     }
 
-    setErrors((prev) => ({ ...prev, [name]: error }));
-    return error === "";
+    // Fix for BillingCurrencyID - check if it exists instead of using trim()
+    if (!formData.BillingCurrencyID) {
+      newErrors.BillingCurrencyID = "Billing Currency ID is required";
+    }
+
+    if (!formData.VAT_Account.trim()) {
+      newErrors.VAT_Account = "VAT Account is required";
+    }
+
+    if (!formData.Website.trim()) {
+      newErrors.Website = "Website is required";
+    }
+
+    if (!formData.CompanyNotes.trim()) {
+      newErrors.CompanyNotes = "Company Notes are required";
+    }
+
+    // Specific field validations
+    if (formData.CompanyName && formData.CompanyName.length > 100) {
+      newErrors.CompanyName = "Company Name cannot exceed 100 characters";
+    } else if (
+      formData.CompanyName &&
+      !/^[a-zA-Z0-9\s&.,'-]+$/.test(formData.CompanyName)
+    ) {
+      newErrors.CompanyName =
+        "Company Name can only contain letters, numbers, spaces, and &.,'-";
+    }
+
+    if (
+      formData.BillingCurrencyID &&
+      !currencies.some(
+        (currency) => currency.value === formData.BillingCurrencyID
+      )
+    ) {
+      newErrors.BillingCurrencyID = "Invalid currency selected";
+    }
+
+    if (formData.VAT_Account && formData.VAT_Account.length > 50) {
+      newErrors.VAT_Account = "VAT Account cannot exceed 50 characters";
+    } else if (
+      formData.VAT_Account &&
+      !/^[a-zA-Z0-9\s-]+$/.test(formData.VAT_Account)
+    ) {
+      newErrors.VAT_Account =
+        "VAT Account can only contain letters, numbers, spaces, and hyphens";
+    }
+
+    if (formData.Website) {
+      const urlPattern =
+        /^(https?:\/\/)?([a-z0-9-]+\.)*[a-z0-9-]+\.[a-z]{2,}(\/.*)?$/i;
+      if (!urlPattern.test(formData.Website)) {
+        newErrors.Website =
+          "Invalid website format (e.g., https://example.com)";
+      } else if (formData.Website.length > 200) {
+        newErrors.Website = "Website cannot exceed 200 characters";
+      }
+    }
+
+    if (formData.CompanyNotes && formData.CompanyNotes.length > 255) {
+      newErrors.CompanyNotes = "Company Notes cannot exceed 255 characters";
+    } else if (formData.CompanyNotes && /[<>{}]/g.test(formData.CompanyNotes)) {
+      newErrors.CompanyNotes = "Company Notes cannot contain <, >, {, or }";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitted(true);
 
-    const validationErrors = {};
-
-    validationErrors.CompanyName = validateField(
-      "CompanyName",
-      formData.CompanyName
-    )
-      ? ""
-      : errors.CompanyName || "Company Name is required";
-    validationErrors.BillingCurrencyID = validateField(
-      "BillingCurrencyID",
-      formData.BillingCurrencyID
-    )
-      ? ""
-      : errors.BillingCurrencyID || "Currency selection is required";
-    validationErrors.VAT_Account = validateField(
-      "VAT_Account",
-      formData.VAT_Account
-    )
-      ? ""
-      : errors.VAT_Account || "VAT Account is required";
-    validationErrors.Website = validateField("Website", formData.Website)
-      ? ""
-      : errors.Website || "Website is required";
-    validationErrors.CompanyNotes = validateField(
-      "CompanyNotes",
-      formData.CompanyNotes
-    )
-      ? ""
-      : errors.CompanyNotes || "Company Notes are required";
-
-    const hasErrors = Object.values(validationErrors).some(
-      (error) => error !== ""
-    );
-
-    if (hasErrors) {
-      setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
+    if (!validateForm()) {
+      toast.error("Please fix the form errors");
       return;
     }
 
     try {
-      setLoading(true);
+      // Update the field names to match what the API expects
+      const submitData = {
+        CompanyName: formData.CompanyName,
+        BillingCurrencyID: formData.BillingCurrencyID,
+        VAT_Account: formData.VAT_Account,
+        Website: formData.Website,
+        CompanyNotes: formData.CompanyNotes,
+        UserID: 1,
+      };
+
+      console.log("Submitting data:", submitData);
+
       if (companyId) {
-        await updateCompany(companyId, formData);
+        await updateCompany(companyId, submitData);
         toast.success("Company updated successfully");
       } else {
-        await createCompany(formData);
+        await createCompany(submitData);
         toast.success("Company created successfully");
       }
+      
+      // Call both onSave and onClose to ensure the popup closes
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error saving company:", error);
-      toast.error(error.message || "Failed to save company");
-    } finally {
-      setLoading(false);
+      console.error("API Error:", error);
+      toast.error(
+        `Failed to ${companyId ? "update" : "create"} company: ` + 
+        (error.error || error.message || "Server returned 400 Bad Request")
+      );
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (isSubmitted) {
-      validateField(name, value);
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    validateField(name, value);
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
     <FormPage
       title={companyId ? "Edit Company" : "Create Company"}
-      onCancel={onClose}
       onSubmit={handleSubmit}
-      loading={loading}
+      onCancel={onClose}
     >
-      <FormInput
-        label="Company Name *"
-        name="CompanyName"
-        value={formData.CompanyName}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.CompanyName}
-        helperText={errors.CompanyName}
-        placeholder="Enter company name"
-      />
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden"
+        }}
+      >
+        <Grid item xs={12} sx={{ width: '47%' }}>
+          <FormInput
+            name="CompanyName"
+            label="Company Name"
+            value={formData.CompanyName}
+            onChange={handleChange}
+            error={!!errors.CompanyName}
+            helperText={errors.CompanyName}
+          />
+        </Grid>
 
-      <FormSelect
-        label="Currency *"
-        name="BillingCurrencyID"
-        value={formData.BillingCurrencyID}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        options={currencies}
-        error={!!errors.BillingCurrencyID}
-        helperText={errors.BillingCurrencyID}
-        placeholder="Select currency"
-      />
+        <Grid item xs={12} sx={{  width: "47%" }}>
+          <FormSelect
+            name="BillingCurrencyID"
+            label="Billing Currency"
+            value={formData.BillingCurrencyID}
+            onChange={handleChange}
+            options={currencies}
+            error={!!errors.BillingCurrencyID}
+            helperText={errors.BillingCurrencyID}
+          />
+        </Grid>
 
-      <FormInput
-        label="VAT Account *"
-        name="VAT_Account"
-        value={formData.VAT_Account}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.VAT_Account}
-        helperText={errors.VAT_Account}
-        placeholder="Enter VAT account number"
-      />
+        <Grid item xs={12} sx={{  width: "47%" }}>
+          <FormInput
+            name="VAT_Account"
+            label="VAT Account"
+            value={formData.VAT_Account}
+            onChange={handleChange}
+            error={!!errors.VAT_Account}
+            helperText={errors.VAT_Account}
+          />
+        </Grid>
 
-      <FormInput
-        label="Website *"
-        name="Website"
-        value={formData.Website}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.Website}
-        helperText={errors.Website}
-        placeholder="https://example.com"
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            name="Website"
+            label="Website"
+            value={formData.Website}
+            onChange={handleChange}
+            error={!!errors.Website}
+            helperText={errors.Website}
+          />
+        </Grid>
 
-      <FormTextArea
-        label="Company Notes *"
-        name="CompanyNotes"
-        value={formData.CompanyNotes}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.CompanyNotes}
-        helperText={errors.CompanyNotes}
-        placeholder="Enter any additional notes"
-        rows={4}
-      />
+        <Grid item xs={12} sx={{ width: "100%" }}>
+          <FormTextArea
+            name="CompanyNotes"
+            label="Company Notes"
+            value={formData.CompanyNotes}
+            onChange={handleChange}
+            error={!!errors.CompanyNotes}
+            helperText={errors.CompanyNotes}
+            rows={4}
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };
