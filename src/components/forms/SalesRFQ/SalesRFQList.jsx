@@ -1,212 +1,198 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Alert } from "@mui/material";
+import { Typography, Box, Button, Stack } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
-import SalesRFQModal from "./SalesRFQModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import { format } from "date-fns";
-import { fetchSalesRFQs, deleteSalesRFQ } from "../../../utils/api";
-// import { useSelector } from "react-redux";
-import { Add } from '@mui/icons-material';
-import { Tooltip, IconButton } from '@mui/material';
+import FormDatePicker from "../../Common/FormDatePicker";
+import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 
 const SalesRFQList = () => {
-  // const userDetails = useSelector(           ----------For your reference to fetch data from redux
-  //   (state) => state.loginReducer.loginDetials
-  // );
-  // console.log(userDetails, "____userDetails");
-
+  const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedSalesRFQId, setSelectedSalesRFQId] = useState(null);
-
-  // Add state for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
-  const columns = [
-    { id: "SalesRFQID", label: "ID" },
-    { id: "Series", label: "Series" },
-    { id: "ExternalRefNo", label: "External Ref No" },
-    { id: "Status", label: "Status" },
-    {
-      id: "DeliveryDate",
-      label: "Delivery Date",
-      format: (value) => (value ? format(new Date(value), "dd/MM/yyyy") : "-"),
-    },
-    {
-      id: "RequiredByDate",
-      label: "Required By",
-      format: (value) => (value ? format(new Date(value), "dd/MM/yyyy") : "-"),
-    },
-  ];
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetchSalesRFQs();
-
-      if (response.success) {
-        let data = response.data;
-        if (
-          data &&
-          typeof data === "object" &&
-          !Array.isArray(data) &&
-          data.data
-        ) {
-          data = data.data;
-        }
-
-        if (!Array.isArray(data)) {
-          data = data && typeof data === "object" ? [data] : [];
-        }
-
-        const formattedRows = data.map((row) => ({
-          ...row,
-          Status: row.Status || "Pending",
-          ExternalRefNo: row.ExternalRefNo || "-",
-          Series: row.Series || "-",
-          DeliveryDate: row.DeliveryDate || null,
-          RequiredByDate: row.RequiredByDate || null,
-        }));
-
-        setRows(formattedRows);
-        setTotalRows(formattedRows.length);
-      } else {
-        setError(response.error || "Failed to fetch data");
-      }
-    } catch (error) {
-      console.error("Error fetching Sales RFQs:", error);
-      setError(error.message || "An unexpected error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const columns = [{ field: "series", headerName: "Series", flex: 1 }];
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    loadSalesRFQs();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
-  const handleEdit = (row) => {
-    setSelectedSalesRFQId(row.SalesRFQID);
-    setModalOpen(true);
-  };
-
-  // Update the handleDelete function to open the confirmation dialog
-  const handleDelete = (row) => {
-    setItemToDelete(row);
-    setDeleteDialogOpen(true);
-  };
-
-  // Add a new function to handle the actual deletion after confirmation
-  const confirmDelete = async () => {
-    if (!itemToDelete) return;
-
+  const loadSalesRFQs = async () => {
     try {
       setLoading(true);
-      const response = await deleteSalesRFQ(itemToDelete.SalesRFQID);
+      const formattedFromDate = fromDate
+        ? dayjs(fromDate).format("YYYY-MM-DD")
+        : null;
+      const formattedToDate = toDate
+        ? dayjs(toDate).format("YYYY-MM-DD")
+        : null;
 
-      if (response.success) {
-        fetchData(); // Refresh the list
-      } else {
-        setError(response.error || "Failed to delete Sales RFQ");
-      }
+      const response = await fetchSalesRFQs(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+
+      const salesRFQs = response.data || [];
+
+      const mappedRows = salesRFQs.map((salesRFQ) => ({
+        id: salesRFQ.SalesRFQID,
+        series: salesRFQ.Series || "N/A",
+      }));
+
+      setRows(mappedRows);
+      setTotalRows(response.totalRecords || salesRFQs.length);
     } catch (error) {
-      console.error("Error deleting Sales RFQ:", error);
-      setError("An unexpected error occurred while deleting");
+      console.error("Error loading SalesRFQs:", error);
+      toast.error("Failed to load SalesRFQs");
     } finally {
       setLoading(false);
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
     }
   };
 
-  // Add a function to handle dialog cancellation
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
   };
 
   const handleCreate = () => {
-    setSelectedSalesRFQId(null);
-    setModalOpen(true);
+    navigate("/sales-rfq/create");
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setSelectedSalesRFQId(null);
+  const handleRowClick = (id) => {
+    navigate(`/sales-rfq/edit/${id}`);
+  };
+
+  const handleEdit = (id) => {
+    navigate(`/sales-rfq/edit/${id}`);
+  };
+
+  const handleView = (id) => {
+    navigate(`/sales-rfq/edit/${id}?view=true`);
+  };
+
+  const handleDeleteClick = (id) => {
+    const item = rows.find((row) => row.id === id);
+    if (item) {
+      setItemToDelete(item);
+      setDeleteDialogOpen(true);
+    } else {
+      toast.error("Item not found");
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteSalesRFQ(itemToDelete.id);
+      toast.success("SalesRFQ deleted successfully");
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadSalesRFQs();
+    } catch (error) {
+      toast.error("Failed to delete SalesRFQ: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = () => {
-    fetchData();
-    setModalOpen(false);
+    loadSalesRFQs();
+  };
+
+  const handleFromDateChange = (date) => {
+    setFromDate(date);
+  };
+
+  const handleToDateChange = (date) => {
+    setToDate(date);
   };
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Sales RFQ Management</Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Tooltip title="Add Sales RFQ">
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={handleFromDateChange}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={handleToDateChange}
+            sx={{ width: 200 }}
+          />
+          <Tooltip title="Add New Sales RFQ">
             <IconButton
+              color="primary"
               onClick={handleCreate}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
-                height: 56,
-                width: 56
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+                height: 40,
+                width: 40,
+                ml: 1,
               }}
             >
               <Add />
             </IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
       <DataTable
-        columns={columns}
         rows={rows}
+        columns={columns}
+        loading={loading}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         totalRows={totalRows}
-        loading={loading}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        onRowClick={(params) => handleRowClick(params.id)}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+        onView={handleView}
       />
 
-      <SalesRFQModal
-        open={modalOpen}
-        onClose={handleModalClose}
-        salesRFQId={selectedSalesRFQId}
-        onSave={handleSave}
-      />
-
-      {/* Add the confirmation dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
-        title="Confirm Delete"
-        message={`Are you sure you want to delete Sales RFQ ${
-          itemToDelete?.Series || itemToDelete?.SalesRFQID
-        }?`}
+        title="Delete Sales RFQ"
+        message={`Are you sure you want to delete the Sales RFQ: ${itemToDelete?.series}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => {
+          setDeleteDialogOpen(false);
+          setItemToDelete(null);
+        }}
       />
     </Box>
   );

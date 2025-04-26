@@ -40,7 +40,7 @@ const FormPage = ({
   };
 
   return (
-    <Container maxWidth={maxWidth} sx={{ mt: 2, mb: 4 }}>
+    <Container sx={{ mt: 2, mb: 4 }}>
       <Paper 
         elevation={0} 
         sx={{ 

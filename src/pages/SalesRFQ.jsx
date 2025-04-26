@@ -1,5 +1,5 @@
 import React from 'react';
-import SalesRFQList from '../components/forms/SalesRFQ/SalesRFQList';
+import { SalesRFQList } from '../components/forms/SalesRFQ';
 
 const SalesRFQ = () => {
   return <SalesRFQList />;

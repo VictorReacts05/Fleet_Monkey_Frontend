@@ -1,11 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Box, CssBaseline } from '@mui/material';
+import React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
-import SalesRFQ from './pages/SalesRFQ';
+import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
+import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage'; // Import the new page component
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -49,7 +51,9 @@ function AppContent() {
       >
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/sales-rfq" element={<ProtectedRoute><SalesRFQ /></ProtectedRoute>} />
+          <Route path="/sales-rfq" element={<ProtectedRoute><SalesRFQList /></ProtectedRoute>} />
+          <Route path="/sales-rfq/create" element={<ProtectedRoute><SalesRFQPage /></ProtectedRoute>} />
+          <Route path="/sales-rfq/edit/:id" element={<ProtectedRoute><SalesRFQPage /></ProtectedRoute>} />
           <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
           <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
           <Route path="/suppliers" element={<ProtectedRoute><SupplierList /></ProtectedRoute>} />

@@ -273,7 +273,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 // At the bottom of your file, update the Redux connection:
 const mapStateToProps = (state) => {
   // Add console log to see what's in the state
-  console.log("Redux state in Header:", state.loginReducer);
+  // console.log("Redux state in Header:", state.loginReducer);
   
   return {
     userInfo: {

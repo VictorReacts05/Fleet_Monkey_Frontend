@@ -1,353 +1,817 @@
-import React, { useState, useEffect } from 'react';
-import FormInput from '../../Common/FormInput';
-import FormSelect from '../../Common/FormSelect';
-import FormPage from '../../Common/FormPage';
-import FormDatePicker from '../../Common/FormDatePicker';
-import FormCheckbox from '../../Common/FormCheckbox';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from "react";
+import {
+  Grid,
+  Box,
+  Typography,
+  FormControlLabel,
+  Checkbox,
+} from "@mui/material";
+import {
+  createSalesRFQ,
+  updateSalesRFQ,
+  getSalesRFQById,
+  fetchCompanies,
+  fetchCustomers,
+  fetchSuppliers,
+  fetchServiceTypes,
+  fetchAddresses,
+  fetchMailingPriorities,
+  fetchCurrencies,
+} from "./SalesRFQAPI";
+import { toast } from "react-toastify";
+import FormInput from "../../Common/FormInput";
+import FormSelect from "../../Common/FormSelect";
+import FormDatePicker from "../../Common/FormDatePicker";
+import FormPage from "../../Common/FormPage";
 
-const SalesRFQForm = ({ rfqId, onSave, onClose }) => {
+const ReadOnlyField = ({ label, value }) => {
+  return (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="caption" color="textSecondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body1" sx={{ mt: 0.5 }}>
+        {value || "-"}
+      </Typography>
+    </Box>
+  );
+};
+
+const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
+  const DEFAULT_COMPANY = { value: 1, label: "Dung Beetle Company" };
+
   const [formData, setFormData] = useState({
-    salesRFQID: '',
-    series: '',
-    companyId: '',
-    customerId: '',
-    supplierId: '',
-    externalRefNo: '',
-    externalSupplierId: '',
-    deliveryDate: null,
-    postingDate: null,
-    requiredByDate: null,
-    dateReceived: null,
-    serviceTypeId: '',
-    originAddressId: '',
-    collectionAddressId: '',
-    status: '',
-    destinationAddressId: '',
-    billingAddressId: '',
-    shippingPriorityId: '',
-    terms: '',
-    currencyId: '',
-    collectFromSupplierYN: false,
-    packagingRequiredYN: false,
-    formCompletedYN: false
+    Series: "",
+    CompanyID: DEFAULT_COMPANY.value,
+    CustomerID: "",
+    SupplierID: "",
+    ExternalRefNo: "",
+    DeliveryDate: null,
+    PostingDate: null,
+    RequiredByDate: null,
+    DateReceived: null,
+    ServiceTypeID: "",
+    CollectionAddressID: "",
+    DestinationAddressID: "",
+    ShippingPriorityID: "",
+    Terms: "",
+    CurrencyID: "",
+    CollectFromSupplier: false,
+    PackagingRequired: false,
+    FormCompleted: false,
+    CreatedByID: "",
+    CreatedDateTime: null,
+    IsDeleted: false,
+    DeletedDateTime: null,
+    DeletedByID: "",
+    RowVersionColumn: "",
   });
 
+  const [companies, setCompanies] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [mailingPriorities, setMailingPriorities] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [errors, setErrors] = useState({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  // Change this line to make the form editable when opened for editing
+  const [isEditing, setIsEditing] = useState(!readOnly);
+  const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
 
-  // Load data if editing
   useEffect(() => {
-    if (rfqId) {
-      // TODO: Implement getRFQById
-      const rfq = getRFQById(rfqId);
-      if (rfq) {
-        setFormData({
-          ...rfq,
-          deliveryDate: rfq.deliveryDate ? dayjs(rfq.deliveryDate) : null,
-          postingDate: rfq.postingDate ? dayjs(rfq.postingDate) : null,
-          requiredByDate: rfq.requiredByDate ? dayjs(rfq.requiredByDate) : null,
-          dateReceived: rfq.dateReceived ? dayjs(rfq.dateReceived) : null,
-        });
+    const loadDropdownData = async () => {
+      try {
+        setLoading(true);
+        const [
+          companiesData,
+          customersData,
+          suppliersData,
+          serviceTypesData,
+          addressesData,
+          prioritiesData,
+          currenciesData,
+        ] = await Promise.all([
+          fetchCompanies().catch((err) => {
+            console.error("Failed to fetch companies:", err);
+            toast.error("Failed to load companies");
+            return [];
+          }),
+          fetchCustomers().catch((err) => {
+            console.error("Failed to fetch customers:", err);
+            toast.error("Failed to load customers");
+            return [];
+          }),
+          fetchSuppliers().catch((err) => {
+            console.error("Failed to fetch suppliers:", err);
+            toast.error("Failed to load suppliers");
+            return [];
+          }),
+          fetchServiceTypes().catch((err) => {
+            console.error("Failed to fetch service types:", err);
+            toast.error("Failed to load service types");
+            return [];
+          }),
+          fetchAddresses().catch((err) => {
+            console.error("Failed to fetch addresses:", err);
+            toast.error("Failed to load addresses");
+            return [];
+          }),
+          fetchMailingPriorities().catch((err) => {
+            console.error("Failed to fetch mailing priorities:", err);
+            toast.error("Failed to load mailing priorities");
+            return [];
+          }),
+          fetchCurrencies().catch((err) => {
+            console.error("Failed to fetch currencies:", err);
+            toast.error("Failed to load currencies");
+            return [];
+          }),
+        ]);
+
+        const companiesOptions = [
+          { value: "", label: "Select an option" },
+          ...companiesData.map((company) => ({
+            value: String(company.CompanyID),
+            label: company.CompanyName,
+          })),
+        ];
+        const customersOptions = [
+          { value: "", label: "Select an option" },
+          ...customersData.map((customer) => ({
+            value: String(customer.CustomerID),
+            label: customer.CustomerName,
+          })),
+        ];
+        const suppliersOptions = [
+          { value: "", label: "Select an option" },
+          ...suppliersData.map((supplier) => ({
+            value: String(supplier.SupplierID),
+            label: supplier.SupplierName,
+          })),
+        ];
+        const serviceTypesOptions = [
+          { value: "", label: "Select an option" },
+          ...serviceTypesData.map((type) => ({
+            value: String(type.ServiceTypeID),
+            label:
+              type.ServiceType ||
+              type.ServiceTypeName ||
+              "Unknown Service Type",
+          })),
+        ];
+        const addressesOptions = [
+          { value: "", label: "Select an option" },
+          ...addressesData.map((address) => ({
+            value: String(address.AddressID),
+            label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+          })),
+        ];
+        const prioritiesOptions = [
+          { value: "", label: "Select an option" },
+          ...prioritiesData.map((priority) => ({
+            value: String(priority.MailingPriorityID),
+            label:
+              priority.PriorityName ||
+              priority.MailingPriorityName ||
+              "Unknown Priority",
+          })),
+        ];
+        const currenciesOptions = [
+          { value: "", label: "Select an option" },
+          ...currenciesData.map((currency) => ({
+            value: String(currency.CurrencyID),
+            label: currency.CurrencyName,
+          })),
+        ];
+
+        setCompanies(companiesOptions);
+        setCustomers(customersOptions);
+        setSuppliers(suppliersOptions);
+        setServiceTypes(serviceTypesOptions);
+        setAddresses(addressesOptions);
+        setMailingPriorities(prioritiesOptions);
+        setCurrencies(currenciesOptions);
+
+        setDropdownsLoaded(true);
+      } catch (error) {
+        console.error("Error in loadDropdownData:", error);
+        toast.error("Failed to load form data: " + error.message);
+      } finally {
+        setLoading(false);
       }
+    };
+
+    loadDropdownData();
+  }, []);
+
+  useEffect(() => {
+    if (salesRFQId && dropdownsLoaded) {
+      loadSalesRFQ();
     }
-  }, [rfqId]);
+  }, [salesRFQId, dropdownsLoaded]);
+
+  const loadSalesRFQ = async () => {
+    try {
+      const response = await getSalesRFQById(salesRFQId);
+      const data = response.data;
+
+      const displayValue = (value) =>
+        value === null || value === undefined ? "-" : value;
+
+      const formattedData = {
+        ...formData,
+        Series: displayValue(data.Series),
+        CompanyID: DEFAULT_COMPANY.value,
+        CustomerID: customers.find(
+          (c) => String(c.value) === String(data.CustomerID)
+        )
+          ? String(data.CustomerID)
+          : "",
+        SupplierID: suppliers.find(
+          (s) => String(s.value) === String(data.SupplierID)
+        )
+          ? String(data.SupplierID)
+          : "",
+        ExternalRefNo: displayValue(data.ExternalRefNo),
+        DeliveryDate: data.DeliveryDate ? new Date(data.DeliveryDate) : null,
+        PostingDate: data.PostingDate ? new Date(data.PostingDate) : null,
+        RequiredByDate: data.RequiredByDate
+          ? new Date(data.RequiredByDate)
+          : null,
+        DateReceived: data.DateReceived ? new Date(data.DateReceived) : null,
+        ServiceTypeID: serviceTypes.find(
+          (st) => String(st.value) === String(data.ServiceTypeID)
+        )
+          ? String(data.ServiceTypeID)
+          : "",
+        CollectionAddressID: addresses.find(
+          (a) => String(a.value) === String(data.CollectionAddressID)
+        )
+          ? String(data.CollectionAddressID)
+          : "",
+        DestinationAddressID: addresses.find(
+          (a) => String(a.value) === String(data.DestinationAddressID)
+        )
+          ? String(data.DestinationAddressID)
+          : "",
+        ShippingPriorityID: mailingPriorities.find(
+          (p) => String(p.value) === String(data.ShippingPriorityID)
+        )
+          ? String(data.ShippingPriorityID)
+          : "",
+        Terms: displayValue(data.Terms),
+        CurrencyID: String(data.CurrencyID) || "",
+        CollectFromSupplier: Boolean(data.CollectFromSupplierYN),
+        PackagingRequired: Boolean(data.PackagingRequiredYN),
+        FormCompleted: Boolean(data.FormCompletedYN),
+        CreatedByID: displayValue(data.CreatedByID),
+        CreatedDateTime: data.CreatedDateTime
+          ? new Date(data.CreatedDateTime)
+          : null,
+        IsDeleted: data.IsDeleted || false,
+        DeletedDateTime: data.DeletedDateTime
+          ? new Date(data.DeletedDateTime)
+          : null,
+        DeletedByID: displayValue(data.DeletedByID),
+        RowVersionColumn: displayValue(data.RowVersionColumn),
+      };
+
+      setFormData(formattedData);
+    } catch (error) {
+      console.error("Failed to load SalesRFQ:", error);
+      toast.error("Failed to load SalesRFQ: " + error.message);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.Series.trim() || formData.Series === "-") {
+      newErrors.Series = "Series is required";
+    }
+    if (!formData.CompanyID) {
+      newErrors.CompanyID = "Company is required";
+    }
+    if (!formData.CustomerID) {
+      newErrors.CustomerID = "Customer is required";
+    }
+    if (!formData.SupplierID) {
+      newErrors.SupplierID = "Supplier is required";
+    }
+    if (!formData.ServiceTypeID) {
+      newErrors.ServiceTypeID = "Service Type is required";
+    }
+    if (!formData.CollectionAddressID) {
+      newErrors.CollectionAddressID = "Collection Address is required";
+    }
+    if (!formData.DestinationAddressID) {
+      newErrors.DestinationAddressID = "Destination Address is required";
+    }
+    if (!formData.ShippingPriorityID) {
+      newErrors.ShippingPriorityID = "Shipping Priority is required";
+    }
+    if (!formData.CurrencyID) {
+      newErrors.CurrencyID = "Currency is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      toast.error("Please fix the form errors");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const apiData = {
+        ...formData,
+        Series: formData.Series === "-" ? null : formData.Series,
+        ExternalRefNo:
+          formData.ExternalRefNo === "-" ? null : formData.ExternalRefNo,
+        Terms: formData.Terms === "-" ? null : formData.Terms,
+        CreatedByID: formData.CreatedByID === "-" ? null : formData.CreatedByID,
+        DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
+        RowVersionColumn:
+          formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
+        DeliveryDate: formData.DeliveryDate
+          ? formData.DeliveryDate.toISOString()
+          : null,
+        PostingDate: formData.PostingDate
+          ? formData.PostingDate.toISOString()
+          : null,
+        RequiredByDate: formData.RequiredByDate
+          ? formData.RequiredByDate.toISOString()
+          : null,
+        DateReceived: formData.DateReceived
+          ? formData.DateReceived.toISOString()
+          : null,
+        CollectFromSupplier: formData.CollectFromSupplier ? 1 : 0,
+        PackagingRequired: formData.PackagingRequired ? 1 : 0,
+        FormCompleted: formData.FormCompleted ? 1 : 0,
+      };
+
+      if (salesRFQId) {
+        await updateSalesRFQ(salesRFQId, apiData);
+        toast.success("SalesRFQ updated successfully");
+      } else {
+        await createSalesRFQ(apiData);
+        toast.success("SalesRFQ created successfully");
+      }
+
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      toast.error(
+        `Failed to ${salesRFQId ? "update" : "create"} SalesRFQ: ` +
+          error.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
+    }));
+  };
+
+  const handleCheckboxChange = (name) => (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: e.target.checked,
     }));
   };
 
   const handleDateChange = (name, date) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: date ? dayjs(date) : null
+      [name]: date,
     }));
   };
 
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: checked
-    }));
-  };
-
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = {};
-
-    // Required field validations
-    const requiredFields = [
-      'companyId',
-      'customerId',
-      'supplierId',
-      'deliveryDate',
-      'requiredByDate',
-      'serviceTypeId',
-      'originAddressId',
-      'collectionAddressId',
-      'status',
-      'destinationAddressId',
-      'billingAddressId',
-      'shippingPriorityId',
-      'currencyId'
-    ];
-
-    requiredFields.forEach(field => {
-      if (!formData[field]) {
-        newErrors[field] = 'This field is required';
-        isValid = false;
-      }
-    });
-
-    // Date validations
-    if (formData.deliveryDate && formData.requiredByDate &&
-        dayjs(formData.deliveryDate).isAfter(formData.requiredByDate)) {
-      newErrors.deliveryDate = 'Delivery date cannot be after required by date';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setIsSubmitted(true);
-
-    if (!validateForm()) {
-      return;
-    }
-
-    const formDataToSave = {
-      ...formData,
-      deliveryDate: formData.deliveryDate ? dayjs(formData.deliveryDate).format('YYYY-MM-DD') : null,
-      postingDate: formData.postingDate ? dayjs(formData.postingDate).format('YYYY-MM-DD') : null,
-      requiredByDate: formData.requiredByDate ? dayjs(formData.requiredByDate).format('YYYY-MM-DD') : null,
-      dateReceived: formData.dateReceived ? dayjs(formData.dateReceived).format('YYYY-MM-DD') : null,
-    };
-
-    try {
-      // TODO: Implement saveRFQ function
-      // saveRFQ(formDataToSave);
-      onSave();
-    } catch (error) {
-      console.error('Error saving RFQ:', error);
-    }
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
   };
 
   return (
     <FormPage
-      title={rfqId ? "Edit Sales RFQ" : "Create Sales RFQ"}
-      onSubmit={handleSubmit}
+      title={
+        salesRFQId
+          ? isEditing
+            ? "Edit Sales RFQ"
+            : "View Sales RFQ"
+          : "Create Sales RFQ"
+      }
       onCancel={onClose}
+      onSubmit={isEditing ? handleSubmit : null}
+      loading={loading}
+      readOnly={!isEditing}
+      onEdit={salesRFQId && !isEditing ? toggleEdit : null}
     >
-      {rfqId && (
-        <>
-          <FormInput
-            label="Sales RFQ ID"
-            name="salesRFQID"
-            value={formData.salesRFQID}
-            disabled={true}
-          />
-          <FormInput
-            label="Series"
-            name="series"
-            value={formData.series}
-            disabled={true}
-          />
-        </>
-      )}
-      
-      <FormSelect
-        label="Company *"
-        name="companyId"
-        value={formData.companyId}
-        onChange={handleChange}
-        options={[]} // TODO: Add company options
-        error={isSubmitted && errors.companyId}
-        helperText={isSubmitted && errors.companyId}
-      />
+      <Grid
+        container
+        spacing={1}
+        sx={{
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormInput
+              name="Series"
+              label="Series"
+              value={formData.Series || ""}
+              onChange={handleChange}
+              error={!!errors.Series}
+              helperText={errors.Series}
+              disabled={true}
+            />
+          ) : (
+            <ReadOnlyField label="Series" value={formData.Series} />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Customer *"
-        name="customerId"
-        value={formData.customerId}
-        onChange={handleChange}
-        options={[]} // TODO: Add customer options
-        error={isSubmitted && errors.customerId}
-        helperText={isSubmitted && errors.customerId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="CompanyID"
+              label="Company"
+              value={formData.CompanyID || ""}
+              onChange={() => {}}
+              options={[DEFAULT_COMPANY]}
+              disabled={true}
+              readOnly={true}
+            />
+          ) : (
+            <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Supplier *"
-        name="supplierId"
-        value={formData.supplierId}
-        onChange={handleChange}
-        options={[]} // TODO: Add supplier options
-        error={isSubmitted && errors.supplierId}
-        helperText={isSubmitted && errors.supplierId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="CustomerID"
+              label="Customer"
+              value={formData.CustomerID || ""}
+              onChange={handleChange}
+              options={customers}
+              error={!!errors.CustomerID}
+              helperText={errors.CustomerID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Customer"
+              value={
+                customers.find((c) => c.value === formData.CustomerID)?.label ||
+                "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormInput
-        label="External Reference No"
-        name="externalRefNo"
-        value={formData.externalRefNo}
-        onChange={handleChange}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="SupplierID"
+              label="Supplier"
+              value={formData.SupplierID || ""}
+              onChange={handleChange}
+              options={suppliers}
+              error={!!errors.SupplierID}
+              helperText={errors.SupplierID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Supplier"
+              value={
+                suppliers.find((s) => s.value === formData.SupplierID)?.label ||
+                "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormInput
-        label="External Supplier ID"
-        name="externalSupplierId"
-        value={formData.externalSupplierId}
-        onChange={handleChange}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormInput
+              name="ExternalRefNo"
+              label="External Ref No."
+              value={formData.ExternalRefNo || ""}
+              onChange={handleChange}
+              error={!!errors.ExternalRefNo}
+              helperText={errors.ExternalRefNo}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="External Ref No."
+              value={formData.ExternalRefNo}
+            />
+          )}
+        </Grid>
 
-      <FormDatePicker
-        label="Delivery Date *"
-        name="deliveryDate"
-        value={formData.deliveryDate}
-        onChange={(date) => handleDateChange("deliveryDate", date)}
-        error={isSubmitted && errors.deliveryDate}
-        helperText={isSubmitted && errors.deliveryDate}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormDatePicker
+              name="DeliveryDate"
+              label="Delivery Date"
+              value={formData.DeliveryDate}
+              onChange={(date) => handleDateChange("DeliveryDate", date)}
+              error={!!errors.DeliveryDate}
+              helperText={errors.DeliveryDate}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Delivery Date"
+              value={
+                formData.DeliveryDate
+                  ? formData.DeliveryDate.toLocaleDateString()
+                  : "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormDatePicker
-        label="Posting Date"
-        name="postingDate"
-        value={formData.postingDate}
-        onChange={(date) => handleDateChange("postingDate", date)}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormDatePicker
+              name="PostingDate"
+              label="Posting Date"
+              value={formData.PostingDate}
+              onChange={(date) => handleDateChange("PostingDate", date)}
+              error={!!errors.PostingDate}
+              helperText={errors.PostingDate}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Posting Date"
+              value={
+                formData.PostingDate
+                  ? formData.PostingDate.toLocaleDateString()
+                  : "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormDatePicker
-        label="Required By Date *"
-        name="requiredByDate"
-        value={formData.requiredByDate}
-        onChange={(date) => handleDateChange("requiredByDate", date)}
-        error={isSubmitted && errors.requiredByDate}
-        helperText={isSubmitted && errors.requiredByDate}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormDatePicker
+              name="RequiredByDate"
+              label="Required By Date"
+              value={formData.RequiredByDate}
+              onChange={(date) => handleDateChange("RequiredByDate", date)}
+              error={!!errors.RequiredByDate}
+              helperText={errors.RequiredByDate}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Required By Date"
+              value={
+                formData.RequiredByDate
+                  ? formData.RequiredByDate.toLocaleDateString()
+                  : "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormDatePicker
-        label="Date Received"
-        name="dateReceived"
-        value={formData.dateReceived}
-        onChange={(date) => handleDateChange("dateReceived", date)}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormDatePicker
+              name="DateReceived"
+              label="Date Received"
+              value={formData.DateReceived}
+              onChange={(date) => handleDateChange("DateReceived", date)}
+              error={!!errors.DateReceived}
+              helperText={errors.DateReceived}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Date Received"
+              value={
+                formData.DateReceived
+                  ? formData.DateReceived.toLocaleDateString()
+                  : "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Service Type *"
-        name="serviceTypeId"
-        value={formData.serviceTypeId}
-        onChange={handleChange}
-        options={[]} // TODO: Add service type options
-        error={isSubmitted && errors.serviceTypeId}
-        helperText={isSubmitted && errors.serviceTypeId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="ServiceTypeID"
+              label="Service Type"
+              value={formData.ServiceTypeID || ""}
+              onChange={handleChange}
+              options={serviceTypes}
+              error={!!errors.ServiceTypeID}
+              helperText={errors.ServiceTypeID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Service Type"
+              value={
+                serviceTypes.find((st) => st.value === formData.ServiceTypeID)
+                  ?.label || "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Origin Address *"
-        name="originAddressId"
-        value={formData.originAddressId}
-        onChange={handleChange}
-        options={[]} // TODO: Add address options
-        error={isSubmitted && errors.originAddressId}
-        helperText={isSubmitted && errors.originAddressId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="CollectionAddressID"
+              label="Collection Address"
+              value={formData.CollectionAddressID || ""}
+              onChange={handleChange}
+              options={addresses}
+              error={!!errors.CollectionAddressID}
+              helperText={errors.CollectionAddressID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Collection Address"
+              value={
+                addresses.find((a) => a.value === formData.CollectionAddressID)
+                  ?.label || "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Collection Address *"
-        name="collectionAddressId"
-        value={formData.collectionAddressId}
-        onChange={handleChange}
-        options={[]} // TODO: Add address options
-        error={isSubmitted && errors.collectionAddressId}
-        helperText={isSubmitted && errors.collectionAddressId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="DestinationAddressID"
+              label="Destination Address"
+              value={formData.DestinationAddressID || ""}
+              onChange={handleChange}
+              options={addresses}
+              error={!!errors.DestinationAddressID}
+              helperText={errors.DestinationAddressID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Destination Address"
+              value={
+                addresses.find((a) => a.value === formData.DestinationAddressID)
+                  ?.label || "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Status *"
-        name="status"
-        value={formData.status}
-        onChange={handleChange}
-        options={[]} // TODO: Add status options
-        error={isSubmitted && errors.status}
-        helperText={isSubmitted && errors.status}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="ShippingPriorityID"
+              label="Shipping Priority"
+              value={formData.ShippingPriorityID || ""}
+              onChange={handleChange}
+              options={mailingPriorities}
+              error={!!errors.ShippingPriorityID}
+              helperText={errors.ShippingPriorityID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Shipping Priority"
+              value={
+                mailingPriorities.find(
+                  (p) => p.value === formData.ShippingPriorityID
+                )?.label || "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Destination Address *"
-        name="destinationAddressId"
-        value={formData.destinationAddressId}
-        onChange={handleChange}
-        options={[]} // TODO: Add address options
-        error={isSubmitted && errors.destinationAddressId}
-        helperText={isSubmitted && errors.destinationAddressId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormInput
+              name="Terms"
+              label="Terms"
+              value={formData.Terms || ""}
+              onChange={handleChange}
+              error={!!errors.Terms}
+              helperText={errors.Terms}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField label="Terms" value={formData.Terms} />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Billing Address *"
-        name="billingAddressId"
-        value={formData.billingAddressId}
-        onChange={handleChange}
-        options={[]} // TODO: Add address options
-        error={isSubmitted && errors.billingAddressId}
-        helperText={isSubmitted && errors.billingAddressId}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {isEditing ? (
+            <FormSelect
+              name="CurrencyID"
+              label="Currency"
+              value={formData.CurrencyID || ""}
+              onChange={handleChange}
+              options={currencies}
+              error={!!errors.CurrencyID}
+              helperText={errors.CurrencyID}
+              disabled={!isEditing}
+            />
+          ) : (
+            <ReadOnlyField
+              label="Currency"
+              value={
+                currencies.find(
+                  (c) => String(c.value) === String(formData.CurrencyID)
+                )?.label || "-"
+              }
+            />
+          )}
+        </Grid>
 
-      <FormSelect
-        label="Shipping Priority *"
-        name="shippingPriorityId"
-        value={formData.shippingPriorityId}
-        onChange={handleChange}
-        options={[]} // TODO: Add shipping priority options
-        error={isSubmitted && errors.shippingPriorityId}
-        helperText={isSubmitted && errors.shippingPriorityId}
-      />
-
-      <FormInput
-        label="Terms"
-        name="terms"
-        value={formData.terms}
-        onChange={handleChange}
-        multiline
-        rows={4}
-      />
-
-      <FormSelect
-        label="Currency *"
-        name="currencyId"
-        value={formData.currencyId}
-        onChange={handleChange}
-        options={[]} // TODO: Add currency options
-        error={isSubmitted && errors.currencyId}
-        helperText={isSubmitted && errors.currencyId}
-      />
-
-      <FormCheckbox
-        label="Collect From Supplier"
-        name="collectFromSupplierYN"
-        checked={formData.collectFromSupplierYN}
-        onChange={handleCheckboxChange}
-      />
-
-      <FormCheckbox
-        label="Packaging Required"
-        name="packagingRequiredYN"
-        checked={formData.packagingRequiredYN}
-        onChange={handleCheckboxChange}
-      />
-
-      <FormCheckbox
-        label="Form Completed"
-        name="formCompletedYN"
-        checked={formData.formCompletedYN}
-        onChange={handleCheckboxChange}
-      />
+        <Grid item xs={12} sx={{width: '100%'}}>
+          <Grid container spacing={1}>
+            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="CollectFromSupplier"
+                      checked={formData.CollectFromSupplier}
+                      onChange={handleCheckboxChange("CollectFromSupplier")}
+                      disabled={!isEditing}
+                    />
+                  }
+                  label="Collect From Supplier"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Collect From Supplier"
+                  value={formData.CollectFromSupplier ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="PackagingRequired"
+                      checked={formData.PackagingRequired}
+                      onChange={handleCheckboxChange("PackagingRequired")}
+                      disabled={!isEditing}
+                    />
+                  }
+                  label="Packaging Required"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Packaging Required"
+                  value={formData.PackagingRequired ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="FormCompleted"
+                      checked={formData.FormCompleted}
+                      onChange={handleCheckboxChange("FormCompleted")}
+                      disabled={!isEditing}
+                    />
+                  }
+                  label="Form Completed"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Form Completed"
+                  value={formData.FormCompleted ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };

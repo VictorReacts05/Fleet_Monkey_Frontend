@@ -169,8 +169,8 @@ const CountryList = () => {
                 backgroundColor: "primary.main",
                 color: "white",
                 "&:hover": { backgroundColor: "primary.dark" },
-                height: 56,
-                width: 56,
+                height: 40,
+                width: 40,
               }}
             >
               <Add />
