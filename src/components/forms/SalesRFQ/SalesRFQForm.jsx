@@ -56,9 +56,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     ShippingPriorityID: "",
     Terms: "",
     CurrencyID: "",
-    CollectFromSupplier: false,
-    PackagingRequired: false,
-    FormCompleted: false,
+    CollectFromSupplierYN: false,
+    PackagingRequiredYN: false,
+    FormCompletedYN: false,
     CreatedByID: "",
     CreatedDateTime: null,
     IsDeleted: false,
@@ -212,14 +212,18 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   }, [salesRFQId, dropdownsLoaded]);
 
+  // Update the loadSalesRFQ function to correctly handle boolean values from the API
   const loadSalesRFQ = async () => {
     try {
       const response = await getSalesRFQById(salesRFQId);
       const data = response.data;
-
+  
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
-
+  
+      // Log the raw data to see how boolean values are represented
+      console.log("Raw SalesRFQ data:", data);
+  
       const formattedData = {
         ...formData,
         Series: displayValue(data.Series),
@@ -263,9 +267,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           : "",
         Terms: displayValue(data.Terms),
         CurrencyID: String(data.CurrencyID) || "",
-        CollectFromSupplier: Boolean(data.CollectFromSupplierYN),
-        PackagingRequired: Boolean(data.PackagingRequiredYN),
-        FormCompleted: Boolean(data.FormCompletedYN),
+        // Fix the boolean values by checking for any truthy value (1, true, "1", "true", etc.)
+        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN || data.CollectFromSupplierYN),
+        PackagingRequiredYN: Boolean(data.PackagingRequiredYN || data.PackagingRequiredYN),
+        FormCompletedYN: Boolean(data.FormCompletedYN || data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? new Date(data.CreatedDateTime)
@@ -277,18 +282,20 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         DeletedByID: displayValue(data.DeletedByID),
         RowVersionColumn: displayValue(data.RowVersionColumn),
       };
-
+  
       setFormData(formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
       toast.error("Failed to load SalesRFQ: " + error.message);
     }
   };
-
+  
+  // Add the validateForm function before handleSubmit
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.Series.trim() || formData.Series === "-") {
+    // Only validate Series if editing an existing record
+    if (salesRFQId && formData.Series && (!formData.Series.trim() || formData.Series === "-")) {
       newErrors.Series = "Series is required";
     }
     if (!formData.CompanyID) {
@@ -320,12 +327,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Update the handleSubmit function to ensure proper redirection
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fix the form errors");
       return;
     }
-
+  
     try {
       setLoading(true);
       const apiData = {
@@ -350,25 +358,30 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         DateReceived: formData.DateReceived
           ? formData.DateReceived.toISOString()
           : null,
-        CollectFromSupplier: formData.CollectFromSupplier ? 1 : 0,
-        PackagingRequired: formData.PackagingRequired ? 1 : 0,
-        FormCompleted: formData.FormCompleted ? 1 : 0,
+        // Ensure boolean values are sent as 1/0 for the API
+        CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
+        PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
+        FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
       };
-
+  
       if (salesRFQId) {
+        // Update existing SalesRFQ
         await updateSalesRFQ(salesRFQId, apiData);
         toast.success("SalesRFQ updated successfully");
       } else {
-        await createSalesRFQ(apiData);
+        // Create new SalesRFQ
+        const result = await createSalesRFQ(apiData);
         toast.success("SalesRFQ created successfully");
       }
-
+  
+      // Ensure we call onSave and onClose to redirect back to the list
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
+      console.error("Error in handleSubmit:", error);
       toast.error(
         `Failed to ${salesRFQId ? "update" : "create"} SalesRFQ: ` +
-          error.message
+          (error.message || "Unknown error")
       );
     } finally {
       setLoading(false);
@@ -425,21 +438,24 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           overflow: "hidden",
         }}
       >
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          {isEditing ? (
-            <FormInput
-              name="Series"
-              label="Series"
-              value={formData.Series || ""}
-              onChange={handleChange}
-              error={!!errors.Series}
-              helperText={errors.Series}
-              disabled={true}
-            />
-          ) : (
-            <ReadOnlyField label="Series" value={formData.Series} />
-          )}
-        </Grid>
+        {/* Only show Series field when editing an existing record */}
+        {salesRFQId && (
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormInput
+                name="Series"
+                label="Series"
+                value={formData.Series || ""}
+                onChange={handleChange}
+                error={!!errors.Series}
+                helperText={errors.Series}
+                disabled={true}
+              />
+            ) : (
+              <ReadOnlyField label="Series" value={formData.Series} />
+            )}
+          </Grid>
+        )}
 
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
@@ -754,9 +770,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      name="CollectFromSupplier"
-                      checked={formData.CollectFromSupplier}
-                      onChange={handleCheckboxChange("CollectFromSupplier")}
+                      name="CollectFromSupplierYN"
+                      checked={formData.CollectFromSupplierYN}
+                      onChange={handleCheckboxChange("CollectFromSupplierYN")}
                       disabled={!isEditing}
                     />
                   }
@@ -765,7 +781,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               ) : (
                 <ReadOnlyField
                   label="Collect From Supplier"
-                  value={formData.CollectFromSupplier ? "Yes" : "No"}
+                  value={formData.CollectFromSupplierYN ? "Yes" : "No"}
                 />
               )}
             </Grid>
@@ -774,9 +790,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      name="PackagingRequired"
-                      checked={formData.PackagingRequired}
-                      onChange={handleCheckboxChange("PackagingRequired")}
+                      name="PackagingRequiredYN"
+                      checked={formData.PackagingRequiredYN}
+                      onChange={handleCheckboxChange("PackagingRequiredYN")}
                       disabled={!isEditing}
                     />
                   }
@@ -785,7 +801,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               ) : (
                 <ReadOnlyField
                   label="Packaging Required"
-                  value={formData.PackagingRequired ? "Yes" : "No"}
+                  value={formData.PackagingRequiredYN ? "Yes" : "No"}
                 />
               )}
             </Grid>
@@ -794,9 +810,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 <FormControlLabel
                   control={
                     <Checkbox
-                      name="FormCompleted"
-                      checked={formData.FormCompleted}
-                      onChange={handleCheckboxChange("FormCompleted")}
+                      name="FormCompletedYN"
+                      checked={formData.FormCompletedYN}
+                      onChange={handleCheckboxChange("FormCompletedYN")}
                       disabled={!isEditing}
                     />
                   }
@@ -805,7 +821,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               ) : (
                 <ReadOnlyField
                   label="Form Completed"
-                  value={formData.FormCompleted ? "Yes" : "No"}
+                  value={formData.FormCompletedYN ? "Yes" : "No"}
                 />
               )}
             </Grid>

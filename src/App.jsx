@@ -6,6 +6,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
+import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
 import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
 import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage'; // Import the new page component
 import CustomerList from './components/forms/Customer/CustomerList';
@@ -25,6 +26,34 @@ import AddressTypeList from './components/forms/AddressType/AddressTypeList';
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
+import { useParams, useNavigate } from 'react-router-dom';
+
+// Create wrapper components that use the hooks properly
+const CreateSalesRFQWrapper = () => {
+  const navigate = useNavigate();
+  return (
+    <SalesRFQForm 
+      onClose={() => navigate('/sales-rfq')} 
+      onSave={() => navigate('/sales-rfq')} 
+    />
+  );
+};
+
+const EditSalesRFQWrapper = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
+  const isViewMode = new URLSearchParams(location.search).get('view') === 'true';
+  
+  return (
+    <SalesRFQForm 
+      salesRFQId={id}
+      onClose={() => navigate('/sales-rfq')} 
+      onSave={() => navigate('/sales-rfq')}
+      readOnly={isViewMode}
+    />
+  );
+};
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -52,8 +81,20 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/sales-rfq" element={<ProtectedRoute><SalesRFQList /></ProtectedRoute>} />
-          <Route path="/sales-rfq/create" element={<ProtectedRoute><SalesRFQPage /></ProtectedRoute>} />
-          <Route path="/sales-rfq/edit/:id" element={<ProtectedRoute><SalesRFQPage /></ProtectedRoute>} />
+          
+          {/* Use the wrapper components instead of inline functions */}
+          <Route path="/sales-rfq/create" element={
+            <ProtectedRoute>
+              <CreateSalesRFQWrapper />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/sales-rfq/edit/:id" element={
+            <ProtectedRoute>
+              <EditSalesRFQWrapper />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
           <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
           <Route path="/suppliers" element={<ProtectedRoute><SupplierList /></ProtectedRoute>} />

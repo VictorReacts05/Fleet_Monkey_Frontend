@@ -56,20 +56,21 @@ export const createSalesRFQ = async (salesRFQData) => {
     const { headers, personId } = getAuthHeader();
 
     if (!personId) {
-      throw new Error("personId is required for createdByID");
+      console.warn("personId not found, proceeding without createdByID");
     }
 
     // Prepare data for API
     const apiData = {
       ...salesRFQData,
-      createdByID: personId,
+      createdByID: personId || salesRFQData.CreatedByID || null,
     };
 
+    console.log("Creating SalesRFQ with data:", apiData);
     const response = await axios.post(API_BASE_URL, apiData, { headers });
     return response.data;
   } catch (error) {
     console.error("Error creating SalesRFQ:", error);
-    throw error.response?.data || error.message;
+    throw error.response?.data || error;
   }
 };
 
@@ -78,12 +79,14 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
   try {
     const { headers } = getAuthHeader();
 
+    console.log("Updating SalesRFQ with ID:", id, "Data:", salesRFQData);
     const response = await axios.put(`${API_BASE_URL}/${id}`, salesRFQData, {
       headers,
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error updating SalesRFQ:", error);
+    throw error.response?.data || error;
   }
 };
 
