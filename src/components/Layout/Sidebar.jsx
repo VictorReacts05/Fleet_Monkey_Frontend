@@ -27,6 +27,7 @@ import WarehouseIcon from "@mui/icons-material/Warehouse";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
+import CategoryIcon from "@mui/icons-material/Category";
 
 const drawerWidth = 240;
 
@@ -54,6 +55,11 @@ const menuItems = [
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
   { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
+  {
+    text: "Units of Measurement",
+    icon: <CategoryIcon />,
+    path: "/uoms",
+  },
 ];
 
 const Sidebar = ({ open, variant, onClose }) => {
