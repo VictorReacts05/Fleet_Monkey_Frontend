@@ -8,7 +8,6 @@ import {
   styled,
 } from "@mui/material";
 
-// Styled Select component for 38px height and centered label
 const CustomSelect = styled(Select)(({ theme }) => ({
   height: 38,
   display: "flex",

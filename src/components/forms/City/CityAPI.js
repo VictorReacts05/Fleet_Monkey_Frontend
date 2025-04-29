@@ -7,10 +7,6 @@ const COUNTRY_API_URL = "http://localhost:7000/api/country-Of-Origin";
 // Helper function to get auth token
 const getAuthToken = () => {
   const token = localStorage.getItem("token");
-  console.log(
-    "[DEBUG] Retrieved token from localStorage:",
-    token ? "Token exists" : "No token found"
-  );
   return token;
 };
 
@@ -23,12 +19,6 @@ const getAxiosConfig = () => {
       "Content-Type": "application/json",
     },
   };
-  console.log("[DEBUG] Axios config:", {
-    headers: {
-      Authorization: token ? "Bearer [REDACTED]" : "No token",
-      "Content-Type": "application/json",
-    },
-  });
   return config;
 };
 
@@ -36,13 +26,6 @@ const getAxiosConfig = () => {
 const getUserFromLocalStorage = () => {
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : {};
-  console.log("[DEBUG] User from localStorage:", {
-    personId: user.personId || "Not found",
-    role: user.role || "Not found",
-    loginId: user.loginId || "Not found",
-    hasToken: !!user.token,
-    rawUserString: userString || "No user data in localStorage",
-  });
   if (!user.personId) {
     console.warn(
       "[WARN] No personId found in localStorage.user. Using fallback ID 1."
@@ -58,24 +41,13 @@ export const fetchCities = async (
   toDate = null
 ) => {
   try {
-    console.log("[DEBUG] fetchCities called with:", {
-      page,
-      limit,
-      fromDate,
-      toDate,
-    });
     const user = getUserFromLocalStorage();
 
     let url = `${CITIES_ALL_URL}?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
-    console.log("[DEBUG] Fetch cities URL:", url);
 
     const response = await axios.get(url, getAxiosConfig());
-    console.log("[DEBUG] fetchCities response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch cities:", {
@@ -90,7 +62,6 @@ export const fetchCities = async (
 
 export const createCity = async (cityData) => {
   try {
-    console.log("[DEBUG] createCity called with cityData:", cityData);
     const user = getUserFromLocalStorage();
 
     // Validate cityName and countryId
@@ -116,26 +87,11 @@ export const createCity = async (cityData) => {
       isDeleted: 0,
     };
 
-    console.log(
-      "[DEBUG] Final createCity request data:",
-      JSON.stringify(dataWithCreator, null, 2)
-    );
-    console.log("[DEBUG] Full createCity request config:", {
-      url: API_BASE_URL,
-      method: "POST",
-      data: dataWithCreator,
-      headers: getAxiosConfig().headers,
-    });
-
     const response = await axios.post(
       API_BASE_URL,
       dataWithCreator,
       getAxiosConfig()
     );
-    console.log("[DEBUG] createCity response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to create city:", {
@@ -151,7 +107,6 @@ export const createCity = async (cityData) => {
 
 export const updateCity = async (cityId, data) => {
   try {
-    console.log("[DEBUG] updateCity called with:", { cityId, data });
     const user = getUserFromLocalStorage();
 
     if (!user.personId) {
@@ -166,26 +121,11 @@ export const updateCity = async (cityId, data) => {
       updatedDateTime: new Date().toISOString(),
     };
 
-    console.log(
-      "[DEBUG] Final updateCity request data:",
-      JSON.stringify(dataWithUpdater, null, 2)
-    );
-    console.log("[DEBUG] Full updateCity request config:", {
-      url: `${API_BASE_URL}/${cityId}`,
-      method: "PUT",
-      data: dataWithUpdater,
-      headers: getAxiosConfig().headers,
-    });
-
     const response = await axios.put(
       `${API_BASE_URL}/${cityId}`,
       dataWithUpdater,
       getAxiosConfig()
     );
-    console.log("[DEBUG] updateCity response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to update city:", {
@@ -201,12 +141,10 @@ export const updateCity = async (cityId, data) => {
 
 export const deleteCity = async (id, deletedById) => {
   try {
-    console.log("[DEBUG] deleteCity called with:", { id, deletedById });
     const user = getUserFromLocalStorage();
 
     // Use provided deletedById or fall back to personId from localStorage
     const finalDeletedById = deletedById || user.personId || 1;
-    console.log("[DEBUG] Final deletedById:", finalDeletedById);
     if (finalDeletedById === 1) {
       console.warn(
         "[WARN] Using fallback deletedById: 1. Ensure user is logged in with valid personId."
@@ -219,26 +157,12 @@ export const deleteCity = async (id, deletedById) => {
     }
 
     const requestData = { deletedById: finalDeletedById };
-    console.log(
-      "[DEBUG] Delete request data:",
-      JSON.stringify(requestData, null, 2)
-    );
-    console.log("[DEBUG] Full deleteCity request config:", {
-      url: `${API_BASE_URL}/${id}`,
-      method: "DELETE",
-      data: requestData,
-      headers: getAxiosConfig().headers,
-    });
 
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       ...getAxiosConfig(),
       data: requestData,
     });
 
-    console.log("[DEBUG] deleteCity response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to delete city:", {
@@ -254,20 +178,9 @@ export const deleteCity = async (id, deletedById) => {
 
 export const getCityById = async (id) => {
   try {
-    console.log("[DEBUG] getCityById called with:", { id });
     const user = getUserFromLocalStorage();
 
-    console.log("[DEBUG] Full getCityById request config:", {
-      url: `${API_BASE_URL}/${id}`,
-      method: "GET",
-      headers: getAxiosConfig().headers,
-    });
-
     const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
-    console.log("[DEBUG] getCityById response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to get city by ID:", {
@@ -282,17 +195,11 @@ export const getCityById = async (id) => {
 
 export const fetchCountries = async () => {
   try {
-    console.log("[DEBUG] fetchCountries called");
     const user = getUserFromLocalStorage();
 
     const url = `${COUNTRY_API_URL}?pageSize=100`;
-    console.log("[DEBUG] Fetch countries URL:", url);
 
     const response = await axios.get(url, getAxiosConfig());
-    console.log("[DEBUG] fetchCountries response:", {
-      status: response.status,
-      data: response.data,
-    });
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch countries:", {

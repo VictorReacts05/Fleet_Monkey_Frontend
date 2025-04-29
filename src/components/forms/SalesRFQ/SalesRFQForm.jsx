@@ -23,6 +23,7 @@ import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
+import ParcelTab from './ParcelTab';
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -414,6 +415,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setIsEditing(!isEditing);
   };
 
+  // Update the FormPage component to add proper spacing
   return (
     <FormPage
       title={
@@ -436,6 +438,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           width: "100%",
           margin: 0,
           overflow: "hidden",
+          border: '1px solid #ccc',
+          borderRadius: '8px',
+          padding: '16px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}
       >
         {/* Only show Series field when editing an existing record */}
@@ -456,7 +462,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             )}
           </Grid>
         )}
-
+        
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -828,8 +834,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </Grid>
         </Grid>
       </Grid>
+        <ParcelTab salesRFQId={salesRFQId} />
+
     </FormPage>
   );
-};
+  }
 
 export default SalesRFQForm;
