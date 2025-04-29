@@ -23,6 +23,7 @@ import PersonList from './components/forms/Person/PersonList';
 import VehicleList from './components/forms/Vehicle/VehicleList';
 import WarehouseList from './components/forms/Warehouse/WarehouseList';
 import AddressTypeList from './components/forms/AddressType/AddressTypeList';
+import UOMList from './components/forms/UOM/UOMList'; // Import the UOM list component
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
@@ -109,6 +110,7 @@ function AppContent() {
           <Route path="/vehicles" element={<ProtectedRoute><VehicleList /></ProtectedRoute>} />
           <Route path="/warehouses" element={<ProtectedRoute><WarehouseList /></ProtectedRoute>} />
           <Route path="/address-types" element={<ProtectedRoute><AddressTypeList /></ProtectedRoute>} />
+          <Route path="/uoms" element={<ProtectedRoute><UOMList /></ProtectedRoute>} /> {/* Add UOM route */}
         </Routes>
       </Box>
     </Box>
