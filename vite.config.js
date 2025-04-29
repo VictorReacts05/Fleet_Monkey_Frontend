@@ -3,19 +3,18 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  optimizeDeps: {
-    include: [
-      "react",
-      "react-dom",
-      "react-redux",
-      "redux",
-      "redux-thunk",
-      "redux-persist",
-      "redux-persist/integration/react",
-      "react-router-dom",
-      "@mui/material",
-      "@mui/x-date-pickers/LocalizationProvider",
-      "@mui/x-date-pickers/AdapterDateFns",
-    ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:7000",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        configure: (proxy) => {
+          proxy.timeout = 60000; // <-- set timeout properly here
+          proxy.proxyTimeout = 60000; // <-- also for proxy timeout
+        },
+      },
+    },
   },
 });

@@ -62,7 +62,7 @@ function AppContent() {
   const isLoginPage = location.pathname === '/';
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       {!isLoginPage && <Header />}
       {isAuthenticated && !isLoginPage && <Sidebar variant="permanent" open={true} />}
