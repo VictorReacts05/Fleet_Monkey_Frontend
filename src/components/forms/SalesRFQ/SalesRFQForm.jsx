@@ -23,7 +23,7 @@ import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
-import ParcelTab from './ParcelTab';
+import ParcelTab from "./ParcelTab";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -67,6 +67,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DeletedByID: "",
     RowVersionColumn: "",
   });
+  // Fix the state variable name - use camelCase consistently
+  const [parcels, setParcels] = useState([]);
 
   const [companies, setCompanies] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -218,13 +220,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     try {
       const response = await getSalesRFQById(salesRFQId);
       const data = response.data;
-  
+
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
-  
+
       // Log the raw data to see how boolean values are represented
       console.log("Raw SalesRFQ data:", data);
-  
+
       const formattedData = {
         ...formData,
         Series: displayValue(data.Series),
@@ -269,8 +271,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         Terms: displayValue(data.Terms),
         CurrencyID: String(data.CurrencyID) || "",
         // Fix the boolean values by checking for any truthy value (1, true, "1", "true", etc.)
-        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN || data.CollectFromSupplierYN),
-        PackagingRequiredYN: Boolean(data.PackagingRequiredYN || data.PackagingRequiredYN),
+        CollectFromSupplierYN: Boolean(
+          data.CollectFromSupplierYN || data.CollectFromSupplierYN
+        ),
+        PackagingRequiredYN: Boolean(
+          data.PackagingRequiredYN || data.PackagingRequiredYN
+        ),
         FormCompletedYN: Boolean(data.FormCompletedYN || data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
@@ -283,20 +289,24 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         DeletedByID: displayValue(data.DeletedByID),
         RowVersionColumn: displayValue(data.RowVersionColumn),
       };
-  
+
       setFormData(formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
       toast.error("Failed to load SalesRFQ: " + error.message);
     }
   };
-  
+
   // Add the validateForm function before handleSubmit
   const validateForm = () => {
     const newErrors = {};
 
     // Only validate Series if editing an existing record
-    if (salesRFQId && formData.Series && (!formData.Series.trim() || formData.Series === "-")) {
+    if (
+      salesRFQId &&
+      formData.Series &&
+      (!formData.Series.trim() || formData.Series === "-")
+    ) {
       newErrors.Series = "Series is required";
     }
     if (!formData.CompanyID) {
@@ -334,7 +344,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       toast.error("Please fix the form errors");
       return;
     }
-  
+
     try {
       setLoading(true);
       const apiData = {
@@ -363,8 +373,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
         PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
         FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
+        // Add parcels data to the API request
+        parcels: parcels,
       };
-  
+
+      console.log("Submitting with parcels data:", parcels);
+
       if (salesRFQId) {
         // Update existing SalesRFQ
         await updateSalesRFQ(salesRFQId, apiData);
@@ -374,7 +388,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         const result = await createSalesRFQ(apiData);
         toast.success("SalesRFQ created successfully");
       }
-  
+
       // Ensure we call onSave and onClose to redirect back to the list
       if (onSave) onSave();
       if (onClose) onClose();
@@ -415,6 +429,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setIsEditing(!isEditing);
   };
 
+  // Add a handler for parcels changes
+  const handleParcelsChange = (newParcels) => {
+    console.log("Parcels updated in SalesRFQForm:", newParcels);
+    setParcels(newParcels);
+  };
+
   // Update the FormPage component to add proper spacing
   return (
     <FormPage
@@ -438,10 +458,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           width: "100%",
           margin: 0,
           overflow: "hidden",
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          padding: '16px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          padding: "16px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
         {/* Only show Series field when editing an existing record */}
@@ -462,7 +482,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             )}
           </Grid>
         )}
-        
+
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -769,7 +789,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           )}
         </Grid>
 
-        <Grid item xs={12} sx={{width: '100%'}}>
+        <Grid item xs={12} sx={{ width: "100%" }}>
           <Grid container spacing={1}>
             <Grid item xs={12} md={3} sx={{ width: "24%" }}>
               {isEditing ? (
@@ -834,10 +854,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </Grid>
         </Grid>
       </Grid>
-        <ParcelTab salesRFQId={salesRFQId} />
-
+      <ParcelTab
+        salesRFQId={salesRFQId}
+        onParcelsChange={handleParcelsChange}
+        readOnly={!isEditing}
+      />
     </FormPage>
   );
-  }
-
+};
 export default SalesRFQForm;
