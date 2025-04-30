@@ -94,7 +94,11 @@ const DataTable = ({
   const renderCellContent = (row, column, rowIndex) => {
     // Handle Sr. No. column
     if (column.id === "srNo") {
-      return page * rowsPerPage + rowIndex + 1;
+      // Fix the Sr. No. calculation to ensure it's always a number
+      // If page or rowsPerPage are undefined or NaN, default to 0 and 1 respectively
+      const currentPage = typeof page === 'number' && !isNaN(page) ? page : 0;
+      const currentRowsPerPage = typeof rowsPerPage === 'number' && !isNaN(rowsPerPage) ? rowsPerPage : 1;
+      return (currentPage * currentRowsPerPage) + rowIndex + 1;
     }
 
     // Support both field and id properties for backward compatibility
@@ -326,14 +330,30 @@ const DataTable = ({
           </TableBody>
         </Table>
       </TableContainer>
+      
+      {/* Fix the TablePagination component */}
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
+        rowsPerPageOptions={[5, 10, 25]}
         component="div"
-        count={totalRows}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
+        count={typeof totalRows === 'number' ? totalRows : rows.length}
+        rowsPerPage={typeof rowsPerPage === 'number' && !isNaN(rowsPerPage) ? rowsPerPage : 10}
+        page={typeof page === 'number' && !isNaN(page) ? page : 0}
+        onPageChange={(e, newPage) => {
+          console.log("TablePagination onPageChange:", newPage);
+          if (onPageChange) onPageChange(newPage);
+        }}
+        onRowsPerPageChange={(e) => {
+          console.log("TablePagination onRowsPerPageChange:", e.target.value);
+          if (onRowsPerPageChange) onRowsPerPageChange(parseInt(e.target.value, 10));
+        }}
+        labelDisplayedRows={({ from, to, count }) => {
+          console.log("TablePagination labelDisplayedRows:", { from, to, count });
+          // Ensure from, to, and count are valid numbers
+          const validFrom = isNaN(from) ? 1 : from;
+          const validTo = isNaN(to) ? rows.length : to;
+          const validCount = isNaN(count) ? rows.length : count;
+          return `${validFrom}–${validTo} of ${validCount}`;
+        }}
       />
     </Paper>
   );

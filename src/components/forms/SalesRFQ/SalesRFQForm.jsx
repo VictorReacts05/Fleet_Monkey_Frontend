@@ -431,7 +431,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   // Add a handler for parcels changes
   const handleParcelsChange = (newParcels) => {
-    console.log("Parcels updated in SalesRFQForm:", newParcels);
     setParcels(newParcels);
   };
 

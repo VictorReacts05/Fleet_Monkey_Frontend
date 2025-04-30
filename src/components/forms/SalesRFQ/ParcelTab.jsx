@@ -68,31 +68,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
-    // Only show actions column if not in readOnly mode
-    ...(readOnly ? [] : [
-      {
-        field: "actions",
-        headerName: "Actions",
-        flex: 1,
-        renderCell: (params) => (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              size="small"
-              onClick={() => handleEditParcel(params.row.id)}
-            >
-              Edit
-            </Button>
-            <Button
-              size="small"
-              color="error"
-              onClick={() => handleDeleteParcel(params.row.id)}
-            >
-              Delete
-            </Button>
-          </Box>
-        ),
-      }
-    ]),
+    // Only show actions column if not in readOnly mode - we'll handle this differently
   ];
 
   // Load dropdown data when component mounts
@@ -158,7 +134,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   // Load existing parcels when salesRFQId is provided
   useEffect(() => {
     const loadExistingParcels = async () => {
-      if (!salesRFQId) return;
+      if (!salesRFQId) {
+        console.log("No SalesRFQ ID provided, skipping parcel fetch");
+        return;
+      }
       
       try {
         setLoadingExistingParcels(true);
@@ -170,14 +149,18 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           // First try the direct endpoint
           response = await axios.get(`${API_URL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`);
         } catch (err) {
-          console.log("First endpoint attempt failed, trying alternative...");
+          console.log("First endpoint attempt failed, trying alternative...", err.message);
           try {
             // Try alternative endpoint format
+            console.log(`Trying endpoint: ${API_URL}/sales-rfq/${salesRFQId}/parcels`);
             response = await axios.get(`${API_URL}/sales-rfq/${salesRFQId}/parcels`);
+            console.log("Second endpoint succeeded");
           } catch (err2) {
-            console.log("Second endpoint attempt failed, trying final alternative...");
+            console.log("Second endpoint attempt failed, trying final alternative...", err2.message);
             // Try one more format
+            console.log(`Trying endpoint: ${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`);
             response = await axios.get(`${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`);
+            console.log("Third endpoint succeeded");
           }
         }
         
@@ -189,41 +172,132 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             parcelData = response.data.data;
           } else if (Array.isArray(response.data)) {
             parcelData = response.data;
+            console.log("Using direct array response format");
           } else if (response.data.parcels && Array.isArray(response.data.parcels)) {
             parcelData = response.data.parcels;
+            console.log("Using response.data.parcels format");
+          } else {
+            console.warn("Unexpected response format:", response.data);
           }
           
-          console.log("Received parcel data:", parcelData);
+          // console.log("Received parcel data:", parcelData);
+          
+          // Ensure we're only processing parcels for this specific SalesRFQ ID
+          const filteredParcels = parcelData.filter(parcel => {
+            // Check for different possible property names for SalesRFQ ID
+            const parcelSalesRFQId = 
+              parcel.SalesRFQID || 
+              parcel.salesRFQID || 
+              parcel.salesRfqId || 
+              parcel.salesrfqid || 
+              parcel.SalesRfqId;
+            
+            // Convert both to strings for comparison
+            return String(parcelSalesRFQId) === String(salesRFQId);
+          });
+          
+          console.log(`Filtered ${filteredParcels.length} parcels out of ${parcelData.length} for SalesRFQ ID ${salesRFQId}`);
+          
+          if (filteredParcels.length === 0) {
+            console.log(`No parcels found for SalesRFQ ID: ${salesRFQId}`);
+            setParcels([]);
+            return;
+          }
+          
+          // If items or UOMs are not loaded yet, fetch them directly
+          let itemsToUse = items;
+          let uomsToUse = uoms;
+          
+          // If items list is empty or doesn't have enough items, fetch them directly
+          if (items.length <= 1) {
+            try {
+              const itemsResponse = await fetchItems();
+              const itemsData = itemsResponse || [];
+              itemsToUse = [
+                { value: "", label: "Select an item" },
+                ...itemsData.map((item) => ({
+                  value: String(item.ItemID),
+                  label: item.ItemName,
+                })),
+              ];
+            } catch (err) {
+              console.error("Failed to fetch items directly:", err);
+            }
+          }
+          
+          // If UOMs list is empty or doesn't have enough UOMs, fetch them directly
+          if (uoms.length <= 1) {
+            try {
+              const uomsResponse = await fetchUOMs();
+              const uomsData = uomsResponse || [];
+              uomsToUse = [
+                { value: "", label: "Select a UOM" },
+                ...uomsData.map((uom) => ({
+                  value: String(
+                    uom.UOMID ||
+                      uom.UOMId ||
+                      uom.uomID ||
+                      uom.uomId ||
+                      uom.id ||
+                      uom.ID
+                  ),
+                  label:
+                    uom.UOM ||
+                    uom.uom ||
+                    uom.UOMName ||
+                    uom.uomName ||
+                    uom.name ||
+                    String(uom.UOMDescription || uom.Description || "Unknown UOM"),
+                })),
+              ];
+            } catch (err) {
+              console.error("Failed to fetch UOMs directly:", err);
+            }
+          }
           
           // Format the parcels data for our component
-          const formattedParcels = parcelData.map(parcel => {
+          const formattedParcels = filteredParcels.map((parcel, index) => {
             // Get item and UOM details
             let itemName = "Unknown Item";
             let uomName = "Unknown UOM";
             
             try {
               // Try to find item name from our items list
-              const item = items.find(i => i.value === String(parcel.ItemID));
+              const itemId = String(parcel.ItemID || "");
+              const uomId = String(parcel.UOMID || "");
+              
+              // Try to find item in our items list
+              const item = itemsToUse.find(i => i.value === itemId);
               if (item) {
                 itemName = item.label;
+              } else {
+                // If not found, use the ID as the name
+                itemName = `Item #${itemId}`;
+                console.log(`Item not found for ID: ${itemId}, using placeholder name`);
               }
               
-              // Try to find UOM name from our UOMs list
-              const uom = uoms.find(u => u.value === String(parcel.UOMID));
+              // Try to find UOM in our UOMs list
+              const uom = uomsToUse.find(u => u.value === uomId);
               if (uom) {
                 uomName = uom.label;
+              } else {
+                // If not found, use the ID as the name
+                uomName = `UOM #${uomId}`;
+                console.log(`UOM not found for ID: ${uomId}, using placeholder name`);
               }
             } catch (err) {
               console.error("Error formatting parcel data:", err);
             }
             
+            // Add index+1 as srNo for proper numbering
             return {
-              id: parcel.SalesRFQParcelID || parcel.id || Date.now(),
-              itemId: String(parcel.ItemID),
-              uomId: String(parcel.UOMID),
-              quantity: String(parcel.ItemQuantity || parcel.Quantity),
+              id: parcel.SalesRFQParcelID || parcel.id || Date.now() + index,
+              itemId: String(parcel.ItemID || ""),
+              uomId: String(parcel.UOMID || ""),
+              quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
-              uomName
+              uomName,
+              srNo: index + 1 // Add explicit sr. no. field
             };
           });
           
@@ -231,15 +305,21 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           console.log("Loaded existing parcels:", formattedParcels);
         } else {
           console.warn("No parcel data found in response");
+          setParcels([]);
         }
       } catch (error) {
         console.error("Error loading existing parcels:", error);
         console.log("This might be a new record without parcels yet");
+        setParcels([]);
       } finally {
         setLoadingExistingParcels(false);
       }
     };
     
+    // Clear parcels when salesRFQId changes
+    setParcels([]);
+    
+    // Then load the parcels for the new salesRFQId
     loadExistingParcels();
   }, [salesRFQId, items, uoms]);
 
@@ -392,19 +472,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             </Button>
           )}
 
-          {/* Display parcels in DataTable */}
-          <DataTable
-            rows={parcels}
-            columns={columns}
-            pageSize={rowsPerPage}
-            page={page}
-            onPageChange={(newPage) => setPage(newPage)}
-            onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
-            rowsPerPageOptions={[5, 10, 25]}
-            checkboxSelection={false}
-            disableSelectionOnClick
-            autoHeight
-          />
+          {/* Show message when no parcels and not in form mode */}
+          {parcels.length === 0 && parcelForms.length === 0 && (
+            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Typography variant="body1">
+                No parcels added yet.{" "}
+                {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+              </Typography>
+            </Box>
+          )}
 
           {/* Parcel forms */}
           {parcelForms.map((form) => (
@@ -412,6 +488,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               key={form.id}
               sx={{
                 mt: 2,
+                mb: 2,
                 p: 2,
                 border: "1px solid #e0e0e0",
                 borderRadius: 1,
@@ -420,9 +497,17 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               <Typography variant="subtitle1" gutterBottom>
                 {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
               </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                <Box sx={{ flex: '1 1 30%', minWidth: '250px' }}>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                   <FormSelect
                     name="itemId"
                     label="Item"
@@ -433,8 +518,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                     helperText={errors[form.id]?.itemId}
                   />
                 </Box>
-                
-                <Box sx={{ flex: '1 1 30%', minWidth: '250px' }}>
+
+                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                   <FormSelect
                     name="uomId"
                     label="UOM"
@@ -445,8 +530,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                     helperText={errors[form.id]?.uomId}
                   />
                 </Box>
-                
-                <Box sx={{ flex: '1 1 30%', minWidth: '250px' }}>
+
+                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                   <FormInput
                     name="quantity"
                     label="Quantity"
@@ -458,8 +543,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                   />
                 </Box>
               </Box>
-              
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
                 <Button
                   variant="outlined"
                   onClick={() =>
@@ -470,15 +555,59 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => handleSave(form.id)}
-                >
+                <Button variant="contained" onClick={() => handleSave(form.id)}>
                   Save
                 </Button>
               </Box>
             </Box>
           ))}
+
+          {/* Only display DataTable when there are parcels */}
+          {parcels.length > 0 && (
+            <>
+              {console.log("Rendering DataTable with parcels:", parcels)}
+              {console.log("Current pagination state:", { page, rowsPerPage })}
+              {console.log("DataTable props:", {
+                rows: parcels,
+                columns,
+                pageSize: rowsPerPage,
+                page,
+                rowCount: parcels.length,
+                paginationMode: "client",
+                pageSizeOptions: [5, 10, 25],
+                initialState: {
+                  pagination: {
+                    pageSize: rowsPerPage,
+                  },
+                }
+              })}
+              <DataTable
+                rows={parcels}
+                columns={columns}
+                pageSize={rowsPerPage}
+                page={page}
+                onPageChange={(newPage) => {
+                  console.log("Page changed to:", newPage);
+                  setPage(newPage);
+                }}
+                onPageSizeChange={(newPageSize) => {
+                  console.log("Page size changed to:", newPageSize);
+                  setRowsPerPage(newPageSize);
+                }}
+                rowsPerPageOptions={[5, 10, 25]}
+                checkboxSelection={false}
+                disableSelectionOnClick
+                autoHeight
+                hideActions={readOnly}
+                onEdit={!readOnly ? handleEditParcel : undefined}
+                onDelete={!readOnly ? handleDeleteParcel : undefined}
+                // Use totalRows instead of rowCount to match the prop name in DataTable
+                totalRows={parcels.length}
+                // Remove potentially conflicting pagination props
+                pagination={true}
+              />
+            </>
+          )}
         </>
       )}
 
@@ -489,12 +618,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"Confirm Deletion"}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"Confirm Deletion"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to remove this parcel? This action cannot be undone.
+            Are you sure you want to remove this parcel? This action cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
