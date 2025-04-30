@@ -6,11 +6,11 @@ import FormSelect from "../../Common/FormSelect";
 import FormInput from "../../Common/FormInput";
 import { toast } from "react-toastify";
 import axios from "axios";
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
 const API_URL = "http://localhost:7000/api";
 
@@ -138,76 +138,97 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         console.log("No SalesRFQ ID provided, skipping parcel fetch");
         return;
       }
-      
+
       try {
         setLoadingExistingParcels(true);
         console.log("Attempting to load parcels for SalesRFQ ID:", salesRFQId);
-        
+
         // Try different endpoint formats that might be available
         let response;
         try {
           // First try the direct endpoint
-          response = await axios.get(`${API_URL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`);
+          response = await axios.get(
+            `${API_URL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
+          );
         } catch (err) {
-          console.log("First endpoint attempt failed, trying alternative...", err.message);
+          console.log(
+            "First endpoint attempt failed, trying alternative...",
+            err.message
+          );
           try {
             // Try alternative endpoint format
-            console.log(`Trying endpoint: ${API_URL}/sales-rfq/${salesRFQId}/parcels`);
-            response = await axios.get(`${API_URL}/sales-rfq/${salesRFQId}/parcels`);
+            console.log(
+              `Trying endpoint: ${API_URL}/sales-rfq/${salesRFQId}/parcels`
+            );
+            response = await axios.get(
+              `${API_URL}/sales-rfq/${salesRFQId}/parcels`
+            );
             console.log("Second endpoint succeeded");
           } catch (err2) {
-            console.log("Second endpoint attempt failed, trying final alternative...", err2.message);
+            console.log(
+              "Second endpoint attempt failed, trying final alternative...",
+              err2.message
+            );
             // Try one more format
-            console.log(`Trying endpoint: ${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`);
-            response = await axios.get(`${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`);
+            console.log(
+              `Trying endpoint: ${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
+            );
+            response = await axios.get(
+              `${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
+            );
             console.log("Third endpoint succeeded");
           }
         }
-        
+
         if (response && response.data) {
           let parcelData = [];
-          
+
           // Handle different response formats
           if (response.data.data && Array.isArray(response.data.data)) {
             parcelData = response.data.data;
           } else if (Array.isArray(response.data)) {
             parcelData = response.data;
             console.log("Using direct array response format");
-          } else if (response.data.parcels && Array.isArray(response.data.parcels)) {
+          } else if (
+            response.data.parcels &&
+            Array.isArray(response.data.parcels)
+          ) {
             parcelData = response.data.parcels;
             console.log("Using response.data.parcels format");
           } else {
             console.warn("Unexpected response format:", response.data);
           }
-          
+
           // console.log("Received parcel data:", parcelData);
-          
+
           // Ensure we're only processing parcels for this specific SalesRFQ ID
-          const filteredParcels = parcelData.filter(parcel => {
+          const filteredParcels = parcelData.filter((parcel) => {
             // Check for different possible property names for SalesRFQ ID
-            const parcelSalesRFQId = 
-              parcel.SalesRFQID || 
-              parcel.salesRFQID || 
-              parcel.salesRfqId || 
-              parcel.salesrfqid || 
+            const parcelSalesRFQId =
+              parcel.SalesRFQID ||
+              parcel.salesRFQID ||
+              parcel.salesRfqId ||
+              parcel.salesrfqid ||
               parcel.SalesRfqId;
-            
+
             // Convert both to strings for comparison
             return String(parcelSalesRFQId) === String(salesRFQId);
           });
-          
-          console.log(`Filtered ${filteredParcels.length} parcels out of ${parcelData.length} for SalesRFQ ID ${salesRFQId}`);
-          
+
+          console.log(
+            `Filtered ${filteredParcels.length} parcels out of ${parcelData.length} for SalesRFQ ID ${salesRFQId}`
+          );
+
           if (filteredParcels.length === 0) {
             console.log(`No parcels found for SalesRFQ ID: ${salesRFQId}`);
             setParcels([]);
             return;
           }
-          
+
           // If items or UOMs are not loaded yet, fetch them directly
           let itemsToUse = items;
           let uomsToUse = uoms;
-          
+
           // If items list is empty or doesn't have enough items, fetch them directly
           if (items.length <= 1) {
             try {
@@ -224,7 +245,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               console.error("Failed to fetch items directly:", err);
             }
           }
-          
+
           // If UOMs list is empty or doesn't have enough UOMs, fetch them directly
           if (uoms.length <= 1) {
             try {
@@ -247,48 +268,54 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                     uom.UOMName ||
                     uom.uomName ||
                     uom.name ||
-                    String(uom.UOMDescription || uom.Description || "Unknown UOM"),
+                    String(
+                      uom.UOMDescription || uom.Description || "Unknown UOM"
+                    ),
                 })),
               ];
             } catch (err) {
               console.error("Failed to fetch UOMs directly:", err);
             }
           }
-          
+
           // Format the parcels data for our component
           const formattedParcels = filteredParcels.map((parcel, index) => {
             // Get item and UOM details
             let itemName = "Unknown Item";
             let uomName = "Unknown UOM";
-            
+
             try {
               // Try to find item name from our items list
               const itemId = String(parcel.ItemID || "");
               const uomId = String(parcel.UOMID || "");
-              
+
               // Try to find item in our items list
-              const item = itemsToUse.find(i => i.value === itemId);
+              const item = itemsToUse.find((i) => i.value === itemId);
               if (item) {
                 itemName = item.label;
               } else {
                 // If not found, use the ID as the name
                 itemName = `Item #${itemId}`;
-                console.log(`Item not found for ID: ${itemId}, using placeholder name`);
+                console.log(
+                  `Item not found for ID: ${itemId}, using placeholder name`
+                );
               }
-              
+
               // Try to find UOM in our UOMs list
-              const uom = uomsToUse.find(u => u.value === uomId);
+              const uom = uomsToUse.find((u) => u.value === uomId);
               if (uom) {
                 uomName = uom.label;
               } else {
                 // If not found, use the ID as the name
                 uomName = `UOM #${uomId}`;
-                console.log(`UOM not found for ID: ${uomId}, using placeholder name`);
+                console.log(
+                  `UOM not found for ID: ${uomId}, using placeholder name`
+                );
               }
             } catch (err) {
               console.error("Error formatting parcel data:", err);
             }
-            
+
             // Add index+1 as srNo for proper numbering
             return {
               id: parcel.SalesRFQParcelID || parcel.id || Date.now() + index,
@@ -297,10 +324,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
               uomName,
-              srNo: index + 1 // Add explicit sr. no. field
+              srNo: index + 1, // Add explicit sr. no. field
             };
           });
-          
+
           setParcels(formattedParcels);
           console.log("Loaded existing parcels:", formattedParcels);
         } else {
@@ -315,10 +342,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         setLoadingExistingParcels(false);
       }
     };
-    
+
     // Clear parcels when salesRFQId changes
     setParcels([]);
-    
+
     // Then load the parcels for the new salesRFQId
     loadExistingParcels();
   }, [salesRFQId, items, uoms]);
@@ -363,7 +390,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         form.id === formId ? { ...form, [name]: value } : form
       )
     );
-    
+
     // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
@@ -449,169 +476,221 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   };
 
   return (
-    <Box sx={{ mt: 2, p: 2, border: "1px solid #e0e0e0", borderRadius: 1 }}>
-      <Typography variant="h6" gutterBottom>
-        Parcels
-      </Typography>
-
-      {loading || loadingExistingParcels ? (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-          <CircularProgress />
+    <Box
+      sx={{
+        mt: 2,
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 1,
+      }}
+    >
+      {/* Tab header */}
+      <Box
+        sx={{
+          display: "flex",
+          borderBottom: "1px solid #e0e0e0",
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+        }}
+      >
+        <Box
+          sx={{
+            py: 1.5,
+            px: 3,
+            fontWeight: "bold",
+            borderTop: "1px solid #e0e0e0",
+            borderLeft: "1px solid #e0e0e0",
+            borderRight: "1px solid #e0e0e0",
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 4,
+            position: "relative",
+            bottom: "-1px",
+          }}
+        >
+          <Typography variant="h6" component="div">
+            Parcels
+          </Typography>
         </Box>
-      ) : (
-        <>
-          {/* Only show Add Parcel button if not in readOnly mode */}
-          {!readOnly && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleAddParcel}
-              sx={{ mb: 2 }}
-            >
-              Add Parcel
-            </Button>
-          )}
+      </Box>
 
-          {/* Show message when no parcels and not in form mode */}
-          {parcels.length === 0 && parcelForms.length === 0 && (
-            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-              <Typography variant="body1">
-                No parcels added yet.{" "}
-                {!readOnly && "Click 'Add Parcel' to add a new parcel."}
-              </Typography>
-            </Box>
-          )}
+      {/* Tab content */}
+      <Box
+        sx={{
+          p: 2,
+          border: "1px solid #e0e0e0",
+          borderTop: "none",
+          borderBottomLeftRadius: 4,
+          borderBottomRightRadius: 4,
+        }}
+      >
+        {loading || loadingExistingParcels ? (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            {/* Only show Add Parcel button if not in readOnly mode */}
+            {!readOnly && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleAddParcel}
+                sx={{ mb: 2 }}
+              >
+                Add Parcel
+              </Button>
+            )}
 
-          {/* Parcel forms */}
-          {parcelForms.map((form) => (
-            <Box
-              key={form.id}
-              sx={{
-                mt: 2,
-                mb: 2,
-                p: 2,
-                border: "1px solid #e0e0e0",
-                borderRadius: 1,
-              }}
-            >
-              <Typography variant="subtitle1" gutterBottom>
-                {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
-              </Typography>
+            {/* Rest of the component remains unchanged */}
+            {/* Show message when no parcels and not in form mode */}
+            {parcels.length === 0 && parcelForms.length === 0 && (
+              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+                <Typography variant="body1">
+                  No parcels added yet.{" "}
+                  {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                </Typography>
+              </Box>
+            )}
 
+            {/* Parcel forms and DataTable remain unchanged */}
+            {parcelForms.map((form) => (
               <Box
+                key={form.id}
                 sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 2,
+                  mt: 2,
                   mb: 2,
+                  p: 2,
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 1,
                 }}
               >
-                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                  <FormSelect
-                    name="itemId"
-                    label="Item"
-                    value={form.itemId}
-                    onChange={(e) => handleChange(e, form.id)}
-                    options={items}
-                    error={!!errors[form.id]?.itemId}
-                    helperText={errors[form.id]?.itemId}
-                  />
-                </Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                </Typography>
 
-                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                  <FormSelect
-                    name="uomId"
-                    label="UOM"
-                    value={form.uomId}
-                    onChange={(e) => handleChange(e, form.id)}
-                    options={uoms}
-                    error={!!errors[form.id]?.uomId}
-                    helperText={errors[form.id]?.uomId}
-                  />
-                </Box>
-
-                <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                  <FormInput
-                    name="quantity"
-                    label="Quantity"
-                    value={form.quantity}
-                    onChange={(e) => handleChange(e, form.id)}
-                    error={!!errors[form.id]?.quantity}
-                    helperText={errors[form.id]?.quantity}
-                    type="number"
-                  />
-                </Box>
-              </Box>
-
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() =>
-                    setParcelForms((prev) =>
-                      prev.filter((f) => f.id !== form.id)
-                    )
-                  }
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 2,
+                    mb: 2,
+                  }}
                 >
-                  Cancel
-                </Button>
-                <Button variant="contained" onClick={() => handleSave(form.id)}>
-                  Save
-                </Button>
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormSelect
+                      name="itemId"
+                      label="Item"
+                      value={form.itemId}
+                      onChange={(e) => handleChange(e, form.id)}
+                      options={items}
+                      error={!!errors[form.id]?.itemId}
+                      helperText={errors[form.id]?.itemId}
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormSelect
+                      name="uomId"
+                      label="UOM"
+                      value={form.uomId}
+                      onChange={(e) => handleChange(e, form.id)}
+                      options={uoms}
+                      error={!!errors[form.id]?.uomId}
+                      helperText={errors[form.id]?.uomId}
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormInput
+                      name="quantity"
+                      label="Quantity"
+                      value={form.quantity}
+                      onChange={(e) => handleChange(e, form.id)}
+                      error={!!errors[form.id]?.quantity}
+                      helperText={errors[form.id]?.quantity}
+                      type="number"
+                    />
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      setParcelForms((prev) =>
+                        prev.filter((f) => f.id !== form.id)
+                      )
+                    }
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSave(form.id)}
+                  >
+                    Save
+                  </Button>
+                </Box>
               </Box>
-            </Box>
-          ))}
+            ))}
 
-          {/* Only display DataTable when there are parcels */}
-          {parcels.length > 0 && (
-            <>
-              {console.log("Rendering DataTable with parcels:", parcels)}
-              {console.log("Current pagination state:", { page, rowsPerPage })}
-              {console.log("DataTable props:", {
-                rows: parcels,
-                columns,
-                pageSize: rowsPerPage,
-                page,
-                rowCount: parcels.length,
-                paginationMode: "client",
-                pageSizeOptions: [5, 10, 25],
-                initialState: {
-                  pagination: {
-                    pageSize: rowsPerPage,
+            {/* Only display DataTable when there are parcels */}
+            {parcels.length > 0 && (
+              <>
+                {console.log("Rendering DataTable with parcels:", parcels)}
+                {console.log("Current pagination state:", {
+                  page,
+                  rowsPerPage,
+                })}
+                {console.log("DataTable props:", {
+                  rows: parcels,
+                  columns,
+                  pageSize: rowsPerPage,
+                  page,
+                  rowCount: parcels.length,
+                  paginationMode: "client",
+                  pageSizeOptions: [5, 10, 25],
+                  initialState: {
+                    pagination: {
+                      pageSize: rowsPerPage,
+                    },
                   },
-                }
-              })}
-              <DataTable
-                rows={parcels}
-                columns={columns}
-                pageSize={rowsPerPage}
-                page={page}
-                onPageChange={(newPage) => {
-                  console.log("Page changed to:", newPage);
-                  setPage(newPage);
-                }}
-                onPageSizeChange={(newPageSize) => {
-                  console.log("Page size changed to:", newPageSize);
-                  setRowsPerPage(newPageSize);
-                }}
-                rowsPerPageOptions={[5, 10, 25]}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                autoHeight
-                hideActions={readOnly}
-                onEdit={!readOnly ? handleEditParcel : undefined}
-                onDelete={!readOnly ? handleDeleteParcel : undefined}
-                // Use totalRows instead of rowCount to match the prop name in DataTable
-                totalRows={parcels.length}
-                // Remove potentially conflicting pagination props
-                pagination={true}
-              />
-            </>
-          )}
-        </>
-      )}
+                })}
+                <DataTable
+                  rows={parcels}
+                  columns={columns}
+                  pageSize={rowsPerPage}
+                  page={page}
+                  onPageChange={(newPage) => {
+                    console.log("Page changed to:", newPage);
+                    setPage(newPage);
+                  }}
+                  onPageSizeChange={(newPageSize) => {
+                    console.log("Page size changed to:", newPageSize);
+                    setRowsPerPage(newPageSize);
+                  }}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  autoHeight
+                  hideActions={readOnly}
+                  onEdit={!readOnly ? handleEditParcel : undefined}
+                  onDelete={!readOnly ? handleDeleteParcel : undefined}
+                  // Use totalRows instead of rowCount to match the prop name in DataTable
+                  totalRows={parcels.length}
+                  // Remove potentially conflicting pagination props
+                  pagination={true}
+                />
+              </>
+            )}
+          </>
+        )}
+      </Box>
 
-      {/* Delete confirmation dialog */}
+      {/* Delete confirmation dialog remains unchanged */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleCancelDelete}
