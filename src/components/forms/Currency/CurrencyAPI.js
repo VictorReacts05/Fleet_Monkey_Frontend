@@ -33,7 +33,8 @@ export const fetchCurrencies = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}/all?pageNumber=${page}&pageSize=${limit}`;
+    // Change from /all to just the base endpoint with query parameters
+    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 

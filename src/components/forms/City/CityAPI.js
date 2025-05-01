@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:7000/api/cities";
-const CITIES_ALL_URL = "http://localhost:7000/api/cities/all";
+const CITIES_ALL_URL = "http://localhost:7000/api/cities";
 const COUNTRY_API_URL = "http://localhost:7000/api/country-Of-Origin";
 
 // Helper function to get auth token

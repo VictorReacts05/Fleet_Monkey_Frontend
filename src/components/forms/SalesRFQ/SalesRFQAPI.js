@@ -97,18 +97,17 @@ export const createSalesRFQ = async (salesRFQData) => {
     console.log("SalesRFQ creation response:", response.data);
     
     // If we have a salesRFQId in the response and parcels data, submit parcels to the correct endpoint
-    if (response.data.salesRFQId && parcels && parcels.length > 0) {
+    if (response.data.newSalesRFQId && parcels && parcels.length > 0) {
       try {
-        console.log("Submitting parcels to the correct endpoint for SalesRFQID:", response.data.salesRFQId);
+        const salesRFQId = response.data.newSalesRFQId;
+        console.log("Submitting parcels for SalesRFQID:", salesRFQId);
         
         // Format parcels data according to the SalesRFQParcelModel parameters
         const formattedParcels = parcels.map((parcel, index) => ({
-          SalesRFQID: response.data.salesRFQId,
-          ItemID: Number(parcel.itemId),
-          UOMID: Number(parcel.uomId),
-          // Use ItemQuantity instead of Quantity as per the model
-          ItemQuantity: Number(parcel.quantity),
-          // Add LineItemNumber for each parcel
+          SalesRFQID: salesRFQId,
+          ItemID: Number(parcel.ItemID || parcel.itemId),
+          UOMID: Number(parcel.UOMID || parcel.uomId),
+          ItemQuantity: Number(parcel.ItemQuantity || parcel.Quantity || parcel.quantity),
           LineItemNumber: index + 1,
           CreatedByID: Number(personId || 1),
           IsDeleted: 0
@@ -253,7 +252,7 @@ export const getSalesRFQById = async (id) => {
 export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/companies/all", { headers });
+    const response = await axios.get("http://localhost:7000/api/companies", { headers });
     return response.data.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -264,7 +263,7 @@ export const fetchCompanies = async () => {
 export const fetchCustomers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/customers/all", { headers });
+    const response = await axios.get("http://localhost:7000/api/customers", { headers });
     return response.data.data || [];
   } catch (error) {
     throw error.response?.data || error.message;
@@ -334,7 +333,7 @@ export const fetchMailingPriorities = async () => {
 export const fetchCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/currencies/all", { headers });
+    const response = await axios.get("http://localhost:7000/api/currencies", { headers });
     return response.data.data || [];
   } catch (error) {
     throw error.response?.data || error.message;

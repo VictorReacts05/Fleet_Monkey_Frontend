@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:7000/api/customers';
-const API_BASE_URL_GET = 'http://localhost:7000/api/customers/all';
+const API_BASE_URL_GET = 'http://localhost:7000/api/customers';
 
 // Add axios interceptor to include auth token
 axios.interceptors.request.use(config => {

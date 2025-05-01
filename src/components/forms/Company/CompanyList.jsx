@@ -48,7 +48,8 @@ const CompanyList = () => {
       // Fetch currencies first to have them available for mapping
       let currencyMap = {};
       try {
-        const currencyResponse = await axios.get('http://localhost:7000/api/currencies/all');
+        // Change from /all to just the base endpoint
+        const currencyResponse = await axios.get('http://localhost:7000/api/currencies');
         if (currencyResponse.data && currencyResponse.data.data) {
           // Create a map of currency ID to currency name
           currencyResponse.data.data.forEach(currency => {
