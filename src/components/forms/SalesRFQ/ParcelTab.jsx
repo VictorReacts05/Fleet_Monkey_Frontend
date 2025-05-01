@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Typography, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  CircularProgress,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../Common/DataTable";
 import FormSelect from "../../Common/FormSelect";
@@ -55,6 +62,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
+  const [activeTab, setActiveTab] = useState("parcels");
+  const [approvalDecision, setApprovalDecision] = useState("");
 
   // Notify parent component when parcels change
   useEffect(() => {
@@ -184,7 +193,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           } else {
             console.warn("Unexpected response format:", response.data);
           }
-
 
           // Ensure we're only processing parcels for this specific SalesRFQ ID
           const filteredParcels = parcelData.filter((parcel) => {
@@ -343,7 +351,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       console.error("Parcel not found for editing:", id);
       return;
     }
-    
+
     const editFormId = Date.now();
     setParcelForms((prev) => [
       ...prev,
@@ -353,7 +361,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         uomId: parcelToEdit.uomId,
         quantity: parcelToEdit.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
-        originalId: id // Store the original ID for reference
+        originalId: id, // Store the original ID for reference
       },
     ]);
   };
@@ -366,7 +374,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         form.id === formId ? { ...form, [name]: value } : form
       )
     );
-    
+
     // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
@@ -412,46 +420,48 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
 
     // Find the original parcel if we're editing
-    const originalParcel = form.editIndex !== undefined ? parcels[form.editIndex] : null;
-    
+    const originalParcel =
+      form.editIndex !== undefined ? parcels[form.editIndex] : null;
+
     // Create a completely new parcel object with all required fields
     const newParcel = {
       // Keep original ID and SalesRFQParcelID for database reference
       id: form.originalId || form.id,
       SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
-      
+
       // Ensure SalesRFQID is included for proper association
       SalesRFQID: salesRFQId,
-      
+
       // Include all possible field name variations for maximum compatibility
-      ItemID: parseInt(form.itemId, 10),  // Convert to number for backend
+      ItemID: parseInt(form.itemId, 10), // Convert to number for backend
       itemId: form.itemId,
-      
-      UOMID: parseInt(form.uomId, 10),    // Convert to number for backend
+
+      UOMID: parseInt(form.uomId, 10), // Convert to number for backend
       uomId: form.uomId,
-      
-      ItemQuantity: parseInt(form.quantity, 10),  // Convert to number for backend
-      Quantity: parseInt(form.quantity, 10),      // Convert to number for backend
+
+      ItemQuantity: parseInt(form.quantity, 10), // Convert to number for backend
+      Quantity: parseInt(form.quantity, 10), // Convert to number for backend
       quantity: form.quantity,
-      
+
       // Display values for UI
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-      
+
       // Preserve srNo
-      srNo: originalParcel?.srNo || (parcels.length + 1),
-      
+      srNo: originalParcel?.srNo || parcels.length + 1,
+
       // Add a flag to indicate this record has been modified
       isModified: true,
-      
+
       // Add any other fields that might be required by the backend
       SalesRFQParcel: {
-        SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
+        SalesRFQParcelID:
+          originalParcel?.SalesRFQParcelID || originalParcel?.id,
         SalesRFQID: salesRFQId,
         ItemID: parseInt(form.itemId, 10),
         UOMID: parseInt(form.uomId, 10),
-        ItemQuantity: parseInt(form.quantity, 10)
-      }
+        ItemQuantity: parseInt(form.quantity, 10),
+      },
     };
 
     if (form.editIndex !== undefined) {
@@ -459,11 +469,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       const updatedParcels = [...parcels];
       updatedParcels[form.editIndex] = newParcel;
       setParcels(updatedParcels);
-      
+
       // Force a notification to the parent component
       if (onParcelsChange) {
         setTimeout(() => onParcelsChange(updatedParcels), 0);
-        
+
         // Also try to directly update the database
         try {
           updateParcelInDatabase(newParcel);
@@ -475,7 +485,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       // Add new parcel
       const newParcelsArray = [...parcels, newParcel];
       setParcels(newParcelsArray);
-      
+
       // Force a notification to the parent component
       if (onParcelsChange) {
         setTimeout(() => onParcelsChange(newParcelsArray), 0);
@@ -494,7 +504,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     }
 
     try {
-      
       // Try to update using the SalesRFQParcel endpoint
       const response = await axios.put(
         `${API_URL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
@@ -502,11 +511,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           SalesRFQID: salesRFQId,
           ItemID: parseInt(parcel.ItemID, 10),
           UOMID: parseInt(parcel.UOMID, 10),
-          ItemQuantity: parseInt(parcel.ItemQuantity, 10)
+          ItemQuantity: parseInt(parcel.ItemQuantity, 10),
         }
       );
-      
-      
+
       if (response.data.success) {
         toast.success("Parcel updated successfully");
       }
@@ -519,7 +527,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           {
             ItemID: parseInt(parcel.ItemID, 10),
             UOMID: parseInt(parcel.UOMID, 10),
-            ItemQuantity: parseInt(parcel.ItemQuantity, 10)
+            ItemQuantity: parseInt(parcel.ItemQuantity, 10),
           }
         );
       } catch (altError) {
@@ -572,7 +580,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
+            backgroundColor:
+              activeTab === "parcels" ? "#252525" : "transparent",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#252525",
+            },
+            cursor: "pointer",
           }}
+          onClick={() => setActiveTab("parcels")}
         >
           <Typography variant="h6" component="div">
             Parcels
@@ -588,15 +604,22 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
+            backgroundColor:
+              activeTab === "approvals" ? "#252525" : "transparent",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#252525",
+            },
           }}
+          onClick={() => setActiveTab("approvals")}
         >
           <Typography variant="h6" component="div">
-            Parcel Approvals
+            SalesRFQ Approvals
           </Typography>
         </Box>
       </Box>
 
-      {/* Tab content */}
+      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -606,153 +629,198 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           borderTopRightRadius: 4,
         }}
       >
-        {loading || loadingExistingParcels ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
+        {activeTab === "parcels" ? (
           <>
-            {/* Only show Add Parcel button if not in readOnly mode */}
-            {!readOnly && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddParcel}
-                sx={{ mb: 2 }}
-              >
-                Add Parcel
-              </Button>
-            )}
-
-            {/* Rest of the component remains unchanged */}
-            {/* Show message when no parcels and not in form mode */}
-            {parcels.length === 0 && parcelForms.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                <Typography variant="body1">
-                  No parcels added yet.{" "}
-                  {!readOnly && "Click 'Add Parcel' to add a new parcel."}
-                </Typography>
+            {loading || loadingExistingParcels ? (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+                <CircularProgress />
               </Box>
-            )}
-
-            {/* Parcel forms and DataTable remain unchanged */}
-            {parcelForms.map((form) => (
-              <Box
-                key={form.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 2,
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="itemId"
-                      label="Item"
-                      value={form.itemId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={items}
-                      error={!!errors[form.id]?.itemId}
-                      helperText={errors[form.id]?.itemId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="uomId"
-                      label="UOM"
-                      value={form.uomId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={uoms}
-                      error={!!errors[form.id]?.uomId}
-                      helperText={errors[form.id]?.uomId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="quantity"
-                      label="Quantity"
-                      value={form.quantity}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.quantity}
-                      helperText={errors[form.id]?.quantity}
-                      type="number"
-                    />
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      setParcelForms((prev) =>
-                        prev.filter((f) => f.id !== form.id)
-                      )
-                    }
-                  >
-                    Cancel
-                  </Button>
+            ) : (
+              <>
+                {/* Only show Add Parcel button if not in readOnly mode */}
+                {!readOnly && (
                   <Button
                     variant="contained"
-                    onClick={() => handleSave(form.id)}
+                    startIcon={<AddIcon />}
+                    onClick={handleAddParcel}
+                    sx={{ mb: 2 }}
                   >
-                    Save
+                    Add Parcel
                   </Button>
-                </Box>
-              </Box>
-            ))}
+                )}
 
-            {/* Only display DataTable when there are parcels */}
-            {parcels.length > 0 && (
-              <>
-                <DataTable
-                  rows={parcels}
-                  columns={columns}
-                  pageSize={rowsPerPage}
-                  page={page}
-                  onPageChange={(newPage) => {
-                    setPage(newPage);
-                  }}
-                  onPageSizeChange={(newPageSize) => {
-                    setRowsPerPage(newPageSize);
-                  }}
-                  rowsPerPageOptions={[5, 10, 25]}
-                  checkboxSelection={false}
-                  disableSelectionOnClick
-                  autoHeight
-                  hideActions={readOnly}
-                  onEdit={!readOnly ? handleEditParcel : undefined}
-                  onDelete={!readOnly ? handleDeleteParcel : undefined}
-                  // Use totalRows instead of rowCount to match the prop name in DataTable
-                  totalRows={parcels.length}
-                  // Remove potentially conflicting pagination props
-                  pagination={true}
-                />
+                {/* Show message when no parcels and not in form mode */}
+                {parcels.length === 0 && parcelForms.length === 0 && (
+                  <Box
+                    sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
+                  >
+                    <Typography variant="body1">
+                      No parcels added yet.{" "}
+                      {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Parcel forms */}
+                {parcelForms.map((form) => (
+                  <Box
+                    key={form.id}
+                    sx={{
+                      mt: 2,
+                      mb: 2,
+                      p: 2,
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="subtitle1" gutterBottom>
+                      {form.editIndex !== undefined
+                        ? "Edit Parcel"
+                        : "New Parcel"}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                        <FormSelect
+                          name="itemId"
+                          label="Item"
+                          value={form.itemId}
+                          onChange={(e) => handleChange(e, form.id)}
+                          options={items}
+                          error={!!errors[form.id]?.itemId}
+                          helperText={errors[form.id]?.itemId}
+                        />
+                      </Box>
+
+                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                        <FormSelect
+                          name="uomId"
+                          label="UOM"
+                          value={form.uomId}
+                          onChange={(e) => handleChange(e, form.id)}
+                          options={uoms}
+                          error={!!errors[form.id]?.uomId}
+                          helperText={errors[form.id]?.uomId}
+                        />
+                      </Box>
+
+                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                        <FormInput
+                          name="quantity"
+                          label="Quantity"
+                          value={form.quantity}
+                          onChange={(e) => handleChange(e, form.id)}
+                          error={!!errors[form.id]?.quantity}
+                          helperText={errors[form.id]?.quantity}
+                          type="number"
+                        />
+                      </Box>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 1,
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        onClick={() =>
+                          setParcelForms((prev) =>
+                            prev.filter((f) => f.id !== form.id)
+                          )
+                        }
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={() => handleSave(form.id)}
+                      >
+                        Save
+                      </Button>
+                    </Box>
+                  </Box>
+                ))}
+
+                {/* DataTable for parcels */}
+                {parcels.length > 0 && (
+                  <DataTable
+                    rows={parcels}
+                    columns={columns}
+                    pageSize={rowsPerPage}
+                    page={page}
+                    onPageChange={(newPage) => setPage(newPage)}
+                    onPageSizeChange={(newPageSize) =>
+                      setRowsPerPage(newPageSize)
+                    }
+                    rowsPerPageOptions={[5, 10, 25]}
+                    checkboxSelection={false}
+                    disableSelectionOnClick
+                    autoHeight
+                    hideActions={readOnly}
+                    onEdit={!readOnly ? handleEditParcel : undefined}
+                    onDelete={!readOnly ? handleDeleteParcel : undefined}
+                    totalRows={parcels.length}
+                    pagination={true}
+                  />
+                )}
               </>
             )}
           </>
+        ) : (
+          <Box sx={{ p: 3, textAlign: "center" }}>
+            {salesRFQId ? (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Approve All Parcels
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>
+                  Do you want to approve all these parcels?
+                </Typography>
+
+                <Select
+                  value={approvalDecision}
+                  onChange={(e) => setApprovalDecision(e.target.value)}
+                  displayEmpty
+                  sx={{ width: 200, mb: 3 }}
+                >
+                  <MenuItem value="" disabled>
+                    Select an option
+                  </MenuItem>
+                  <MenuItem value="yes">Yes</MenuItem>
+                  <MenuItem value="no">No</MenuItem>
+                </Select>
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={!approvalDecision}
+                  onClick={() => console.log("Submit approval:", approvalDecision)}
+                  sx={{ display: "block", margin: "0 auto" }}
+                >
+                  Submit Approval Decision
+                </Button>
+              </>
+            ) : (
+              <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                Approvals are only available for existing SalesRFQ records
+              </Typography>
+            )}
+          </Box>
         )}
       </Box>
 
-      {/* Delete confirmation dialog remains unchanged */}
+      {/* Delete confirmation dialog */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleCancelDelete}
