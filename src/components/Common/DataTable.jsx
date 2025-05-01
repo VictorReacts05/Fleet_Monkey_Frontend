@@ -339,15 +339,12 @@ const DataTable = ({
         rowsPerPage={typeof rowsPerPage === 'number' && !isNaN(rowsPerPage) ? rowsPerPage : 10}
         page={typeof page === 'number' && !isNaN(page) ? page : 0}
         onPageChange={(e, newPage) => {
-          console.log("TablePagination onPageChange:", newPage);
           if (onPageChange) onPageChange(newPage);
         }}
         onRowsPerPageChange={(e) => {
-          console.log("TablePagination onRowsPerPageChange:", e.target.value);
           if (onRowsPerPageChange) onRowsPerPageChange(parseInt(e.target.value, 10));
         }}
         labelDisplayedRows={({ from, to, count }) => {
-          console.log("TablePagination labelDisplayedRows:", { from, to, count });
           // Ensure from, to, and count are valid numbers
           const validFrom = isNaN(from) ? 1 : from;
           const validTo = isNaN(to) ? rows.length : to;

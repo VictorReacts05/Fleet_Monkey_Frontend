@@ -68,7 +68,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
-    // Only show actions column if not in readOnly mode - we'll handle this differently
   ];
 
   // Load dropdown data when component mounts
@@ -141,7 +140,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
       try {
         setLoadingExistingParcels(true);
-        console.log("Attempting to load parcels for SalesRFQ ID:", salesRFQId);
 
         // Try different endpoint formats that might be available
         let response;
@@ -156,27 +154,17 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             err.message
           );
           try {
-            // Try alternative endpoint format
-            console.log(
-              `Trying endpoint: ${API_URL}/sales-rfq/${salesRFQId}/parcels`
-            );
             response = await axios.get(
               `${API_URL}/sales-rfq/${salesRFQId}/parcels`
             );
-            console.log("Second endpoint succeeded");
           } catch (err2) {
             console.log(
               "Second endpoint attempt failed, trying final alternative...",
               err2.message
             );
-            // Try one more format
-            console.log(
-              `Trying endpoint: ${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
-            );
             response = await axios.get(
               `${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
             );
-            console.log("Third endpoint succeeded");
           }
         }
 
@@ -188,18 +176,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             parcelData = response.data.data;
           } else if (Array.isArray(response.data)) {
             parcelData = response.data;
-            console.log("Using direct array response format");
           } else if (
             response.data.parcels &&
             Array.isArray(response.data.parcels)
           ) {
             parcelData = response.data.parcels;
-            console.log("Using response.data.parcels format");
           } else {
             console.warn("Unexpected response format:", response.data);
           }
 
-          // console.log("Received parcel data:", parcelData);
 
           // Ensure we're only processing parcels for this specific SalesRFQ ID
           const filteredParcels = parcelData.filter((parcel) => {
@@ -215,12 +200,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             return String(parcelSalesRFQId) === String(salesRFQId);
           });
 
-          console.log(
-            `Filtered ${filteredParcels.length} parcels out of ${parcelData.length} for SalesRFQ ID ${salesRFQId}`
-          );
-
           if (filteredParcels.length === 0) {
-            console.log(`No parcels found for SalesRFQ ID: ${salesRFQId}`);
             setParcels([]);
             return;
           }
@@ -296,9 +276,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               } else {
                 // If not found, use the ID as the name
                 itemName = `Item #${itemId}`;
-                console.log(
-                  `Item not found for ID: ${itemId}, using placeholder name`
-                );
               }
 
               // Try to find UOM in our UOMs list
@@ -308,9 +285,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               } else {
                 // If not found, use the ID as the name
                 uomName = `UOM #${uomId}`;
-                console.log(
-                  `UOM not found for ID: ${uomId}, using placeholder name`
-                );
               }
             } catch (err) {
               console.error("Error formatting parcel data:", err);
@@ -329,14 +303,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           });
 
           setParcels(formattedParcels);
-          console.log("Loaded existing parcels:", formattedParcels);
         } else {
           console.warn("No parcel data found in response");
           setParcels([]);
         }
       } catch (error) {
         console.error("Error loading existing parcels:", error);
-        console.log("This might be a new record without parcels yet");
         setParcels([]);
       } finally {
         setLoadingExistingParcels(false);
@@ -367,8 +339,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   // Handle editing an existing parcel
   const handleEditParcel = (id) => {
     const parcelToEdit = parcels.find((p) => p.id === id);
-    if (!parcelToEdit) return;
-
+    if (!parcelToEdit) {
+      console.error("Parcel not found for editing:", id);
+      return;
+    }
+    
     const editFormId = Date.now();
     setParcelForms((prev) => [
       ...prev,
@@ -378,6 +353,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         uomId: parcelToEdit.uomId,
         quantity: parcelToEdit.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
+        originalId: id // Store the original ID for reference
       },
     ]);
   };
@@ -390,7 +366,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         form.id === formId ? { ...form, [name]: value } : form
       )
     );
-
+    
     // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
@@ -435,27 +411,121 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
 
+    // Find the original parcel if we're editing
+    const originalParcel = form.editIndex !== undefined ? parcels[form.editIndex] : null;
+    
+    // Create a completely new parcel object with all required fields
     const newParcel = {
-      id: form.editIndex !== undefined ? parcels[form.editIndex].id : formId,
+      // Keep original ID and SalesRFQParcelID for database reference
+      id: form.originalId || form.id,
+      SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
+      
+      // Ensure SalesRFQID is included for proper association
+      SalesRFQID: salesRFQId,
+      
+      // Include all possible field name variations for maximum compatibility
+      ItemID: parseInt(form.itemId, 10),  // Convert to number for backend
       itemId: form.itemId,
+      
+      UOMID: parseInt(form.uomId, 10),    // Convert to number for backend
       uomId: form.uomId,
+      
+      ItemQuantity: parseInt(form.quantity, 10),  // Convert to number for backend
+      Quantity: parseInt(form.quantity, 10),      // Convert to number for backend
       quantity: form.quantity,
+      
+      // Display values for UI
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+      
+      // Preserve srNo
+      srNo: originalParcel?.srNo || (parcels.length + 1),
+      
+      // Add a flag to indicate this record has been modified
+      isModified: true,
+      
+      // Add any other fields that might be required by the backend
+      SalesRFQParcel: {
+        SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
+        SalesRFQID: salesRFQId,
+        ItemID: parseInt(form.itemId, 10),
+        UOMID: parseInt(form.uomId, 10),
+        ItemQuantity: parseInt(form.quantity, 10)
+      }
     };
 
     if (form.editIndex !== undefined) {
-      // Update existing parcel
-      setParcels((prev) =>
-        prev.map((p, index) => (index === form.editIndex ? newParcel : p))
-      );
+      // Update existing parcel - create a completely new array
+      const updatedParcels = [...parcels];
+      updatedParcels[form.editIndex] = newParcel;
+      setParcels(updatedParcels);
+      
+      // Force a notification to the parent component
+      if (onParcelsChange) {
+        setTimeout(() => onParcelsChange(updatedParcels), 0);
+        
+        // Also try to directly update the database
+        try {
+          updateParcelInDatabase(newParcel);
+        } catch (error) {
+          console.error("Error directly updating parcel:", error);
+        }
+      }
     } else {
       // Add new parcel
-      setParcels((prev) => [...prev, newParcel]);
+      const newParcelsArray = [...parcels, newParcel];
+      setParcels(newParcelsArray);
+      
+      // Force a notification to the parent component
+      if (onParcelsChange) {
+        setTimeout(() => onParcelsChange(newParcelsArray), 0);
+      }
     }
 
     // Remove the form
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
+  };
+
+  // Function to directly update a parcel in the database
+  const updateParcelInDatabase = async (parcel) => {
+    if (!salesRFQId || !parcel.SalesRFQParcelID) {
+      console.error("Missing required IDs for direct parcel update");
+      return;
+    }
+
+    try {
+      
+      // Try to update using the SalesRFQParcel endpoint
+      const response = await axios.put(
+        `${API_URL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
+        {
+          SalesRFQID: salesRFQId,
+          ItemID: parseInt(parcel.ItemID, 10),
+          UOMID: parseInt(parcel.UOMID, 10),
+          ItemQuantity: parseInt(parcel.ItemQuantity, 10)
+        }
+      );
+      
+      
+      if (response.data.success) {
+        toast.success("Parcel updated successfully");
+      }
+    } catch (error) {
+      console.error("Failed to directly update parcel:", error);
+      // Try alternative endpoint
+      try {
+        const altResponse = await axios.put(
+          `${API_URL}/sales-rfq/${salesRFQId}/parcels/${parcel.SalesRFQParcelID}`,
+          {
+            ItemID: parseInt(parcel.ItemID, 10),
+            UOMID: parseInt(parcel.UOMID, 10),
+            ItemQuantity: parseInt(parcel.ItemQuantity, 10)
+          }
+        );
+      } catch (altError) {
+        console.error("Failed alternative direct update:", altError);
+      }
+    }
   };
 
   // Handle deleting a parcel
@@ -488,7 +558,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       <Box
         sx={{
           display: "flex",
-          borderBottom: "1px solid #e0e0e0",
           borderTopLeftRadius: 4,
           borderTopRightRadius: 4,
         }}
@@ -499,16 +568,30 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             px: 3,
             fontWeight: "bold",
             borderTop: "1px solid #e0e0e0",
-            borderLeft: "1px solid #e0e0e0",
             borderRight: "1px solid #e0e0e0",
-            borderTopLeftRadius: 4,
-            borderTopRightRadius: 4,
-            position: "relative",
-            bottom: "-1px",
+            borderLeft: "1px solid #e0e0e0",
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
           }}
         >
           <Typography variant="h6" component="div">
             Parcels
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            py: 1.5,
+            px: 3,
+            fontWeight: "bold",
+            borderTop: "1px solid #e0e0e0",
+            borderRight: "1px solid #e0e0e0",
+            borderLeft: "1px solid #e0e0e0",
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+          }}
+        >
+          <Typography variant="h6" component="div">
+            Parcel Approvals
           </Typography>
         </Box>
       </Box>
@@ -518,9 +601,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         sx={{
           p: 2,
           border: "1px solid #e0e0e0",
-          borderTop: "none",
           borderBottomLeftRadius: 4,
           borderBottomRightRadius: 4,
+          borderTopRightRadius: 4,
         }}
       >
         {loading || loadingExistingParcels ? (
@@ -640,36 +723,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             {/* Only display DataTable when there are parcels */}
             {parcels.length > 0 && (
               <>
-                {console.log("Rendering DataTable with parcels:", parcels)}
-                {console.log("Current pagination state:", {
-                  page,
-                  rowsPerPage,
-                })}
-                {console.log("DataTable props:", {
-                  rows: parcels,
-                  columns,
-                  pageSize: rowsPerPage,
-                  page,
-                  rowCount: parcels.length,
-                  paginationMode: "client",
-                  pageSizeOptions: [5, 10, 25],
-                  initialState: {
-                    pagination: {
-                      pageSize: rowsPerPage,
-                    },
-                  },
-                })}
                 <DataTable
                   rows={parcels}
                   columns={columns}
                   pageSize={rowsPerPage}
                   page={page}
                   onPageChange={(newPage) => {
-                    console.log("Page changed to:", newPage);
                     setPage(newPage);
                   }}
                   onPageSizeChange={(newPageSize) => {
-                    console.log("Page size changed to:", newPageSize);
                     setRowsPerPage(newPageSize);
                   }}
                   rowsPerPageOptions={[5, 10, 25]}
