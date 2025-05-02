@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
+
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
@@ -116,6 +118,11 @@ const AddressTypeList = () => {
     setSelectedAddressTypeId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   // Make sure the DataTable component has the correct props for pagination
   return (
     <Box>
@@ -129,17 +136,13 @@ const AddressTypeList = () => {
       >
         <Typography variant="h5">Address Type Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Address Type">
             <IconButton

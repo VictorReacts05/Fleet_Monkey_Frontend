@@ -8,6 +8,8 @@ import { fetchCompanies, deleteCompany } from "./CompanyAPI";
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import SearchBar from "../../Common/SearchBar";
+
 
 // Update imports
 import { Add } from '@mui/icons-material';
@@ -163,10 +165,14 @@ const CompanyList = () => {
     setPage(0);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   // Update the ConfirmDialog component where it's used in the return statement
   return (
     <Box>
-  
       <Box
         sx={{
           display: "flex",
@@ -177,28 +183,24 @@ const CompanyList = () => {
       >
         <Typography variant="h5">Company Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Company">
-            <IconButton 
+            <IconButton
               color="primary"
               onClick={handleCreate}
-              sx={{ 
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
-                width: 40
+                width: 40,
               }}
             >
               <Add />
@@ -206,7 +208,7 @@ const CompanyList = () => {
           </Tooltip>
         </Stack>
       </Box>
-  
+
       <DataTable
         rows={rows}
         columns={columns}
@@ -219,14 +221,14 @@ const CompanyList = () => {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
-  
+
       <CompanyModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         companyId={selectedCompanyId}
         onSave={handleSave}
       />
-  
+
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Company"
@@ -237,10 +239,10 @@ const CompanyList = () => {
         fullWidth
         PaperProps={{
           sx: {
-            width: '400px',
-            minHeight: '200px',
-            padding: '16px'
-          }
+            width: "400px",
+            minHeight: "200px",
+            padding: "16px",
+          },
         }}
       />
     </Box>

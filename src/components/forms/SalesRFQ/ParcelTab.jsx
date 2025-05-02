@@ -6,6 +6,15 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../Common/DataTable";
@@ -64,6 +73,13 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
   const [activeTab, setActiveTab] = useState("parcels");
   const [approvalDecision, setApprovalDecision] = useState("");
+  const [submittingApproval, setSubmittingApproval] = useState(false);
+  const [approvalSubmitted, setApprovalSubmitted] = useState(false);
+  const [approvalError, setApprovalError] = useState("");
+  const [currentApproval, setCurrentApproval] = useState(null);
+  const [loadingApproval, setLoadingApproval] = useState(false);
+
+  const theme = useTheme();
 
   // Notify parent component when parcels change
   useEffect(() => {
@@ -71,6 +87,42 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       onParcelsChange(parcels);
     }
   }, [parcels, onParcelsChange]);
+
+  useEffect(() => {
+    const fetchCurrentApproval = async () => {
+      if (!salesRFQId || activeTab !== "approvals") return;
+
+      try {
+        setLoadingApproval(true);
+        const response = await axios.get(
+          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
+        );
+
+        if (
+          response.data &&
+          response.data.data &&
+          response.data.data.length > 0
+        ) {
+          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
+          setCurrentApproval(latestApproval);
+
+          // Set the approval decision based on the current value
+          setApprovalDecision(latestApproval.ApprovedYN ? "yes" : "no");
+        } else {
+          // No approval found, set default to "no"
+          setApprovalDecision("no");
+        }
+      } catch (error) {
+        console.error("Error fetching current approval:", error);
+        // Default to "no" if there's an error
+        setApprovalDecision("no");
+      } finally {
+        setLoadingApproval(false);
+      }
+    };
+
+    fetchCurrentApproval();
+  }, [salesRFQId, activeTab]);
 
   // Define columns for DataTable
   const columns = [
@@ -553,6 +605,62 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     setDeleteParcelId(null);
   };
 
+  const handleApprovalSubmit = async () => {
+    if (!salesRFQId || !approvalDecision) {
+      setApprovalError("Please select an approval decision");
+      return;
+    }
+
+    try {
+      setSubmittingApproval(true);
+      setApprovalError("");
+
+      // Get the logged in user's ID from localStorage
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const personId = user.personId || user.PersonID || user.id;
+
+      if (!personId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
+      // Prepare the approval data - match the exact field names expected by the backend
+      const approvalData = {
+        SalesRFQID: Number(salesRFQId),
+        ApproverID: Number(personId),
+        ApprovedYN: approvalDecision === "yes" ? 1 : 0,
+        FormName: "SalesRFQ",
+        RoleName: "Approver",
+        UserID: Number(personId)
+      };
+
+      console.log("Submitting approval with data:", approvalData);
+
+      // Submit to the API
+      const response = await axios.post(
+        "http://localhost:7000/api/sales-rfq-approvals",
+        approvalData
+      );
+
+      if (response.data && response.data.success) {
+        toast.success(
+          `SalesRFQ ${
+            approvalDecision === "yes" ? "approved" : "rejected"
+          } successfully`
+        );
+        setApprovalSubmitted(true);
+      } else {
+        throw new Error(response.data?.message || "Failed to submit approval");
+      }
+    } catch (error) {
+      console.error("Error submitting approval:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      setApprovalError(error.response?.data?.message || error.message || "Failed to submit approval");
+      toast.error(`Error: ${error.response?.data?.message || error.message || "Failed to submit approval"}`);
+    } finally {
+      setSubmittingApproval(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -586,7 +694,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             "&:hover": {
               backgroundColor: "#252525",
             },
-            cursor: "pointer",
           }}
           onClick={() => setActiveTab("parcels")}
         >
@@ -778,44 +885,115 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             )}
           </>
         ) : (
-          <Box sx={{ p: 3, textAlign: "center" }}>
-            {salesRFQId ? (
-              <>
-                <Typography variant="h6" gutterBottom>
-                  Approve All Parcels
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 3 }}>
-                  Do you want to approve all these parcels?
-                </Typography>
+          <Box sx={{ p: 3 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                width: "100%",
+                overflow: "hidden",
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 2,
+                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                textAlign: "center",
+              }}
+            >
+              <TableContainer sx={{ maxHeight: "calc(100vh - 250px)" }}>
+                <Table stickyHeader aria-label="approval table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor:
+                            theme.palette.mode === "dark"
+                              ? "#1f2529"
+                              : "#f3f8fd",
+                          color: theme.palette.text.primary,
+                          zIndex: 10,
+                          position: "sticky",
+                          top: 0,
+                          textAlign: "center",
+                        }}
+                        align="center"
+                      >
+                        SalesRFQ ID
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: "bold",
+                          backgroundColor:
+                            theme.palette.mode === "dark"
+                              ? "#1f2529"
+                              : "#f3f8fd",
+                          color: theme.palette.text.primary,
+                          zIndex: 10,
+                          position: "sticky",
+                          top: 0,
+                          textAlign: "center",
+                        }}
+                        align="center"
+                      >
+                        Approval Decision
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow
+                      hover
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: alpha(
+                            theme.palette.primary.main,
+                            0.05
+                          ),
+                        },
+                        textAlign: "center",
+                      }}
+                    >
+                      <TableCell sx={{ textAlign: "center" }} align="center">
+                        {salesRFQId}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: "center" }} align="center">
+                        <Select
+                          value={approvalDecision}
+                          onChange={(e) => setApprovalDecision(e.target.value)}
+                          displayEmpty
+                          fullWidth
+                          error={!!approvalError}
+                        >
+                          <MenuItem value="" disabled>
+                            Select an option
+                          </MenuItem>
+                          <MenuItem value="yes">Yes</MenuItem>
+                          <MenuItem value="no">No</MenuItem>
+                        </Select>
+                        {approvalError && (
+                          <Typography variant="caption" color="error">
+                            {approvalError}
+                          </Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
 
-                <Select
-                  value={approvalDecision}
-                  onChange={(e) => setApprovalDecision(e.target.value)}
-                  displayEmpty
-                  sx={{ width: 200, mb: 3 }}
-                >
-                  <MenuItem value="" disabled>
-                    Select an option
-                  </MenuItem>
-                  <MenuItem value="yes">Yes</MenuItem>
-                  <MenuItem value="no">No</MenuItem>
-                </Select>
-
-                <Button
-                  variant="contained"
-                  color="primary"
-                  disabled={!approvalDecision}
-                  onClick={() => console.log("Submit approval:", approvalDecision)}
-                  sx={{ display: "block", margin: "0 auto" }}
-                >
-                  Submit Approval Decision
-                </Button>
-              </>
-            ) : (
-              <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                Approvals are only available for existing SalesRFQ records
-              </Typography>
-            )}
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                disabled={!approvalDecision || submittingApproval}
+                onClick={handleApprovalSubmit}
+                sx={{ minWidth: 200 }}
+              >
+                {submittingApproval ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Submit Approval Decision"
+                )}
+              </Button>
+            </Box>
           </Box>
         )}
       </Box>

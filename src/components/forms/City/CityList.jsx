@@ -7,6 +7,8 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCities, deleteCity, fetchCountries } from './CityAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
+import SearchBar from "../../Common/SearchBar";
+
 
 // Update imports
 import { Add } from '@mui/icons-material';
@@ -184,33 +186,41 @@ const CityList = () => {
     setSelectedCityId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: "center", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">City Management</Typography>
         <Stack direction="row" spacing={1}>
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add City">
             <IconButton
               onClick={handleCreate}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
                 width: 40,
-                ml: 1
+                ml: 1,
               }}
             >
               <Add />
@@ -241,7 +251,7 @@ const CityList = () => {
         onClose={handleModalClose}
         cityId={selectedCityId}
         onSave={handleSave}
-        initialData={rows.find(row => row.id === selectedCityId)}
+        initialData={rows.find((row) => row.id === selectedCityId)}
       />
 
       <ConfirmDialog

@@ -8,6 +8,8 @@ import { fetchCurrencies, deleteCurrency } from './CurrencyAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { connect } from "react-redux";
+import SearchBar from "../../Common/SearchBar";
+
 // Add imports
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
@@ -166,34 +168,42 @@ const CurrencyList = ({ userId }) => {
     setSelectedCurrencyId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">Currency Management</Typography>
         <Stack direction="row" spacing={2} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
             <Tooltip title="Add Currency">
               <IconButton
                 onClick={handleCreate}
                 sx={{
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { backgroundColor: 'primary.dark' },
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  "&:hover": { backgroundColor: "primary.dark" },
                   height: 40,
                   width: 40,
-                  ml: 1
+                  ml: 1,
                 }}
               >
                 <Add />
@@ -225,7 +235,7 @@ const CurrencyList = ({ userId }) => {
         onClose={handleModalClose}
         currencyId={selectedCurrencyId}
         onSave={handleSave}
-        initialData={rows.find(row => row.id === selectedCurrencyId)}
+        initialData={rows.find((row) => row.id === selectedCurrencyId)}
       />
 
       <ConfirmDialog

@@ -7,6 +7,8 @@ import { fetchBanks, deleteBank } from "./BankAPI";
 import { toast } from "react-toastify";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import SearchBar from "../../Common/SearchBar";
+
 
 const BankList = () => {
   const [rows, setRows] = useState([]);
@@ -124,6 +126,11 @@ const BankList = () => {
     }
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -135,9 +142,14 @@ const BankList = () => {
         }}
       >
         <Typography variant="h5">Bank Account Management</Typography>
-        {/* <Button variant="contained" onClick={() => setModalOpen(true)}>
-          Create New
-        </Button> */}
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search Sales RFQs..."
+          sx={{
+            width: "100%",
+            marginLeft: "auto",
+          }}
+        />
         <Tooltip title="Add Bank">
           <IconButton
             onClick={() => setModalOpen(true)}

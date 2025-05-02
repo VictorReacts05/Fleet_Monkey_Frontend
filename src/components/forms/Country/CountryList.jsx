@@ -10,6 +10,8 @@ import dayjs from "dayjs";
 import StyledButton from "../../Common/StyledButton";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
+
 
 const CountryList = () => {
   const [rows, setRows] = useState([]);
@@ -138,6 +140,11 @@ const CountryList = () => {
     setSelectedCountryId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -149,19 +156,15 @@ const CountryList = () => {
         }}
       >
         <Typography variant="h5">Country Management</Typography>
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search Sales RFQs..."
+          sx={{
+            width: "100%",
+            marginLeft: "auto",
+          }}
+        />
         <Stack direction="row" spacing={1}>
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
-          />
           <Tooltip title="Add Country">
             <IconButton
               onClick={handleCreate}

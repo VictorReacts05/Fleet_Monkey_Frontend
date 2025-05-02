@@ -156,6 +156,12 @@ const DataTable = ({
                   width={30}
                   height={30}
                 />
+                <Skeleton
+                  animation="wave"
+                  variant="circular"
+                  width={30}
+                  height={30}
+                />
               </Box>
             </TableCell>
           )}

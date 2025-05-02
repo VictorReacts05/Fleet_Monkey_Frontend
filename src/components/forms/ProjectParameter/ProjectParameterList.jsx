@@ -6,6 +6,7 @@ import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getProjectParameters, deleteProjectParameter } from './projectParameterStorage';
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
 
 const ProjectParameterList = () => {
   const [rows, setRows] = useState([]);
@@ -81,6 +82,11 @@ const ProjectParameterList = () => {
     setModalOpen(false);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -92,9 +98,14 @@ const ProjectParameterList = () => {
         }}
       >
         <Typography variant="h5">Project Parameter Management</Typography>
-        {/* <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button> */}
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search Sales RFQs..."
+          sx={{
+            width: "100%",
+            marginLeft: "auto",
+          }}
+        />
         <Tooltip title="Add Project Parameters">
           <IconButton
             onClick={handleCreate}

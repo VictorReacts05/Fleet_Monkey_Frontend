@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
 
 const SupplierList = () => {
   const [rows, setRows] = useState([]);
@@ -112,6 +113,11 @@ const SupplierList = () => {
     setSelectedSupplierId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -124,26 +130,14 @@ const SupplierList = () => {
       >
         <Typography variant="h5">Supplier Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          {/* <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{width: 200, height: 56}}
-          >
-            Add Supplier
-          </Button> */}
           <Tooltip title="Add Supplier">
             <IconButton
               onClick={handleCreate}

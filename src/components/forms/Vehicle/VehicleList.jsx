@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import SearchBar from "../../Common/SearchBar";
 
 const VehicleList = () => {
   const [rows, setRows] = useState([]);
@@ -116,6 +117,11 @@ const VehicleList = () => {
     setSelectedVehicleId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -128,17 +134,13 @@ const VehicleList = () => {
       >
         <Typography variant="h5">Vehicle Management</Typography>
         <Stack direction="row" spacing={1}>
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Sales RFQs..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Vehicle">
             <IconButton

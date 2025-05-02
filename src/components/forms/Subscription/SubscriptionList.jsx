@@ -4,6 +4,7 @@ import DataTable from '../../Common/DataTable';
 import SubscriptionModal from './SubscriptionModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getSubscriptions, deleteSubscription } from './subscriptionStorage';
+import SearchBar from "../../Common/SearchBar";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
@@ -63,10 +64,23 @@ const SubscriptionList = () => {
     setModalOpen(false);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h5">Subscription Management</Typography>
+        <SearchBar
+          onSearch={handleSearch}
+          placeholder="Search Sales RFQs..."
+          sx={{
+            width: "100%",
+            marginLeft: "auto",
+          }}
+        />
         <Button variant="contained" color="primary" onClick={handleCreate}>
           Create New
         </Button>
