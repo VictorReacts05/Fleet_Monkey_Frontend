@@ -32,10 +32,29 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
     try {
       setLoading(true);
       const response = await getUOMById(uomId);
-      const data = response.data;
+      console.log("UOM data received:", response);
+      
+      // Extract the UOM data from the nested structure
+      let uomData = null;
+      
+      if (response.data && response.data.data) {
+        // If data is nested in response.data.data
+        uomData = response.data.data;
+      } else if (response.data) {
+        // If data is in response.data
+        uomData = response.data;
+      } else if (response.success && response.data) {
+        // If data is in response.data with success flag
+        uomData = response.data;
+      } else {
+        // Fallback to the whole response
+        uomData = response;
+      }
+      
+      console.log("Extracted UOM data:", uomData);
       
       setFormData({
-        UOM: data.UOM || '',
+        UOM: uomData.UOM || '',
       });
     } catch (error) {
       console.error('Error loading UOM:', error);
@@ -73,29 +92,28 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
     try {
       setLoading(true);
       
-      const apiData = {
-        UOM: formData.UOM,
-        // Include these fields for API consistency
-        CreatedByID: null,
-        IsDeleted: false,
-        DeletedDateTime: null,
-        DeletedByID: null,
-      };
-      
       if (uomId) {
-        await updateUOM(uomId, apiData);
+        // Update existing UOM
+        await updateUOM(uomId, formData);
         toast.success('UOM updated successfully');
       } else {
-        await createUOM(apiData);
+        // Create new UOM
+        await createUOM(formData);
         toast.success('UOM created successfully');
       }
       
-      if (onSave) {
-        onSave();
-      }
+      if (onSave) onSave();
+      onClose();
     } catch (error) {
-      console.error('Error saving UOM:', error);
-      toast.error('Failed to save UOM: ' + (error.message || 'Unknown error'));
+      console.error("Error saving UOM:", error);
+      
+      // Check for our custom unique constraint error
+      if (error.isUniqueConstraintError) {
+        toast.error(error.message);
+      } else {
+        // Generic error message for other errors
+        toast.error(`Failed to save UOM: ${error.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }

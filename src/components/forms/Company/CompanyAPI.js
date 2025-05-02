@@ -69,46 +69,64 @@ export const createCompany = async (companyData) => {
     const { headers, personId } = getAuthHeader();
 
     if (!personId) {
-      throw new Error("personId is required for createdByID");
+      console.warn("No personId found in localStorage, using default value 1");
     }
 
-    // Prepare data for API
+    // Prepare data for API with correct field casing to match backend expectations
     const apiData = {
-      companyName: companyData.CompanyName,
-      billingCurrencyID: companyData.BillingCurrencyID,
-      vatAccount: companyData.VAT_Account,
-      website: companyData.Website,
-      companyNotes: companyData.CompanyNotes,
-      createdByID: personId,
+      CompanyName: companyData.CompanyName,
+      BillingCurrencyID: companyData.BillingCurrencyID,
+      VAT_Account: companyData.VAT_Account,
+      Website: companyData.Website,
+      CompanyNotes: companyData.CompanyNotes,
+      CreatedByID: personId || companyData.CreatedByID || 1,
     };
+
+    console.log("[DEBUG] Company create request data:", apiData);
 
     const response = await axios.post(API_BASE_URL, apiData, { headers });
     return response.data;
   } catch (error) {
+    console.error("Error creating company:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     throw error.response?.data || error.message;
   }
 };
 
 // Update an existing company
-export const updateCompany = async (id, companyData) => {
+export const updateCompany = async (companyId, companyData) => {
   try {
-    const { headers } = getAuthHeader();
-
-    // Prepare data for API
-    const apiData = {
-      companyName: companyData.CompanyName,
-      billingCurrencyID: companyData.BillingCurrencyID,
-      vatAccount: companyData.VAT_Account,
-      website: companyData.Website,
-      companyNotes: companyData.CompanyNotes,
-      rowVersionColumn: companyData.RowVersionColumn,
+    const { headers, personId } = getAuthHeader();
+    
+    // Ensure we're using the correct field names with proper capitalization
+    const requestBody = {
+      CompanyID: Number(companyId), // Make sure CompanyID is included and is a number
+      CompanyName: companyData.CompanyName,
+      BillingCurrencyID: Number(companyData.BillingCurrencyID), // Ensure this is a number
+      VAT_Account: companyData.VAT_Account,
+      Website: companyData.Website,
+      CompanyNotes: companyData.CompanyNotes,
+      CreatedByID: personId || companyData.CreatedByID || 1,
     };
-
-    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
-      headers,
-    });
+    
+    // Add RowVersionColumn if it exists
+    if (companyData.RowVersionColumn) {
+      requestBody.RowVersionColumn = companyData.RowVersionColumn;
+    }
+    
+    console.log("[DEBUG] Company update request data:", requestBody);
+    
+    const response = await axios.put(`${API_BASE_URL}/${companyId}`, requestBody, { headers });
     return response.data;
   } catch (error) {
+    console.error("Error updating company:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     throw error.response?.data || error.message;
   }
 };
@@ -206,8 +224,9 @@ export const getCompanyById = async (id) => {
 export const fetchAllCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
+    // Change from /all to just the base endpoint
     const response = await axios.get(
-      "http://localhost:7000/api/currencies/all",
+      "http://localhost:7000/api/currencies",
       { headers }
     );
 

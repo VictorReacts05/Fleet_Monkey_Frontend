@@ -50,19 +50,17 @@ export const createCountry = async (countryData) => {
     const user = JSON.parse(localStorage.getItem("user")) || {};
     console.log("[DEBUG] Current user from localStorage:", user);
 
-    // Validate countryOfOrigin
-    if (
-      !countryData.countryOfOrigin ||
-      typeof countryData.countryOfOrigin !== "string"
-    ) {
-      throw new Error("Invalid or missing countryOfOrigin");
+    // Validate country name (check both possible field names)
+    const countryName = countryData.countryOfOrigin || countryData.CountryOfOrigin;
+    if (!countryName || typeof countryName !== "string") {
+      throw new Error("Invalid or missing country name");
     }
 
-    // Prepare request data
+    // Prepare request data with correct field casing to match backend expectations
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      countryOfOrigin: countryData.countryOfOrigin,
-      createdById: user.personId || 1,
+      CountryOfOrigin: countryName, // Use capital letters to match backend model
+      CreatedByID: user.personId || 1, // Use capital letters to match backend model
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };

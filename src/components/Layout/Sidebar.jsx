@@ -31,7 +31,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 
 const drawerWidth = 240;
 
-const menuItems = [
+/* const menuItems = [
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
@@ -60,7 +60,35 @@ const menuItems = [
     icon: <CategoryIcon />,
     path: "/uoms",
   },
+]; */
+
+const menuItems = [
+  { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
+  { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
+  { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
+  { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
+  { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
+  { text: "Countries", icon: <PublicIcon />, path: "/countries" },
+  { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
+  { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
+  { text: "Persons", icon: <PersonIcon />, path: "/persons" },
+  {
+    text: "Project Parameters",
+    icon: <SettingsApplicationsIcon />,
+    path: "/project-parameters",
+  },
+  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
+  {
+    text: "Subscriptions",
+    icon: <SubscriptionsIcon />,
+    path: "/subscriptions",
+  },
+  { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
+  { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
+  { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
+  { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
 ];
+
 
 const Sidebar = ({ open, variant, onClose }) => {
   const navigate = useNavigate();

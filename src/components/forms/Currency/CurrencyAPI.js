@@ -48,6 +48,7 @@ export const fetchCurrencies = async (
 };
 
 // Create a new currency
+// Update the createCurrency function to use proper field casing
 export const createCurrency = async (currencyData, personId = null) => {
   try {
     const url = `${API_BASE_URL}`;
@@ -56,14 +57,17 @@ export const createCurrency = async (currencyData, personId = null) => {
     // Use provided personId or fallback to storedPersonId from localStorage
     const createdById = personId || storedPersonId;
     if (!createdById) {
-      console.warn("No personId provided for createdById");
+      console.warn("No personId provided for CreatedByID");
     }
 
-    // Include createdById in the request body
+    // Ensure we're using the correct field names with proper capitalization
+    // to match what the backend expects
     const requestBody = {
-      ...currencyData,
-      createdById: createdById,
+      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
+      CreatedByID: currencyData.CreatedByID || createdById || 1,
     };
+
+    console.log("[DEBUG] Currency create request data:", requestBody);
 
     const response = await axios.post(url, requestBody, {
       headers: {
@@ -89,15 +93,30 @@ export const createCurrency = async (currencyData, personId = null) => {
   }
 };
 
-// Update an existing currency
+// Update the updateCurrency function to use proper field casing
 export const updateCurrency = async (id, currencyData) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.put(`${API_BASE_URL}/${id}`, currencyData, {
+    
+    // Ensure we're using the correct field names with proper capitalization
+    const requestBody = {
+      CurrencyID: Number(id),
+      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
+      CreatedByID: currencyData.CreatedByID || currencyData.createdById || 1,
+    };
+    
+    if (currencyData.RowVersionColumn || currencyData.rowVersionColumn) {
+      requestBody.RowVersionColumn = currencyData.RowVersionColumn || currencyData.rowVersionColumn;
+    }
+    
+    console.log("[DEBUG] Currency update request data:", requestBody);
+    
+    const response = await axios.put(`${API_BASE_URL}/${id}`, requestBody, {
       headers,
     });
     return response.data;
   } catch (error) {
+    console.error("Error updating currency:", error);
     throw error.response?.data || error.message;
   }
 };

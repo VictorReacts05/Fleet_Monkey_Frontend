@@ -32,7 +32,7 @@ const VehicleList = () => {
     { field: "length", headerName: "Length (m)", flex: 1 },
     { field: "width", headerName: "Width (m)", flex: 1 },
     { field: "height", headerName: "Height (m)", flex: 1 },
-    { field: "vehicleTypeName", headerName: "Vehicle Type", flex: 1 },
+    // { field: "vehicleTypeName", headerName: "Vehicle Type", flex: 1 },
   ];
 
   const loadVehicles = async () => {
@@ -61,8 +61,8 @@ const VehicleList = () => {
         length: vehicle.Length?.toFixed(2) || "N/A",
         width: vehicle.Width?.toFixed(2) || "N/A",
         height: vehicle.Height?.toFixed(2) || "N/A",
-        vehicleTypeName: vehicle.VehicleTypeName || "N/A",
-        vehicleTypeId: vehicle.VehicleTypeID,
+        // vehicleTypeName: vehicle.VehicleTypeName || "N/A",
+        // vehicleTypeId: vehicle.VehicleTypeID,
       }));
 
       setRows(formattedRows);

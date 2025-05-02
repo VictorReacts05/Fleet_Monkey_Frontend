@@ -27,6 +27,7 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
   });
 
   const [currencies, setCurrencies] = useState([]);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   useEffect(() => {
     const loadCurrencies = async () => {
@@ -147,28 +148,45 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Inside the handleSubmit function
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
+    // Add null check for the event parameter
+    if (e) {
+      e.preventDefault();
+    }
+  
     if (!validateForm()) {
       toast.error("Please fix the form errors");
       return;
     }
-
+  
     try {
+      setLoading(true);
+      
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+  
       // Update the field names to match what the API expects
       const submitData = {
+        // Use capital letters for field names to match backend expectations
         CompanyName: formData.CompanyName,
-        BillingCurrencyID: formData.BillingCurrencyID,
+        BillingCurrencyID: Number(formData.BillingCurrencyID), // Ensure this is a number
         VAT_Account: formData.VAT_Account,
         Website: formData.Website,
         CompanyNotes: formData.CompanyNotes,
-        UserID: 1,
+        CreatedByID: user.personId || 1, // Use user's personId or default to 1
       };
-
+  
+      // If updating, include the RowVersionColumn if it exists
+      if (companyId && formData.RowVersionColumn) {
+        submitData.RowVersionColumn = formData.RowVersionColumn;
+      }
+  
       console.log("Submitting data:", submitData);
-
+  
       if (companyId) {
+        // For update, explicitly include the CompanyID
+        submitData.CompanyID = Number(companyId);
         await updateCompany(companyId, submitData);
         toast.success("Company updated successfully");
       } else {

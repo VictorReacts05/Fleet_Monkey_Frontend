@@ -71,14 +71,20 @@ export const createVehicle = async (vehicleData) => {
       throw new Error("personId is required for createdByID");
     }
 
-    // Prepare data with createdByID
+    // Prepare data with proper field names to match backend expectations
     const apiData = {
-      ...vehicleData,
-      createdByID: personId,
-      createdById: personId, // Include both to handle backend naming
+      // Map frontend camelCase to backend PascalCase field names
+      TruckNumberPlate: vehicleData.truckNumberPlate,
+      VIN: vehicleData.vin,
+      CompanyID: Number(vehicleData.companyID),
+      MaxWeight: Number(vehicleData.maxWeight) || null,
+      Length: Number(vehicleData.length) || null,
+      Width: Number(vehicleData.width) || null,
+      Height: Number(vehicleData.height) || null,
+      CreatedByID: Number(personId)
     };
 
-    console.log("Creating vehicle with data:", apiData);
+    console.log("Creating vehicle with formatted data:", apiData);
 
     const response = await axios.post(API_BASE_URL, apiData, { headers });
     return response.data;
@@ -95,12 +101,42 @@ export const createVehicle = async (vehicleData) => {
 // Update an existing vehicle
 export const updateVehicle = async (id, vehicleData) => {
   try {
-    const { headers } = getAuthHeader();
-    const response = await axios.put(`${API_BASE_URL}/${id}`, vehicleData, {
+    const { headers, personId } = getAuthHeader();
+    
+    if (!personId) {
+      throw new Error("personId is required for CreatedByID");
+    }
+
+    // Prepare data with proper field names to match backend expectations
+    const apiData = {
+      VehicleID: Number(id),
+      TruckNumberPlate: vehicleData.truckNumberPlate,
+      VIN: vehicleData.vin,
+      CompanyID: Number(vehicleData.companyID),
+      MaxWeight: Number(vehicleData.maxWeight) || null,
+      Length: Number(vehicleData.length) || null,
+      Width: Number(vehicleData.width) || null,
+      Height: Number(vehicleData.height) || null,
+      CreatedByID: Number(personId)
+    };
+    
+    // Include RowVersionColumn if available
+    if (vehicleData.RowVersionColumn) {
+      apiData.RowVersionColumn = vehicleData.RowVersionColumn;
+    }
+
+    console.log("Updating vehicle with formatted data:", apiData);
+    
+    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
       headers,
     });
     return response.data;
   } catch (error) {
+    console.error("Error updating vehicle:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     throw error.response?.data || error.message;
   }
 };
@@ -167,7 +203,7 @@ export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      "http://localhost:7000/api/companies/all",
+      "http://localhost:7000/api/companies",
       { headers }
     );
     return response.data;
@@ -190,7 +226,7 @@ export const fetchVehicleTypes = async () => {
     try {
       const { headers } = getAuthHeader();
       const response = await axios.get(
-        "http://localhost:7000/api/vehicletype/all",
+        "http://localhost:7000/api/vehicletype",
         { headers }
       );
       return response.data;

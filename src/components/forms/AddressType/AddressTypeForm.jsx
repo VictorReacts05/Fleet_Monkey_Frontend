@@ -57,7 +57,9 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
+    if(e){
     e.preventDefault();
+    }
     setIsSubmitted(true);
 
     if (validateForm()) {

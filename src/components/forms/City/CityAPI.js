@@ -68,7 +68,7 @@ export const createCity = async (cityData) => {
     if (!cityData.cityName || typeof cityData.cityName !== "string") {
       throw new Error("Invalid or missing cityName");
     }
-    if (!cityData.countryId || typeof cityData.countryId !== "number") {
+    if (!cityData.countryId || isNaN(cityData.countryId)) {
       throw new Error("Invalid or missing countryId");
     }
     if (!user.personId) {
@@ -77,15 +77,17 @@ export const createCity = async (cityData) => {
       );
     }
 
-    // Prepare request data
+    // Prepare request data with correct field names (capital letters to match backend)
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      cityName: cityData.cityName,
-      countryId: cityData.countryId,
-      createdById: user.personId,
+      CityName: cityData.cityName,         // Changed from cityName to CityName
+      CountryID: Number(cityData.countryId), // Changed from countryId to CountryID
+      CreatedByID: user.personId,          // Changed from createdById to CreatedByID
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };
+
+    console.log("[DEBUG] City create request data:", dataWithCreator);
 
     const response = await axios.post(
       API_BASE_URL,
@@ -115,11 +117,16 @@ export const updateCity = async (cityId, data) => {
       );
     }
 
+    // Prepare data with correct field names (capital letters to match backend)
     const dataWithUpdater = {
-      ...data,
-      updatedById: user.personId,
+      CityID: Number(cityId),                // Added CityID with proper capitalization
+      CityName: data.cityName,               // Changed from cityName to CityName
+      CountryID: Number(data.countryId),     // Changed from countryId to CountryID
+      CreatedByID: user.personId,            // Changed from createdById to CreatedByID
       updatedDateTime: new Date().toISOString(),
     };
+
+    console.log("[DEBUG] City update request data:", dataWithUpdater);
 
     const response = await axios.put(
       `${API_BASE_URL}/${cityId}`,

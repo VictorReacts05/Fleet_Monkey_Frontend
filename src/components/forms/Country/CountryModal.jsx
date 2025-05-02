@@ -67,20 +67,24 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
     try {
       setLoading(true);
       
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      
+      // Inside the handleSubmit function (around line 70-85)
       if (countryId) {
         // Make sure we're sending the data in the format the API expects
         const updateData = {
           CountryOfOriginID: countryId,
-          countryOfOrigin: formData.countryName,
-          createdById: 1  // Adding required createdById field with a default value
+          CountryOfOrigin: formData.countryName, // Changed from countryOfOrigin to CountryOfOrigin
+          CreatedByID: user.personId || 1  // Changed from createdById to CreatedByID
         };
         
         await updateCountry(countryId, updateData);
         toast.success('Country updated successfully');
       } else {
         await createCountry({
-          countryOfOrigin: formData.countryName,  // Changed from CountryOfOrigin to countryOfOrigin
-          createdById: 1  // Adding required createdById field with a default value
+          CountryOfOrigin: formData.countryName,  // Changed from countryOfOrigin to CountryOfOrigin
+          CreatedByID: user.personId || 1  // Changed from createdById to CreatedByID
         });
         toast.success('Country created successfully');
       }

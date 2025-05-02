@@ -86,7 +86,10 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    if(e){
+      e.preventDefault();
+    }
     if (!validateForm()) {
       toast.error("Please fix the form errors");
       return;

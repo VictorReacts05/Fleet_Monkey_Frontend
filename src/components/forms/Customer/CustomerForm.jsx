@@ -27,6 +27,8 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     CustomerNotes: ''
   });
 
+  // Update the useEffect hook that fetches the data
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -34,13 +36,28 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
         
         // Fetch currencies from the currency table
         const currenciesResponse = await fetchCurrencies();
-        setCurrencies(currenciesResponse.data || []);
+        console.log('Currencies response:', currenciesResponse);
+        
+        if (currenciesResponse.success && currenciesResponse.data) {
+          setCurrencies(currenciesResponse.data);
+        } else {
+          console.error('Failed to load currencies:', currenciesResponse.error);
+          toast.error('Failed to load currencies');
+        }
         
         // Fetch companies from the company table
         const companiesResponse = await fetchCompanies();
-        setCompanies(companiesResponse.data || []);
+        console.log('Companies response:', companiesResponse);
+        
+        if (companiesResponse.success && companiesResponse.data) {
+          setCompanies(companiesResponse.data);
+        } else {
+          console.error('Failed to load companies:', companiesResponse.error);
+          toast.error('Failed to load companies');
+        }
         
         // If editing, fetch customer data
+        // In the useEffect hook where customer data is loaded
         if (customerId) {
           const customerData = await getCustomerById(customerId);
           if (customerData) {
@@ -50,18 +67,19 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
               ImportCode: customerData.ImportCode || '',
               BillingCurrencyID: customerData.BillingCurrencyID || '',
               Website: customerData.Website || '',
-              CustomerNotes: customerData.CustomerNotes || ''
+              CustomerNotes: customerData.CustomerNotes || '',
+              RowVersionColumn: customerData.RowVersionColumn || null // Add this line
             });
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load required data');
+        console.error('Error loading form data:', error);
+        toast.error('Failed to load form data');
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchData();
   }, [customerId]);
 
@@ -162,7 +180,11 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Add null check for the event parameter
+    if (e) {
+      e.preventDefault();
+    }
+    
     setIsSubmitted(true);
 
     const validationErrors = {};
@@ -247,15 +269,15 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
         onBlur={handleBlur}
         error={errors.CustomerName}
       />
-
+      
       <FormSelect
-        required
-        label="Select Company"
+        label="Company *"
         name="CompanyID"
         value={formData.CompanyID}
         onChange={handleChange}
         onBlur={handleBlur}
-        error={errors.CompanyID}
+        error={!!errors.CompanyID}
+        helperText={errors.CompanyID}
         options={companies.map(company => ({
           value: company.CompanyID,
           label: company.CompanyName
@@ -274,12 +296,13 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
 
       <FormSelect
         required
-        label="Select Currency"
+        label="Billing Currency"
         name="BillingCurrencyID"
         value={formData.BillingCurrencyID}
         onChange={handleChange}
         onBlur={handleBlur}
-        error={errors.BillingCurrencyID}
+        error={!!errors.BillingCurrencyID}
+        helperText={errors.BillingCurrencyID}
         options={currencies.map(currency => ({
           value: currency.CurrencyID,
           label: currency.CurrencyName
