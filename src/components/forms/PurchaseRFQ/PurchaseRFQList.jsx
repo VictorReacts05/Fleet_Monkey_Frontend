@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from './../../Common/SearchBar';
 
 const PurchaseRFQList = () => {
   const navigate = useNavigate();
