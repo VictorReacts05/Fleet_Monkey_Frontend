@@ -187,7 +187,7 @@ const CurrencyList = ({ userId }) => {
         <Stack direction="row" spacing={2} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales RFQs..."
+            placeholder="Search Currencies..."
             sx={{
               width: "100%",
               marginLeft: "auto",

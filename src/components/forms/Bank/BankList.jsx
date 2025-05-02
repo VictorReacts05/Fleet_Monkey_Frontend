@@ -5,10 +5,10 @@ import BankModal from "./BankModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
 import { fetchBanks, deleteBank } from "./BankAPI";
 import { toast } from "react-toastify";
-import { Add } from '@mui/icons-material';
-import { Tooltip, IconButton } from '@mui/material';
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
-
+import { Stack } from "@mui/material"; // Import Stack from @mui/material
 
 const BankList = () => {
   const [rows, setRows] = useState([]);
@@ -61,7 +61,6 @@ const BankList = () => {
         // Fallback
         setTotalRows(mappedRows.length);
       }
-      
     } catch (error) {
       console.error("Load banks error:", {
         message: error.message,
@@ -142,29 +141,31 @@ const BankList = () => {
         }}
       >
         <Typography variant="h5">Bank Account Management</Typography>
-        <SearchBar
-          onSearch={handleSearch}
-          placeholder="Search Sales RFQs..."
-          sx={{
-            width: "100%",
-            marginLeft: "auto",
-          }}
-        />
-        <Tooltip title="Add Bank">
-          <IconButton
-            onClick={() => setModalOpen(true)}
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Banks..."
             sx={{
-              backgroundColor: "primary.main",
-              color: "white",
-              "&:hover": { backgroundColor: "primary.dark" },
-              height: 40,
-              width: 40,
-              ml: 1,
+              width: "100%",
+              marginLeft: "auto",
             }}
-          >
-            <Add />
-          </IconButton>
-        </Tooltip>
+          />
+          <Tooltip title="Add Bank">
+            <IconButton
+              onClick={() => setModalOpen(true)}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 40,
+                width: 40,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Box>
 
       <DataTable

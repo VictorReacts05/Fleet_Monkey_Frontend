@@ -156,15 +156,15 @@ const CountryList = () => {
         }}
       >
         <Typography variant="h5">Country Management</Typography>
+        <Stack direction="row" spacing={1}>
         <SearchBar
           onSearch={handleSearch}
-          placeholder="Search Sales RFQs..."
+          placeholder="Search Countries..."
           sx={{
             width: "100%",
             marginLeft: "auto",
           }}
         />
-        <Stack direction="row" spacing={1}>
           <Tooltip title="Add Country">
             <IconButton
               onClick={handleCreate}

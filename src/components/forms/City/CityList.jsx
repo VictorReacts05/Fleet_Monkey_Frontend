@@ -205,7 +205,7 @@ const CityList = () => {
         <Stack direction="row" spacing={1}>
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales RFQs..."
+            placeholder="Search Cities..."
             sx={{
               width: "100%",
               marginLeft: "auto",

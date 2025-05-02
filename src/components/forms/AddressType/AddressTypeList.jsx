@@ -138,7 +138,7 @@ const AddressTypeList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales RFQs..."
+            placeholder="Search Address Types..."
             sx={{
               width: "100%",
               marginLeft: "auto",

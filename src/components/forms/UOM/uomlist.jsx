@@ -8,6 +8,7 @@ import ConfirmDialog from '../../Common/ConfirmDialog';
 import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchUOMs, deleteUOM } from "./UOMAPI";
 import UOMModal from './UOMModal';
+import SearchBar from '../../Common/SearchBar';
 
 const UOMList = () => {
   const [rows, setRows] = useState([]);
@@ -110,33 +111,29 @@ const UOMList = () => {
     <Box>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           mb: 2,
         }}
       >
         <Typography variant="h5">Unit of Measurement Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            // onSearch={handleSearch}
+            placeholder="Search Unit of Measurements..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add UOM">
             <IconButton
               onClick={handleCreate}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
                 width: 40,
               }}

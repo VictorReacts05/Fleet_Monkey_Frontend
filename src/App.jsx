@@ -8,7 +8,9 @@ import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
 import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
-import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage'; // Import the new page component
+import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
+import { PurchaseRFQList } from './components/forms/PurchaseRFQ';
+import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -23,7 +25,7 @@ import PersonList from './components/forms/Person/PersonList';
 import VehicleList from './components/forms/Vehicle/VehicleList';
 import WarehouseList from './components/forms/Warehouse/WarehouseList';
 import AddressTypeList from './components/forms/AddressType/AddressTypeList';
-import UOMList from './components/forms/UOM/UOMList'; // Import the UOM list component
+import UOMList from './components/forms/UOM/UOMList';
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
@@ -96,6 +98,11 @@ function AppContent() {
             </ProtectedRoute>
           } />
           
+          {/* Purchase RFQ Routes */}
+          <Route path="/purchase-rfq" element={<ProtectedRoute><PurchaseRFQList /></ProtectedRoute>} />
+          <Route path="/purchase-rfq/create" element={<ProtectedRoute><PurchaseRFQPage /></ProtectedRoute>} />
+          <Route path="/purchase-rfq/edit/:id" element={<ProtectedRoute><PurchaseRFQPage /></ProtectedRoute>} />
+          
           <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
           <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
           <Route path="/suppliers" element={<ProtectedRoute><SupplierList /></ProtectedRoute>} />
@@ -110,7 +117,7 @@ function AppContent() {
           <Route path="/vehicles" element={<ProtectedRoute><VehicleList /></ProtectedRoute>} />
           <Route path="/warehouses" element={<ProtectedRoute><WarehouseList /></ProtectedRoute>} />
           <Route path="/address-types" element={<ProtectedRoute><AddressTypeList /></ProtectedRoute>} />
-          <Route path="/uoms" element={<ProtectedRoute><UOMList /></ProtectedRoute>} /> {/* Add UOM route */}
+          <Route path="/uoms" element={<ProtectedRoute><UOMList /></ProtectedRoute>} />
         </Routes>
       </Box>
     </Box>

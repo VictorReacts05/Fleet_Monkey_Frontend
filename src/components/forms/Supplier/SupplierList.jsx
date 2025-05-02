@@ -132,7 +132,7 @@ const SupplierList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales RFQs..."
+            placeholder="Search Suppliers..."
             sx={{
               width: "100%",
               marginLeft: "auto",

@@ -136,7 +136,7 @@ const VehicleList = () => {
         <Stack direction="row" spacing={1}>
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales RFQs..."
+            placeholder="Search Vehicles..."
             sx={{
               width: "100%",
               marginLeft: "auto",

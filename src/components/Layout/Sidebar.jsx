@@ -28,41 +28,13 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
 
 const drawerWidth = 240;
 
-/* const menuItems = [
-  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
-  { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
-  { text: "Countries", icon: <PublicIcon />, path: "/countries" },
-  { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
-  { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
-  { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
-  { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
-  { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
-  {
-    text: "Project Parameters",
-    icon: <SettingsApplicationsIcon />,
-    path: "/project-parameters",
-  },
-  { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
-  {
-    text: "Subscriptions",
-    icon: <SubscriptionsIcon />,
-    path: "/subscriptions",
-  },
-  { text: "Persons", icon: <PersonIcon />, path: "/persons" },
-  { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
-  { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
-  { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
-  {
-    text: "Units of Measurement",
-    icon: <CategoryIcon />,
-    path: "/uoms",
-  },
-]; */
-
 const menuItems = [
+  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
+  { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
   { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
@@ -77,7 +49,6 @@ const menuItems = [
     icon: <SettingsApplicationsIcon />,
     path: "/project-parameters",
   },
-  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   {
     text: "Subscriptions",
     icon: <SubscriptionsIcon />,
@@ -109,7 +80,14 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  const mastersItems = menuItems.filter((item) => item.text !== "Sales RFQ");
+  // Update to include both Sales RFQ and Purchase RFQ in the main menu
+  const mainMenuItems = menuItems.filter(item => 
+    item.text === "Sales RFQ" || item.text === "Purchase RFQ"
+  );
+  
+  const mastersItems = menuItems.filter(item => 
+    item.text !== "Sales RFQ" && item.text !== "Purchase RFQ"
+  );
 
   return (
     <Drawer
@@ -140,36 +118,40 @@ const Sidebar = ({ open, variant, onClose }) => {
     >
       <Box sx={{ overflow: "auto" }}>
         <List>
-          <ListItem
-            component="div"
-            onClick={() => navigate("/sales-rfq")}
-            sx={{
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.05)"
-                    : "rgba(255, 255, 255, 0.08)",
-              },
-              backgroundColor: location.pathname.startsWith("/sales-rfq")
-                ? theme.palette.mode === "dark"
-                  ? "rgba(255, 255, 255, 0.08)"
-                  : "rgba(255, 255, 255, 0.2)"
-                : "transparent",
-              cursor: "pointer",
-            }}
-          >
-            <ListItemIcon
+          {/* Map through main menu items (Sales RFQ and Purchase RFQ) */}
+          {mainMenuItems.map((item) => (
+            <ListItem
+              key={item.text}
+              component="div"
+              onClick={() => navigate(item.path)}
               sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.text.primary
-                    : "#fff",
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(255, 255, 255, 0.08)",
+                },
+                backgroundColor: location.pathname.startsWith(item.path)
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(255, 255, 255, 0.2)"
+                  : "transparent",
+                cursor: "pointer",
               }}
             >
-              <LocalShippingIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sales RFQ" />
-          </ListItem>
+              <ListItemIcon
+                sx={{
+                  color:
+                    theme.palette.mode === "dark"
+                      ? theme.palette.text.primary
+                      : "#fff",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
           <ListItem
             component="div"
             onClick={handleMastersClick}

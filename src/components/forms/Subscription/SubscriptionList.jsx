@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import SubscriptionModal from './SubscriptionModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import { getSubscriptions, deleteSubscription } from './subscriptionStorage';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Button, Stack, Tooltip, IconButton } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import SubscriptionModal from "./SubscriptionModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
 import SearchBar from "../../Common/SearchBar";
+import { Add } from "@mui/icons-material";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
@@ -38,10 +39,10 @@ const SubscriptionList = () => {
   };
 
   const columns = [
-    { id: 'planName', label: 'Plan Name', align: 'center' },
-    { id: 'description', label: 'Description', align: 'center' },
-    { id: 'fees', label: 'Fees', align: 'center' },
-    { id: 'billingType', label: 'Billing Type', align: 'center' }
+    { id: "planName", label: "Plan Name", align: "center" },
+    { id: "description", label: "Description", align: "center" },
+    { id: "fees", label: "Fees", align: "center" },
+    { id: "billingType", label: "Billing Type", align: "center" },
   ];
 
   const handleEdit = (row) => {
@@ -73,17 +74,30 @@ const SubscriptionList = () => {
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Typography variant="h5">Subscription Management</Typography>
-        <SearchBar
-          onSearch={handleSearch}
-          placeholder="Search Sales RFQs..."
-          sx={{
-            width: "100%",
-            marginLeft: "auto",
-          }}
-        />
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Subscriptions..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
+          />
+          <Tooltip title="Add Subscriptions">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 40,
+                width: 40,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Box>
 
       <DataTable
