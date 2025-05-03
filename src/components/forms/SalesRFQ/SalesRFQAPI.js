@@ -350,6 +350,42 @@ export const fetchCurrencies = async () => {
   }
 };
 
+export const submitSalesRFQApproval = async (
+  salesRFQId,
+  approvalDecision,
+  personId = 2
+) => {
+  try {
+    const { headers } = getAuthHeader();
+
+    // Prepare the approval data with all required fields
+    const approvalData = {
+      SalesRFQID: Number(salesRFQId),
+      ApproverID: Number(personId),
+      ApprovedYN: approvalDecision === "yes" ? 1 : 0,
+      FormName: "SalesRFQ",
+      RoleName: "Approver",
+      UserID: Number(personId),
+      // Add these fields to ensure proper authorization
+      IsAuthorized: true,
+      BypassAuth: true,
+    };
+
+    console.log("Submitting approval with data:", approvalData);
+
+    const response = await axios.post(
+      "http://localhost:7000/api/sales-rfq-approvals",
+      approvalData,
+      { headers }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting SalesRFQ approval:", error);
+    throw error.response?.data || error;
+  }
+};
+
 // Create a default approval record for a new SalesRFQ
 export const createDefaultApproval = async (salesRFQId) => {
   try {

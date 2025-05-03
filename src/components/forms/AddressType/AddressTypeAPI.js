@@ -6,11 +6,11 @@ const API_BASE_URL = "http://localhost:7000/api/address-types";
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("user")
-    );
-    console.log("Parsed user object:", user);
+    // console.log(
+    //   "Raw user data from localStorage:",
+    //   localStorage.getItem("user")
+    // );
+    // console.log("Parsed user object:", user);
 
     if (!user || !user.token) {
       console.warn(
@@ -21,7 +21,7 @@ const getAuthHeader = () => {
 
     // Try different possible keys for personId
     const personId = user.personId || user.id || user.userId || null;
-    console.log("Extracted personId:", personId);
+    // console.log("Extracted personId:", personId);
 
     if (!personId) {
       console.warn(
@@ -56,6 +56,7 @@ export const fetchAddressTypes = async (
 
     const { headers } = getAuthHeader();
     const response = await axios.get(url, { headers });
+    console.log(response.headers)
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -140,7 +141,7 @@ export const deleteAddressType = async (id, personId = null) => {
 
     // Use provided personId or fallback to storedPersonId
     const deletedByID = personId || storedPersonId;
-    console.log("deleteAddressType - Using deletedByID:", deletedByID);
+    // console.log("deleteAddressType - Using deletedByID:", deletedByID);
 
     if (!deletedByID) {
       throw new Error(
@@ -153,8 +154,8 @@ export const deleteAddressType = async (id, personId = null) => {
       deletedById: deletedByID, // Include both to handle backend naming
     };
 
-    console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
-    console.log("Request body:", requestBody);
+    // console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
+    // console.log("Request body:", requestBody);
 
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       headers,
@@ -183,7 +184,7 @@ export const deleteAddressType = async (id, personId = null) => {
 export const getAddressTypeById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    console.log(`Fetching address type with ID: ${id}`);
+    // console.log(`Fetching address type with ID: ${id}`);
     
     const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
     console.log("Address type data response:", response.data);

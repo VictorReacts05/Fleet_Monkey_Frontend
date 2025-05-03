@@ -27,6 +27,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import { submitSalesRFQApproval } from "./SalesRFQAPI";
 
 const API_URL = "http://localhost:7000/api";
 
@@ -72,7 +73,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
   const [activeTab, setActiveTab] = useState("parcels");
-  const [approvalDecision, setApprovalDecision] = useState("");
+  const [approvalDecision, setApprovalDecision] = useState("no"); // Default to "no"
   const [submittingApproval, setSubmittingApproval] = useState(false);
   const [approvalSubmitted, setApprovalSubmitted] = useState(false);
   const [approvalError, setApprovalError] = useState("");
@@ -81,14 +82,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
   const theme = useTheme();
 
-  // Notify parent component when parcels change
-  useEffect(() => {
-    if (onParcelsChange) {
-      onParcelsChange(parcels);
-    }
-  }, [parcels, onParcelsChange]);
-
-  useEffect(() => {
+  /* useEffect(() => {
     const fetchCurrentApproval = async () => {
       if (!salesRFQId || activeTab !== "approvals") return;
 
@@ -109,9 +103,48 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           // Set the approval decision based on the current value
           setApprovalDecision(latestApproval.ApprovedYN ? "yes" : "no");
         } else {
-          // No approval found, set default to "no"
+          // No approval found, explicitly set default to "no"
           setApprovalDecision("no");
         }
+      } catch (error) {
+        console.error("Error fetching current approval:", error);
+        // Default to "no" if there's an error
+        setApprovalDecision("no");
+      } finally {
+        setLoadingApproval(false);
+      }
+    };
+
+    fetchCurrentApproval();
+  }, [salesRFQId, activeTab]); */
+
+  useEffect(() => {
+    const fetchCurrentApproval = async () => {
+      if (!salesRFQId || activeTab !== "approvals") return;
+
+      try {
+        setLoadingApproval(true);
+        // First, explicitly set to "no" before fetching
+        setApprovalDecision("no");
+
+        const response = await axios.get(
+          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
+        );
+
+        if (
+          response.data &&
+          response.data.data &&
+          response.data.data.length > 0
+        ) {
+          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
+          setCurrentApproval(latestApproval);
+
+          // Only change from default "no" if there's an explicit approval
+          if (latestApproval.ApprovedYN === 1) {
+            setApprovalDecision("yes");
+          }
+        }
+        // If no approval found or ApprovedYN is not 1, keep it as "no"
       } catch (error) {
         console.error("Error fetching current approval:", error);
         // Default to "no" if there's an error
@@ -616,8 +649,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       setApprovalError("");
 
       // Get the logged in user's ID from localStorage
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const personId = user.personId || user.PersonID || user.id;
+      /* const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const personId = user.personId || user.PersonID || user.id; */
+      const personId = 2;
 
       if (!personId) {
         throw new Error("User ID not found. Please log in again.");
@@ -630,10 +664,16 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         ApprovedYN: approvalDecision === "yes" ? 1 : 0,
         FormName: "SalesRFQ",
         RoleName: "Approver",
-        UserID: Number(personId)
+        UserID: Number(personId),
       };
 
-      console.log("Submitting approval with data:", approvalData);
+      // console.log("Submitting approval with data:", approvalData);
+      console.log("Submitting approval with data:", {
+        SalesRFQID: approvalData.SalesRFQID,
+        ApproverID: approvalData.ApproverID,
+        ApprovedYN: approvalData.ApprovedYN,
+        Decision: approvalDecision,
+      });
 
       // Submit to the API
       const response = await axios.post(
@@ -654,8 +694,18 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     } catch (error) {
       console.error("Error submitting approval:", error);
       console.error("Error details:", error.response?.data || error.message);
-      setApprovalError(error.response?.data?.message || error.message || "Failed to submit approval");
-      toast.error(`Error: ${error.response?.data?.message || error.message || "Failed to submit approval"}`);
+      setApprovalError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to submit approval"
+      );
+      toast.error(
+        `Error: ${
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to submit approval"
+        }`
+      );
     } finally {
       setSubmittingApproval(false);
     }
@@ -961,9 +1011,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                           fullWidth
                           error={!!approvalError}
                         >
-                          <MenuItem value="" disabled>
-                            Select an option
-                          </MenuItem>
                           <MenuItem value="yes">Yes</MenuItem>
                           <MenuItem value="no">No</MenuItem>
                         </Select>
