@@ -4,7 +4,7 @@ import SupplierForm from './SupplierForm';
 
 const SupplierModal = ({ open, onClose, supplierId, onSave }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogContent>
         <SupplierForm
           supplierId={supplierId}
