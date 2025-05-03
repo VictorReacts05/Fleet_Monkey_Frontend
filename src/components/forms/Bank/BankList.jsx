@@ -199,6 +199,7 @@ const BankList = () => {
 
       <ConfirmDialog
         open={deleteDialogOpen}
+        onCancel={() => setDeleteDialogOpen(false)}
         onClose={() => {
           setDeleteDialogOpen(false);
           setItemToDelete(null);

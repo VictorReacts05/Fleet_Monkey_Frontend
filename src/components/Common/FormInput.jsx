@@ -1,20 +1,45 @@
 import React from "react";
-import { TextField, styled, InputAdornment, Tooltip, IconButton, Box, Typography } from "@mui/material";
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {
+  TextField,
+  styled,
+  InputAdornment,
+  Tooltip,
+  IconButton,
+  Box,
+  Typography,
+} from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-// Create a styled TextField to override autofill styles
 const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
+    backgroundColor: "#595959", // Your custom background
     "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
+      color: theme.palette.common.white, // white text for contrast
+    },
+    "& fieldset": {
+      borderColor: "#8a8a8a", // optional: adjust border color
+    },
+    "&:hover fieldset": {
+      borderColor: "#a0a0a0",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: theme.palette.primary.main,
+    },
+    // Autofill override
+    "& input:-webkit-autofill": {
+      boxShadow: "0 0 0 1000px #595959 inset !important",
+      WebkitTextFillColor: "white !important",
+      transition: "background-color 9999s ease-out 0s",
     },
   },
   "& .MuiInputLabel-root": {
-    top: "-6px", // Adjust label position
+    top: "-6px",
+    color: "#dcdcdc",
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
@@ -22,23 +47,27 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
 }));
 
 
-
-const FormInput = ({ 
-  label, 
-  value, 
-  onChange, 
-  error, 
-  helperText, 
+const FormInput = ({
+  label,
+  value,
+  onChange,
+  error,
   tooltip,
   startIcon,
   endIcon,
-  ...props 
+  ...props
 }) => {
+  const hasError = Boolean(error);
+
   return (
     <Box>
-      {tooltip && (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium">
+      {tooltip ? (
+        <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            fontWeight="medium"
+          >
             {label}
           </Typography>
           <Tooltip title={tooltip} arrow placement="top">
@@ -47,27 +76,23 @@ const FormInput = ({
             </IconButton>
           </Tooltip>
         </Box>
-      )}
-      
+      ) : null}
+
       <CustomTextField
         fullWidth
         label={tooltip ? "" : label}
         value={value}
         onChange={onChange}
-        error={error}
-        helperText={helperText}
+        error={hasError}
+        helperText={hasError ? error : " "}
         variant="outlined"
         margin="normal"
         InputProps={{
           startAdornment: startIcon ? (
-            <InputAdornment position="start">
-              {startIcon}
-            </InputAdornment>
+            <InputAdornment position="start">{startIcon}</InputAdornment>
           ) : null,
           endAdornment: endIcon ? (
-            <InputAdornment position="end">
-              {endIcon}
-            </InputAdornment>
+            <InputAdornment position="end">{endIcon}</InputAdornment>
           ) : null,
         }}
         {...props}

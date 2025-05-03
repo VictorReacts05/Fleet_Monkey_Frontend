@@ -22,7 +22,6 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
-// Styled components for custom elements
 const LoginContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
   width: "100vw",
@@ -32,10 +31,10 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
   margin: 0,
   padding: 0,
-  overflow: 'hidden',
-  position: 'fixed',
+  overflow: "hidden",
+  position: "fixed",
   top: 0,
-  left: 0
+  left: 0,
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
@@ -63,7 +62,9 @@ const LoginButton = styled(Button)(({ theme }) => ({
 const Login = () => {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [loginIdError, setLoginIdError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -71,22 +72,36 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    let valid = true;
 
-    if (!loginId.trim() || !password.trim()) {
-      setError("Please enter both login ID and password");
-      return;
+    setLoginIdError("");
+    setPasswordError("");
+    setFormError("");
+
+    if (!loginId.trim()) {
+      setLoginIdError("Login ID is required.");
+      valid = false;
     }
+
+    if (!password.trim()) {
+      setPasswordError("Password is required.");
+      valid = false;
+    } else if (password.length < 4) {
+      setPasswordError("Password must be at least 4 characters.");
+      valid = false;
+    }
+
+    if (!valid) return;
 
     setLoading(true);
 
     try {
       const result = await login(loginId, password);
       if (!result.success) {
-        setError(result.error);
+        setFormError(result.error || "Invalid credentials.");
       }
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
+      setFormError("An unexpected error occurred. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -116,18 +131,18 @@ const Login = () => {
 
         <Divider sx={{ my: 2 }} />
 
-        {error && (
+        {formError && (
           <Typography
             color="error"
             variant="body2"
             align="center"
-            sx={{ mb: 2, p: 1, bgcolor: "error.light", borderRadius: 1 }}
+            sx={{ mb: 2, p: 1, bgcolor: "white", borderRadius: 1 }}
           >
-            {error}
+            {formError}
           </Typography>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <TextField
             fullWidth
             label="Login ID"
@@ -135,6 +150,8 @@ const Login = () => {
             margin="normal"
             value={loginId}
             onChange={(e) => setLoginId(e.target.value)}
+            error={!!loginIdError}
+            helperText={loginIdError}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -152,6 +169,8 @@ const Login = () => {
             margin="normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            error={!!passwordError}
+            helperText={passwordError}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">

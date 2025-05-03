@@ -22,7 +22,11 @@ const SalesRFQList = () => {
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
 
-  const columns = [{ field: "series", headerName: "Series", flex: 1 }];
+  const columns = [
+    { field: "series", headerName: "Series", flex: 1 },
+    { field: "customerName", headerName: "Customer Name", flex: 1 },
+    { field: "supplierName", headerName: "Supplier Name", flex: 1 },
+  ];
 
   useEffect(() => {
     loadSalesRFQs();
@@ -50,6 +54,8 @@ const SalesRFQList = () => {
       const mappedRows = salesRFQs.map((salesRFQ) => ({
         id: salesRFQ.SalesRFQID,
         series: salesRFQ.Series || "N/A",
+        customerName: salesRFQ.CustomerName || "N/A",
+        supplierName: salesRFQ.SupplierName || "N/A",
       }));
 
       setRows(mappedRows);

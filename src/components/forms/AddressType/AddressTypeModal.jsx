@@ -3,8 +3,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
   CircularProgress
 } from '@mui/material';
 import AddressTypeForm from './AddressTypeForm';
@@ -41,7 +39,7 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
       open={open} 
       onClose={onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="sm"
     >
       <DialogTitle>
         {addressTypeId ? 'Edit Address Type' : 'Add New Address Type'}

@@ -30,6 +30,7 @@ import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
+import ToastNotification from './components/toastNotification';
 
 // Create wrapper components that use the hooks properly
 const CreateSalesRFQWrapper = () => {
@@ -120,6 +121,7 @@ function AppContent() {
           <Route path="/uoms" element={<ProtectedRoute><UOMList /></ProtectedRoute>} />
         </Routes>
       </Box>
+      <ToastNotification />
     </Box>
   );
 }

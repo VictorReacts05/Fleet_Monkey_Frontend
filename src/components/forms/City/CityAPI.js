@@ -87,8 +87,6 @@ export const createCity = async (cityData) => {
       isDeleted: 0,
     };
 
-    console.log("[DEBUG] City create request data:", dataWithCreator);
-
     const response = await axios.post(
       API_BASE_URL,
       dataWithCreator,
