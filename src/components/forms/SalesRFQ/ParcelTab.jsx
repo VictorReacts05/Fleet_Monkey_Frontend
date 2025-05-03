@@ -41,7 +41,6 @@ const fetchItems = async () => {
   }
 };
 
-// Function to fetch UOMs from API
 const fetchUOMs = async () => {
   try {
     const response = await axios.get(`${API_URL}/uoms`);
@@ -87,7 +86,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
         try {
           setLoadingApproval(true);
-          // First, explicitly set to empty before fetching
           setApprovalDecision("");
 
           const response = await axios.get(
@@ -101,15 +99,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             response.data.data &&
             response.data.data.length > 0
           ) {
-            // Get all approvals for this SalesRFQ
             const approvals = response.data.data;
             console.log("All approvals for this SalesRFQ:", approvals);
 
-            // Set the latest approval as current
             setCurrentApproval(approvals[0]);
 
-            // Check if current user (hardcoded as 2 for now) has already approved
-            const personId = 2; // Hardcoded user ID
+            const personId = 2; 
             const userApproval = approvals.find(
               (approval) =>
                 Number(approval.ApproverID) === Number(personId) ||
@@ -131,12 +126,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               );
               setApprovalDecision(approvedValue ? "yes" : "no");
 
-              // Mark as already submitted so we can show as label
               setApprovalSubmitted(true);
             } else {
-              // User hasn't approved yet, keep dropdown editable
               setApprovalSubmitted(false);
-              setApprovalDecision(""); // Default to empty
+              setApprovalDecision("");
             }
           }
         } catch (error) {
@@ -252,8 +245,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
         if (response && response.data) {
           let parcelData = [];
-
-          // Handle different response formats
           if (response.data.data && Array.isArray(response.data.data)) {
             parcelData = response.data.data;
           } else if (Array.isArray(response.data)) {
@@ -608,11 +599,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         Decision: approvalDecision,
       });
 
-      // Submit to the API
-      // const response = await axios.post(
-      //   "http://localhost:7000/api/sales-rfq-approvals",
-      //   approvalData
-      // );
       const response = await submitSalesRFQApproval(
         salesRFQId,
         approvalDecision,
@@ -717,7 +703,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         </Box>
       </Box>
 
-      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -735,7 +720,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               </Box>
             ) : (
               <>
-                {/* Only show Add Parcel button if not in readOnly mode */}
                 {!readOnly && (
                   <Button
                     variant="contained"
@@ -747,7 +731,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                   </Button>
                 )}
 
-                {/* Show message when no parcels and not in form mode */}
                 {parcels.length === 0 && parcelForms.length === 0 && (
                   <Box
                     sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
@@ -850,7 +833,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                   </Box>
                 ))}
 
-                {/* DataTable for parcels */}
                 {parcels.length > 0 && (
                   <DataTable
                     rows={parcels}
