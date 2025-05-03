@@ -638,6 +638,10 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     setDeleteParcelId(null);
   };
 
+  /*
+  
+  ## DO NOT REMOVE THIS COMMENTED CODE BELOW
+  
   const handleApprovalSubmit = async () => {
     if (!salesRFQId || !approvalDecision) {
       setApprovalError("Please select an approval decision");
@@ -649,8 +653,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       setApprovalError("");
 
       // Get the logged in user's ID from localStorage
-      /* const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const personId = user.personId || user.PersonID || user.id; */
+      // const user = JSON.parse(localStorage.getItem("user") || "{}");
+      //const personId = user.personId || user.PersonID || user.id; 
       const personId = 2;
 
       if (!personId) {
@@ -690,6 +694,89 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         setApprovalSubmitted(true);
       } else {
         throw new Error(response.data?.message || "Failed to submit approval");
+      }
+    } catch (error) {
+      console.error("Error submitting approval:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      setApprovalError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to submit approval"
+      );
+      toast.error(
+        `Error: ${
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to submit approval"
+        }`
+      );
+    } finally {
+      setSubmittingApproval(false);
+    }
+  }; */
+
+  const handleApprovalSubmit = async () => {
+    if (!salesRFQId || !approvalDecision) {
+      setApprovalError("Please select an approval decision");
+      return;
+    }
+
+    try {
+      setSubmittingApproval(true);
+      setApprovalError("");
+
+      // Get the logged in user's ID from localStorage
+      /* const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const personId = user.personId || user.PersonID || user.id; */
+      const personId = 2;
+
+      if (!personId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
+      // Prepare the approval data - match the exact field names expected by the backend
+      const approvalData = {
+        SalesRFQID: Number(salesRFQId),
+        ApproverID: Number(personId),
+        ApprovedYN: approvalDecision === "yes" ? 1 : 0,
+        FormName: "SalesRFQ",
+        RoleName: "Approver",
+        UserID: Number(personId),
+      };
+
+      // console.log("Submitting approval with data:", approvalData);
+      console.log("Submitting approval with data:", {
+        SalesRFQID: approvalData.SalesRFQID,
+        ApproverID: approvalData.ApproverID,
+        ApprovedYN: approvalData.ApprovedYN,
+        Decision: approvalDecision,
+      });
+
+      // Submit to the API
+      // const response = await axios.post(
+      //   "http://localhost:7000/api/sales-rfq-approvals",
+      //   approvalData
+      // );
+      const response = await submitSalesRFQApproval(
+        salesRFQId,
+        approvalDecision,
+        personId
+      );
+
+      // Check for successful response (HTTP 200/201 or presence of expected data)
+      if (response && (response.status === 200 || response.status === 201)) {
+        toast.success(
+          `SalesRFQ ${
+            approvalDecision === "yes" ? "approved" : "rejected"
+          } successfully`
+        );
+        setApprovalSubmitted(true);
+      } else {
+        throw new Error(
+          response.data?.message ||
+            response.message ||
+            "Failed to submit approval"
+        );
       }
     } catch (error) {
       console.error("Error submitting approval:", error);

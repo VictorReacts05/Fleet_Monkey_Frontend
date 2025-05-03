@@ -363,8 +363,8 @@ export const submitSalesRFQApproval = async (
       SalesRFQID: Number(salesRFQId),
       ApproverID: Number(personId),
       ApprovedYN: approvalDecision === "yes" ? 1 : 0,
-      FormName: "SalesRFQ",
-      RoleName: "Approver",
+      FormName: "Sales RFQ",
+      RoleName: "Sales RFQ Approver",
       UserID: Number(personId),
       // Add these fields to ensure proper authorization
       IsAuthorized: true,
@@ -417,8 +417,8 @@ export const createDefaultApproval = async (salesRFQId) => {
           SalesRFQID: Number(salesRFQId),
           ApproverID: 2,
           ApprovedYN: 0,
-          FormName: "SalesRFQ",
-          RoleName: "Approver",
+          FormName: "Sales RFQ",
+          RoleName: "Sales RFQ Approver",
           UserID: 2
         };
         
@@ -443,8 +443,8 @@ export const createDefaultApproval = async (salesRFQId) => {
             SalesRFQID: Number(salesRFQId),
             ApproverID: 2,
             ApprovedYN: 0,
-            FormName: "SalesRFQ",
-            RoleName: "Approver",
+            FormName: "Sales RFQ",
+            RoleName: "Sales RFQ Approver",
             UserID: 2,
             timestamp: new Date().toISOString()
           });
