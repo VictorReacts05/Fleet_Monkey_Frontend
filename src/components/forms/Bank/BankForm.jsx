@@ -3,6 +3,7 @@ import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormPage from "../../Common/FormPage";
 import { createBank, updateBank, getBankById } from "./BankAPI";
+import { Grid } from "@mui/material";
 import { toast } from "react-toastify";
 
 const BankForm = ({ bankId, onSave, onClose }) => {
@@ -27,7 +28,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         try {
           setLoading(true);
           const data = await getBankById(bankId);
-          
+
           // Make sure we're setting the form data with the correct property names
           setFormData({
             AccountName: data.AccountName || "",
@@ -100,13 +101,14 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           delete newErrors.BranchCode;
         }
         break;
-        
+
       case "IBAN":
         if (value) {
           // IBAN format: 2 letter country code + 2 check digits + up to 30 alphanumeric chars
           const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/;
           if (!ibanRegex.test(value)) {
-            newErrors.IBAN = "Invalid IBAN format (e.g., GB29NWBK60161331926819)";
+            newErrors.IBAN =
+              "Invalid IBAN format (e.g., GB29NWBK60161331926819)";
           } else {
             delete newErrors.IBAN;
           }
@@ -114,7 +116,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           delete newErrors.IBAN;
         }
         break;
-        
+
       case "IFSC":
         if (value) {
           // IFSC format: 4 letters (bank code) + 0 + 6 alphanumeric chars
@@ -128,7 +130,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           delete newErrors.IFSC;
         }
         break;
-        
+
       case "MICRA":
         if (value) {
           // MICR code is typically 9 digits
@@ -153,7 +155,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
+
     // Only validate if the form has been submitted once
     if (submitted) {
       validateField(name, value);
@@ -231,16 +233,16 @@ const BankForm = ({ bankId, onSave, onClose }) => {
     if (e) {
       e.preventDefault();
     }
-    
+
     setSubmitted(true);
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // Use the correct property names from formData (with uppercase first letters)
       const apiData = {
         AccountName: formData.AccountName,
@@ -249,11 +251,11 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         BranchCode: formData.BranchCode || null,
         IBAN: formData.IBAN || null,
         IFSC: formData.IFSC || null,
-        MICRA: formData.MICRA || null
+        MICRA: formData.MICRA || null,
       };
-      
+
       console.log("Submitting bank data:", apiData);
-      
+
       if (bankId) {
         await updateBank(bankId, apiData);
         toast.success("Bank account updated successfully");
@@ -261,12 +263,16 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         await createBank(apiData);
         toast.success("Bank account created successfully");
       }
-      
+
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
       console.error("API error:", error);
-      toast.error(`Failed to ${bankId ? "update" : "create"} bank account: ${error.message || "Unknown error"}`);
+      toast.error(
+        `Failed to ${bankId ? "update" : "create"} bank account: ${
+          error.message || "Unknown error"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -286,71 +292,96 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       onSubmit={handleSubmit}
       loading={loading}
     >
-      <FormInput
-        label="Account Name *"
-        name="AccountName"
-        value={formData.AccountName}
-        onChange={handleChange}
-        error={errors.AccountName}
-        helperText={errors.AccountName || ""}
-      />
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Account Name *"
+            name="AccountName"
+            value={formData.AccountName}
+            onChange={handleChange}
+            error={errors.AccountName}
+            helperText={errors.AccountName || ""}
+          />
+        </Grid>
 
-      <FormSelect
-        label="Account Type *"
-        name="AccountType"
-        value={formData.AccountType}
-        options={[
-          { value: "Savings", label: "Savings" },
-          { value: "Current", label: "Current" },
-        ]}
-        onChange={handleChange}
-        error={errors.AccountType}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormSelect
+            label="Account Type *"
+            name="AccountType"
+            value={formData.AccountType}
+            options={[
+              { value: "Savings", label: "Savings" },
+              { value: "Current", label: "Current" },
+            ]}
+            onChange={handleChange}
+            error={errors.AccountType}
+          />
+        </Grid>
 
-      <FormInput
-        label="Bank Name *"
-        name="BankName"
-        value={formData.BankName}
-        onChange={handleChange}
-        error={errors.BankName}
-        helperText={errors.BankName || ""}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Bank Name *"
+            name="BankName"
+            value={formData.BankName}
+            onChange={handleChange}
+            error={errors.BankName}
+            helperText={errors.BankName || ""}
+          />
+        </Grid>
 
-      <FormInput
-        label="Branch Code"
-        name="BranchCode"
-        value={formData.BranchCode}
-        onChange={handleChange}
-        error={errors.BranchCode}
-        helperText={errors.BranchCode || ""}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Branch Code"
+            name="BranchCode"
+            value={formData.BranchCode}
+            onChange={handleChange}
+            error={errors.BranchCode}
+            helperText={errors.BranchCode || ""}
+          />
+        </Grid>
 
-      <FormInput
-        label="IBAN"
-        name="IBAN"
-        value={formData.IBAN}
-        onChange={handleChange}
-        error={errors.IBAN}
-        helperText={errors.IBAN || ""}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="IBAN"
+            name="IBAN"
+            value={formData.IBAN}
+            onChange={handleChange}
+            error={errors.IBAN}
+            helperText={errors.IBAN || ""}
+          />
+        </Grid>
 
-      <FormInput
-        label="IFSC Code"
-        name="IFSC"
-        value={formData.IFSC}
-        onChange={handleChange}
-        error={errors.IFSC}
-        helperText={errors.IFSC || ""}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="IFSC Code"
+            name="IFSC"
+            value={formData.IFSC}
+            onChange={handleChange}
+            error={errors.IFSC}
+            helperText={errors.IFSC || ""}
+          />
+        </Grid>
 
-      <FormInput
-        label="MICR Code"
-        name="MICRA"
-        value={formData.MICRA}
-        onChange={handleChange}
-        error={errors.MICRA}
-        helperText={errors.MICRA || ""}
-      />
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="MICR Code"
+            name="MICRA"
+            value={formData.MICRA}
+            onChange={handleChange}
+            error={errors.MICRA}
+            helperText={errors.MICRA || ""}
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };

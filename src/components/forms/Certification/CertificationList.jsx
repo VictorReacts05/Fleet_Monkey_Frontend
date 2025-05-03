@@ -11,7 +11,6 @@ import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
 
-
 const CertificationList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);

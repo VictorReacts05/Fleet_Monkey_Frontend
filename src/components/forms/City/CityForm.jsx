@@ -26,19 +26,19 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       try {
         setLoading(true);
         const response = await fetchCountries();
-        const countryOptions = (response.data || []).map(country => ({
+        const countryOptions = (response.data || []).map((country) => ({
           value: country.CountryOfOriginID,
           label: country.CountryOfOrigin,
         }));
         setCountries(countryOptions);
       } catch (error) {
-        console.error('Error loading countries:', error);
-        toast.error('Failed to load countries');
+        console.error("Error loading countries:", error);
+        toast.error("Failed to load countries");
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadCountries();
   }, []);
 
@@ -54,12 +54,12 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       setLoading(true);
       const response = await getCityById(cityId);
       setFormData({
-        cityName: response.CityName || '',
-        countryId: response.CountryID || '',
+        cityName: response.CityName || "",
+        countryId: response.CountryID || "",
       });
     } catch (error) {
-      console.error('Error loading city:', error);
-      toast.error('Failed to load city details');
+      console.error("Error loading city:", error);
+      toast.error("Failed to load city details");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,8 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       newErrors.cityName = "City name is required";
       isValid = false;
     } else if (!/^[A-Za-z\s-]{2,}$/.test(formData.cityName)) {
-      newErrors.cityName = "City name must be at least 2 characters and contain only letters, spaces, and hyphens";
+      newErrors.cityName =
+        "City name must be at least 2 characters and contain only letters, spaces, and hyphens";
       isValid = false;
     }
 
@@ -95,12 +96,12 @@ const CityForm = ({ cityId, onSave, onClose }) => {
     if (validateForm()) {
       try {
         setLoading(true);
-        
+
         const cityData = {
           CityName: formData.cityName,
-          CountryID: formData.countryId
+          CountryID: formData.countryId,
         };
-        
+
         if (cityId) {
           // Update existing city
           await updateCity(cityId, cityData);
@@ -110,12 +111,12 @@ const CityForm = ({ cityId, onSave, onClose }) => {
           await createCity(cityData);
           toast.success("City created successfully");
         }
-        
+
         if (onSave) onSave();
         if (onClose) onClose();
       } catch (error) {
-        console.error('Error saving city:', error);
-        toast.error(`Failed to save city: ${error.message || 'Unknown error'}`);
+        console.error("Error saving city:", error);
+        toast.error(`Failed to save city: ${error.message || "Unknown error"}`);
       } finally {
         setLoading(false);
       }
@@ -125,7 +126,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     if (isSubmitted) {
       validateForm();
     }
@@ -138,14 +139,6 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       onCancel={onClose}
       loading={loading}
     >
-      <FormInput
-        label="City Name"
-        name="cityName"
-        value={formData.cityName}
-        onChange={handleChange}
-        error={errors.cityName}
-        required
-      />
       <FormSelect
         label="Country"
         name="countryId"
@@ -153,6 +146,14 @@ const CityForm = ({ cityId, onSave, onClose }) => {
         onChange={handleChange}
         options={countries}
         error={errors.countryId}
+        required
+      />
+      <FormInput
+        label="City Name"
+        name="cityName"
+        value={formData.cityName}
+        onChange={handleChange}
+        error={errors.cityName}
         required
       />
     </FormPage>
