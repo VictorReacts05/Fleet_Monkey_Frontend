@@ -71,7 +71,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       console.error("Failed to load UOM:", error);
       toast.error("Failed to load UOM: " + error.message);
     }
-  };
+  }; 
 
   const validateForm = () => {
     const newErrors = {};

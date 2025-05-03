@@ -11,10 +11,10 @@ const getPersonId = () => {
       return user.personId;
     }
     console.warn("No personId found in localStorage, using default");
-    return 1015; // Fallback value
+    return 1015;
   } catch (error) {
     console.error("Error getting personId from localStorage:", error);
-    return 1015; // Fallback value
+    return 1015; 
   }
 };
 

@@ -9,7 +9,7 @@ import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchUOMs, deleteUOM } from "./UOMAPI";
 import UOMModal from './UOMModal';
 import SearchBar from '../../Common/SearchBar';
-
+ 
 const UOMList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);

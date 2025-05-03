@@ -33,7 +33,7 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
       setLoading(true);
       const response = await getUOMById(uomId);
       console.log("UOM data received:", response);
-      
+       
       // Extract the UOM data from the nested structure
       let uomData = null;
       
