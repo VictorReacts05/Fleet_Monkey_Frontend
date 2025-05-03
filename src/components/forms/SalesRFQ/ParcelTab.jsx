@@ -31,7 +31,6 @@ import { submitSalesRFQApproval } from "./SalesRFQAPI";
 
 const API_URL = "http://localhost:7000/api";
 
-// Function to fetch items from API
 const fetchItems = async () => {
   try {
     const response = await axios.get(`${API_URL}/items`);
@@ -73,7 +72,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
   const [activeTab, setActiveTab] = useState("parcels");
-  const [approvalDecision, setApprovalDecision] = useState("no"); // Default to "no"
+  const [approvalDecision, setApprovalDecision] = useState("");
   const [submittingApproval, setSubmittingApproval] = useState(false);
   const [approvalSubmitted, setApprovalSubmitted] = useState(false);
   const [approvalError, setApprovalError] = useState("");
@@ -82,89 +81,81 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
   const theme = useTheme();
 
-  /* useEffect(() => {
-    const fetchCurrentApproval = async () => {
-      if (!salesRFQId || activeTab !== "approvals") return;
+    useEffect(() => {
+      const fetchCurrentApproval = async () => {
+        if (!salesRFQId || activeTab !== "approvals") return;
 
-      try {
-        setLoadingApproval(true);
-        const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
-        );
+        try {
+          setLoadingApproval(true);
+          // First, explicitly set to empty before fetching
+          setApprovalDecision("");
 
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
-          setCurrentApproval(latestApproval);
+          const response = await axios.get(
+            `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
+          );
 
-          // Set the approval decision based on the current value
-          setApprovalDecision(latestApproval.ApprovedYN ? "yes" : "no");
-        } else {
-          // No approval found, explicitly set default to "no"
-          setApprovalDecision("no");
-        }
-      } catch (error) {
-        console.error("Error fetching current approval:", error);
-        // Default to "no" if there's an error
-        setApprovalDecision("no");
-      } finally {
-        setLoadingApproval(false);
-      }
-    };
+          console.log("Approval data received:", response.data);
 
-    fetchCurrentApproval();
-  }, [salesRFQId, activeTab]); */
+          if (
+            response.data &&
+            response.data.data &&
+            response.data.data.length > 0
+          ) {
+            // Get all approvals for this SalesRFQ
+            const approvals = response.data.data;
+            console.log("All approvals for this SalesRFQ:", approvals);
 
-  useEffect(() => {
-    const fetchCurrentApproval = async () => {
-      if (!salesRFQId || activeTab !== "approvals") return;
+            // Set the latest approval as current
+            setCurrentApproval(approvals[0]);
 
-      try {
-        setLoadingApproval(true);
-        // First, explicitly set to "no" before fetching
-        setApprovalDecision("no");
+            // Check if current user (hardcoded as 2 for now) has already approved
+            const personId = 2; // Hardcoded user ID
+            const userApproval = approvals.find(
+              (approval) =>
+                Number(approval.ApproverID) === Number(personId) ||
+                Number(approval.UserID) === Number(personId)
+            );
 
-        const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
-        );
+            console.log("User's approval record:", userApproval);
 
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
-          setCurrentApproval(latestApproval);
+            if (userApproval) {
+              const approvedValue =
+                userApproval.ApprovedYN === 1 ||
+                userApproval.ApprovedYN === true ||
+                userApproval.ApprovedYN === "1" ||
+                userApproval.ApprovedYN === "true";
 
-          // Only change from default "no" if there's an explicit approval
-          if (latestApproval.ApprovedYN === 1) {
-            setApprovalDecision("yes");
+              console.log(
+                "Setting approval decision to:",
+                approvedValue ? "yes" : "no"
+              );
+              setApprovalDecision(approvedValue ? "yes" : "no");
+
+              // Mark as already submitted so we can show as label
+              setApprovalSubmitted(true);
+            } else {
+              // User hasn't approved yet, keep dropdown editable
+              setApprovalSubmitted(false);
+              setApprovalDecision(""); // Default to empty
+            }
           }
+        } catch (error) {
+          console.error("Error fetching current approval:", error);
+          setApprovalDecision("");
+        } finally {
+          setLoadingApproval(false);
         }
-        // If no approval found or ApprovedYN is not 1, keep it as "no"
-      } catch (error) {
-        console.error("Error fetching current approval:", error);
-        // Default to "no" if there's an error
-        setApprovalDecision("no");
-      } finally {
-        setLoadingApproval(false);
-      }
-    };
+      };
 
-    fetchCurrentApproval();
-  }, [salesRFQId, activeTab]);
+      fetchCurrentApproval();
+    }, [salesRFQId, activeTab]);
 
-  // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
   ];
 
-  // Load dropdown data when component mounts
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -224,7 +215,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     loadDropdownData();
   }, []);
 
-  // Load existing parcels when salesRFQId is provided
   useEffect(() => {
     const loadExistingParcels = async () => {
       if (!salesRFQId) {
@@ -235,10 +225,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       try {
         setLoadingExistingParcels(true);
 
-        // Try different endpoint formats that might be available
         let response;
         try {
-          // First try the direct endpoint
           response = await axios.get(
             `${API_URL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
           );
@@ -279,9 +267,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             console.warn("Unexpected response format:", response.data);
           }
 
-          // Ensure we're only processing parcels for this specific SalesRFQ ID
           const filteredParcels = parcelData.filter((parcel) => {
-            // Check for different possible property names for SalesRFQ ID
             const parcelSalesRFQId =
               parcel.SalesRFQID ||
               parcel.salesRFQID ||
@@ -289,7 +275,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               parcel.salesrfqid ||
               parcel.SalesRfqId;
 
-            // Convert both to strings for comparison
             return String(parcelSalesRFQId) === String(salesRFQId);
           });
 
@@ -298,11 +283,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             return;
           }
 
-          // If items or UOMs are not loaded yet, fetch them directly
           let itemsToUse = items;
           let uomsToUse = uoms;
 
-          // If items list is empty or doesn't have enough items, fetch them directly
           if (items.length <= 1) {
             try {
               const itemsResponse = await fetchItems();
@@ -319,7 +302,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             }
           }
 
-          // If UOMs list is empty or doesn't have enough UOMs, fetch them directly
           if (uoms.length <= 1) {
             try {
               const uomsResponse = await fetchUOMs();
@@ -351,39 +333,31 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             }
           }
 
-          // Format the parcels data for our component
           const formattedParcels = filteredParcels.map((parcel, index) => {
-            // Get item and UOM details
             let itemName = "Unknown Item";
             let uomName = "Unknown UOM";
 
             try {
-              // Try to find item name from our items list
               const itemId = String(parcel.ItemID || "");
               const uomId = String(parcel.UOMID || "");
 
-              // Try to find item in our items list
               const item = itemsToUse.find((i) => i.value === itemId);
               if (item) {
                 itemName = item.label;
               } else {
-                // If not found, use the ID as the name
                 itemName = `Item #${itemId}`;
               }
 
-              // Try to find UOM in our UOMs list
               const uom = uomsToUse.find((u) => u.value === uomId);
               if (uom) {
                 uomName = uom.label;
               } else {
-                // If not found, use the ID as the name
                 uomName = `UOM #${uomId}`;
               }
             } catch (err) {
               console.error("Error formatting parcel data:", err);
             }
 
-            // Add index+1 as srNo for proper numbering
             return {
               id: parcel.SalesRFQParcelID || parcel.id || Date.now() + index,
               itemId: String(parcel.ItemID || ""),
@@ -391,7 +365,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
               uomName,
-              srNo: index + 1, // Add explicit sr. no. field
+              srNo: index + 1,
             };
           });
 
@@ -408,14 +382,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       }
     };
 
-    // Clear parcels when salesRFQId changes
     setParcels([]);
 
-    // Then load the parcels for the new salesRFQId
     loadExistingParcels();
   }, [salesRFQId, items, uoms]);
 
-  // Handle adding a new parcel form
   const handleAddParcel = () => {
     const newFormId = Date.now();
     setParcelForms((prev) => [
@@ -429,7 +400,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     ]);
   };
 
-  // Handle editing an existing parcel
   const handleEditParcel = (id) => {
     const parcelToEdit = parcels.find((p) => p.id === id);
     if (!parcelToEdit) {
@@ -446,12 +416,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         uomId: parcelToEdit.uomId,
         quantity: parcelToEdit.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
-        originalId: id, // Store the original ID for reference
+        originalId: id,
       },
     ]);
   };
 
-  // Handle form field changes
   const handleChange = (e, formId) => {
     const { name, value } = e.target;
     setParcelForms((prev) =>
@@ -460,7 +429,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       )
     );
 
-    // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -472,7 +440,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     }
   };
 
-  // Validate a parcel form
   const validateParcelForm = (form) => {
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
@@ -486,7 +453,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     return formErrors;
   };
 
-  // Handle saving a parcel form
   const handleSave = (formId) => {
     const form = parcelForms.find((f) => f.id === formId);
     if (!form) return;
@@ -500,45 +466,27 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       return;
     }
 
-    // Get item and UOM names for display
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
 
-    // Find the original parcel if we're editing
     const originalParcel =
       form.editIndex !== undefined ? parcels[form.editIndex] : null;
 
-    // Create a completely new parcel object with all required fields
     const newParcel = {
-      // Keep original ID and SalesRFQParcelID for database reference
       id: form.originalId || form.id,
       SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
-
-      // Ensure SalesRFQID is included for proper association
       SalesRFQID: salesRFQId,
-
-      // Include all possible field name variations for maximum compatibility
-      ItemID: parseInt(form.itemId, 10), // Convert to number for backend
+      ItemID: parseInt(form.itemId, 10),
       itemId: form.itemId,
-
-      UOMID: parseInt(form.uomId, 10), // Convert to number for backend
+      UOMID: parseInt(form.uomId, 10),
       uomId: form.uomId,
-
-      ItemQuantity: parseInt(form.quantity, 10), // Convert to number for backend
-      Quantity: parseInt(form.quantity, 10), // Convert to number for backend
+      ItemQuantity: parseInt(form.quantity, 10),
+      Quantity: parseInt(form.quantity, 10),
       quantity: form.quantity,
-
-      // Display values for UI
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-
-      // Preserve srNo
       srNo: originalParcel?.srNo || parcels.length + 1,
-
-      // Add a flag to indicate this record has been modified
       isModified: true,
-
-      // Add any other fields that might be required by the backend
       SalesRFQParcel: {
         SalesRFQParcelID:
           originalParcel?.SalesRFQParcelID || originalParcel?.id,
@@ -550,16 +498,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     };
 
     if (form.editIndex !== undefined) {
-      // Update existing parcel - create a completely new array
       const updatedParcels = [...parcels];
       updatedParcels[form.editIndex] = newParcel;
       setParcels(updatedParcels);
 
-      // Force a notification to the parent component
       if (onParcelsChange) {
         setTimeout(() => onParcelsChange(updatedParcels), 0);
-
-        // Also try to directly update the database
         try {
           updateParcelInDatabase(newParcel);
         } catch (error) {
@@ -567,21 +511,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         }
       }
     } else {
-      // Add new parcel
       const newParcelsArray = [...parcels, newParcel];
       setParcels(newParcelsArray);
-
-      // Force a notification to the parent component
       if (onParcelsChange) {
         setTimeout(() => onParcelsChange(newParcelsArray), 0);
       }
     }
-
-    // Remove the form
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
   };
 
-  // Function to directly update a parcel in the database
   const updateParcelInDatabase = async (parcel) => {
     if (!salesRFQId || !parcel.SalesRFQParcelID) {
       console.error("Missing required IDs for direct parcel update");
@@ -589,7 +527,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     }
 
     try {
-      // Try to update using the SalesRFQParcel endpoint
       const response = await axios.put(
         `${API_URL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
         {
@@ -605,7 +542,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       }
     } catch (error) {
       console.error("Failed to directly update parcel:", error);
-      // Try alternative endpoint
       try {
         const altResponse = await axios.put(
           `${API_URL}/sales-rfq/${salesRFQId}/parcels/${parcel.SalesRFQParcelID}`,
@@ -621,7 +557,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     }
   };
 
-  // Handle deleting a parcel
   const handleDeleteParcel = (id) => {
     setDeleteParcelId(id);
     setDeleteConfirmOpen(true);
@@ -637,83 +572,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
   };
-
-  /*
-  
-  ## DO NOT REMOVE THIS COMMENTED CODE BELOW
-  
-  const handleApprovalSubmit = async () => {
-    if (!salesRFQId || !approvalDecision) {
-      setApprovalError("Please select an approval decision");
-      return;
-    }
-
-    try {
-      setSubmittingApproval(true);
-      setApprovalError("");
-
-      // Get the logged in user's ID from localStorage
-      // const user = JSON.parse(localStorage.getItem("user") || "{}");
-      //const personId = user.personId || user.PersonID || user.id; 
-      const personId = 2;
-
-      if (!personId) {
-        throw new Error("User ID not found. Please log in again.");
-      }
-
-      // Prepare the approval data - match the exact field names expected by the backend
-      const approvalData = {
-        SalesRFQID: Number(salesRFQId),
-        ApproverID: Number(personId),
-        ApprovedYN: approvalDecision === "yes" ? 1 : 0,
-        FormName: "SalesRFQ",
-        RoleName: "Approver",
-        UserID: Number(personId),
-      };
-
-      // console.log("Submitting approval with data:", approvalData);
-      console.log("Submitting approval with data:", {
-        SalesRFQID: approvalData.SalesRFQID,
-        ApproverID: approvalData.ApproverID,
-        ApprovedYN: approvalData.ApprovedYN,
-        Decision: approvalDecision,
-      });
-
-      // Submit to the API
-      const response = await axios.post(
-        "http://localhost:7000/api/sales-rfq-approvals",
-        approvalData
-      );
-
-      if (response.data && response.data.success) {
-        toast.success(
-          `SalesRFQ ${
-            approvalDecision === "yes" ? "approved" : "rejected"
-          } successfully`
-        );
-        setApprovalSubmitted(true);
-      } else {
-        throw new Error(response.data?.message || "Failed to submit approval");
-      }
-    } catch (error) {
-      console.error("Error submitting approval:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      setApprovalError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-      );
-      toast.error(
-        `Error: ${
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-        }`
-      );
-    } finally {
-      setSubmittingApproval(false);
-    }
-  }; */
 
   const handleApprovalSubmit = async () => {
     if (!salesRFQId || !approvalDecision) {
@@ -734,7 +592,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         throw new Error("User ID not found. Please log in again.");
       }
 
-      // Prepare the approval data - match the exact field names expected by the backend
       const approvalData = {
         SalesRFQID: Number(salesRFQId),
         ApproverID: Number(personId),
@@ -744,7 +601,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         UserID: Number(personId),
       };
 
-      // console.log("Submitting approval with data:", approvalData);
       console.log("Submitting approval with data:", {
         SalesRFQID: approvalData.SalesRFQID,
         ApproverID: approvalData.ApproverID,
@@ -763,7 +619,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         personId
       );
 
-      // Check for successful response (HTTP 200/201 or presence of expected data)
       if (response && (response.status === 200 || response.status === 201)) {
         toast.success(
           `SalesRFQ ${
@@ -807,7 +662,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         borderRadius: 1,
       }}
     >
-      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -1091,20 +945,44 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                         {salesRFQId}
                       </TableCell>
                       <TableCell sx={{ textAlign: "center" }} align="center">
-                        <Select
-                          value={approvalDecision}
-                          onChange={(e) => setApprovalDecision(e.target.value)}
-                          displayEmpty
-                          fullWidth
-                          error={!!approvalError}
-                        >
-                          <MenuItem value="yes">Yes</MenuItem>
-                          <MenuItem value="no">No</MenuItem>
-                        </Select>
-                        {approvalError && (
-                          <Typography variant="caption" color="error">
-                            {approvalError}
+                        {loadingApproval ? (
+                          <CircularProgress size={24} />
+                        ) : approvalSubmitted ? (
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              fontWeight: "medium",
+                              color:
+                                approvalDecision === "yes"
+                                  ? "success.main"
+                                  : "error.main",
+                              padding: "8px 0",
+                            }}
+                          >
+                            {approvalDecision === "yes"
+                              ? "Approved"
+                              : "Rejected"}
                           </Typography>
+                        ) : (
+                          <>
+                            <Select
+                              value={approvalDecision}
+                              onChange={(e) =>
+                                setApprovalDecision(e.target.value)
+                              }
+                              displayEmpty
+                              fullWidth
+                              error={!!approvalError}
+                            >
+                              <MenuItem value="yes">Yes</MenuItem>
+                              <MenuItem value="no">No</MenuItem>
+                            </Select>
+                            {approvalError && (
+                              <Typography variant="caption" color="error">
+                                {approvalError}
+                              </Typography>
+                            )}
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -1114,25 +992,26 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             </Paper>
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                disabled={!approvalDecision || submittingApproval}
-                onClick={handleApprovalSubmit}
-                sx={{ minWidth: 200 }}
-              >
-                {submittingApproval ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Submit Approval Decision"
-                )}
-              </Button>
+              {!approvalSubmitted && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  disabled={!approvalDecision || submittingApproval}
+                  onClick={handleApprovalSubmit}
+                  sx={{ minWidth: 200 }}
+                >
+                  {submittingApproval ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    "Submit Approval Decision"
+                  )}
+                </Button>
+              )}
             </Box>
           </Box>
         )}
       </Box>
 
-      {/* Delete confirmation dialog */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleCancelDelete}

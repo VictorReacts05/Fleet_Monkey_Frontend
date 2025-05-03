@@ -5,7 +5,9 @@ import {
   Typography,
   FormControlLabel,
   Checkbox,
+  Button,
 } from "@mui/material";
+import axios from "axios";
 import {
   createSalesRFQ,
   updateSalesRFQ,
@@ -69,7 +71,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   });
   // Fix the state variable name - use camelCase consistently
   const [parcels, setParcels] = useState([]);
-
+  const [isApproved, setIsApproved] = useState(false); // Replace checkApprovalStatus with isApproved
   const [companies, setCompanies] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -82,6 +84,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   // Change this line to make the form editable when opened for editing
   const [isEditing, setIsEditing] = useState(!readOnly);
   const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
+  // const [loadSalesRFQ, setLoadSalesRFQ] = useState([]);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -212,89 +215,78 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   useEffect(() => {
     if (salesRFQId && dropdownsLoaded) {
       loadSalesRFQ();
+      checkApprovalStatus(); // Now this will call the function, not the state
     }
   }, [salesRFQId, dropdownsLoaded]);
 
-  // Update the loadSalesRFQ function to correctly handle boolean values from the API
+  // Add the loadSalesRFQ function
   const loadSalesRFQ = async () => {
     try {
-      const response = await getSalesRFQById(salesRFQId);
-      const data = response.data;
-
-      const displayValue = (value) =>
-        value === null || value === undefined ? "-" : value;
-
-      // Log the raw data to see how boolean values are represented
+      setLoading(true);
+      const data = await getSalesRFQById(salesRFQId);
       console.log("Raw SalesRFQ data:", data);
 
+      // Format dates from string to Date objects
       const formattedData = {
-        ...formData,
-        Series: displayValue(data.Series),
-        CompanyID: DEFAULT_COMPANY.value,
-        CustomerID: customers.find(
-          (c) => String(c.value) === String(data.CustomerID)
-        )
-          ? String(data.CustomerID)
-          : "",
-        SupplierID: suppliers.find(
-          (s) => String(s.value) === String(data.SupplierID)
-        )
-          ? String(data.SupplierID)
-          : "",
-        ExternalRefNo: displayValue(data.ExternalRefNo),
+        ...data,
         DeliveryDate: data.DeliveryDate ? new Date(data.DeliveryDate) : null,
         PostingDate: data.PostingDate ? new Date(data.PostingDate) : null,
-        RequiredByDate: data.RequiredByDate
-          ? new Date(data.RequiredByDate)
-          : null,
+        RequiredByDate: data.RequiredByDate ? new Date(data.RequiredByDate) : null,
         DateReceived: data.DateReceived ? new Date(data.DateReceived) : null,
-        ServiceTypeID: serviceTypes.find(
-          (st) => String(st.value) === String(data.ServiceTypeID)
-        )
-          ? String(data.ServiceTypeID)
-          : "",
-        CollectionAddressID: addresses.find(
-          (a) => String(a.value) === String(data.CollectionAddressID)
-        )
-          ? String(data.CollectionAddressID)
-          : "",
-        DestinationAddressID: addresses.find(
-          (a) => String(a.value) === String(data.DestinationAddressID)
-        )
-          ? String(data.DestinationAddressID)
-          : "",
-        ShippingPriorityID: mailingPriorities.find(
-          (p) => String(p.value) === String(data.ShippingPriorityID)
-        )
-          ? String(data.ShippingPriorityID)
-          : "",
-        Terms: displayValue(data.Terms),
-        CurrencyID: String(data.CurrencyID) || "",
-        // Fix the boolean values by checking for any truthy value (1, true, "1", "true", etc.)
-        CollectFromSupplierYN: Boolean(
-          data.CollectFromSupplierYN || data.CollectFromSupplierYN
-        ),
-        PackagingRequiredYN: Boolean(
-          data.PackagingRequiredYN || data.PackagingRequiredYN
-        ),
-        FormCompletedYN: Boolean(data.FormCompletedYN || data.FormCompletedYN),
-        CreatedByID: displayValue(data.CreatedByID),
-        CreatedDateTime: data.CreatedDateTime
-          ? new Date(data.CreatedDateTime)
-          : null,
-        IsDeleted: data.IsDeleted || false,
-        DeletedDateTime: data.DeletedDateTime
-          ? new Date(data.DeletedDateTime)
-          : null,
-        DeletedByID: displayValue(data.DeletedByID),
-        RowVersionColumn: displayValue(data.RowVersionColumn),
+        // Convert numeric boolean values to actual booleans
+        CollectFromSupplierYN: !!data.CollectFromSupplierYN,
+        PackagingRequiredYN: !!data.PackagingRequiredYN,
+        FormCompletedYN: !!data.FormCompletedYN,
       };
 
       setFormData(formattedData);
+      
+      // If there are parcels in the response, set them
+      if (data.parcels && Array.isArray(data.parcels)) {
+        setParcels(data.parcels);
+      }
     } catch (error) {
-      console.error("Failed to load SalesRFQ:", error);
+      console.error("Error loading SalesRFQ:", error);
       toast.error("Failed to load SalesRFQ: " + error.message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Add a proper function to check approval status
+  const checkApprovalStatus = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
+      );
+
+      if (
+        response.data &&
+        response.data.data &&
+        response.data.data.length > 0
+      ) {
+        // Check if any approval has ApprovedYN = 1 (approved)
+        const hasApproval = response.data.data.some(approval => {
+          const approvedValue =
+            approval.ApprovedYN === 1 ||
+            approval.ApprovedYN === true ||
+            approval.ApprovedYN === "1" ||
+            approval.ApprovedYN === "true";
+          return approvedValue;
+        });
+        
+        setIsApproved(hasApproval);
+      }
+    } catch (error) {
+      console.error("Error checking approval status:", error);
+    }
+  };
+
+  // Add a function to handle creating a Purchase RFQ
+  const handleCreatePurchaseRFQ = () => {
+    // Navigate to create Purchase RFQ page with SalesRFQ data
+    toast.info("Creating Purchase RFQ from Sales RFQ...");
+    // Implement the actual navigation or API call here
   };
 
   // Add the validateForm function before handleSubmit
@@ -449,6 +441,18 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       loading={loading}
       readOnly={!isEditing}
       onEdit={salesRFQId && !isEditing ? toggleEdit : null}
+      additionalButtons={
+        isApproved && salesRFQId ? (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleCreatePurchaseRFQ}
+            sx={{ mr: 1 }}
+          >
+            Create Purchase RFQ
+          </Button>
+        ) : null
+      }
     >
       <Grid
         container
@@ -861,4 +865,5 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     </FormPage>
   );
 };
+
 export default SalesRFQForm;
