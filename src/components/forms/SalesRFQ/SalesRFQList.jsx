@@ -27,7 +27,7 @@ const SalesRFQList = () => {
     { field: "customerName", headerName: "Customer Name", flex: 1 },
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
   ];
-
+ 
   useEffect(() => {
     loadSalesRFQs();
   }, [page, rowsPerPage, fromDate, toDate]);
