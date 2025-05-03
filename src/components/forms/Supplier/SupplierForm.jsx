@@ -199,8 +199,17 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+       <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SupplierName"
             label="Supplier Name"
@@ -211,7 +220,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+       <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SupplierGroupID"
             label="Supplier Group ID"
@@ -223,7 +232,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SupplierTypeID"
             label="Supplier Type ID"
@@ -235,7 +244,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SupplierAddressID"
             label="Supplier Address ID"
@@ -247,7 +256,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SupplierExportCode"
             label="Supplier Export Code"
@@ -258,7 +267,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SAPartner"
             label="SA Partner"
@@ -270,7 +279,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="SAPartnerExportCode"
             label="SA Partner Export Code"
@@ -281,7 +290,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="BillingCurrencyID"
             label="Billing Currency ID"
@@ -293,7 +302,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormInput
             name="CompanyID"
             label="Company ID"
@@ -305,7 +314,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid item xs={12} sx={{ width: "47%" }}>
           <FormSelect
             name="ExternalSupplierYN"
             label="External Supplier"

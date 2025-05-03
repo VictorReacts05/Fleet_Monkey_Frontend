@@ -4,7 +4,7 @@ import VehicleForm from './VehicleForm';
 
 const VehicleModal = ({ open, onClose, vehicleId, onSave }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogContent>
         <VehicleForm
           vehicleId={vehicleId}
