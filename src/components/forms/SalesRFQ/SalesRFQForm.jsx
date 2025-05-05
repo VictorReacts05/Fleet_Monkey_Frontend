@@ -1,11 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
   Typography,
   FormControlLabel,
   Checkbox,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
   createSalesRFQ,
   updateSalesRFQ,
@@ -17,6 +27,8 @@ import {
   fetchAddresses,
   fetchMailingPriorities,
   fetchCurrencies,
+  approveSalesRFQ,
+  fetchSalesRFQApprovalStatus,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -67,9 +79,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DeletedByID: "",
     RowVersionColumn: "",
   });
-  // Fix the state variable name - use camelCase consistently
   const [parcels, setParcels] = useState([]);
-
   const [companies, setCompanies] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -79,9 +89,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [currencies, setCurrencies] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  // Change this line to make the form editable when opened for editing
   const [isEditing, setIsEditing] = useState(!readOnly);
   const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [approvalStatus, setApprovalStatus] = useState(null);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -209,14 +223,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     loadDropdownData();
   }, []);
 
-  useEffect(() => {
-    if (salesRFQId && dropdownsLoaded) {
-      loadSalesRFQ();
-    }
-  }, [salesRFQId, dropdownsLoaded]);
-
-  // Update the loadSalesRFQ function to correctly handle boolean values from the API
-  const loadSalesRFQ = async () => {
+  const loadSalesRFQ = useCallback(async () => {
     try {
       const response = await getSalesRFQById(salesRFQId);
       const data = response.data;
@@ -224,11 +231,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
 
-      // Log the raw data to see how boolean values are represented
       console.log("Raw SalesRFQ data:", data);
 
       const formattedData = {
-        ...formData,
         Series: displayValue(data.Series),
         CompanyID: DEFAULT_COMPANY.value,
         CustomerID: customers.find(
@@ -270,14 +275,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           : "",
         Terms: displayValue(data.Terms),
         CurrencyID: String(data.CurrencyID) || "",
-        // Fix the boolean values by checking for any truthy value (1, true, "1", "true", etc.)
-        CollectFromSupplierYN: Boolean(
-          data.CollectFromSupplierYN || data.CollectFromSupplierYN
-        ),
-        PackagingRequiredYN: Boolean(
-          data.PackagingRequiredYN || data.PackagingRequiredYN
-        ),
-        FormCompletedYN: Boolean(data.FormCompletedYN || data.FormCompletedYN),
+        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
+        PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
+        FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? new Date(data.CreatedDateTime)
@@ -295,13 +295,46 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       console.error("Failed to load SalesRFQ:", error);
       toast.error("Failed to load SalesRFQ: " + error.message);
     }
-  };
+  }, [
+    salesRFQId,
+    customers,
+    suppliers,
+    serviceTypes,
+    addresses,
+    mailingPriorities,
+    DEFAULT_COMPANY.value,
+  ]);
 
-  // Add the validateForm function before handleSubmit
+  const loadApprovalStatus = useCallback(async () => {
+    if (!salesRFQId) return;
+    try {
+      const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
+      console.log("Approval data received:", approvalData);
+      
+      if (approvalData && approvalData.ApprovedYN !== undefined) {
+        // Convert to boolean and set status
+        const isApproved = approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true;
+        setApprovalStatus(isApproved ? "approved" : "disapproved");
+      } else {
+        // No approval record found
+        setApprovalStatus(null);
+      }
+    } catch (error) {
+      console.error("Failed to load approval status:", error);
+      setApprovalStatus(null);
+    }
+  }, [salesRFQId]);
+
+  useEffect(() => {
+    if (salesRFQId && dropdownsLoaded) {
+      loadSalesRFQ();
+      loadApprovalStatus();
+    }
+  }, [salesRFQId, dropdownsLoaded, loadSalesRFQ, loadApprovalStatus]);
+
   const validateForm = () => {
     const newErrors = {};
 
-    // Only validate Series if editing an existing record
     if (
       salesRFQId &&
       formData.Series &&
@@ -338,7 +371,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update the handleSubmit function to ensure proper redirection
   const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fix the form errors");
@@ -369,27 +401,22 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         DateReceived: formData.DateReceived
           ? formData.DateReceived.toISOString()
           : null,
-        // Ensure boolean values are sent as 1/0 for the API
         CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
         PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
         FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
-        // Add parcels data to the API request
         parcels: parcels,
       };
 
       console.log("Submitting with parcels data:", parcels);
 
       if (salesRFQId) {
-        // Update existing SalesRFQ
         await updateSalesRFQ(salesRFQId, apiData);
         toast.success("SalesRFQ updated successfully");
       } else {
-        // Create new SalesRFQ
         const result = await createSalesRFQ(apiData);
         toast.success("SalesRFQ created successfully");
       }
 
-      // Ensure we call onSave and onClose to redirect back to the list
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
@@ -429,20 +456,127 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setIsEditing(!isEditing);
   };
 
-  // Add a handler for parcels changes
   const handleParcelsChange = (newParcels) => {
     setParcels(newParcels);
   };
 
-  // Update the FormPage component to add proper spacing
+  const handleMenuOpen = (event) => {
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const handleApprove = () => {
+    handleMenuClose();
+    setConfirmAction("approve");
+    setConfirmMessage("Do you want to approve this Sales RFQ?");
+    setConfirmDialogOpen(true);
+  };
+
+  const handleDisapprove = () => {
+    handleMenuClose();
+    setConfirmAction("disapprove");
+    setConfirmMessage("Do you want to disapprove this Sales RFQ?");
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    setConfirmDialogOpen(false);
+
+    try {
+      setLoading(true);
+
+      if (confirmAction === "approve") {
+        const result = await approveSalesRFQ(salesRFQId, true);
+        console.log("Approval result:", result);
+        toast.success("SalesRFQ approved successfully");
+        setApprovalStatus("approved");
+      } else if (confirmAction === "disapprove") {
+        const result = await approveSalesRFQ(salesRFQId, false);
+        console.log("Disapproval result:", result);
+        toast.success("SalesRFQ disapproved successfully");
+        setApprovalStatus("disapproved");
+      }
+    } catch (error) {
+      console.error(
+        `Error ${
+          confirmAction === "approve" ? "approving" : "disapproving"
+        } SalesRFQ:`,
+        error
+      );
+      toast.error(
+        `Failed to ${confirmAction} SalesRFQ: ${
+          error.message || "Unknown error"
+        }`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <FormPage
       title={
-        salesRFQId
-          ? isEditing
-            ? "Edit Sales RFQ"
-            : "View Sales RFQ"
-          : "Create Sales RFQ"
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <Typography variant="h6">
+            {salesRFQId
+              ? isEditing
+                ? "Edit Sales RFQ"
+                : "View Sales RFQ"
+              : "Create Sales RFQ"}
+          </Typography>
+          {!isEditing && salesRFQId && (
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              {approvalStatus !== null ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor:
+                      approvalStatus === "approved" ? "#e6f7e6" : "#ffebee",
+                    color:
+                      approvalStatus === "approved" ? "#2e7d32" : "#d32f2f",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    fontWeight: "medium",
+                  }}
+                >
+                  <Typography variant="body2">
+                    Status:{" "}
+                    {approvalStatus === "approved" ? "Approved" : "Disapproved"}
+                  </Typography>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleMenuOpen}
+                  endIcon={<MoreVertIcon />}
+                  sx={{ ml: 1 }}
+                >
+                  Status
+                </Button>
+              )}
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleApprove}>Approve</MenuItem>
+                <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
+              </Menu>
+            </Box>
+          )}
+        </Box>
       }
       onCancel={onClose}
       onSubmit={isEditing ? handleSubmit : null}
@@ -463,7 +597,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {/* Only show Series field when editing an existing record */}
         {salesRFQId && (
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
@@ -481,7 +614,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             )}
           </Grid>
         )}
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -497,7 +629,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -520,7 +651,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -543,7 +673,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormInput
@@ -562,7 +691,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormDatePicker
@@ -585,7 +713,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormDatePicker
@@ -608,7 +735,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormDatePicker
@@ -631,7 +757,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormDatePicker
@@ -654,7 +779,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -677,7 +801,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -700,7 +823,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -723,7 +845,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -747,7 +868,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormInput
@@ -763,7 +883,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             <ReadOnlyField label="Terms" value={formData.Terms} />
           )}
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           {isEditing ? (
             <FormSelect
@@ -787,7 +906,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             />
           )}
         </Grid>
-
         <Grid item xs={12} sx={{ width: "100%" }}>
           <Grid container spacing={1}>
             <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -858,7 +976,29 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         onParcelsChange={handleParcelsChange}
         readOnly={!isEditing}
       />
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Action</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmMessage}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmAction}
+            color={confirmAction === "approve" ? "primary" : "error"}
+            variant="contained"
+          >
+            {confirmAction === "approve" ? "Approve" : "Disapprove"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </FormPage>
   );
 };
+
 export default SalesRFQForm;

@@ -4,8 +4,6 @@ import {
   Button,
   Typography,
   CircularProgress,
-  Select,
-  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -27,7 +25,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { submitSalesRFQApproval } from "./SalesRFQAPI";
 
 const API_URL = "http://localhost:7000/api";
 
@@ -72,90 +69,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [activeTab, setActiveTab] = useState("parcels");
-  const [approvalDecision, setApprovalDecision] = useState("no"); // Default to "no"
-  const [submittingApproval, setSubmittingApproval] = useState(false);
-  const [approvalSubmitted, setApprovalSubmitted] = useState(false);
-  const [approvalError, setApprovalError] = useState("");
-  const [currentApproval, setCurrentApproval] = useState(null);
-  const [loadingApproval, setLoadingApproval] = useState(false);
+  const [activeTab] = useState("parcels"); // Keep activeTab state but with fixed value
 
   const theme = useTheme();
-
-  /* useEffect(() => {
-    const fetchCurrentApproval = async () => {
-      if (!salesRFQId || activeTab !== "approvals") return;
-
-      try {
-        setLoadingApproval(true);
-        const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
-        );
-
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
-          setCurrentApproval(latestApproval);
-
-          // Set the approval decision based on the current value
-          setApprovalDecision(latestApproval.ApprovedYN ? "yes" : "no");
-        } else {
-          // No approval found, explicitly set default to "no"
-          setApprovalDecision("no");
-        }
-      } catch (error) {
-        console.error("Error fetching current approval:", error);
-        // Default to "no" if there's an error
-        setApprovalDecision("no");
-      } finally {
-        setLoadingApproval(false);
-      }
-    };
-
-    fetchCurrentApproval();
-  }, [salesRFQId, activeTab]); */
-
-  useEffect(() => {
-    const fetchCurrentApproval = async () => {
-      if (!salesRFQId || activeTab !== "approvals") return;
-
-      try {
-        setLoadingApproval(true);
-        // First, explicitly set to "no" before fetching
-        setApprovalDecision("no");
-
-        const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQId}`
-        );
-
-        if (
-          response.data &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          const latestApproval = response.data.data[0]; // Assuming the first one is the latest
-          setCurrentApproval(latestApproval);
-
-          // Only change from default "no" if there's an explicit approval
-          if (latestApproval.ApprovedYN === 1) {
-            setApprovalDecision("yes");
-          }
-        }
-        // If no approval found or ApprovedYN is not 1, keep it as "no"
-      } catch (error) {
-        console.error("Error fetching current approval:", error);
-        // Default to "no" if there's an error
-        setApprovalDecision("no");
-      } finally {
-        setLoadingApproval(false);
-      }
-    };
-
-    fetchCurrentApproval();
-  }, [salesRFQId, activeTab]);
 
   // Define columns for DataTable
   const columns = [
@@ -638,166 +554,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     setDeleteParcelId(null);
   };
 
-  /*
-  
-  ## DO NOT REMOVE THIS COMMENTED CODE BELOW
-  
-  const handleApprovalSubmit = async () => {
-    if (!salesRFQId || !approvalDecision) {
-      setApprovalError("Please select an approval decision");
-      return;
-    }
-
-    try {
-      setSubmittingApproval(true);
-      setApprovalError("");
-
-      // Get the logged in user's ID from localStorage
-      // const user = JSON.parse(localStorage.getItem("user") || "{}");
-      //const personId = user.personId || user.PersonID || user.id; 
-      const personId = 2;
-
-      if (!personId) {
-        throw new Error("User ID not found. Please log in again.");
-      }
-
-      // Prepare the approval data - match the exact field names expected by the backend
-      const approvalData = {
-        SalesRFQID: Number(salesRFQId),
-        ApproverID: Number(personId),
-        ApprovedYN: approvalDecision === "yes" ? 1 : 0,
-        FormName: "SalesRFQ",
-        RoleName: "Approver",
-        UserID: Number(personId),
-      };
-
-      // console.log("Submitting approval with data:", approvalData);
-      console.log("Submitting approval with data:", {
-        SalesRFQID: approvalData.SalesRFQID,
-        ApproverID: approvalData.ApproverID,
-        ApprovedYN: approvalData.ApprovedYN,
-        Decision: approvalDecision,
-      });
-
-      // Submit to the API
-      const response = await axios.post(
-        "http://localhost:7000/api/sales-rfq-approvals",
-        approvalData
-      );
-
-      if (response.data && response.data.success) {
-        toast.success(
-          `SalesRFQ ${
-            approvalDecision === "yes" ? "approved" : "rejected"
-          } successfully`
-        );
-        setApprovalSubmitted(true);
-      } else {
-        throw new Error(response.data?.message || "Failed to submit approval");
-      }
-    } catch (error) {
-      console.error("Error submitting approval:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      setApprovalError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-      );
-      toast.error(
-        `Error: ${
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-        }`
-      );
-    } finally {
-      setSubmittingApproval(false);
-    }
-  }; */
-
-  const handleApprovalSubmit = async () => {
-    if (!salesRFQId || !approvalDecision) {
-      setApprovalError("Please select an approval decision");
-      return;
-    }
-
-    try {
-      setSubmittingApproval(true);
-      setApprovalError("");
-
-      // Get the logged in user's ID from localStorage
-      /* const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const personId = user.personId || user.PersonID || user.id; */
-      const personId = 2;
-
-      if (!personId) {
-        throw new Error("User ID not found. Please log in again.");
-      }
-
-      // Prepare the approval data - match the exact field names expected by the backend
-      const approvalData = {
-        SalesRFQID: Number(salesRFQId),
-        ApproverID: Number(personId),
-        ApprovedYN: approvalDecision === "yes" ? 1 : 0,
-        FormName: "SalesRFQ",
-        RoleName: "Approver",
-        UserID: Number(personId),
-      };
-
-      // console.log("Submitting approval with data:", approvalData);
-      console.log("Submitting approval with data:", {
-        SalesRFQID: approvalData.SalesRFQID,
-        ApproverID: approvalData.ApproverID,
-        ApprovedYN: approvalData.ApprovedYN,
-        Decision: approvalDecision,
-      });
-
-      // Submit to the API
-      // const response = await axios.post(
-      //   "http://localhost:7000/api/sales-rfq-approvals",
-      //   approvalData
-      // );
-      const response = await submitSalesRFQApproval(
-        salesRFQId,
-        approvalDecision,
-        personId
-      );
-
-      // Check for successful response (HTTP 200/201 or presence of expected data)
-      if (response && (response.status === 200 || response.status === 201)) {
-        toast.success(
-          `SalesRFQ ${
-            approvalDecision === "yes" ? "approved" : "rejected"
-          } successfully`
-        );
-        setApprovalSubmitted(true);
-      } else {
-        throw new Error(
-          response.data?.message ||
-            response.message ||
-            "Failed to submit approval"
-        );
-      }
-    } catch (error) {
-      console.error("Error submitting approval:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      setApprovalError(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-      );
-      toast.error(
-        `Error: ${
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to submit approval"
-        }`
-      );
-    } finally {
-      setSubmittingApproval(false);
-    }
-  };
-
   return (
     <Box
       sx={{
@@ -825,40 +581,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
-            backgroundColor:
-              activeTab === "parcels" ? "#252525" : "transparent",
+            backgroundColor: "#252525",
             cursor: "pointer",
-            "&:hover": {
-              backgroundColor: "#252525",
-            },
           }}
-          onClick={() => setActiveTab("parcels")}
         >
           <Typography variant="h6" component="div">
             Parcels
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            py: 1.5,
-            px: 3,
-            fontWeight: "bold",
-            borderTop: "1px solid #e0e0e0",
-            borderRight: "1px solid #e0e0e0",
-            borderLeft: "1px solid #e0e0e0",
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            backgroundColor:
-              activeTab === "approvals" ? "#252525" : "transparent",
-            cursor: "pointer",
-            "&:hover": {
-              backgroundColor: "#252525",
-            },
-          }}
-          onClick={() => setActiveTab("approvals")}
-        >
-          <Typography variant="h6" component="div">
-            SalesRFQ Approvals
           </Typography>
         </Box>
       </Box>
@@ -873,262 +601,144 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           borderTopRightRadius: 4,
         }}
       >
-        {activeTab === "parcels" ? (
-          <>
-            {loading || loadingExistingParcels ? (
-              <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
-                {/* Only show Add Parcel button if not in readOnly mode */}
-                {!readOnly && (
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleAddParcel}
-                    sx={{ mb: 2 }}
-                  >
-                    Add Parcel
-                  </Button>
-                )}
-
-                {/* Show message when no parcels and not in form mode */}
-                {parcels.length === 0 && parcelForms.length === 0 && (
-                  <Box
-                    sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
-                  >
-                    <Typography variant="body1">
-                      No parcels added yet.{" "}
-                      {!readOnly && "Click 'Add Parcel' to add a new parcel."}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Parcel forms */}
-                {parcelForms.map((form) => (
-                  <Box
-                    key={form.id}
-                    sx={{
-                      mt: 2,
-                      mb: 2,
-                      p: 2,
-                      border: "1px solid #e0e0e0",
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography variant="subtitle1" gutterBottom>
-                      {form.editIndex !== undefined
-                        ? "Edit Parcel"
-                        : "New Parcel"}
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        gap: 2,
-                        mb: 2,
-                      }}
-                    >
-                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                        <FormSelect
-                          name="itemId"
-                          label="Item"
-                          value={form.itemId}
-                          onChange={(e) => handleChange(e, form.id)}
-                          options={items}
-                          error={!!errors[form.id]?.itemId}
-                          helperText={errors[form.id]?.itemId}
-                        />
-                      </Box>
-
-                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                        <FormSelect
-                          name="uomId"
-                          label="UOM"
-                          value={form.uomId}
-                          onChange={(e) => handleChange(e, form.id)}
-                          options={uoms}
-                          error={!!errors[form.id]?.uomId}
-                          helperText={errors[form.id]?.uomId}
-                        />
-                      </Box>
-
-                      <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                        <FormInput
-                          name="quantity"
-                          label="Quantity"
-                          value={form.quantity}
-                          onChange={(e) => handleChange(e, form.id)}
-                          error={!!errors[form.id]?.quantity}
-                          helperText={errors[form.id]?.quantity}
-                          type="number"
-                        />
-                      </Box>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                      }}
-                    >
-                      <Button
-                        variant="outlined"
-                        onClick={() =>
-                          setParcelForms((prev) =>
-                            prev.filter((f) => f.id !== form.id)
-                          )
-                        }
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="contained"
-                        onClick={() => handleSave(form.id)}
-                      >
-                        Save
-                      </Button>
-                    </Box>
-                  </Box>
-                ))}
-
-                {/* DataTable for parcels */}
-                {parcels.length > 0 && (
-                  <DataTable
-                    rows={parcels}
-                    columns={columns}
-                    pageSize={rowsPerPage}
-                    page={page}
-                    onPageChange={(newPage) => setPage(newPage)}
-                    onPageSizeChange={(newPageSize) =>
-                      setRowsPerPage(newPageSize)
-                    }
-                    rowsPerPageOptions={[5, 10, 25]}
-                    checkboxSelection={false}
-                    disableSelectionOnClick
-                    autoHeight
-                    hideActions={readOnly}
-                    onEdit={!readOnly ? handleEditParcel : undefined}
-                    onDelete={!readOnly ? handleDeleteParcel : undefined}
-                    totalRows={parcels.length}
-                    pagination={true}
-                  />
-                )}
-              </>
-            )}
-          </>
+        {loading || loadingExistingParcels ? (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+            <CircularProgress />
+          </Box>
         ) : (
-          <Box sx={{ p: 3 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                width: "100%",
-                overflow: "hidden",
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 2,
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-                textAlign: "center",
-              }}
-            >
-              <TableContainer sx={{ maxHeight: "calc(100vh - 250px)" }}>
-                <Table stickyHeader aria-label="approval table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor:
-                            theme.palette.mode === "dark"
-                              ? "#1f2529"
-                              : "#f3f8fd",
-                          color: theme.palette.text.primary,
-                          zIndex: 10,
-                          position: "sticky",
-                          top: 0,
-                          textAlign: "center",
-                        }}
-                        align="center"
-                      >
-                        SalesRFQ ID
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontWeight: "bold",
-                          backgroundColor:
-                            theme.palette.mode === "dark"
-                              ? "#1f2529"
-                              : "#f3f8fd",
-                          color: theme.palette.text.primary,
-                          zIndex: 10,
-                          position: "sticky",
-                          top: 0,
-                          textAlign: "center",
-                        }}
-                        align="center"
-                      >
-                        Approval Decision
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow
-                      hover
-                      sx={{
-                        "&:hover": {
-                          backgroundColor: alpha(
-                            theme.palette.primary.main,
-                            0.05
-                          ),
-                        },
-                        textAlign: "center",
-                      }}
-                    >
-                      <TableCell sx={{ textAlign: "center" }} align="center">
-                        {salesRFQId}
-                      </TableCell>
-                      <TableCell sx={{ textAlign: "center" }} align="center">
-                        <Select
-                          value={approvalDecision}
-                          onChange={(e) => setApprovalDecision(e.target.value)}
-                          displayEmpty
-                          fullWidth
-                          error={!!approvalError}
-                        >
-                          <MenuItem value="yes">Yes</MenuItem>
-                          <MenuItem value="no">No</MenuItem>
-                        </Select>
-                        {approvalError && (
-                          <Typography variant="caption" color="error">
-                            {approvalError}
-                          </Typography>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <>
+            {/* Only show Add Parcel button if not in readOnly mode */}
+            {!readOnly && (
               <Button
                 variant="contained"
-                color="primary"
-                disabled={!approvalDecision || submittingApproval}
-                onClick={handleApprovalSubmit}
-                sx={{ minWidth: 200 }}
+                startIcon={<AddIcon />}
+                onClick={handleAddParcel}
+                sx={{ mb: 2 }}
               >
-                {submittingApproval ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Submit Approval Decision"
-                )}
+                Add Parcel
               </Button>
-            </Box>
-          </Box>
+            )}
+
+            {/* Show message when no parcels and not in form mode */}
+            {parcels.length === 0 && parcelForms.length === 0 && (
+              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+                <Typography variant="body1">
+                  No parcels added yet.{" "}
+                  {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Parcel forms */}
+            {parcelForms.map((form) => (
+              <Box
+                key={form.id}
+                sx={{
+                  mt: 2,
+                  mb: 2,
+                  p: 2,
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="subtitle1" gutterBottom>
+                  {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 2,
+                    mb: 2,
+                  }}
+                >
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormSelect
+                      name="itemId"
+                      label="Item"
+                      value={form.itemId}
+                      onChange={(e) => handleChange(e, form.id)}
+                      options={items}
+                      error={!!errors[form.id]?.itemId}
+                      helperText={errors[form.id]?.itemId}
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormSelect
+                      name="uomId"
+                      label="UOM"
+                      value={form.uomId}
+                      onChange={(e) => handleChange(e, form.id)}
+                      options={uoms}
+                      error={!!errors[form.id]?.uomId}
+                      helperText={errors[form.id]?.uomId}
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormInput
+                      name="quantity"
+                      label="Quantity"
+                      value={form.quantity}
+                      onChange={(e) => handleChange(e, form.id)}
+                      error={!!errors[form.id]?.quantity}
+                      helperText={errors[form.id]?.quantity}
+                      type="number"
+                    />
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() =>
+                      setParcelForms((prev) =>
+                        prev.filter((f) => f.id !== form.id)
+                      )
+                    }
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSave(form.id)}
+                  >
+                    Save
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+
+            {/* DataTable for parcels */}
+            {parcels.length > 0 && (
+              <DataTable
+                rows={parcels}
+                columns={columns}
+                pageSize={rowsPerPage}
+                page={page}
+                onPageChange={(newPage) => setPage(newPage)}
+                onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
+                rowsPerPageOptions={[5, 10, 25]}
+                checkboxSelection={false}
+                disableSelectionOnClick
+                autoHeight
+                hideActions={readOnly}
+                onEdit={!readOnly ? handleEditParcel : undefined}
+                onDelete={!readOnly ? handleDeleteParcel : undefined}
+                totalRows={parcels.length}
+                pagination={true}
+              />
+            )}
+          </>
         )}
       </Box>
 
