@@ -516,6 +516,17 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   };
 
+  const handleCreatePurchaseRFQ = () => {
+    // Navigate to create purchase RFQ page with the current salesRFQ data
+    console.log("Creating Purchase RFQ from Sales RFQ:", salesRFQId);
+    // You can implement the actual navigation or API call here
+    // For example:
+    // navigate(`/purchase-rfq/create?fromSalesRFQ=${salesRFQId}`);
+
+    // For now, just show a message
+    toast.info("Creating Purchase RFQ from Sales RFQ: " + salesRFQId);
+  };
+
   return (
     <FormPage
       title={
@@ -583,6 +594,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       loading={loading}
       readOnly={!isEditing}
       onEdit={salesRFQId && !isEditing ? toggleEdit : null}
+      onCreatePurchaseRFQ={handleCreatePurchaseRFQ}
+      isApproved={approvalStatus === "approved"}
     >
       <Grid
         container

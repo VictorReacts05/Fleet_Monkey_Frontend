@@ -37,6 +37,42 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   left: 0,
 }));
 
+const CustomTextField = styled(TextField)(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    height: 38,
+    padding: 0,
+    backgroundColor: "#595959", // Your custom background
+    "& input": {
+      padding: "0 14px",
+      height: "100%",
+      boxSizing: "border-box",
+      color: theme.palette.common.white, // white text for contrast
+    },
+    "& fieldset": {
+      borderColor: "#8a8a8a", // optional: adjust border color
+    },
+    "&:hover fieldset": {
+      borderColor: "#a0a0a0",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: theme.palette.primary.main,
+    },
+    // Autofill override
+    "& input:-webkit-autofill": {
+      boxShadow: "0 0 0 1000px #595959 inset !important",
+      WebkitTextFillColor: "white !important",
+      transition: "background-color 9999s ease-out 0s",
+    },
+  },
+  "& .MuiInputLabel-root": {
+    top: "-6px",
+    color: "#dcdcdc",
+    "&.MuiInputLabel-shrink": {
+      top: 0,
+    },
+  },
+}));
+
 const LoginPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   borderRadius: 16,

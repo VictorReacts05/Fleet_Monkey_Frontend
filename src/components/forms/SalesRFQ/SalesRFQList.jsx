@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
 
 const SalesRFQList = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const SalesRFQList = () => {
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const columns = [
     { field: "series", headerName: "Series", flex: 1 },
@@ -142,17 +144,9 @@ const SalesRFQList = () => {
       >
         <Typography variant="h5">Sales RFQ Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={handleFromDateChange}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={handleToDateChange}
-            sx={{ width: 200 }}
+          <SearchBar
+            // onSearch={handleSearch}
+            placeholder="Search SalesRFQs..."
           />
           <Tooltip title="Add New Sales RFQ">
             <IconButton
