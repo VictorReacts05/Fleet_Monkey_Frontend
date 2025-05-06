@@ -81,7 +81,7 @@ function AppContent() {
       >
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/sales-rfq" element={<ProtectedRoute><SalesRFQList /></ProtectedRoute>} />
+          <Route path="/sales-rfq" element={<SalesRFQList />} />
           
           {/* Use the wrapper components instead of inline functions */}
           <Route path="/sales-rfq/create" element={
@@ -104,7 +104,7 @@ function AppContent() {
           <Route path="/cities" element={<ProtectedRoute><CityList /></ProtectedRoute>} />
           <Route path="/currencies" element={<ProtectedRoute><CurrencyList /></ProtectedRoute>} />
           <Route path="/certifications" element={<ProtectedRoute><CertificationList /></ProtectedRoute>} />
-          <Route path="/banks" element={<ProtectedRoute><BankList /></ProtectedRoute>} />
+          <Route path="/banks" element={<BankList />} />
           <Route path="/project-parameters" element={<ProtectedRoute><ProjectParameterList /></ProtectedRoute>} />
           <Route path="/persons" element={<ProtectedRoute><PersonList /></ProtectedRoute>} />
           <Route path="/vehicles" element={<ProtectedRoute><VehicleList /></ProtectedRoute>} />
