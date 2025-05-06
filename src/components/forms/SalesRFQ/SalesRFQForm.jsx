@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  CircularProgress
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
@@ -29,6 +30,7 @@ import {
   fetchCurrencies,
   approveSalesRFQ,
   fetchSalesRFQApprovalStatus,
+  updateSalesRFQApproval,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -36,6 +38,8 @@ import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
 import ParcelTab from "./ParcelTab";
+import { createPurchaseRFQFromSalesRFQ } from "../PurchaseRFQ/PurchaseRFQAPI";
+import { useNavigate } from "react-router-dom";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -51,6 +55,8 @@ const ReadOnlyField = ({ label, value }) => {
 };
 
 const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
+  const navigate = useNavigate();
+
   const DEFAULT_COMPANY = { value: 1, label: "Dung Beetle Company" };
 
   const [formData, setFormData] = useState({
@@ -96,6 +102,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [confirmAction, setConfirmAction] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
   const [approvalStatus, setApprovalStatus] = useState(null);
+  const [purchaseRFQDialogOpen, setPurchaseRFQDialogOpen] = useState(false);
+  const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
+  const [approvalRecord, setApprovalRecord] = useState(null);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -305,23 +314,31 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DEFAULT_COMPANY.value,
   ]);
 
+  // ... existing code ...
+  // ... existing code ...
   const loadApprovalStatus = useCallback(async () => {
     if (!salesRFQId) return;
     try {
       const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
       console.log("Approval data received:", approvalData);
-      
+
+      setApprovalRecord(approvalData); // <-- Save the approval record
+
       if (approvalData && approvalData.ApprovedYN !== undefined) {
-        // Convert to boolean and set status
-        const isApproved = approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true;
-        setApprovalStatus(isApproved ? "approved" : "disapproved");
+        if (approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true) {
+          setApprovalStatus("approved");
+        } else if (approvalData.ApprovedYN === 0) {
+          setApprovalStatus("disapproved");
+        } else {
+          setApprovalStatus(null);
+        }
       } else {
-        // No approval record found
         setApprovalStatus(null);
       }
     } catch (error) {
       console.error("Failed to load approval status:", error);
       setApprovalStatus(null);
+      setApprovalRecord(null);
     }
   }, [salesRFQId]);
 
@@ -488,17 +505,38 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     try {
       setLoading(true);
 
-      if (confirmAction === "approve") {
-        const result = await approveSalesRFQ(salesRFQId, true);
-        console.log("Approval result:", result);
-        toast.success("SalesRFQ approved successfully");
-        setApprovalStatus("approved");
-      } else if (confirmAction === "disapprove") {
-        const result = await approveSalesRFQ(salesRFQId, false);
-        console.log("Disapproval result:", result);
-        toast.success("SalesRFQ disapproved successfully");
-        setApprovalStatus("disapproved");
+      const approvedYN = confirmAction === "approve" ? 1 : 0;
+      const approvalData = {
+        SalesRFQID: salesRFQId,
+        ApproverID: 2,
+        ApprovedYN: approvedYN,
+        FormName: "Sales RFQ",
+        RoleName: "Sales RFQ Approver",
+        UserID: 2,
+      };
+
+      // Debug: Check what approvalRecord contains
+      console.log("approvalRecord in handleConfirmAction:", approvalRecord);
+
+      // The approvalRecord exists but doesn't have the ID properties we're checking for
+      // Instead, we should check if the record exists at all
+      if (approvalRecord && approvalRecord.SalesRFQID) {
+        // Update existing approval record (PUT)
+        // We need to use the SalesRFQID and ApproverID to identify the record
+         await updateSalesRFQApproval(approvalRecord.SalesRFQID, approvalData);
+      } else {
+        // Create new approval record (POST)
+        await approveSalesRFQ(salesRFQId, approvedYN === 1);
       }
+
+      toast.success(
+        `SalesRFQ ${
+          confirmAction === "approve" ? "approved" : "disapproved"
+        } successfully`
+      );
+      setApprovalStatus(
+        confirmAction === "approve" ? "approved" : "disapproved"
+      );
     } catch (error) {
       console.error(
         `Error ${
@@ -517,14 +555,33 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   };
 
   const handleCreatePurchaseRFQ = () => {
-    // Navigate to create purchase RFQ page with the current salesRFQ data
-    console.log("Creating Purchase RFQ from Sales RFQ:", salesRFQId);
-    // You can implement the actual navigation or API call here
-    // For example:
-    // navigate(`/purchase-rfq/create?fromSalesRFQ=${salesRFQId}`);
+    setPurchaseRFQDialogOpen(true);
+  };
 
-    // For now, just show a message
-    toast.info("Creating Purchase RFQ from Sales RFQ: " + salesRFQId);
+  const handleConfirmCreatePurchaseRFQ = async () => {
+    try {
+      setCreatingPurchaseRFQ(true);
+
+      const result = await createPurchaseRFQFromSalesRFQ(salesRFQId);
+
+      if (result.success) {
+        toast.success("Purchase RFQ created successfully");
+        setPurchaseRFQDialogOpen(false);
+
+        // Navigate to the Purchase RFQ list
+        navigate("/purchase-rfq");
+      } else {
+        toast.error(result.message || "Failed to create Purchase RFQ");
+      }
+    } catch (error) {
+      console.error("Error creating Purchase RFQ:", error);
+      toast.error(
+        typeof error === "string" ? error : "Failed to create Purchase RFQ"
+      );
+    } finally {
+      setCreatingPurchaseRFQ(false);
+      setPurchaseRFQDialogOpen(false);
+    }
   };
 
   return (
@@ -1007,6 +1064,34 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             variant="contained"
           >
             {confirmAction === "approve" ? "Approve" : "Disapprove"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={purchaseRFQDialogOpen}
+        onClose={() => !creatingPurchaseRFQ && setPurchaseRFQDialogOpen(false)}
+      >
+        <DialogTitle>Create Purchase RFQ</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Do you want to create Purchase RFQ for this Sales RFQ?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setPurchaseRFQDialogOpen(false)}
+            color="secondary"
+            disabled={creatingPurchaseRFQ}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmCreatePurchaseRFQ}
+            color="primary"
+            variant="contained"
+            disabled={creatingPurchaseRFQ}
+          >
+            {creatingPurchaseRFQ ? <CircularProgress size={24} /> : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

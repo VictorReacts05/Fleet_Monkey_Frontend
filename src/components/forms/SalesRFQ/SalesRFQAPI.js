@@ -406,6 +406,24 @@ export const createDefaultApproval = async (salesRFQId) => {
   }
 };
 
+// Update SalesRFQ approval
+export const updateSalesRFQApproval = async (salesRFQID, approvalData) => {
+  try {
+    const { headers } = getAuthHeader();
+    
+    // Instead of using a path parameter, use query parameters
+    const response = await axios.put(
+      `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQID}&approverID=${approvalData.ApproverID}`,
+      approvalData,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating SalesRFQ approval:", error);
+    throw error.response?.data || error;
+  }
+};
+
 // Approve or disapprove SalesRFQ
 export const approveSalesRFQ = async (salesRFQId, isApproved) => {
   try {

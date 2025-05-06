@@ -144,3 +144,21 @@ export const fetchSalesRFQs = async () => {
     throw error;
   }
 };
+
+// Add this function to PurchaseRFQAPI.js
+export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const createdById = user?.personId || 2;
+    
+    const response = await axios.post(`http://localhost:7000/api/purchase-rfq`, {
+      SalesRFQID: salesRFQId,
+      CreatedByID: createdById
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error creating Purchase RFQ from Sales RFQ:", error);
+    throw error.response?.data || error.message;
+  }
+};
