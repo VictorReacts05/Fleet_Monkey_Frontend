@@ -57,7 +57,7 @@ const ReadOnlyField = ({ label, value }) => {
 const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const navigate = useNavigate();
 
-  const DEFAULT_COMPANY = { value: 1, label: "Dung Beetle Company" };
+  const DEFAULT_COMPANY = { value: 1, label: "Dung Beetle Logistics" };
 
   const [formData, setFormData] = useState({
     Series: "",

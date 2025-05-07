@@ -9,8 +9,13 @@ import Header from './components/Layout/Header';
 import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
 import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
 import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
-import { PurchaseRFQList } from './components/forms/PurchaseRFQ';
+// Change this line
+// import PurchaseRFQList from './components/forms/PurchaseRFQ';
+
+// To this
+import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
 import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
+import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -65,60 +70,250 @@ function AppContent() {
   const isLoginPage = location.pathname === '/';
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
       {!isLoginPage && <Header />}
-      {isAuthenticated && !isLoginPage && <Sidebar variant="permanent" open={true} />}
-      <Box 
-        component="main" 
-        sx={{ 
-          flexGrow: 1, 
-          p: isLoginPage ? 0 : 3, 
+      {isAuthenticated && !isLoginPage && (
+        <Sidebar variant="permanent" open={true} />
+      )}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: isLoginPage ? 0 : 3,
           mt: isLoginPage ? 0 : 8,
-          overflow: 'auto',
-          height: '100%',
-          backgroundColor: 'background.default',
+          overflow: "auto",
+          height: "100%",
+          backgroundColor: "background.default",
           borderRadius: isLoginPage ? 0 : 2,
-          transition: 'all 0.3s ease-in-out'
+          transition: "all 0.3s ease-in-out",
         }}
       >
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/sales-rfq" element={<ProtectedRoute><SalesRFQList /></ProtectedRoute>} />
-          
+          <Route
+            path="/sales-rfq"
+            element={
+              <ProtectedRoute>
+                <SalesRFQList />
+              </ProtectedRoute>
+            }
+          />
           {/* Use the wrapper components instead of inline functions */}
-          <Route path="/sales-rfq/create" element={
-            <ProtectedRoute>
-              <CreateSalesRFQWrapper />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/sales-rfq/edit/:id" element={
-            <ProtectedRoute>
-              <EditSalesRFQWrapper />
-            </ProtectedRoute>
-          } />
-          
+          <Route
+            path="/sales-rfq/create"
+            element={
+              <ProtectedRoute>
+                <CreateSalesRFQWrapper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-rfq/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditSalesRFQWrapper />
+              </ProtectedRoute>
+            }
+          />
+          // Change these lines
           {/* Purchase RFQ Routes */}
-          <Route path="/purchase-rfq" element={<ProtectedRoute><PurchaseRFQList /></ProtectedRoute>} />
-          <Route path="/purchase-rfq/create" element={<ProtectedRoute><PurchaseRFQPage /></ProtectedRoute>} />
-          <Route path="/purchase-rfq/edit/:id" element={<ProtectedRoute><PurchaseRFQPage /></ProtectedRoute>} />
-          
-          <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
-          <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
-          <Route path="/suppliers" element={<ProtectedRoute><SupplierList /></ProtectedRoute>} />
-          <Route path="/subscriptions" element={<ProtectedRoute><SubscriptionList /></ProtectedRoute>} />
-          <Route path="/countries" element={<ProtectedRoute><CountryList /></ProtectedRoute>} />
-          <Route path="/cities" element={<ProtectedRoute><CityList /></ProtectedRoute>} />
-          <Route path="/currencies" element={<ProtectedRoute><CurrencyList /></ProtectedRoute>} />
-          <Route path="/certifications" element={<ProtectedRoute><CertificationList /></ProtectedRoute>} />
-          <Route path="/banks" element={<ProtectedRoute><BankList /></ProtectedRoute>} />
-          <Route path="/project-parameters" element={<ProtectedRoute><ProjectParameterList /></ProtectedRoute>} />
-          <Route path="/persons" element={<ProtectedRoute><PersonList /></ProtectedRoute>} />
-          <Route path="/vehicles" element={<ProtectedRoute><VehicleList /></ProtectedRoute>} />
-          <Route path="/warehouses" element={<ProtectedRoute><WarehouseList /></ProtectedRoute>} />
-          <Route path="/address-types" element={<ProtectedRoute><AddressTypeList /></ProtectedRoute>} />
-          <Route path="/uoms" element={<ProtectedRoute><UOMList /></ProtectedRoute>} />
+          // Add these routes to your existing routes
+          <Route path="/purchase-rfq" element={<PurchaseRFQList />} />
+          <Route path="/purchase-rfq/create" element={<PurchaseRFQForm />} />
+          <Route path="/purchase-rfq/:id" element={<PurchaseRFQForm />} />
+          <Route
+            path="/purchase-rfq"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/create"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/create"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/view/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <ProtectedRoute>
+                <CustomerList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/companies"
+            element={
+              <ProtectedRoute>
+                <CompanyList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/suppliers"
+            element={
+              <ProtectedRoute>
+                <SupplierList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscriptions"
+            element={
+              <ProtectedRoute>
+                <SubscriptionList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/countries"
+            element={
+              <ProtectedRoute>
+                <CountryList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cities"
+            element={
+              <ProtectedRoute>
+                <CityList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/currencies"
+            element={
+              <ProtectedRoute>
+                <CurrencyList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/certifications"
+            element={
+              <ProtectedRoute>
+                <CertificationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/banks"
+            element={
+              <ProtectedRoute>
+                <BankList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/project-parameters"
+            element={
+              <ProtectedRoute>
+                <ProjectParameterList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/persons"
+            element={
+              <ProtectedRoute>
+                <PersonList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vehicles"
+            element={
+              <ProtectedRoute>
+                <VehicleList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/warehouses"
+            element={
+              <ProtectedRoute>
+                <WarehouseList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/address-types"
+            element={
+              <ProtectedRoute>
+                <AddressTypeList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/uoms"
+            element={
+              <ProtectedRoute>
+                <UOMList />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Box>
       <ToastNotification />
