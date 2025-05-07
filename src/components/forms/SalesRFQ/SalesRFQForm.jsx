@@ -365,9 +365,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     if (!formData.CustomerID) {
       newErrors.CustomerID = "Customer is required";
     }
-    if (!formData.SupplierID) {
+    /* if (!formData.SupplierID) {
       newErrors.SupplierID = "Supplier is required";
-    }
+    } */
     if (!formData.ServiceTypeID) {
       newErrors.ServiceTypeID = "Service Type is required";
     }

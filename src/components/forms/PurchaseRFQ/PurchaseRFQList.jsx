@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
-import { Add, Visibility, Edit, Delete } from "@mui/icons-material";
+import { Add, Visibility, Delete } from "@mui/icons-material";
 import axios from "axios";
 import PurchaseRFQForm from "./PurchaseRFQForm";
 
@@ -36,7 +36,6 @@ const PurchaseRFQList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRFQ, setSelectedRFQ] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -124,17 +123,12 @@ const PurchaseRFQList = () => {
 
   const handleView = (id) => {
     console.log("View clicked for Purchase RFQ ID:", id);
-    if (id && id !== 'undefined') {
+    if (id && id !== "undefined") {
       navigate(`/purchase-rfq/view/${id}`);
     } else {
       console.error("Invalid Purchase RFQ ID:", id);
       toast.error("Cannot view Purchase RFQ: Invalid ID");
     }
-  };
-
-  const handleEdit = (id) => {
-    setSelectedRFQ(id);
-    setEditDialogOpen(true);
   };
 
   const handleDeleteClick = (id) => {
@@ -144,7 +138,6 @@ const PurchaseRFQList = () => {
 
   const handleDialogClose = () => {
     setViewDialogOpen(false);
-    setEditDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedRFQ(null);
     fetchPurchaseRFQs(page + 1, rowsPerPage);
@@ -227,7 +220,6 @@ const PurchaseRFQList = () => {
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onView={handleView}
-        onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
 
@@ -244,29 +236,6 @@ const PurchaseRFQList = () => {
               purchaseRFQId={selectedRFQ}
               onClose={handleDialogClose}
               readOnly={true}
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={editDialogOpen}
-        onClose={handleDialogClose}
-        fullWidth
-        maxWidth="lg"
-      >
-        <DialogTitle>Edit Purchase RFQ</DialogTitle>
-        <DialogContent>
-          {selectedRFQ && (
-            <PurchaseRFQForm
-              purchaseRFQId={selectedRFQ}
-              onClose={handleDialogClose}
-              onSave={handleDialogClose}
             />
           )}
         </DialogContent>

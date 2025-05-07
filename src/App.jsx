@@ -36,6 +36,7 @@ import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import ToastNotification from './components/toastNotification';
+import SignUp from "./pages/SignUp";
 
 // Create wrapper components that use the hooks properly
 const CreateSalesRFQWrapper = () => {
@@ -91,6 +92,7 @@ function AppContent() {
       >
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route
             path="/sales-rfq"
             element={

@@ -261,6 +261,31 @@ const Login = () => {
               "Sign In"
             )}
           </LoginButton>
+
+
+          {/* <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Don't have an account?{" "}
+            <Link to="./SignUp" style={{ textDecoration: "none" }}>
+              <Typography variant="body2" color="primary">
+                Sign Up
+              </Typography>
+            </Link>
+          </Typography> */}
+
+         {/*  <LoginButton
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="secondary"
+            disabled={loading}
+            sx={{ mt: 3 }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Sign Up"
+            )}
+          </LoginButton> */}
         </form>
 
         <Box sx={{ mt: 3, textAlign: "center" }}>

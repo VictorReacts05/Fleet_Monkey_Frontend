@@ -21,6 +21,8 @@ import {
   TableHead,
   TableRow,
   Paper,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
@@ -77,6 +79,7 @@ const PurchaseRFQForm = ({
   const isViewMode = location.pathname.includes("/view/");
   const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
   const purchaseRFQId = propPurchaseRFQId || id;
+  const theme = useTheme();
 
   const [formData, setFormData] = useState({
     Series: "",
@@ -301,7 +304,7 @@ const PurchaseRFQForm = ({
             View Purchase RFQ
             {formData.Series ? ` - ${formData.Series}` : ""}
           </Typography>
-          {purchaseRFQId && (
+          {/* {purchaseRFQId && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {approvalStatus !== null ? (
                 <Box
@@ -338,7 +341,7 @@ const PurchaseRFQForm = ({
                 </Box>
               )}
             </Box>
-          )}
+          )} */}
         </Box>
       }
       onCancel={onClose || (() => navigate("/purchase-rfq"))}
@@ -513,35 +516,53 @@ const PurchaseRFQForm = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Parcels
           </Typography>
-          <TableContainer
-            component={Paper}
-            sx={{ boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
+          <TableContainer 
+            component={Paper} 
+            sx={{ 
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              borderRadius: '8px',
+              overflow: 'hidden'
+            }}
           >
             <Table>
-              <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
+              <TableHead sx={{ 
+                backgroundColor: '#1976d2', // Exact color from ParcelTab
+                height: '56px' // Match the height from ParcelTab
+              }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: "bold" }}>Item</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>UOM</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Quantity</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Sr. No.</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Item</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>UOM</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Quantity</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {parcelLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} align="center">
+                    <TableCell colSpan={4} align="center">
                       <CircularProgress size={24} sx={{ my: 2 }} />
                     </TableCell>
                   </TableRow>
                 ) : (
-                  parcels.map((parcel) => (
-                    <TableRow key={parcel.id}>
-                      <TableCell>
-                        {parcel.itemName || `Item #${parcel.itemId}`}
-                      </TableCell>
-                      <TableCell>
-                        {parcel.uomName || `UOM #${parcel.uomId}`}
-                      </TableCell>
-                      <TableCell>{parcel.quantity}</TableCell>
+                  parcels.map((parcel, index) => (
+                    <TableRow 
+                      key={parcel.id}
+                      sx={{
+                        height: '52px', // Match the height from ParcelTab
+                        '&:nth-of-type(odd)': {
+                          backgroundColor: alpha('#1976d2', 0.05),
+                        },
+                        '&:hover': {
+                          backgroundColor: alpha('#1976d2', 0.1),
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                        },
+                      }}
+                    >
+                      <TableCell align="center">{parcel.srNo || index + 1}</TableCell>
+                      <TableCell align="center">{parcel.itemName || `Item #${parcel.itemId}`}</TableCell>
+                      <TableCell align="center">{parcel.uomName || `UOM #${parcel.uomId}`}</TableCell>
+                      <TableCell align="center">{parcel.quantity}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -554,7 +575,15 @@ const PurchaseRFQForm = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Parcels
           </Typography>
-          <Paper sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+          <Paper 
+            sx={{ 
+              p: 3, 
+              textAlign: "center", 
+              color: "text.secondary",
+              borderRadius: '8px',
+              backgroundColor: alpha('#f5f5f5', 0.7)
+            }}
+          >
             No parcels found for this Purchase RFQ.
           </Paper>
         </Box>
