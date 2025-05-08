@@ -23,6 +23,7 @@ import {
   Paper,
   useTheme,
   alpha,
+  IconButton,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
@@ -44,17 +45,17 @@ import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
 import ParcelTab from "../SalesRFQ/ParcelTab";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
-  
+
   if (value instanceof Date && !isNaN(value)) {
     displayValue = value.toLocaleDateString();
+  } else if (typeof value === "boolean") {
+    displayValue = value ? "Yes" : "No";
   }
-  else if (typeof value === 'boolean') {
-    displayValue = value ? 'Yes' : 'No';
-  }
-  
+
   return (
     <Box sx={{ mb: 2 }}>
       <Typography variant="caption" color="textSecondary" display="block">
@@ -111,183 +112,323 @@ const PurchaseRFQForm = ({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [approvalStatus, setApprovalStatus] = useState(null);
+  const [approvalRecord, setApprovalRecord] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
-  const [approvalRecord, setApprovalRecord] = useState(null);
-  const [isEditing, setIsEditing] = useState(!isViewMode && !readOnly);
   const [parcelLoading, setParcelLoading] = useState(false);
-  const [serviceTypes, setServiceTypes] = useState([]);
-  const [shippingPriorities, setShippingPriorities] = useState([]);
-  const [currencies, setCurrencies] = useState([]);
+
+  const loadPurchaseRFQData = useCallback(async () => {
+    if (!purchaseRFQId) return;
+
+    try {
+      setLoading(true);
+      setParcelLoading(true);
+
+      // Fetch Purchase RFQ data
+      const response = await getPurchaseRFQById(purchaseRFQId);
+      console.log("Purchase RFQ response:", response);
+
+      if (response && response.data) {
+        const rfqData = response.data;
+        console.log("Purchase RFQ data:", rfqData);
+
+        // Format dates if they exist
+        let formattedData = {
+          ...rfqData,
+          DeliveryDate: rfqData.DeliveryDate
+            ? new Date(rfqData.DeliveryDate)
+            : null,
+          PostingDate: rfqData.PostingDate
+            ? new Date(rfqData.PostingDate)
+            : null,
+          RequiredByDate: rfqData.RequiredByDate
+            ? new Date(rfqData.RequiredByDate)
+            : null,
+          DateReceived: rfqData.DateReceived
+            ? new Date(rfqData.DateReceived)
+            : null,
+          SalesRFQID: rfqData.SalesRFQID ? rfqData.SalesRFQID.toString() : "",
+        };
+
+        // Fetch additional data
+        try {
+          // Fetch collection address details
+          if (rfqData.CollectionAddressID) {
+            const collectionAddressResponse = await axios.get(
+              `http://localhost:7000/api/addresses/${rfqData.CollectionAddressID}`
+            );
+            if (
+              collectionAddressResponse.data &&
+              collectionAddressResponse.data.data
+            ) {
+              const addressData = collectionAddressResponse.data.data;
+              formattedData.CollectionAddress = `${
+                addressData.AddressLine1 || ""
+              }, ${addressData.City || ""}`;
+            }
+          }
+
+          // Fetch destination address details
+          if (rfqData.DestinationAddressID) {
+            const destinationAddressResponse = await axios.get(
+              `http://localhost:7000/api/addresses/${rfqData.DestinationAddressID}`
+            );
+            if (
+              destinationAddressResponse.data &&
+              destinationAddressResponse.data.data
+            ) {
+              const addressData = destinationAddressResponse.data.data;
+              formattedData.DestinationAddress = `${
+                addressData.AddressLine1 || ""
+              }, ${addressData.City || ""}`;
+            }
+          }
+
+          // Fetch shipping priority details
+          if (rfqData.ShippingPriorityID) {
+            try {
+              const prioritiesResponse = await fetchShippingPriorities();
+              console.log("Shipping priorities response:", prioritiesResponse);
+
+              // Handle nested or direct array response
+              const priorities = Array.isArray(prioritiesResponse)
+                ? prioritiesResponse
+                : prioritiesResponse.data || [];
+
+              if (Array.isArray(priorities)) {
+                const matchingPriority = priorities.find(
+                  (p) =>
+                    parseInt(p.ShippingPriorityID || p.MailingPriorityID) ===
+                    parseInt(rfqData.ShippingPriorityID)
+                );
+
+                if (matchingPriority) {
+                  console.log("Matching priority found:", matchingPriority);
+                  formattedData.ShippingPriorityName =
+                    matchingPriority.PriorityName || "Unknown Priority";
+                  console.log(
+                    "Set ShippingPriorityName:",
+                    formattedData.ShippingPriorityName
+                  );
+                } else {
+                  console.warn(
+                    `No matching shipping priority for ID: ${rfqData.ShippingPriorityID}`
+                  );
+                  formattedData.ShippingPriorityName = `Unknown Priority (${rfqData.ShippingPriorityID})`;
+                }
+              } else {
+                console.error(
+                  "Shipping priorities is not an array:",
+                  priorities
+                );
+                formattedData.ShippingPriorityName = `Error: Invalid priorities data`;
+              }
+            } catch (priorityError) {
+              console.error(
+                "Error fetching shipping priorities:",
+                priorityError
+              );
+              formattedData.ShippingPriorityName = `Error: Failed to fetch priority`;
+            }
+          }
+
+          // Fetch service type details
+          if (rfqData.ServiceTypeID) {
+            try {
+              const serviceTypesResponse = await fetchServiceTypes();
+              console.log("Service types response:", serviceTypesResponse);
+
+              // Handle nested or direct array response
+              const serviceTypes = Array.isArray(serviceTypesResponse)
+                ? serviceTypesResponse
+                : serviceTypesResponse.data || [];
+
+              if (Array.isArray(serviceTypes)) {
+                const matchingServiceType = serviceTypes.find(
+                  (s) =>
+                    parseInt(s.ServiceTypeID) ===
+                    parseInt(rfqData.ServiceTypeID)
+                );
+
+                if (matchingServiceType) {
+                  console.log(
+                    "Matching service type found:",
+                    matchingServiceType
+                  );
+                  formattedData.ServiceType =
+                    matchingServiceType.ServiceType || "Unknown Service Type";
+                  console.log("Set ServiceType:", formattedData.ServiceType);
+                } else {
+                  console.warn(
+                    `No matching service type for ID: ${rfqData.ServiceTypeID}`
+                  );
+                  formattedData.ServiceType = `Unknown Service Type (${rfqData.ServiceTypeID})`;
+                }
+              } else {
+                console.error("Service types is not an array:", serviceTypes);
+                formattedData.ServiceType = `Error: Invalid service types data`;
+              }
+            } catch (serviceTypeError) {
+              console.error("Error fetching service types:", serviceTypeError);
+              formattedData.ServiceType = `Error: Failed to fetch service type`;
+            }
+          }
+
+          // Fetch currency details
+          if (rfqData.CurrencyID) {
+            try {
+              const currenciesResponse = await fetchCurrencies();
+              console.log("Currencies response:", currenciesResponse);
+
+              const currencies = Array.isArray(currenciesResponse)
+                ? currenciesResponse
+                : currenciesResponse.data || [];
+
+              if (Array.isArray(currencies)) {
+                const matchingCurrency = currencies.find(
+                  (c) => parseInt(c.CurrencyID) === parseInt(rfqData.CurrencyID)
+                );
+                if (matchingCurrency) {
+                  formattedData.CurrencyName =
+                    matchingCurrency.CurrencyName || "Unknown Currency";
+                  console.log("Set CurrencyName:", formattedData.CurrencyName);
+                } else {
+                  console.warn(
+                    `No matching currency for ID: ${rfqData.CurrencyID}`
+                  );
+                }
+              } else {
+                console.error("Currencies is not an array:", currencies);
+              }
+            } catch (currencyError) {
+              console.error("Error fetching currencies:", currencyError);
+            }
+          }
+        } catch (fetchError) {
+          console.error("Error fetching additional data:", fetchError);
+        }
+
+        console.log("Final formatted data:", formattedData);
+        setFormData(formattedData);
+
+        // Set parcels if they exist
+        if (rfqData.parcels && Array.isArray(rfqData.parcels)) {
+          setParcels(rfqData.parcels);
+        }
+      }
+
+      // Fetch Sales RFQs for dropdown
+      const salesRFQsData = await fetchSalesRFQs();
+      if (salesRFQsData && Array.isArray(salesRFQsData)) {
+        const formattedSalesRFQs = salesRFQsData.map((rfq) => ({
+          value: rfq.SalesRFQID.toString(),
+          label: rfq.Series || `Sales RFQ #${rfq.SalesRFQID}`,
+        }));
+        setSalesRFQs(formattedSalesRFQs);
+      }
+    } catch (error) {
+      console.error("Error loading Purchase RFQ data:", error);
+      toast.error("Failed to load Purchase RFQ data");
+    } finally {
+      setLoading(false);
+      setParcelLoading(false);
+    }
+  }, [purchaseRFQId]);
+
+  useEffect(() => {
+    if (purchaseRFQId) {
+      loadPurchaseRFQData();
+    }
+  }, [purchaseRFQId, loadPurchaseRFQData]);
 
   const loadApprovalStatus = useCallback(async () => {
     if (!purchaseRFQId) return;
     try {
       const approvalData = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      console.log("Purchase RFQ Approval data received:", approvalData);
+
       setApprovalRecord(approvalData);
-      if (approvalData && approvalData.ApprovedYN !== undefined) {
-        setApprovalStatus(approvalData.ApprovedYN ? "approved" : "disapproved");
+
+      if (approvalData.exists) {
+        if (approvalData.ApprovedYN === true || approvalData.ApprovedYN === 1) {
+          setApprovalStatus("approved");
+        } else if (
+          approvalData.ApprovedYN === false ||
+          approvalData.ApprovedYN === 0
+        ) {
+          setApprovalStatus("disapproved");
+        } else {
+          setApprovalStatus(null);
+        }
       } else {
         setApprovalStatus(null);
       }
+      console.log("Set approvalStatus to:", approvalStatus);
     } catch (error) {
       console.error("Failed to load approval status:", error);
       setApprovalStatus(null);
-      setApprovalRecord(null);
     }
   }, [purchaseRFQId]);
 
   useEffect(() => {
-    const loadData = async () => {
-      if (!purchaseRFQId || purchaseRFQId === "undefined") return;
+    if (purchaseRFQId) {
+      loadApprovalStatus();
+    }
+  }, [purchaseRFQId, loadApprovalStatus]);
 
+  const handleMenuOpen = (event) => {
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const handleApprove = () => {
+    setConfirmAction("approve");
+    setConfirmMessage("Are you sure you want to approve this Purchase RFQ?");
+    setConfirmDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleDisapprove = () => {
+    setConfirmAction("disapprove");
+    setConfirmMessage("Are you sure you want to disapprove this Purchase RFQ?");
+    setConfirmDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleConfirmAction = async () => {
+    try {
       setLoading(true);
-      try {
-        const [
-          salesRFQsData,
-          serviceTypesResponse,
-          shippingPrioritiesResponse,
-          currenciesResponse,
-        ] = await Promise.all([
-          fetchSalesRFQs(),
-          fetchServiceTypes(),
-          fetchShippingPriorities(),
-          fetchCurrencies(),
-        ]);
-
-        const salesRFQOptions = [
-          { value: "", label: "Select an option" },
-          ...salesRFQsData.map((rfq) => ({
-            value: String(rfq.SalesRFQID),
-            label: rfq.Series,
-          })),
-        ];
-        setSalesRFQs(salesRFQOptions);
-
-        const serviceTypesData = Array.isArray(serviceTypesResponse)
-          ? serviceTypesResponse
-          : serviceTypesResponse?.data &&
-            Array.isArray(serviceTypesResponse.data)
-          ? serviceTypesResponse.data
-          : [];
-
-        const shippingPrioritiesData = Array.isArray(shippingPrioritiesResponse)
-          ? shippingPrioritiesResponse
-          : shippingPrioritiesResponse?.data &&
-            Array.isArray(shippingPrioritiesResponse.data)
-          ? shippingPrioritiesResponse.data
-          : [];
-
-        const currenciesData = Array.isArray(currenciesResponse)
-          ? currenciesResponse
-          : currenciesResponse?.data && Array.isArray(currenciesResponse.data)
-          ? currenciesResponse.data
-          : [];
-
-        setServiceTypes(serviceTypesData);
-        setShippingPriorities(shippingPrioritiesData);
-        setCurrencies(currenciesData);
-
-        if (purchaseRFQId && purchaseRFQId !== "create") {
-          const purchaseRFQResponse = await getPurchaseRFQById(purchaseRFQId);
-          const rfqData = purchaseRFQResponse?.data;
-
-          if (rfqData) {
-            const serviceType = serviceTypesData.find(
-              (st) => st.ServiceTypeID === rfqData.ServiceTypeID
-            );
-
-            const shippingPriority = shippingPrioritiesData.find(
-              (sp) => sp.MailingPriorityID === rfqData.ShippingPriorityID
-            );
-
-            const currency = currenciesData.find(
-              (c) => c.CurrencyID === rfqData.CurrencyID
-            );
-
-            const serviceTypeDisplay =
-              serviceType?.ServiceType ||
-              (rfqData.ServiceTypeID
-                ? `Service Type ID: ${rfqData.ServiceTypeID}`
-                : "Not specified");
-
-            const currencyDisplay =
-              currency?.CurrencyName ||
-              (rfqData.CurrencyID
-                ? `Currency ID: ${rfqData.CurrencyID}`
-                : "Not specified");
-
-            const shippingPriorityDisplay =
-              shippingPriority?.PriorityName ||
-              (rfqData.ShippingPriorityID
-                ? `Priority ID: ${rfqData.ShippingPriorityID}`
-                : "Not specified");
-
-            setFormData({
-              Series: rfqData.Series || "",
-              SalesRFQID: rfqData.SalesRFQID ? String(rfqData.SalesRFQID) : "",
-              CompanyID: rfqData.CompanyID || DEFAULT_COMPANY.value,
-              CustomerID: rfqData.CustomerID || "",
-              CustomerName: rfqData.CustomerName || "",
-              SupplierID: rfqData.SupplierID || "",
-              SupplierName: rfqData.SupplierName || "",
-              ExternalRefNo: rfqData.ExternalRefNo || "",
-              DeliveryDate: rfqData.DeliveryDate
-                ? new Date(rfqData.DeliveryDate)
-                : null,
-              PostingDate: rfqData.PostingDate
-                ? new Date(rfqData.PostingDate)
-                : null,
-              RequiredByDate: rfqData.RequiredByDate
-                ? new Date(rfqData.RequiredByDate)
-                : null,
-              DateReceived: rfqData.DateReceived
-                ? new Date(rfqData.DateReceived)
-                : null,
-              ServiceTypeID: rfqData.ServiceTypeID || "",
-              ServiceType: serviceTypeDisplay,
-              CollectionAddressID: rfqData.CollectionAddressID || "",
-              DestinationAddressID: rfqData.DestinationAddressID || "",
-              ShippingPriorityID: rfqData.ShippingPriorityID || "",
-              ShippingPriorityName: shippingPriorityDisplay,
-              Terms: rfqData.Terms || "",
-              CurrencyID: rfqData.CurrencyID || "",
-              CurrencyName: currencyDisplay,
-              CollectFromSupplierYN: Boolean(rfqData.CollectFromSupplierYN),
-              PackagingRequiredYN: Boolean(rfqData.PackagingRequiredYN),
-              FormCompletedYN: Boolean(rfqData.FormCompletedYN),
-            });
-
-            // Use parcels directly from the API response
-            const parcels = rfqData.parcels || [];
-            console.log(
-              `Loaded ${parcels.length} parcels for SalesRFQID ${rfqData.SalesRFQID}`,
-              parcels
-            );
-            setParcels(parcels);
-
-            if (readOnly || isViewMode) {
-              setIsEditing(false);
-            }
-
-            await loadApprovalStatus();
-          } else {
-            toast.error("Failed to load Purchase RFQ data");
-          }
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error(
-          "Failed to load data: " + (error.message || "Unknown error")
-        );
-      } finally {
-        setLoading(false);
+      if (confirmAction === "approve") {
+        await updatePurchaseRFQApproval(purchaseRFQId, true);
+        toast.success("Purchase RFQ approved successfully");
+        setApprovalStatus("approved");
+      } else if (confirmAction === "disapprove") {
+        await updatePurchaseRFQApproval(purchaseRFQId, false);
+        toast.success("Purchase RFQ disapproved successfully");
+        setApprovalStatus("disapproved");
       }
-    };
-    loadData();
-  }, [purchaseRFQId, loadApprovalStatus, readOnly, isViewMode]);
+      await loadApprovalStatus();
+    } catch (error) {
+      console.error(`Error ${confirmAction}ing Purchase RFQ:`, error);
+      toast.error(
+        `Failed to ${confirmAction} Purchase RFQ: ${
+          error.message || "Unknown error"
+        }`
+      );
+    } finally {
+      setConfirmDialogOpen(false);
+      setLoading(false);
+    }
+  };
+
+  const handleCancelAction = () => {
+    setConfirmDialogOpen(false);
+  };
 
   return (
     <FormPage
@@ -304,44 +445,63 @@ const PurchaseRFQForm = ({
             View Purchase RFQ
             {formData.Series ? ` - ${formData.Series}` : ""}
           </Typography>
-          {/* {purchaseRFQId && (
+          {purchaseRFQId && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              {approvalStatus !== null ? (
+              {approvalStatus === "approved" ? (
                 <Box
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    backgroundColor:
-                      approvalStatus === "approved" ? "#e6f7e6" : "#ffebee",
-                    color:
-                      approvalStatus === "approved" ? "#2e7d32" : "#d32f2f",
+                    backgroundColor: "#e6f7e6",
+                    color: "#2e7d32",
                     borderRadius: "4px",
                     padding: "6px 12px",
                     fontWeight: "medium",
+                    mr: 2,
                   }}
                 >
-                  <Typography variant="body2">
-                    Status:{" "}
-                    {approvalStatus === "approved" ? "Approved" : "Disapproved"}
-                  </Typography>
+                  <Typography variant="body2">Status: Approved</Typography>
+                </Box>
+              ) : approvalStatus === "disapproved" ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor: "#ffebee",
+                    color: "#d32f2f",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    fontWeight: "medium",
+                    mr: 2,
+                  }}
+                >
+                  <Typography variant="body2">Status: Disapproved</Typography>
                 </Box>
               ) : (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    backgroundColor: "#fff3e0",
-                    color: "#f57c00",
-                    borderRadius: "4px",
-                    padding: "6px 12px",
-                    fontWeight: "medium",
-                  }}
-                >
-                  <Typography variant="body2">Status: Pending</Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleMenuOpen}
+                    endIcon={<MoreVertIcon />}
+                    sx={{ mr: 2 }}
+                  >
+                    Status
+                  </Button>
+                  <Menu
+                    id="purchase-rfq-menu"
+                    anchorEl={menuAnchor}
+                    keepMounted
+                    open={Boolean(menuAnchor)}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem onClick={handleApprove}>Approve</MenuItem>
+                    <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
+                  </Menu>
                 </Box>
               )}
             </Box>
-          )} */}
+          )}
         </Box>
       }
       onCancel={onClose || (() => navigate("/purchase-rfq"))}
@@ -378,8 +538,9 @@ const PurchaseRFQForm = ({
           <ReadOnlyField
             label="Sales RFQ"
             value={
-              salesRFQs.find((s) => s.value === formData.SalesRFQID)?.label ||
-              "-"
+              salesRFQs.find((s) => s.value === formData.SalesRFQID?.toString())
+                ?.label ||
+              (formData.SalesRFQID ? `Sales RFQ #${formData.SalesRFQID}` : "-")
             }
           />
         </Grid>
@@ -459,14 +620,14 @@ const PurchaseRFQForm = ({
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collection Address"
-            value={formData.CollectionAddressID || "-"}
+            value={formData.CollectionAddress || "-"}
           />
         </Grid>
 
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Destination Address"
-            value={formData.DestinationAddressID || "-"}
+            value={formData.DestinationAddress || "-"}
           />
         </Grid>
 
@@ -516,24 +677,46 @@ const PurchaseRFQForm = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Parcels
           </Typography>
-          <TableContainer 
-            component={Paper} 
-            sx={{ 
+          <TableContainer
+            component={Paper}
+            sx={{
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              borderRadius: '8px',
-              overflow: 'hidden'
+              borderRadius: "8px",
+              overflow: "hidden",
             }}
           >
             <Table>
-              <TableHead sx={{ 
-                backgroundColor: '#1976d2', // Exact color from ParcelTab
-                height: '56px' // Match the height from ParcelTab
-              }}>
+              <TableHead
+                sx={{
+                  backgroundColor: "#1976d2",
+                  height: "56px",
+                }}
+              >
                 <TableRow>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Sr. No.</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Item</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>UOM</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: 'white', py: 2 }}>Quantity</TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                  >
+                    Sr. No.
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                  >
+                    Item
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                  >
+                    UOM
+                  </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                  >
+                    Quantity
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -545,23 +728,29 @@ const PurchaseRFQForm = ({
                   </TableRow>
                 ) : (
                   parcels.map((parcel, index) => (
-                    <TableRow 
+                    <TableRow
                       key={parcel.id}
                       sx={{
-                        height: '52px', // Match the height from ParcelTab
-                        '&:nth-of-type(odd)': {
-                          backgroundColor: alpha('#1976d2', 0.05),
+                        height: "52px",
+                        "&:nth-of-type(odd)": {
+                          backgroundColor: alpha("#1976d2", 0.05),
                         },
-                        '&:hover': {
-                          backgroundColor: alpha('#1976d2', 0.1),
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
+                        "&:hover": {
+                          backgroundColor: alpha("#1976d2", 0.1),
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
                         },
                       }}
                     >
-                      <TableCell align="center">{parcel.srNo || index + 1}</TableCell>
-                      <TableCell align="center">{parcel.itemName || `Item #${parcel.itemId}`}</TableCell>
-                      <TableCell align="center">{parcel.uomName || `UOM #${parcel.uomId}`}</TableCell>
+                      <TableCell align="center">
+                        {parcel.srNo || index + 1}
+                      </TableCell>
+                      <TableCell align="center">
+                        {parcel.itemName || `Item #${parcel.itemId}`}
+                      </TableCell>
+                      <TableCell align="center">
+                        {parcel.uomName || `UOM #${parcel.uomId}`}
+                      </TableCell>
                       <TableCell align="center">{parcel.quantity}</TableCell>
                     </TableRow>
                   ))
@@ -575,21 +764,43 @@ const PurchaseRFQForm = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Parcels
           </Typography>
-          <Paper 
-            sx={{ 
-              p: 3, 
-              textAlign: "center", 
+          <Paper
+            sx={{
+              p: 3,
+              textAlign: "center",
               color: "text.secondary",
-              borderRadius: '8px',
-              backgroundColor: alpha('#f5f5f5', 0.7)
+              borderRadius: "8px",
+              backgroundColor: alpha("#f5f5f5", 0.7),
             }}
           >
             No parcels found for this Purchase RFQ.
           </Paper>
         </Box>
       )}
+
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCancelAction}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Confirm Action</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {confirmMessage}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelAction} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmAction} color="primary" autoFocus>
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </FormPage>
   );
-}
+};
 
 export default PurchaseRFQForm;
