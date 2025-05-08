@@ -14,7 +14,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  CircularProgress
+  CircularProgress,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
@@ -30,7 +30,6 @@ import {
   fetchCurrencies,
   approveSalesRFQ,
   fetchSalesRFQApprovalStatus,
-  updateSalesRFQApproval,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -314,20 +313,21 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DEFAULT_COMPANY.value,
   ]);
 
-  // ... existing code ...
-  // ... existing code ...
   const loadApprovalStatus = useCallback(async () => {
     if (!salesRFQId) return;
     try {
       const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
       console.log("Approval data received:", approvalData);
 
-      setApprovalRecord(approvalData); // <-- Save the approval record
+      setApprovalRecord(approvalData);
 
       if (approvalData && approvalData.ApprovedYN !== undefined) {
         if (approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true) {
           setApprovalStatus("approved");
-        } else if (approvalData.ApprovedYN === 0) {
+        } else if (
+          approvalData.ApprovedYN === 0 ||
+          approvalData.ApprovedYN === false
+        ) {
           setApprovalStatus("disapproved");
         } else {
           setApprovalStatus(null);
@@ -335,6 +335,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       } else {
         setApprovalStatus(null);
       }
+      console.log("Set approvalStatus to:", approvalStatus);
     } catch (error) {
       console.error("Failed to load approval status:", error);
       setApprovalStatus(null);
@@ -365,9 +366,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     if (!formData.CustomerID) {
       newErrors.CustomerID = "Customer is required";
     }
-    /* if (!formData.SupplierID) {
-      newErrors.SupplierID = "Supplier is required";
-    } */
     if (!formData.ServiceTypeID) {
       newErrors.ServiceTypeID = "Service Type is required";
     }
@@ -505,38 +503,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     try {
       setLoading(true);
 
-      const approvedYN = confirmAction === "approve" ? 1 : 0;
-      const approvalData = {
-        SalesRFQID: salesRFQId,
-        ApproverID: 2,
-        ApprovedYN: approvedYN,
-        FormName: "Sales RFQ",
-        RoleName: "Sales RFQ Approver",
-        UserID: 2,
-      };
-
-      // Debug: Check what approvalRecord contains
-      console.log("approvalRecord in handleConfirmAction:", approvalRecord);
-
-      // The approvalRecord exists but doesn't have the ID properties we're checking for
-      // Instead, we should check if the record exists at all
-      if (approvalRecord && approvalRecord.SalesRFQID) {
-        // Update existing approval record (PUT)
-        // We need to use the SalesRFQID and ApproverID to identify the record
-         await updateSalesRFQApproval(approvalRecord.SalesRFQID, approvalData);
-      } else {
-        // Create new approval record (POST)
-        await approveSalesRFQ(salesRFQId, approvedYN === 1);
-      }
+      const isApproved = confirmAction === "approve";
+      await approveSalesRFQ(salesRFQId, isApproved);
 
       toast.success(
-        `SalesRFQ ${
-          confirmAction === "approve" ? "approved" : "disapproved"
-        } successfully`
+        `SalesRFQ ${isApproved ? "approved" : "disapproved"} successfully`
       );
-      setApprovalStatus(
-        confirmAction === "approve" ? "approved" : "disapproved"
-      );
+      setApprovalStatus(isApproved ? "approved" : "disapproved");
+      await loadApprovalStatus(); // Reload approval status to ensure UI is in sync
     } catch (error) {
       console.error(
         `Error ${
@@ -624,24 +598,26 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   </Typography>
                 </Box>
               ) : (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleMenuOpen}
-                  endIcon={<MoreVertIcon />}
-                  sx={{ ml: 1 }}
-                >
-                  Status
-                </Button>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleMenuOpen}
+                    endIcon={<MoreVertIcon />}
+                    sx={{ ml: 1 }}
+                  >
+                    Status
+                  </Button>
+                  <Menu
+                    anchorEl={menuAnchor}
+                    open={Boolean(menuAnchor)}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem onClick={handleApprove}>Approve</MenuItem>
+                    <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
+                  </Menu>
+                </Box>
               )}
-              <Menu
-                anchorEl={menuAnchor}
-                open={Boolean(menuAnchor)}
-                onClose={handleMenuClose}
-              >
-                <MenuItem onClick={handleApprove}>Approve</MenuItem>
-                <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
-              </Menu>
             </Box>
           )}
         </Box>

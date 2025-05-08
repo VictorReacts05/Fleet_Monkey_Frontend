@@ -144,7 +144,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   useEffect(() => {
     const loadExistingParcels = async () => {
       if (!salesRFQId) {
-        console.log("No SalesRFQ ID provided, skipping parcel fetch");
+        // console.log("No SalesRFQ ID provided, skipping parcel fetch");
         return;
       }
 

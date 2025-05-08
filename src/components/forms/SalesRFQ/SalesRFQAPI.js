@@ -100,21 +100,6 @@ export const createSalesRFQ = async (salesRFQData) => {
 
     console.log("SalesRFQ creation response:", response.data);
 
-    if (response.data.newSalesRFQId) {
-      try {
-        console.log(
-          "Creating default approval for SalesRFQ ID:",
-          response.data.newSalesRFQId
-        );
-        const approvalResponse = await createDefaultApproval(
-          response.data.newSalesRFQId
-        );
-        console.log("Default approval creation response:", approvalResponse);
-      } catch (approvalError) {
-        console.error("Error creating default approval:", approvalError);
-      }
-    }
-
     if (response.data.newSalesRFQId && parcels && parcels.length > 0) {
       try {
         const salesRFQId = response.data.newSalesRFQId;
@@ -334,96 +319,6 @@ export const fetchCurrencies = async () => {
   }
 };
 
-// Submit SalesRFQ approval
-export const submitSalesRFQApproval = async (
-  salesRFQId,
-  approvalDecision,
-  personId = 2
-) => {
-  try {
-    const { headers } = getAuthHeader();
-
-    const approvalData = {
-      SalesRFQID: Number(salesRFQId),
-      ApproverID: Number(personId),
-      ApprovedYN: approvalDecision === "yes" ? 1 : 0,
-      FormName: "Sales RFQ",
-      RoleName: "Sales RFQ Approver",
-      UserID: Number(personId),
-      IsAuthorized: true,
-      BypassAuth: true,
-    };
-
-    console.log("Submitting approval with data:", approvalData);
-
-    const response = await axios.post(
-      "http://localhost:7000/api/sales-rfq-approvals",
-      approvalData,
-      { headers }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Error submitting SalesRFQ approval:", error);
-    throw error.response?.data || error;
-  }
-};
-
-// Create a default approval record for a new SalesRFQ
-export const createDefaultApproval = async (salesRFQId) => {
-  try {
-    const { headers } = getAuthHeader();
-
-    if (!salesRFQId) {
-      console.error("Cannot create default approval: Missing SalesRFQId");
-      return { success: false, message: "Missing SalesRFQId" };
-    }
-
-    const approvalData = {
-      SalesRFQID: Number(salesRFQId),
-      ApproverID: 2,
-      ApprovedYN: 0, // Default to not approved
-      FormName: "Sales RFQ",
-      RoleName: "Sales RFQ Approver",
-      UserID: 2,
-    };
-
-    console.log("Creating default approval with data:", approvalData);
-
-    const response = await axios.post(
-      "http://localhost:7000/api/sales-rfq-approvals",
-      approvalData,
-      { headers }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error("Error creating default approval:", error);
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-    };
-  }
-};
-
-// Update SalesRFQ approval
-export const updateSalesRFQApproval = async (salesRFQID, approvalData) => {
-  try {
-    const { headers } = getAuthHeader();
-    
-    // Instead of using a path parameter, use query parameters
-    const response = await axios.put(
-      `http://localhost:7000/api/sales-rfq-approvals?salesRFQID=${salesRFQID}&approverID=${approvalData.ApproverID}`,
-      approvalData,
-      { headers }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error updating SalesRFQ approval:", error);
-    throw error.response?.data || error;
-  }
-};
-
 // Approve or disapprove SalesRFQ
 export const approveSalesRFQ = async (salesRFQId, isApproved) => {
   try {
@@ -461,7 +356,7 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
       `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}`,
       { headers }
     );
-    
+
     // Check if we have data and it contains approval information
     if (response.data && response.data.data && response.data.data.length > 0) {
       // Return the first approval record
