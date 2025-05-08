@@ -150,10 +150,71 @@ export const createSalesRFQ = async (salesRFQData) => {
   }
 };
 
+export const fetchSalesRFQParcels = async (salesRFQId) => {
+  try {
+    const { headers } = getAuthHeader();
+    let response;
+
+    // Use the confirmed endpoint
+    response = await axios.get(
+      `http://localhost:7000/api/sales-rfq-parcels?salesRFQID=${salesRFQId}`,
+      { headers }
+    );
+    console.log("Fetched parcels using query endpoint:", response.data);
+
+    let parcels = [];
+    if (response && response.data) {
+      if (response.data.data && Array.isArray(response.data.data)) {
+        parcels = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        parcels = response.data;
+      } else if (
+        response.data.parcels &&
+        Array.isArray(response.data.parcels)
+      ) {
+        parcels = response.data.parcels;
+      } else {
+        console.warn("Unexpected response format:", response.data);
+      }
+    }
+
+    // Filter parcels for the specific SalesRFQId
+    parcels = parcels.filter((parcel) => {
+      const parcelSalesRFQId =
+        parcel.SalesRFQID ||
+        parcel.salesRFQID ||
+        parcel.salesRfqId ||
+        parcel.salesrfqid ||
+        parcel.SalesRfqId;
+      return String(parcelSalesRFQId) === String(salesRFQId);
+    });
+
+    console.log("Fetched parcels for SalesRFQID:", salesRFQId, parcels);
+    return parcels;
+  } catch (error) {
+    console.error(
+      "Error fetching SalesRFQ parcels for SalesRFQID:",
+      salesRFQId,
+      error
+    );
+    if (error.response) {
+      console.error("Server response:", error.response.data);
+    }
+    return [];
+  }
+};
+
 // Update an existing SalesRFQ with parcels
 export const updateSalesRFQ = async (id, salesRFQData) => {
   try {
     const { headers, personId } = getAuthHeader();
+
+    if (!personId) {
+      console.warn(
+        "No personId found for deletion; proceeding without DeletedByID"
+      );
+    }
+    console.log("PersonID for DeletedByID:", personId);
 
     const { parcels, ...salesRFQDetails } = salesRFQData;
 
@@ -165,32 +226,188 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
       ...(personId ? { UpdatedByID: Number(personId) } : {}),
     };
 
-    if (parcels && parcels.length > 0) {
-      console.log("Parcels data before formatting for update:", parcels);
-
-      apiData.SalesRFQParcels = parcels.map((parcel) => ({
-        SalesRFQID: Number(id),
-        ItemID: Number(parcel.itemId),
-        UOMID: Number(parcel.uomId),
-        Quantity: Number(parcel.quantity),
-        CreatedByID: Number(personId || 1),
-        UpdatedByID: Number(personId || 1),
-      }));
-
-      console.log(
-        "Sending parcels data for SalesRFQParcel table update:",
-        apiData.SalesRFQParcels
-      );
-    } else {
-      console.warn("No parcels data found in the update request");
-    }
-
     console.log("Updating SalesRFQ with ID:", id, "Data:", apiData);
     const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
       headers,
     });
 
     console.log("SalesRFQ update response:", response.data);
+
+    // Handle parcels: Delete removed parcels and create/update others
+    try {
+      // Fetch existing parcels
+      const existingParcels = await fetchSalesRFQParcels(id);
+      console.log("Raw existing parcels for SalesRFQID:", id, existingParcels);
+
+      // Determine parcels to delete (not present in updated parcels or all if parcels is empty)
+      const updatedParcelIds = parcels
+        .filter(
+          (parcel) =>
+            parcel.SalesRFQParcelID ||
+            parcel.SalesRFQParcelId ||
+            parcel.ParcelID ||
+            parcel.ID
+        )
+        .map((parcel) =>
+          Number(
+            parcel.SalesRFQParcelID ||
+              parcel.SalesRFQParcelId ||
+              parcel.ParcelID ||
+              parcel.ID
+          )
+        );
+
+      // Include all existing parcels if parcels is empty, otherwise only those not in updated parcels
+      const parcelsToDelete =
+        parcels.length === 0
+          ? existingParcels
+          : existingParcels.filter(
+              (parcel) =>
+                !updatedParcelIds.includes(
+                  Number(
+                    parcel.SalesRFQParcelID ||
+                      parcel.SalesRFQParcelId ||
+                      parcel.ParcelID ||
+                      parcel.ID
+                  )
+                )
+            );
+
+      // Delete parcels
+      if (parcelsToDelete.length > 0) {
+        const deletedParcelIds = new Set(); // Track deleted IDs to prevent duplicates
+        const deletePromises = parcelsToDelete
+          .filter((parcel) => {
+            const parcelId =
+              parcel.SalesRFQParcelID ||
+              parcel.SalesRFQParcelId ||
+              parcel.ParcelID ||
+              parcel.ID;
+            if (!parcelId) {
+              console.warn(
+                "Skipping parcel with missing SalesRFQParcelID:",
+                parcel
+              );
+              return false;
+            }
+            if (deletedParcelIds.has(parcelId)) {
+              console.log(
+                "Skipping duplicate parcel deletion for SalesRFQParcelID:",
+                parcelId
+              );
+              return false;
+            }
+            deletedParcelIds.add(parcelId);
+            return true;
+          })
+          .map((parcel) => {
+            const parcelId =
+              parcel.SalesRFQParcelID ||
+              parcel.SalesRFQParcelId ||
+              parcel.ParcelID ||
+              parcel.ID;
+            console.log(
+              "Attempting to delete parcel with SalesRFQParcelID:",
+              parcelId
+            );
+            return axios
+              .delete(
+                `http://localhost:7000/api/sales-rfq-parcels/${parcelId}`,
+                {
+                  headers,
+                  data: personId ? { DeletedByID: Number(personId) } : {},
+                }
+              )
+              .catch((error) => {
+                if (
+                  error.response &&
+                  error.response.status === 400 &&
+                  error.response.data.message.includes(
+                    "SalesRFQParcelID does not exist"
+                  )
+                ) {
+                  console.log(
+                    `Parcel with SalesRFQParcelID ${parcelId} already deleted or does not exist, proceeding.`
+                  );
+                  return { success: true, parcelId }; // Treat as success
+                }
+                throw error;
+              });
+          });
+
+        try {
+          const results = await Promise.all(deletePromises);
+          console.log(
+            "Deleted parcels for SalesRFQID:",
+            id,
+            results
+              .filter((result) => result !== undefined)
+              .map(
+                (result) =>
+                  result.parcelId ||
+                  (result.data && result.data.salesRFQParcelId)
+              )
+              .filter(Boolean)
+          );
+        } catch (deleteError) {
+          console.error("Error deleting parcels:", deleteError);
+          if (deleteError.response) {
+            console.error("Server response:", deleteError.response.data);
+          }
+        }
+      } else {
+        console.log("No parcels to delete for SalesRFQID:", id);
+      }
+
+      // Create new parcels (those without SalesRFQParcelID)
+      if (parcels && parcels.length > 0) {
+        console.log("Processing parcels for SalesRFQID:", id);
+        const formattedParcels = parcels
+          .filter(
+            (parcel) =>
+              !parcel.SalesRFQParcelID &&
+              !parcel.SalesRFQParcelId &&
+              !parcel.ParcelID &&
+              !parcel.ID
+          )
+          .map((parcel, index) => ({
+            SalesRFQID: Number(id),
+            ItemID: Number(parcel.ItemID || parcel.itemId),
+            UOMID: Number(parcel.UOMID || parcel.uomId),
+            ItemQuantity: Number(
+              parcel.ItemQuantity || parcel.Quantity || parcel.quantity
+            ),
+            LineItemNumber: index + 1,
+            IsDeleted: 0,
+          }));
+
+        if (formattedParcels.length > 0) {
+          console.log("Creating new parcels:", formattedParcels);
+          const parcelPromises = formattedParcels.map((parcel) =>
+            axios.post("http://localhost:7000/api/sales-rfq-parcels", parcel, {
+              headers,
+            })
+          );
+          const parcelResults = await Promise.all(parcelPromises);
+          console.log(
+            "Parcels creation results:",
+            parcelResults.map((r) => r.data)
+          );
+        } else {
+          console.log("No new parcels to create for SalesRFQID:", id);
+        }
+      } else {
+        console.log("No parcels provided for SalesRFQID:", id);
+      }
+    } catch (parcelError) {
+      console.error("Error handling parcels:", parcelError);
+      if (parcelError.response && parcelError.response.data) {
+        console.error(
+          "Server response for parcels:",
+          parcelError.response.data
+        );
+      }
+    }
 
     return response.data;
   } catch (error) {
