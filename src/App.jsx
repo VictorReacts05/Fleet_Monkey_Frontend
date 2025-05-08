@@ -37,6 +37,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import ToastNotification from './components/toastNotification';
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 
 // Create wrapper components that use the hooks properly
 const CreateSalesRFQWrapper = () => {
@@ -69,29 +72,35 @@ function AppContent() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === '/';
+  const isAuthPage = location.pathname === '/' || location.pathname === '/forgot-password' || location.pathname === '/reset-password';
 
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      {!isLoginPage && <Header />}
-      {isAuthenticated && !isLoginPage && (
+      {!isAuthPage && <Header />}
+      {isAuthenticated && !isAuthPage && (
         <Sidebar variant="permanent" open={true} />
       )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: isLoginPage ? 0 : 3,
-          mt: isLoginPage ? 0 : 8,
+          p: isAuthPage ? 0 : 3,
+          mt: isAuthPage ? 0 : 8,
           overflow: "auto",
           height: "100%",
           backgroundColor: "background.default",
-          borderRadius: isLoginPage ? 0 : 2,
+          borderRadius: isAuthPage ? 0 : 2,
           transition: "all 0.3s ease-in-out",
         }}
       >
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
+          // Remove this line - it's causing an error
+          // import ForgotPassword from "./pages/ForgotPassword";
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/sales-rfq"

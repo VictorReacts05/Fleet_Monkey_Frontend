@@ -21,6 +21,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import ForgotPassword from "./ForgotPassword";
 
 const LoginContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -238,7 +239,7 @@ const Login = () => {
                   size="small"
                 />
               }
-              label={<Typography variant="body2">Remember me</Typography>}
+              label="Remember me"
             />
             <Link to="/forgot-password" style={{ textDecoration: "none" }}>
               <Typography variant="body2" color="primary">
