@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Box, CssBaseline } from '@mui/material';
 import React from 'react';
@@ -9,6 +9,10 @@ import Header from './components/Layout/Header';
 import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
 import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
 import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
+import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboard component
+import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
+import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
+
 // Change this line
 // import PurchaseRFQList from './components/forms/PurchaseRFQ';
 
@@ -102,6 +106,14 @@ function AppContent() {
           // Remove this line - it's causing an error
           // import ForgotPassword from "./pages/ForgotPassword";
           <Route path="/signup" element={<SignUp />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/sales-rfq"
             element={
@@ -334,16 +346,14 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <ThemeProvider>
-          <CssBaseline />
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <AppContent />
-          </LocalizationProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <ToastContainer position="top-right" autoClose={3000} />
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 
