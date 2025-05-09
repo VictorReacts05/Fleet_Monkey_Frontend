@@ -541,8 +541,19 @@ export const approveSalesRFQ = async (salesRFQId, isApproved) => {
   try {
     const { headers } = getAuthHeader();
 
+    let existingApproval = null;
+    try {
+      existingApproval = await fetchSalesRFQApprovalStatus(salesRFQId);
+      console.log("Existing approval:", existingApproval);
+    } catch (error) {
+      console.warn(
+        "No existing approval found or error fetching status:",
+        error
+      );
+    }
+
     const approvalData = {
-      SalesRFQID: salesRFQId,
+      SalesRFQID: Number(salesRFQId), // Convert to number
       ApproverID: 2,
       ApprovedYN: isApproved ? 1 : 0,
       FormName: "Sales RFQ",
@@ -552,15 +563,51 @@ export const approveSalesRFQ = async (salesRFQId, isApproved) => {
 
     console.log("Approval data to be sent:", approvalData);
 
-    const response = await axios.post(
-      "http://localhost:7000/api/sales-rfq-approvals",
-      approvalData,
-      { headers }
-    );
+    let response;
+    if (existingApproval) {
+      response = await axios.put(
+        `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
+        approvalData,
+        { headers }
+      );
+      console.log("Updated existing approval:", response.data);
+    } else {
+      try {
+        // Attempt to create new approval
+        response = await axios.post(
+          `http://localhost:7000/api/sales-rfq-approvals`,
+          approvalData,
+          { headers }
+        );
+        console.log("Created new approval:", response.data);
+      } catch (postError) {
+        if (
+          postError.response?.status === 400 &&
+          postError.response?.data?.message ===
+            "Approval record already exists."
+        ) {
+          console.log(
+            "Approval record already exists, attempting to update instead."
+          );
+          // Fallback to updating the existing approval
+          response = await axios.put(
+            `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
+            approvalData,
+            { headers }
+          );
+          console.log("Updated existing approval:", response.data);
+        } else {
+          throw postError; // Rethrow other errors
+        }
+      }
+    }
 
     return response.data;
   } catch (error) {
     console.error("Error approving SalesRFQ:", error);
+    if (error.response) {
+      console.error("Server response:", error.response.data);
+    }
     throw error;
   }
 };
@@ -570,21 +617,22 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}`,
+      `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
       { headers }
     );
+    console.log("GET approval response:", response.data);
 
-    // Check if we have data and it contains approval information
     if (response.data && response.data.data && response.data.data.length > 0) {
-      // Return the first approval record
       return response.data.data[0];
     } else {
-      // No approval record found
+      console.log("No approval data found in response:", response.data);
       return null;
     }
   } catch (error) {
     console.error("Error fetching SalesRFQ approval status:", error);
-    // If no approval record exists, return null instead of throwing an error
+    if (error.response) {
+      console.error("Server response:", error.response.data);
+    }
     if (error.response?.status === 404) {
       return null;
     }

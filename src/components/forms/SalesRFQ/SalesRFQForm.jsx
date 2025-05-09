@@ -235,6 +235,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     try {
       const response = await getSalesRFQById(salesRFQId);
       const data = response.data;
+      console.log("SalesRFQ data for ID", salesRFQId, ":", data);
 
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
@@ -322,24 +323,26 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       setApprovalRecord(approvalData);
 
       if (approvalData && approvalData.ApprovedYN !== undefined) {
-        if (approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true) {
-          setApprovalStatus("approved");
-        } else if (
-          approvalData.ApprovedYN === 0 ||
-          approvalData.ApprovedYN === false
-        ) {
-          setApprovalStatus("disapproved");
-        } else {
-          setApprovalStatus(null);
-        }
+        const newStatus =
+          approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true
+            ? "approved"
+            : approvalData.ApprovedYN === 0 || approvalData.ApprovedYN === false
+            ? "disapproved"
+            : null;
+        setApprovalStatus(newStatus);
+        console.log("Set approvalStatus to:", newStatus);
       } else {
         setApprovalStatus(null);
+        console.log("Set approvalStatus to null: No valid approval data");
       }
-      console.log("Set approvalStatus to:", approvalStatus);
     } catch (error) {
       console.error("Failed to load approval status:", error);
+      if (error.response) {
+        console.error("Server response:", error.response.data);
+      }
       setApprovalStatus(null);
       setApprovalRecord(null);
+      console.log("Set approvalStatus to null: Error fetching status");
     }
   }, [salesRFQId]);
 
@@ -509,8 +512,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       toast.success(
         `SalesRFQ ${isApproved ? "approved" : "disapproved"} successfully`
       );
-      setApprovalStatus(isApproved ? "approved" : "disapproved");
-      await loadApprovalStatus(); // Reload approval status to ensure UI is in sync
+      const newStatus = isApproved ? "approved" : "disapproved";
+      setApprovalStatus(newStatus);
+      console.log("Set approvalStatus after approval:", newStatus);
+      // Optionally reload status after a delay to ensure backend sync
+      setTimeout(() => loadApprovalStatus(), 1000);
     } catch (error) {
       console.error(
         `Error ${
@@ -518,11 +524,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         } SalesRFQ:`,
         error
       );
-      toast.error(
-        `Failed to ${confirmAction} SalesRFQ: ${
-          error.message || "Unknown error"
-        }`
-      );
+      const errorMessage =
+        error.response?.data?.message || error.message || "Unknown error";
+      toast.error(`Failed to ${confirmAction} SalesRFQ: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
