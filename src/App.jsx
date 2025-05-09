@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Box, CssBaseline } from '@mui/material';
 import React from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';

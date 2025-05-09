@@ -1,67 +1,33 @@
-import React from "react";
-import { DatePicker } from "@mui/x-date-pickers";
-import { FormControl, FormHelperText, styled } from "@mui/material";
+import React from 'react';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
-// Styled DatePicker's TextField to match 38px height
-const StyledDatePicker = styled(DatePicker)(({ theme }) => ({
-  "& .MuiInputBase-root": {
-    height: 38,
-    padding: 0,
-    borderRadius: theme.shape.borderRadius * 1.5,
-    boxSizing: "border-box",
-  },
-  "& .MuiInputBase-input": {
-    height: "100%",
-    padding: "0 14px",
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-  },
-  "& .MuiInputAdornment-root": {
-    marginRight: 8, // adjust icon spacing
-  },
-  "& .MuiSvgIcon-root": {
-    fontSize: "20px", // optional: scale down the calendar icon
-  },
-  "& .MuiInputLabel-root": {
-    top: "-6px",
-    "&.MuiInputLabel-shrink": {
-      top: 0,
-    },
-  },
-}));
+const FormDatePicker = ({ name, label, value, onChange, error, helperText, disabled = false, ...props }) => {
+  // Convert the value to a dayjs object if it's not already
+  const dayjsValue = value ? (dayjs.isDayjs(value) ? value : dayjs(value)) : null;
+  
+  const handleChange = (newValue) => {
+    onChange(newValue);
+  };
 
-const FormDatePicker = ({
-  label,
-  value,
-  onChange,
-  error,
-  helperText,
-  ...props
-}) => {
   return (
-    <FormControl fullWidth margin="normal" error={error}>
-      <StyledDatePicker
-        label={label}
-        value={value}
-        onChange={onChange}
-        slotProps={{
-          textField: {
-            fullWidth: true,
-            error: error,
-            helperText: helperText,
-            InputProps: {
-              sx: {
-                height: 38,
-                boxSizing: "border-box",
-              },
-            },
-          },
-        }}
-        {...props}
-      />
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
-    </FormControl>
+    <DatePicker
+      label={label}
+      value={dayjsValue}
+      onChange={handleChange}
+      disabled={disabled}
+      slotProps={{
+        textField: {
+          name,
+          fullWidth: true,
+          error,
+          helperText,
+          variant: "outlined",
+          size: "small",
+          ...props
+        }
+      }}
+    />
   );
 };
 

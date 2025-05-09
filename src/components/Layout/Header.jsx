@@ -32,7 +32,11 @@ import { connect } from 'react-redux';
 
 const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const { logout, isAuthenticated } = useAuth();
-  const { mode, toggleTheme } = useTheme();
+  /* const { mode, toggleTheme } = useTheme(); */
+  const theme = useTheme();
+  const mode = theme?.mode || "light";
+  const toggleTheme =
+    theme?.toggleTheme || (() => console.log("Theme toggle not available"));
   const muiTheme = useMuiTheme();
   const navigate = useNavigate();
   const isMobileView = useMediaQuery(muiTheme.breakpoints.down('md'));

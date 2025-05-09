@@ -410,73 +410,35 @@ export const approvePurchaseRFQ = async (purchaseRFQId) => {
 // Create a Purchase RFQ from a Sales RFQ
 export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
   try {
-    const { headers } = getHeaders();
-
-    // Fetch Sales RFQ details
-    const salesRFQResponse = await axios.get(
-      `http://localhost:7000/api/sales-rfq/${salesRFQId}`,
-      { headers }
-    );
-    const salesRFQData = salesRFQResponse.data;
-
-    console.log("Full Sales RFQ response:", salesRFQResponse.data);
-
-    const supplierData = {
-      SupplierID:
-        salesRFQData.SupplierID ||
-        (salesRFQData.data && salesRFQData.data.SupplierID),
-      SupplierName:
-        salesRFQData.SupplierName ||
-        (salesRFQData.data && salesRFQData.data.SupplierName),
-      ExternalSupplierName:
-        salesRFQData.ExternalSupplierName ||
-        (salesRFQData.data && salesRFQData.data.ExternalSupplierName),
-    };
-
-    console.log("Extracted supplier data:", supplierData);
-
-    const purchaseRFQData = {
-      SalesRFQID: salesRFQId,
-      SupplierID: supplierData.SupplierID,
-      SupplierName: supplierData.SupplierName || "Default Supplier",
-      ExternalSupplierName:
-        supplierData.ExternalSupplierName ||
-        supplierData.SupplierName ||
-        "Default Supplier",
-    };
-
-    console.log("Creating Purchase RFQ with data:", purchaseRFQData);
-
+    console.log(`Creating Purchase RFQ from Sales RFQ ID: ${salesRFQId}`);
+    
+    // Use the correct endpoint with the proper payload structure
     const response = await axios.post(
-      "http://localhost:7000/api/purchase-rfq",
-      purchaseRFQData,
-      { headers }
+      `http://localhost:7000/api/purchase-rfq`,
+      { 
+        SalesRFQID: salesRFQId,
+        // Add any other required fields for creating a Purchase RFQ
+      },
+      getHeaders()
     );
-
-    console.log("Purchase RFQ created from Sales RFQ:", response.data);
-
-    if (response.data && response.data.PurchaseRFQID) {
-      const updateResponse = await updatePurchaseRFQ(
-        response.data.PurchaseRFQID,
-        {
-          SupplierName: purchaseRFQData.SupplierName,
-          ExternalSupplierName: purchaseRFQData.ExternalSupplierName,
-        }
-      );
-      console.log("Updated Purchase RFQ with supplier info:", updateResponse);
+    
+    console.log("Purchase RFQ creation response:", response.data);
+    
+    // Extract the Purchase RFQ ID from the response
+    let purchaseRFQId = null;
+    if (response.data && response.data.data) {
+      purchaseRFQId = response.data.data.PurchaseRFQID || response.data.data.id;
+      console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
     }
-
-    return {
-      success: true,
-      data: response.data,
-      purchaseRFQId: response.data.PurchaseRFQID,
-    };
+    
+    // Add the ID to the response object for easier access
+    response.purchaseRFQId = purchaseRFQId;
+    
+    // Return the entire response for better debugging
+    return response;
   } catch (error) {
     console.error("Error creating Purchase RFQ from Sales RFQ:", error);
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-    };
+    throw error;
   }
 };
 
