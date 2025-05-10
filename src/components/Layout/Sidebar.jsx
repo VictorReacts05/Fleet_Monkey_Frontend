@@ -52,6 +52,11 @@ const menuItems = [
     path: "/project-parameters",
   },
   {
+    text: "Roles",
+    icon: <PersonIcon />,
+    path: "/roles",
+  },
+  {
     text: "Subscriptions",
     icon: <SubscriptionsIcon />,
     path: "/subscriptions",
@@ -61,7 +66,6 @@ const menuItems = [
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
 ];
-
 
 const Sidebar = ({ open, variant, onClose }) => {
   const navigate = useNavigate();
@@ -83,12 +87,18 @@ const Sidebar = ({ open, variant, onClose }) => {
   };
 
   // Update to include Dashboard, Sales RFQ and Purchase RFQ in the main menu
-  const mainMenuItems = menuItems.filter(item => 
-    item.text === "Dashboard" || item.text === "Sales RFQ" || item.text === "Purchase RFQ"
+  const mainMenuItems = menuItems.filter(
+    (item) =>
+      item.text === "Dashboard" ||
+      item.text === "Sales RFQ" ||
+      item.text === "Purchase RFQ"
   );
-  
-  const mastersItems = menuItems.filter(item => 
-    item.text !== "Dashboard" && item.text !== "Sales RFQ" && item.text !== "Purchase RFQ"
+
+  const mastersItems = menuItems.filter(
+    (item) =>
+      item.text !== "Dashboard" &&
+      item.text !== "Sales RFQ" &&
+      item.text !== "Purchase RFQ"
   );
 
   return (

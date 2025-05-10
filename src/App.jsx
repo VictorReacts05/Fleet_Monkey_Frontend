@@ -12,9 +12,7 @@ import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
 import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboard component
 import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
-
-// Change this line
-// import PurchaseRFQList from './components/forms/PurchaseRFQ';
+import RolesList from './components/forms/Role/RolesList';
 
 // To this
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
@@ -337,6 +335,16 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Add the Roles route here */}
+          <Route
+            path="/roles"
+            element={
+              <ProtectedRoute>
+                <RolesList />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Box>
       <ToastNotification />
@@ -347,12 +355,14 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <AuthProvider>
-          <ToastContainer position="top-right" autoClose={3000} />
-          <AppContent />
-        </AuthProvider>
-      </Router>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Router>
+          <AuthProvider>
+            <ToastContainer position="top-right" autoClose={3000} />
+            <AppContent />
+          </AuthProvider>
+        </Router>
+      </LocalizationProvider>
     </ThemeProvider>
   );
 }
