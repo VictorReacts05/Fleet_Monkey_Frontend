@@ -42,6 +42,7 @@ import { useNavigate } from "react-router-dom";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import StatusIndicator from "./StatusIndicator";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -107,6 +108,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [purchaseRFQDialogOpen, setPurchaseRFQDialogOpen] = useState(false);
   const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
   const [approvalRecord, setApprovalRecord] = useState(null);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -356,6 +358,30 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   }, [salesRFQId, dropdownsLoaded, loadSalesRFQ, loadApprovalStatus]);
 
+  useEffect(() => {
+    const loadSalesRFQ = async () => {
+      if (salesRFQId) {
+        try {
+          setLoading(true);
+          const response = await getSalesRFQById(salesRFQId);
+          if (response.data) {
+            // Set form data...
+
+            // Add this line to set the status
+            setStatus(response.data.Status || "Pending");
+          }
+        } catch (error) {
+          console.error("Error loading SalesRFQ:", error);
+          toast.error("Failed to load SalesRFQ details");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSalesRFQ();
+  }, [salesRFQId]);
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -476,8 +502,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }));
   };
 
-  
-
   useEffect(() => {
     // This effect will run when the component mounts
     // to ensure all date fields are properly formatted as dayjs objects
@@ -516,18 +540,44 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setMenuAnchor(null);
   };
 
-  const handleApprove = () => {
-    handleMenuClose();
-    setConfirmAction("approve");
-    setConfirmMessage("Do you want to approve this Sales RFQ?");
-    setConfirmDialogOpen(true);
+  const handleApprove = async () => {
+    try {
+      setLoading(true);
+      const response = await approveSalesRFQ(salesRFQId, true);
+
+      if (response.success) {
+        toast.success("SalesRFQ approved successfully");
+        setApprovalStatus("approved");
+        setStatus("Approved"); // Update the status state
+      } else {
+        toast.error(`Failed to approve: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error approving SalesRFQ:", error);
+      toast.error(`Error approving SalesRFQ: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDisapprove = () => {
-    handleMenuClose();
-    setConfirmAction("disapprove");
-    setConfirmMessage("Do you want to disapprove this Sales RFQ?");
-    setConfirmDialogOpen(true);
+  const handleDisapprove = async () => {
+    try {
+      setLoading(true);
+      const response = await approveSalesRFQ(salesRFQId, false);
+
+      if (response.success) {
+        toast.success("SalesRFQ disapproved successfully");
+        setApprovalStatus("disapproved");
+        setStatus("Pending"); // Update the status state
+      } else {
+        toast.error(`Failed to disapprove: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error disapproving SalesRFQ:", error);
+      toast.error(`Error disapproving SalesRFQ: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConfirmAction = async () => {
@@ -562,82 +612,82 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   };
 
-   const handleCreatePurchaseRFQ = async () => {
-     try {
-       setCreatingPurchaseRFQ(true);
-       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
-       console.log("Purchase RFQ creation response:", response);
+  const handleCreatePurchaseRFQ = async () => {
+    try {
+      setCreatingPurchaseRFQ(true);
+      const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
+      console.log("Purchase RFQ creation response:", response);
 
-       // Extract the Purchase RFQ ID from the response
-       let purchaseRFQId = null;
+      // Extract the Purchase RFQ ID from the response
+      let purchaseRFQId = null;
 
-       // Check for the ID in different possible locations in the response
-       if (response && response.data && response.data.data) {
-         purchaseRFQId =
-           response.data.data.PurchaseRFQID || response.data.data.id;
-       } else if (response && response.data && response.data.purchaseRFQId) {
-         purchaseRFQId = response.data.purchaseRFQId;
-       } else if (response && response.purchaseRFQId) {
-         purchaseRFQId = response.purchaseRFQId;
-       } else if (
-         response &&
-         response.data &&
-         typeof response.data === "object"
-       ) {
-         // Look for any property that might contain the ID
-         const possibleIdProps = ["PurchaseRFQID", "id", "purchaseRFQId"];
-         for (const prop of possibleIdProps) {
-           if (response.data[prop]) {
-             purchaseRFQId = response.data[prop];
-             break;
-           }
-         }
-       }
+      // Check for the ID in different possible locations in the response
+      if (response && response.data && response.data.data) {
+        purchaseRFQId =
+          response.data.data.PurchaseRFQID || response.data.data.id;
+      } else if (response && response.data && response.data.purchaseRFQId) {
+        purchaseRFQId = response.data.purchaseRFQId;
+      } else if (response && response.purchaseRFQId) {
+        purchaseRFQId = response.purchaseRFQId;
+      } else if (
+        response &&
+        response.data &&
+        typeof response.data === "object"
+      ) {
+        // Look for any property that might contain the ID
+        const possibleIdProps = ["PurchaseRFQID", "id", "purchaseRFQId"];
+        for (const prop of possibleIdProps) {
+          if (response.data[prop]) {
+            purchaseRFQId = response.data[prop];
+            break;
+          }
+        }
+      }
 
-       console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
+      console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
 
-       if (purchaseRFQId) {
-         // First toast - success message
-         toast.success(`Purchase RFQ has been created successfully!`);
+      if (purchaseRFQId) {
+        // First toast - success message
+        toast.success(`Purchase RFQ has been created successfully!`);
 
-         // Second toast - with link to view the created Purchase RFQ
-         toast.info(
-           <div>
-             View Purchase RFQ details{" "}
-             <a
-               href={`/purchase-rfq/view/${purchaseRFQId}`}
-               style={{
-                 color: "black",
-                 textDecoration: "underline",
-                 fontWeight: "bold",
-               }}
-               onClick={(e) => {
-                 e.preventDefault();
-                 // Make sure we're passing the correct ID to the navigation
-                 console.log("Navigating to Purchase RFQ:", purchaseRFQId);
-                 navigate(`/purchase-rfq/view/${purchaseRFQId}`);
-               }}
-             >
-               here
-             </a>
-           </div>,
-           { autoClose: 8000 } // Keep this toast visible longer
-         );
+        // Second toast - with link to view the created Purchase RFQ
+        toast.info(
+          <div>
+            View Purchase RFQ details{" "}
+            <a
+              href={`/purchase-rfq/view/${purchaseRFQId}`}
+              style={{
+                color: "black",
+                textDecoration: "underline",
+                fontWeight: "bold",
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                // Make sure we're passing the correct ID to the navigation
+                console.log("Navigating to Purchase RFQ:", purchaseRFQId);
+                navigate(`/purchase-rfq/view/${purchaseRFQId}`);
+              }}
+            >
+              here
+            </a>
+          </div>,
+          { autoClose: 8000 } // Keep this toast visible longer
+        );
 
-         // Close the dialog if it's open
-         setPurchaseRFQDialogOpen(false);
-       } else {
-         toast.error("Purchase RFQ was created but the ID is unavailable");
-       }
-     } catch (error) {
-       console.error("Error creating Purchase RFQ:", error);
-       toast.error(
-         `Failed to create Purchase RFQ: ${error.message || "Unknown error"}`
-       );
-     } finally {
-       setCreatingPurchaseRFQ(false);
-     }
-   };
+        // Close the dialog if it's open
+        setPurchaseRFQDialogOpen(false);
+      } else {
+        toast.error("Purchase RFQ was created but the ID is unavailable");
+      }
+    } catch (error) {
+      console.error("Error creating Purchase RFQ:", error);
+      toast.error(
+        `Failed to create Purchase RFQ: ${error.message || "Unknown error"}`
+      );
+    } finally {
+      setCreatingPurchaseRFQ(false);
+    }
+  };
 
   const handleConfirmCreatePurchaseRFQ = async () => {
     try {
@@ -700,12 +750,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       fontWeight: "medium",
                     }}
                   >
-                    <Typography variant="body2">
-                      Status:{" "}
-                      {approvalStatus === "approved"
-                        ? "Approved"
-                        : "Disapproved"}
-                    </Typography>
+                    <Typography variant="body2">Status: </Typography>
+                    <StatusIndicator
+                      status={status}
+                      salesRFQId={salesRFQId}
+                      onStatusChange={(newStatus) => setStatus(newStatus)}
+                      // readOnly={readOnly}
+                    />
                   </Box>
                 ) : (
                   <Box sx={{ display: "flex", alignItems: "center" }}>

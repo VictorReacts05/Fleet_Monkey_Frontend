@@ -8,7 +8,7 @@ import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
-import { Tooltip, IconButton } from "@mui/material";
+import { Tooltip, IconButton, Chip } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
 
 const SalesRFQList = () => {
@@ -28,6 +28,20 @@ const SalesRFQList = () => {
     { field: "series", headerName: "Series", flex: 1 },
     { field: "customerName", headerName: "Customer Name", flex: 1 },
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
+    { 
+      field: "status", 
+      headerName: "Status", 
+      flex: 1,
+      renderCell: (params) => {
+        const status = params.value || 'Pending';
+        let color = 'default';
+        
+        if (status === 'Approved') color = 'success';
+        else if (status === 'Pending') color = 'warning';
+        
+        return <Chip label={status} color={color} size="small" />;
+      }
+    },
   ];
  
   useEffect(() => {
@@ -58,6 +72,7 @@ const SalesRFQList = () => {
         series: salesRFQ.Series || "N/A",
         customerName: salesRFQ.CustomerName || "N/A",
         supplierName: salesRFQ.SupplierName || "N/A",
+        status: salesRFQ.Status || "Pending", // Add status field
       }));
 
       setRows(mappedRows);
@@ -183,7 +198,6 @@ const SalesRFQList = () => {
         onDelete={handleDeleteClick}
         onView={handleView}
       />
-
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Sales RFQ"
