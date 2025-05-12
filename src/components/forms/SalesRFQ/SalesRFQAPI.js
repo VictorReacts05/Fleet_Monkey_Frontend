@@ -648,8 +648,8 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
     const response = await axios.get(`${API_BASE_URL}/${salesRFQId}`, {
       headers,
     });
-
-    console.log("GET SalesRFQ status response:", response.data);
+    // console.log("GET SalesRFQ response
+    // console.log("GET SalesRFQ status response:", response.data);
 
     // Convert the Status field to an approval record format for backward compatibility
     if (response.data && response.data.data) {

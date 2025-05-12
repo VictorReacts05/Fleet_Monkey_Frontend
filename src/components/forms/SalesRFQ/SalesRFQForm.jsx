@@ -245,8 +245,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
 
-      console.log("Raw SalesRFQ data:", data);
-
       const formattedData = {
         Series: displayValue(data.Series),
         CompanyID: DEFAULT_COMPANY.value,
@@ -319,37 +317,88 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DEFAULT_COMPANY.value,
   ]);
 
-  const loadApprovalStatus = useCallback(async () => {
-    if (!salesRFQId) return;
-    try {
-      const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
-      console.log("Approval data received:", approvalData);
+    const loadApprovalStatus = useCallback(async () => {
+      if (!salesRFQId) return;
+      try {
+        const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
 
-      setApprovalRecord(approvalData);
+        // Log the entire response to see its structure
+        console.log("Full approval data response:", approvalData);
 
-      if (approvalData && approvalData.ApprovedYN !== undefined) {
-        const newStatus =
-          approvalData.ApprovedYN === 1 || approvalData.ApprovedYN === true
-            ? "approved"
-            : approvalData.ApprovedYN === 0 || approvalData.ApprovedYN === false
-            ? "disapproved"
-            : null;
-        setApprovalStatus(newStatus);
-        console.log("Set approvalStatus to:", newStatus);
-      } else {
+        // Check if the data is nested in a data property
+        // If approvalData has a data array, use the first item
+        const actualApprovalData =
+          approvalData?.data &&
+          Array.isArray(approvalData.data) &&
+          approvalData.data.length > 0
+            ? approvalData.data[0]
+            : approvalData;
+
+        console.log(
+          "SalesRFQ Approval - ApprovedYN:",
+          actualApprovalData?.ApprovedYN
+        );
+
+        setApprovalRecord(actualApprovalData);
+
+        // First check if we have a direct Status field from the API
+        if (actualApprovalData && actualApprovalData.Status) {
+          setStatus(actualApprovalData.Status);
+          setApprovalStatus(
+            actualApprovalData.Status === "Approved"
+              ? "approved"
+              : "disapproved"
+          );
+        }
+        // Otherwise use the ApprovedYN field
+        else if (
+          actualApprovalData &&
+          actualApprovalData.ApprovedYN !== undefined
+        ) {
+          const isApproved =
+            actualApprovalData.ApprovedYN === 1 ||
+            actualApprovalData.ApprovedYN === true ||
+            actualApprovalData.ApprovedYN === "1";
+          const newStatus = isApproved ? "approved" : "disapproved";
+          setApprovalStatus(newStatus);
+
+          // Also update the status state to match the approval status
+          const newDisplayStatus = isApproved ? "Approved" : "Pending";
+          setStatus(newDisplayStatus);
+        } else {
+          setApprovalStatus(null);
+        }
+
+        // Also try to get the status from the SalesRFQ record itself
+        try {
+          const salesRFQResponse = await getSalesRFQById(salesRFQId);
+          // console.log("Full SalesRFQ response:", salesRFQResponse);
+
+          // Check if the data is nested in a data property
+          const salesRFQData = salesRFQResponse?.data;
+
+          // Check for both Status and status (case-sensitive fields)
+          console.log(
+            "SalesRFQ Table - Status:",
+            salesRFQData?.Status || salesRFQData?.status
+          );
+
+          if (salesRFQData && (salesRFQData.Status || salesRFQData.status)) {
+            // Use whichever one is defined
+            setStatus(salesRFQData.Status || salesRFQData.status);
+          }
+        } catch (error) {
+          console.error("Error fetching SalesRFQ for status:", error);
+        }
+      } catch (error) {
+        console.error("Failed to load approval status:", error);
+        if (error.response) {
+          console.error("Server response:", error.response.data);
+        }
         setApprovalStatus(null);
-        console.log("Set approvalStatus to null: No valid approval data");
+        setApprovalRecord(null);
       }
-    } catch (error) {
-      console.error("Failed to load approval status:", error);
-      if (error.response) {
-        console.error("Server response:", error.response.data);
-      }
-      setApprovalStatus(null);
-      setApprovalRecord(null);
-      console.log("Set approvalStatus to null: Error fetching status");
-    }
-  }, [salesRFQId]);
+    }, [salesRFQId]);
 
   useEffect(() => {
     if (salesRFQId && dropdownsLoaded) {
@@ -358,29 +407,43 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   }, [salesRFQId, dropdownsLoaded, loadSalesRFQ, loadApprovalStatus]);
 
-  useEffect(() => {
-    const loadSalesRFQ = async () => {
-      if (salesRFQId) {
-        try {
-          setLoading(true);
-          const response = await getSalesRFQById(salesRFQId);
-          if (response.data) {
-            // Set form data...
+    useEffect(() => {
+      const loadSalesRFQ = async () => {
+        if (salesRFQId) {
+          try {
+            setLoading(true);
+            const response = await getSalesRFQById(salesRFQId);
+            if (response.data) {
+              // Check for both Status and status (case-sensitive fields)
+              console.log(
+                "SalesRFQ Table - Status:",
+                response.data.Status || response.data.status
+              );
 
-            // Add this line to set the status
-            setStatus(response.data.Status || "Pending");
+              // If Status is explicitly set in the API response, use it
+              if (response.data.Status || response.data.status) {
+                setStatus(response.data.Status || response.data.status);
+              }
+              // Otherwise, derive it from the approval status
+              else if (response.data.ApprovedYN !== undefined) {
+                setStatus(response.data.ApprovedYN ? "Approved" : "Pending");
+              }
+              // Default fallback
+              else {
+                setStatus("Pending");
+              }
+            }
+          } catch (error) {
+            console.error("Error loading SalesRFQ:", error);
+            toast.error("Failed to load SalesRFQ details");
+          } finally {
+            setLoading(false);
           }
-        } catch (error) {
-          console.error("Error loading SalesRFQ:", error);
-          toast.error("Failed to load SalesRFQ details");
-        } finally {
-          setLoading(false);
         }
-      }
-    };
+      };
 
-    loadSalesRFQ();
-  }, [salesRFQId]);
+      loadSalesRFQ();
+    }, [salesRFQId]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -742,20 +805,33 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       display: "flex",
                       alignItems: "center",
                       backgroundColor:
-                        approvalStatus === "approved" ? "#e6f7e6" : "#ffebee",
-                      color:
-                        approvalStatus === "approved" ? "#2e7d32" : "#d32f2f",
+                        status === "Approved" ? "#e6f7e6" : "#ffebee",
+                      color: status === "Approved" ? "#2e7d32" : "#d32f2f",
                       borderRadius: "4px",
                       padding: "6px 12px",
                       fontWeight: "medium",
                     }}
                   >
-                    <Typography variant="body2">Status: </Typography>
+                    <Typography variant="body2" sx={{ marginRight: "8px" }}>
+                      Status:{" "}
+                    </Typography>
+                    {/* <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                      {status || "Pending"}
+                    </Typography> */}
                     <StatusIndicator
                       status={status}
                       salesRFQId={salesRFQId}
-                      onStatusChange={(newStatus) => setStatus(newStatus)}
-                      // readOnly={readOnly}
+                      onStatusChange={(newStatus) => {
+                        console.log("Status changed to:", newStatus);
+                        setStatus(newStatus);
+                        // Also update the approvalStatus to match
+                        setApprovalStatus(
+                          newStatus === "Approved" ? "approved" : "disapproved"
+                        );
+                      }}
+                      initialStatus={status}
+                      skipFetch={true}
+                      readOnly={false} // Change this to false to make it clickable
                     />
                   </Box>
                 ) : (
@@ -788,8 +864,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         loading={loading}
         readOnly={!isEditing}
         onEdit={salesRFQId && !isEditing ? toggleEdit : null}
-        onCreatePurchaseRFQ={handleCreatePurchaseRFQ}
-        isApproved={approvalStatus === "approved"}
+        onCreatePurchaseRFQ={
+          status === "Approved" ? handleCreatePurchaseRFQ : null
+        }
+        isApproved={status === "Approved"}
       >
         <Grid
           container

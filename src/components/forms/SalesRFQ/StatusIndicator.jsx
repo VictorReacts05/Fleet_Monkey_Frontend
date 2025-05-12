@@ -30,12 +30,16 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         ? { Authorization: `Bearer ${user.token}` }
         : {};
 
-      // Try to fetch the approval record, but don't fail if it doesn't exist
+      // Use the correct endpoint format
+      // The approverID is hardcoded to 2 as in other parts of the code
+      const approverID = 2;
+      
       try {
         const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}`,
+          `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/${approverID}`,
           { headers }
         );
+        console.log("Fetching approval record for SalesRFQID:", salesRFQId);
 
         console.log("Fetched approval record:", response.data);
 
@@ -73,9 +77,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         : {};
       const userId = user?.personId || user?.id || 2; // Default to 2 if not found
 
-      console.log(
-        `Sending PUT request to update status to ${newStatus} for SalesRFQ ID: ${salesRFQId}`
-      );
+      console.log(`Updating SalesRFQ status to: ${newStatus}`);
 
       // 1. Update the Status in SalesRFQ table
       const salesRFQResponse = await axios.put(
@@ -87,7 +89,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         { headers }
       );
 
-      console.log("Status update response:", salesRFQResponse.data);
+      // console.log("Status update response:", salesRFQResponse.data);
 
       // 2. Create or update record in SalesRFQApproval table
       const isApproved = newStatus === "Approved";
@@ -101,6 +103,8 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         ApproverDateTime: new Date().toISOString(), // Add timestamp
         CreatedByID: 2 // Add CreatedByID
       };
+
+      console.log(`Setting ApprovedYN to: ${isApproved ? 1 : 0}`);
 
       let approvalResponse;
 
@@ -175,6 +179,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
     setAnchorEl(null);
   };
 
+  // Add these function definitions
   const handleApprove = () => {
     console.log("Approve button clicked");
     updateStatus("Approved");
@@ -227,9 +232,10 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
             chipProps.icon
           )
         }
-        onClick={chipProps.clickable ? handleClick : undefined}
+        onClick={handleClick}
+        clickable={!readOnly}
         sx={{
-          cursor: chipProps.clickable ? "pointer" : "default",
+          cursor: readOnly ? "default" : "pointer",
           "& .MuiChip-label": {
             display: "flex",
             alignItems: "center",
