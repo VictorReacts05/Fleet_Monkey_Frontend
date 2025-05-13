@@ -109,6 +109,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [status, setStatus] = useState("");
+    const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -587,7 +588,49 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   }, []);
 
+  const checkPurchaseRFQExists = useCallback(async () => {
+    if (!salesRFQId) return;
+
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const headers = user?.token
+        ? { Authorization: `Bearer ${user.token}` }
+        : {};
+
+      // Fetch all purchase RFQs
+      const response = await axios.get("http://localhost:7000/api/sales-rfq", {
+        headers,
+      });
+
+      if (response.data && response.data.data) {
+        // Check if any purchase RFQ has this sales RFQ ID as its source
+        const hasPurchaseRFQ = response.data.data.some(
+          (rfq) => rfq.SourceSalesRFQID === parseInt(salesRFQId, 10)
+        );
+
+        console.log(
+          `Purchase RFQ exists for Sales RFQ ${salesRFQId}: ${hasPurchaseRFQ}`
+        );
+        setPurchaseRFQExists(hasPurchaseRFQ);
+      }
+    } catch (error) {
+      console.error("Error checking for purchase RFQ:", error);
+    }
+  }, [salesRFQId]);
+
+  useEffect(() => {
+    if (salesRFQId) {
+      checkPurchaseRFQExists();
+    }
+  }, [salesRFQId, checkPurchaseRFQExists]);
+
   const toggleEdit = () => {
+    if (purchaseRFQExists) {
+      toast.warning(
+        "Cannot edit this Sales RFQ because a Purchase RFQ exists for it"
+      );
+      return;
+    }
     setIsEditing(!isEditing);
   };
 

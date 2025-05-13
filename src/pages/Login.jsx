@@ -264,14 +264,14 @@ const Login = () => {
           </LoginButton>
 
 
-          {/* <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
             Don't have an account?{" "}
             <Link to="./SignUp" style={{ textDecoration: "none" }}>
               <Typography variant="body2" color="primary">
                 Sign Up
               </Typography>
             </Link>
-          </Typography> */}
+          </Typography>
 
          {/*  <LoginButton
             type="submit"
