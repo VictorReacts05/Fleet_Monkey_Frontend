@@ -1,5 +1,5 @@
 import React from "react";
-import { FormControlLabel, Checkbox, styled } from "@mui/material";
+import { FormControlLabel, Checkbox, styled, Box } from "@mui/material";
 
 // Styled FormControlLabel for consistent height
 const CustomFormControlLabel = styled(FormControlLabel)(({ theme }) => ({

@@ -18,6 +18,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
@@ -32,8 +34,6 @@ import { useTheme } from "../../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { connect } from "react-redux";
 import axios from "axios";
-
-// Import common form components
 import FormInput from "../../components/Common/FormInput";
 import FormSelect from "../../components/Common/FormSelect";
 
@@ -48,9 +48,17 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const isMobileView = useMediaQuery(muiTheme.breakpoints.down("md"));
 
   const [anchorEl, setAnchorEl] = useState(null);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [openUserModal, setOpenUserModal] = useState(false);
   const [roles, setRoles] = useState([]);
+  const [users, setUsers] = useState([]); // To store fetched users
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
@@ -63,30 +71,75 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
     companyId: 48,
   });
 
+  // Fetch roles and users when modal opens
   useEffect(() => {
     if (openUserModal) {
       fetchRoles();
+      fetchUsers();
     }
   }, [openUserModal]);
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get("http://localhost:7000/api/roles/all");
-      // Check if response has the expected structure and set roles accordingly
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      const response = await axios.get("http://localhost:7000/api/roles/all", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.data?.data && Array.isArray(response.data.data)) {
         setRoles(response.data.data);
       } else {
         console.error("Unexpected roles data format:", response.data);
+        setSnackbar({
+          open: true,
+          message: "Unexpected roles data format",
+          severity: "warning",
+        });
         setRoles([]);
       }
     } catch (error) {
       console.error("Error fetching roles:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to fetch roles",
+        severity: "error",
+      });
       setRoles([]);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get("http://localhost:7000/api/persons", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        setUsers(response.data.data);
+      } else {
+        console.error("Unexpected users data format:", response.data);
+        setSnackbar({
+          open: true,
+          message: "Unexpected users data format",
+          severity: "warning",
+        });
+        setUsers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to fetch users",
+        severity: "error",
+      });
+      setUsers([]);
     }
   };
 
   const handleOpenUserModal = () => {
     setOpenUserModal(true);
+    setFormSubmitted(false); // Reset form submission state when opening modal
   };
 
   const handleCloseUserModal = () => {
@@ -112,14 +165,91 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
     }));
   };
 
+  const showNotification = (message, severity = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   const handleCreateUser = async () => {
+    // Set formSubmitted to true to trigger validation display
+    setFormSubmitted(true);
+    
+    // Client-side validation
+    if (
+      !newUser.firstName ||
+      !newUser.lastName ||
+      !newUser.emailId ||
+      !newUser.loginId ||
+      !newUser.password ||
+      !newUser.role
+    ) {
+      showNotification("Please fill all required fields", "error");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUser.emailId)) {
+      showNotification("Please enter a valid email address", "error");
+      return;
+    }
+
+    if (newUser.password.length < 8) {
+      showNotification("Password must be at least 8 characters long", "error");
+      return;
+    }
+
     try {
-      await axios.post("/api/users", newUser);
+      setIsSubmitting(true);
+
+      const userData = {
+        FirstName: newUser.firstName,
+        MiddleName: newUser.middleName || "",
+        LastName: newUser.lastName,
+        EmailID: newUser.emailId,
+        LoginID: newUser.loginId,
+        Password: newUser.password, // Backend should hash this
+        RoleID: newUser.role,
+        CompanyID: newUser.companyId,
+      };
+
+      const response = await axios.post(
+        "http://localhost:7000/api/auth/create-person",
+        userData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      showNotification(
+        "User created successfully! A confirmation email has been sent.",
+        "success"
+      );
+
+      // Refresh user list
+      await fetchUsers();
+
+      // Close modal and reset form
       handleCloseUserModal();
-      // TODO: Show success notification
     } catch (error) {
       console.error("Error creating user:", error);
-      // TODO: Show error notification
+      const errorMessage =
+        error.response?.data?.message || "Failed to create user";
+      showNotification(errorMessage, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -257,9 +387,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
           >
             <Box sx={{ px: 2, py: 1.5 }}>
               <Typography variant="subtitle1" fontWeight="bold">
-                {userInfo?.firstName && userInfo?.lastName
-                  ? `${userInfo.firstName} ${userInfo.lastName}`
-                  : userInfo?.loginId || "User"}
+                {userInfo?.loginId || "User"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {userInfo?.role || "Administrator"}
@@ -359,7 +487,6 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
           </Menu>
         </Toolbar>
       </AppBar>
-      {/* User Creation Modal */}
       <Dialog
         open={openUserModal}
         onClose={handleCloseUserModal}
@@ -382,26 +509,22 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.firstName}
               onChange={handleInputChange}
               required
-              // sx={{ marginY: 0.5 }}
+              error={formSubmitted && newUser.firstName === "" && "First Name is required"}
             />
-            
             <FormInput
               name="lastName"
               label="Last Name"
               value={newUser.lastName}
               onChange={handleInputChange}
               required
-              // sx={{ marginY: 0.5 }}
+              error={formSubmitted && newUser.lastName === "" && "Last Name is required"}
             />
-            
             <FormInput
               name="middleName"
               label="Middle Name"
               value={newUser.middleName}
               onChange={handleInputChange}
-              // sx={{ marginY: 0.5 }}
             />
-            
             <FormInput
               name="emailId"
               label="Email ID"
@@ -409,18 +532,20 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.emailId}
               onChange={handleInputChange}
               required
-              // sx={{ marginY: 0.5 }}
+              error={
+                newUser.emailId &&
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.emailId) &&
+                "Invalid email format"
+              }
             />
-            
             <FormInput
               name="loginId"
               label="Login ID"
               value={newUser.loginId}
               onChange={handleInputChange}
               required
-              sx={{ marginY: 0.5 }}
+              error={formSubmitted && newUser.loginId === "" && "Login ID is required"}
             />
-            
             <FormInput
               name="password"
               label="Password"
@@ -428,59 +553,85 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.password}
               onChange={handleInputChange}
               required
-              sx={{ marginY: 0.5 }}
+              error={
+                formSubmitted && 
+                newUser.password &&
+                newUser.password.length < 8 &&
+                "Password must be at least 8 characters"
+              }
             />
-            
             <FormSelect
               name="role"
               label="Role"
               value={newUser.role}
               onChange={handleInputChange}
-              options={Array.isArray(roles) ? roles.map(role => ({
-                value: role.RoleID,
-                label: role.RoleName
-              })) : []}
+              options={
+                Array.isArray(roles)
+                  ? roles.map((role) => ({
+                      value: role.RoleID,
+                      label: role.RoleName,
+                    }))
+                  : []
+              }
               required
-              // sx={{ marginY: 0.5 }}
+              error={formSubmitted && newUser.role === "" && "Role is required"}
             />
-            
             <FormSelect
               name="companyName"
               label="Company"
-              value={48}
+              value={newUser.companyId}
               options={[{ value: 48, label: "Dung Beetle Logistics" }]}
-              disabled={true}
-              readOnly={true}
-              // sx={{ marginY: 0.5 }}
+              disabled
+              readOnly
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUserModal}>Cancel</Button>
+          <Button onClick={handleCloseUserModal} disabled={isSubmitting}>
+            Cancel
+          </Button>
           <Button
             onClick={handleCreateUser}
             variant="contained"
             color="primary"
+            disabled={isSubmitting}
           >
-            Create User
+            {isSubmitting ? "Creating..." : "Create User"}
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
 
-const mapStateToProps = (state) => ({
-  userInfo: {
-    firstName: state.loginReducer?.loginDetails?.firstName,
-    lastName: state.loginReducer?.loginDetails?.lastName,
-    loginId:
-      state.loginReducer?.loginDetails?.loginId ||
-      (state.loginReducer?.loginDetails?.personId
-        ? `User-${state.loginReducer.loginDetails.personId}`
-        : null),
-    role: state.loginReducer?.loginDetails?.role || "Administrator",
-  },
-});
+const mapStateToProps = (state) => {
+  const loginDetails = state.loginReducer?.loginDetails || {};
+  const userData = loginDetails.user || {};
+  
+  console.log("Redux state loginDetails:", loginDetails);
+
+  return {
+    userInfo: {
+      firstName: userData.firstName || "",
+      lastName: userData.lastName || "",
+      loginId: userData.loginID || "User", // Note: it's loginID not LoginID
+      role: userData.role || "Administrator",
+    },
+  };
+};
 
 export default connect(mapStateToProps)(Header);
