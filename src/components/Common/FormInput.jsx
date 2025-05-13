@@ -10,6 +10,8 @@ import {
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
+// Add a styled version of TextField that also modifies the helper text
+// Update the styled TextField to match the styling in the screenshots
 const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
@@ -44,8 +46,13 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
       top: 0,
     },
   },
+  // Update margin settings to match the CSS in screenshots
+  "& .MuiFormHelperText-root": {
+    marginTop: 0,
+    marginBottom: 0,
+    height: 0,
+  },
 }));
-
 
 const FormInput = ({
   label,
@@ -60,9 +67,14 @@ const FormInput = ({
   const hasError = Boolean(error);
 
   return (
-    <Box>
+    // Update Box margins to match the pb69ky class in your screenshots
+    <Box sx={{ 
+      marginTop: "4px", 
+      marginBottom: "4px",
+      ...(props.sx || {})
+    }}>
       {tooltip ? (
-        <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography
             variant="body2"
             color="text.secondary"
@@ -86,7 +98,7 @@ const FormInput = ({
         error={hasError}
         helperText={hasError ? error : " "}
         variant="outlined"
-        margin="normal"
+        margin="none" // Change from dense to none
         InputProps={{
           startAdornment: startIcon ? (
             <InputAdornment position="start">{startIcon}</InputAdornment>

@@ -42,6 +42,11 @@ const CustomInputLabel = styled(InputLabel)(() => ({
   },
 }));
 
+// Add styled FormHelperText to remove margin
+const CustomFormHelperText = styled(FormHelperText)(() => ({
+  marginTop: 0,
+}));
+
 const FormSelect = ({
   label,
   value,
@@ -52,7 +57,7 @@ const FormSelect = ({
   ...props
 }) => {
   return (
-    <FormControl fullWidth margin="normal" error={error}>
+    <FormControl fullWidth margin="dense" error={error} sx={{ my: 0.5, ...props.sx }}>
       <CustomInputLabel>{label}</CustomInputLabel>
       <CustomSelect value={value} label={label} onChange={onChange} {...props}>
         {options.map((option) => (
@@ -65,7 +70,7 @@ const FormSelect = ({
           </MenuItem>
         ))}
       </CustomSelect>
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText && <CustomFormHelperText>{helperText}</CustomFormHelperText>}
     </FormControl>
   );
 };
