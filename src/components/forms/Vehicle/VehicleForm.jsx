@@ -337,10 +337,12 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
 
       if (vehicleId) {
         await updateVehicle(vehicleId, payload);
-        toast.success("Vehicle updated successfully");
+        // toast.success("Vehicle updated successfully");
+        showToast("Vehicle updated successfully", "success");
       } else {
         await createVehicle(payload);
-        toast.success("Vehicle created successfully");
+        // toast.success("Vehicle created successfully");
+        showToast("Vehicle created successfully", "success");
       }
 
       if (onSave) onSave();

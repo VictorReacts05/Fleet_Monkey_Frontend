@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from './../../Common/SearchBar';
+import { showToast } from "../../toastNotification";
 
 const PurchaseRFQList = () => {
   const navigate = useNavigate();
@@ -98,6 +99,7 @@ const PurchaseRFQList = () => {
       setDeleteDialogOpen(true);
     } else {
       toast.error("Item not found");
+      
     }
   };
 
@@ -105,7 +107,8 @@ const PurchaseRFQList = () => {
     try {
       setLoading(true);
       await deletePurchaseRFQ(itemToDelete.id);
-      toast.success("Purchase RFQ deleted successfully");
+      // toast.success("Purchase RFQ deleted successfully");
+      showToast("Purchase RFQ deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadPurchaseRFQs();

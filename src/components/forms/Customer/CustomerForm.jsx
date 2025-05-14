@@ -12,6 +12,7 @@ import {
   fetchCompanies,
 } from "./CustomerAPI";
 import { Grid } from "@mui/material";
+import { showToast } from "../../toastNotification";
 
 const CustomerForm = ({ customerId, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
@@ -235,10 +236,19 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
       setLoading(true);
       if (customerId) {
         await updateCustomer(customerId, formData);
-        toast.success("Customer updated successfully");
+        // toast.success("Customer updated successfully");
+        showToast(
+          "Customer updated successfully","success");
       } else {
         await createCustomer(formData);
-        toast.success("Customer created successfully");
+        // toast.success("Customer created successfully");
+        showToast(
+          "Customer created successfully",
+          "success"
+        );
+
+
+
       }
       if (onSave) onSave();
       if (onClose) onClose();

@@ -8,6 +8,7 @@ import {
   fetchCurrencies,
 } from "./CurrencyAPI";
 import { toast } from 'react-toastify';
+import { showToast } from '../../toastNotification';
 
 const CurrencyForm = ({ currencyId, onSave, onClose }) => {
   // Initialize with empty strings to maintain controlled inputs
@@ -99,10 +100,12 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       if (currencyId) {
         transformedData.CurrencyID = currencyId;
         await updateCurrency(currencyId, transformedData);
-        toast.success('Currency updated successfully');
+        // toast.success('Currency updated successfully');
+        showToast('Currency updated successfully', 'success');
       } else {
         await createCurrency(transformedData);
-        toast.success('Currency created successfully');
+        // toast.success('Currency created successfully');
+        showToast('Currency created successfully', 'success');
       }
       
       if (onSave) onSave();

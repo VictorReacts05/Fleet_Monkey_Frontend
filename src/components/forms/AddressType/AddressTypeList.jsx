@@ -9,6 +9,7 @@ import AddressTypeModal from "./AddressTypeModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
 import SearchBar from "../../Common/SearchBar";
 import { fetchAddressTypes, deleteAddressType } from "./AddressTypeAPI";
+import { showToast } from "../../toastNotification";
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
@@ -89,7 +90,7 @@ const AddressTypeList = () => {
   const confirmDelete = async () => {
     try {
       await deleteAddressType(itemToDelete.id);
-      toast.success("Address type deleted successfully");
+      showToast("Address type deleted successfully","success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadAddressTypes();

@@ -9,6 +9,8 @@ const StyledDatePicker = styled(DatePicker)(({ theme }) => ({
     padding: 0,
     borderRadius: theme.shape.borderRadius * 1.5,
     boxSizing: "border-box",
+    backgroundColor: "#595959", // Your custom background
+
   },
   "& .MuiInputBase-input": {
     height: "100%",

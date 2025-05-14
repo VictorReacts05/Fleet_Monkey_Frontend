@@ -42,6 +42,7 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     color: "#dcdcdc",
     "&.MuiInputLabel-shrink": {
       top: 0,
+      
     },
   },
 }));

@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
+import { showToast } from '../../toastNotification';
 
 const WarehouseList = () => {
   const [rows, setRows] = useState([]);
@@ -116,7 +117,8 @@ const WarehouseList = () => {
   const confirmDelete = async () => {
     try {
       await deleteWarehouse(itemToDelete.id);
-      toast.success('Warehouse deleted successfully');
+      // toast.success('Warehouse deleted successfully');
+      showToast("Warehouse deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadWarehouses();

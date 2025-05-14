@@ -75,11 +75,13 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
         if (warehouseId) {
           // Update existing warehouse
           await updateWarehouse(warehouseId, warehouseData);
-          toast.success("Warehouse updated successfully");
+          // toast.success("Warehouse updated successfully");
+          showToast("Warehouse updated successfully", "success");
         } else {
           // Create new warehouse
           await createWarehouse(warehouseData);
-          toast.success("Warehouse created successfully");
+          // toast.success("Warehouse created successfully");
+          showToast("Warehouse created successfully", "success");
         }
         
         if (onSave) onSave();

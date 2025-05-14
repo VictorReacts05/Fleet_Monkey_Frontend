@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { createUOM, updateUOM, getUOMById } from './UOMAPI';
 import FormInput from '../../Common/FormInput';
 import FormPage from '../../Common/FormPage';
+import { showToast } from '../../toastNotification';
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -111,11 +112,13 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       if (uomId) {
         // Update existing UOM
         await updateUOM(uomId, apiData);
-        toast.success("UOM updated successfully");
+        // toast.success("UOM updated successfully");
+        showToast("UOM updated successfully", "success");
       } else {
         // Create new UOM
         await createUOM(apiData);
-        toast.success("UOM created successfully");
+        // toast.success("UOM created successfully");
+        showToast("UOM created successfully", "success");
       }
 
       if (onSave) onSave();
@@ -174,7 +177,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
           overflow: "hidden",
         }}
       >
-        <Grid item xs={12} md={6} sx={{ width: "100%" }}>
+        <Grid item xs={12} md={6} sx={{ width: "100%" ,}}>
           {isEditing ? (
             <FormInput
               name="uom"

@@ -12,6 +12,7 @@ const CustomSelect = styled(Select)(({ theme }) => ({
   height: 38,
   display: "flex",
   alignItems: "center",
+
   "& .MuiSelect-select": {
     padding: "0 14px",
     display: "flex",
@@ -19,23 +20,33 @@ const CustomSelect = styled(Select)(({ theme }) => ({
     height: "100%",
     boxSizing: "border-box",
     lineHeight: "38px",
+    backgroundColor: "#595959", // Your custom background
+
+  },
+  "& input:-webkit-autofill": {
+    boxShadow: "0 0 0 1000px #595959 inset !important",
+    WebkitTextFillColor: "white !important",
+    transition: "background-color 9999s ease-out 0s",
   },
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
     display: "flex",
     alignItems: "center",
+    
     borderRadius: theme.shape.borderRadius * 1.5,
   },
   "& .MuiInputBase-input": {
     paddingLeft: "14px",
+    
   },
 }));
 
 const CustomInputLabel = styled(InputLabel)(() => ({
-  top: "50%",
+  top: "20px",
   transform: "translate(14px, -50%)",
   fontSize: "0.875rem",
+  
   "&.MuiInputLabel-shrink": {
     top: 0,
     transform: "translate(14px, -8px) scale(0.75)",

@@ -9,6 +9,7 @@ import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
 import { Stack } from "@mui/material"; // Import Stack from @mui/material
+import { showToast } from "../../toastNotification";
 
 const BankList = () => {
   const [rows, setRows] = useState([]);
@@ -111,7 +112,7 @@ const BankList = () => {
     try {
       await deleteBank(itemToDelete.id);
       loadBanks();
-      toast.success("Bank account deleted successfully");
+      showToast("Bank account deleted successfully","success");
     } catch (error) {
       console.error("Delete error:", {
         message: error.message,

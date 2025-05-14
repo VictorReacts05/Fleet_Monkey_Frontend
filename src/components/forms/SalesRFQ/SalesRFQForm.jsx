@@ -40,6 +40,7 @@ import FormPage from "../../Common/FormPage";
 import ParcelTab from "./ParcelTab";
 import { createPurchaseRFQFromSalesRFQ } from "../PurchaseRFQ/PurchaseRFQAPI";
 import { useNavigate } from "react-router-dom";
+import { showToast } from "../../toastNotification";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -524,15 +525,20 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         // Update existing approval record (PUT)
         // We need to use the SalesRFQID and ApproverID to identify the record
          await updateSalesRFQApproval(approvalRecord.SalesRFQID, approvalData);
+         
       } else {
         // Create new approval record (POST)
         await approveSalesRFQ(salesRFQId, approvedYN === 1);
       }
 
-      toast.success(
-        `SalesRFQ ${
-          confirmAction === "approve" ? "approved" : "disapproved"
-        } successfully`
+      // toast.success(
+      //   `SalesRFQ ${
+      //     confirmAction === "approve" ? "approved" : "disapproved"
+      //   } successfully`
+      // );
+      showToast(
+        `SalesRFQ ${confirmAction === "approve" ? "approved" : "disapproved"} successfully`,
+        "success"
       );
       setApprovalStatus(
         confirmAction === "approve" ? "approved" : "disapproved"
@@ -565,7 +571,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       const result = await createPurchaseRFQFromSalesRFQ(salesRFQId);
 
       if (result.success) {
-        toast.success("Purchase RFQ created successfully");
+        // toast.success("Purchase RFQ created successfully");
+        showToast("Purchase RFQ created successfully", "success");
         setPurchaseRFQDialogOpen(false);
 
         // Navigate to the Purchase RFQ list

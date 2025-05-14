@@ -94,7 +94,8 @@ const SupplierList = () => {
   const confirmDelete = async () => {
     try {
       await deleteSupplier(itemToDelete.id);
-      toast.success('Supplier deleted successfully');
+      // toast.success('Supplier deleted successfully');
+      showToast("Supplier deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadSuppliers();

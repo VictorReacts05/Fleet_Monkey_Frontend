@@ -20,6 +20,7 @@ import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
+import { showToast } from "../../toastNotification";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -124,7 +125,8 @@ const PurchaseRFQForm = ({ purchaseRFQId, onClose, onSave, readOnly = false }) =
         : await createPurchaseRFQ(formData);
       
       if (result.success) {
-        toast.success(`Purchase RFQ ${purchaseRFQId ? "updated" : "created"} successfully`);
+        // toast.success(`Purchase RFQ ${purchaseRFQId ? "updated" : "created"} successfully`);
+        showToast(`Purchase RFQ ${purchaseRFQId ? "updated" : "created"} successfully`, "success");
         if (onSave) onSave(result.purchaseRFQId || result.data?.PurchaseRFQID);
       } else {
         toast.error(result.message || "Operation failed");

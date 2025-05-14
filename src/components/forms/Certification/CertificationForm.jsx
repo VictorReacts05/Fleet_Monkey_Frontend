@@ -3,6 +3,7 @@ import FormInput from "../../Common/FormInput";
 import FormPage from "../../Common/FormPage";
 import { createCertification, updateCertification, getCertificationById } from "./CertificationAPI";
 import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification";
 
 const CertificationForm = ({ certificationId, onSave, onClose }) => {
   const [formData, setFormData] = useState({ 
@@ -67,12 +68,14 @@ const CertificationForm = ({ certificationId, onSave, onClose }) => {
           RowVersionColumn: formData.rowVersionColumn
         });
         toast.success('Certification updated successfully');
+        showToast('Certification updated successfully',"success");
       } else {
         await createCertification({
           CertificationName: formData.certificationName,
           CreatedByID: user.personId || 1 // Fallback to 1 if user not available
         });
         toast.success('Certification created successfully');
+        showToast('Certification created successfully',"success");
       }
       
       onSave();

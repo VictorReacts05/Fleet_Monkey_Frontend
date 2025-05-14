@@ -13,6 +13,7 @@ import SearchBar from "../../Common/SearchBar";
 // Update imports
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import { showToast } from '../../toastNotification';
 
 const CityList = () => {
   const [rows, setRows] = useState([]);
@@ -153,7 +154,8 @@ const CityList = () => {
       await deleteCity(deletedItemId);
       
       // Show success message
-      toast.success('City deleted successfully');
+      // toast.success('City deleted successfully');
+      showToast('City deleted successfully',"success");
       
       // Clear the item to delete
       setItemToDelete(null);

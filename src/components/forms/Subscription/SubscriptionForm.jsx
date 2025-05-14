@@ -3,6 +3,7 @@ import FormInput from '../../Common/FormInput';
 import FormSelect from '../../Common/FormSelect';
 import FormPage from '../../Common/FormPage';
 import { getSubscriptionById } from './subscriptionStorage';
+import { showToast } from '../../toastNotification';
 
 const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -93,7 +94,7 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setIsSubmitted(true);
 
     if (!validateForm()) {
@@ -107,12 +108,14 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
         sub.id === subscriptionId ? { ...formData, id: subscriptionId } : sub
       );
       localStorage.setItem('subscriptions', JSON.stringify(updatedSubscriptions));
+      showToast('Subscription updated successfully', 'success');
     } else {
       const newSubscription = {
         ...formData,
         id: Date.now(),
       };
       localStorage.setItem('subscriptions', JSON.stringify([...subscriptions, newSubscription]));
+      showToast('Subscription added successfully', 'success');
     }
 
     onSave();

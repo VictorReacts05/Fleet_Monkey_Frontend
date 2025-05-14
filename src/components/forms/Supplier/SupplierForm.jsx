@@ -8,6 +8,7 @@ import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
 import dayjs from "dayjs";
+import { showToast } from "../../toastNotification";
 
 const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -21,12 +22,23 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
     BillingCurrencyID: "",
     CompanyID: "",
     ExternalSupplierYN: "",
-    CreatedByID: "",
-    CreatedDateTime: null,
-    IsDeleted: false,
-    DeletedDateTime: null,
-    DeletedByID: "",
   });
+
+  const [errors, setErrors] = useState({
+    SupplierName: "",
+    SupplierGroupID: "",
+    SupplierTypeID: "",
+    SupplierAddressID: "",
+    SupplierExportCode: "",
+    SAPartner: "",
+    SAPartnerExportCode: "",
+    BillingCurrencyID: "",
+    CompanyID: "",
+    ExternalSupplierYN: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     if (supplierId) {
@@ -36,23 +48,27 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
 
   const loadSupplier = async () => {
     try {
+      setLoading(true);
       const data = await getSupplierById(supplierId);
       setFormData({
-        ...data,
-        ExternalSupplierYN: data.ExternalSupplierYN ? "1" : "0", // Convert boolean to string for FormSelect
-        CreatedDateTime: data.CreatedDateTime
-          ? dayjs(data.CreatedDateTime)
-          : null,
-        DeletedDateTime: data.DeletedDateTime
-          ? dayjs(data.DeletedDateTime)
-          : null,
+        SupplierName: data?.SupplierName || "",
+        SupplierGroupID: data?.SupplierGroupID?.toString() || "",
+        SupplierTypeID: data?.SupplierTypeID?.toString() || "",
+        SupplierAddressID: data?.SupplierAddressID?.toString() || "",
+        SupplierExportCode: data?.SupplierExportCode || "",
+        SAPartner: data?.SAPartner?.toString() || "",
+        SAPartnerExportCode: data?.SAPartnerExportCode || "",
+        BillingCurrencyID: data?.BillingCurrencyID?.toString() || "",
+        CompanyID: data?.CompanyID?.toString() || "",
+        ExternalSupplierYN: data?.ExternalSupplierYN ? "1" : "0",
       });
+      
     } catch (error) {
       toast.error("Failed to load supplier: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const [errors, setErrors] = useState({});
 
   const validateForm = () => {
     const newErrors = {};
@@ -62,77 +78,40 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       newErrors.SupplierName = "Supplier Name is required";
     }
 
-    if (!formData.SupplierGroupID.trim()) {
+    if (!formData.SupplierGroupID) {
       newErrors.SupplierGroupID = "Supplier Group ID is required";
     }
 
-    if (!formData.SupplierAddressID.trim()) {
+    if (!formData.SupplierAddressID) {
       newErrors.SupplierAddressID = "Supplier Address ID is required";
     }
 
-    if (!formData.SupplierTypeID.trim()) {
+    if (!formData.SupplierTypeID) {
       newErrors.SupplierTypeID = "Supplier Type ID is required";
     }
-
-    if (!formData.SupplierExportCode.trim()) {
-      newErrors.SupplierExportCode = "Supplier Export Code is required";
-    }
-
-    if (!formData.SAPartner.trim()) {
-      newErrors.SAPartner = "South Africa Partner is required";
-    }
-
-    if (!formData.BillingCurrencyID.trim()) {
-      newErrors.BillingCurrencyID = "Billing Currency ID is required";
-    }
-
-    if (!formData.CompanyID.trim()) {
-      newErrors.CompanyID = "Company ID is required";
-    }
-
-    if (formData.ExternalSupplierYN === "") {
-      newErrors.ExternalSupplierYN = "External Supplier selection is required";
-    }
-
-    // Number field validations
-    const numberFields = [
-      "SupplierGroupID",
-      "SupplierTypeID",
-      "SupplierAddressID",
-      "SAPartner",
-      "BillingCurrencyID",
-      "CompanyID",
-    ];
-
-    numberFields.forEach((field) => {
-      if (
-        formData[field] &&
-        (isNaN(formData[field]) || parseInt(formData[field]) < 0)
-      ) {
-        newErrors[field] = "Must be a valid positive number";
-      }
-    });
-
-    // Export code validations
     const exportCodeRegex = /^[A-Z0-9-_]+$/;
+    if (!exportCodeRegex.test(formData.SupplierExportCode)) {
+      newErrors.SupplierExportCode = "Invalid Export Code format";
+    }
 
-    if (!formData.SupplierExportCode.trim()) {
-      newErrors.SupplierExportCode = "Export Code is required";
-    } else if (formData.SupplierExportCode.length > 50) {
-      newErrors.SupplierExportCode = "Export Code cannot exceed 50 characters";
-    } else if (!exportCodeRegex.test(formData.SupplierExportCode)) {
-      newErrors.SupplierExportCode =
-        "Export Code can only contain uppercase letters, numbers, hyphens and underscores";
+    if (!formData.SAPartner) {
+      newErrors.SAPartner = "South Africa Partner is required";
     }
 
     if (!formData.SAPartnerExportCode.trim()) {
       newErrors.SAPartnerExportCode = "SA Partner Export Code is required";
-    } else if (formData.SAPartnerExportCode.length > 50) {
-      newErrors.SAPartnerExportCode =
-        "SA Partner Export Code cannot exceed 50 characters";
-    } else if (!exportCodeRegex.test(formData.SAPartnerExportCode)) {
-      newErrors.SAPartnerExportCode =
-        "SA Partner Export Code can only contain uppercase letters, numbers, hyphens and underscores";
+    }
+
+    if (!formData.BillingCurrencyID) {
+      newErrors.BillingCurrencyID = "Billing Currency ID is required";
+    }
+
+    if (!formData.CompanyID) {
+      newErrors.CompanyID = "Company ID is required";
+    }
+
+    if (!formData.ExternalSupplierYN) {
+      newErrors.ExternalSupplierYN = "External Supplier selection is required";
     }
 
     setErrors(newErrors);
@@ -140,14 +119,16 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
+    if (e) e.preventDefault();
+    setIsSubmitted(true);
+    
     if (!validateForm()) {
       toast.error("Please fix the form errors");
       return;
     }
 
     try {
+      setLoading(true);
       const submitData = {
         supplierName: formData.SupplierName,
         supplierGroupID: parseInt(formData.SupplierGroupID),
@@ -164,10 +145,12 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
 
       if (supplierId) {
         await updateSupplier(supplierId, submitData);
-        toast.success("Supplier updated successfully");
+        // toast.success("Supplier updated successfully");
+        showToast("Supplier updated successfully", "success");
       } else {
         await createSupplier(submitData);
-        toast.success("Supplier created successfully");
+        // toast.success("Supplier created successfully");
+        showToast("Supplier created successfully", "success");
       }
       onSave();
     } catch (error) {
@@ -175,19 +158,29 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
         `Failed to ${supplierId ? "update" : "create"} supplier: ` +
           error.message
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   const handleDateChange = (name, value) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -198,21 +191,13 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       title={supplierId ? "Edit Supplier" : "Create Supplier"}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
-      <Grid
-        container
-        spacing={2}
-        sx={{
-          maxHeight: "calc(100vh - 200px)",
-          width: "100%",
-          margin: 0,
-          overflow: "hidden",
-        }}
-      >
-       <Grid item xs={12} sx={{ width: "47%" }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierName"
-            label="Supplier Name"
+            label="Supplier Name *"
             value={formData.SupplierName}
             onChange={handleChange}
             error={!!errors.SupplierName}
@@ -220,10 +205,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-       <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierGroupID"
-            label="Supplier Group ID"
+            label="Supplier Group ID *"
             type="number"
             value={formData.SupplierGroupID}
             onChange={handleChange}
@@ -232,10 +217,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierTypeID"
-            label="Supplier Type ID"
+            label="Supplier Type ID *"
             type="number"
             value={formData.SupplierTypeID}
             onChange={handleChange}
@@ -244,10 +229,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierAddressID"
-            label="Supplier Address ID"
+            label="Supplier Address ID *"
             type="number"
             value={formData.SupplierAddressID}
             onChange={handleChange}
@@ -256,10 +241,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierExportCode"
-            label="Supplier Export Code"
+            label="Supplier Export Code *"
             value={formData.SupplierExportCode}
             onChange={handleChange}
             error={!!errors.SupplierExportCode}
@@ -267,10 +252,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SAPartner"
-            label="SA Partner"
+            label="SA Partner *"
             type="number"
             value={formData.SAPartner}
             onChange={handleChange}
@@ -279,10 +264,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="SAPartnerExportCode"
-            label="SA Partner Export Code"
+            label="SA Partner Export Code *"
             value={formData.SAPartnerExportCode}
             onChange={handleChange}
             error={!!errors.SAPartnerExportCode}
@@ -290,10 +275,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="BillingCurrencyID"
-            label="Billing Currency ID"
+            label="Billing Currency ID *"
             type="number"
             value={formData.BillingCurrencyID}
             onChange={handleChange}
@@ -302,10 +287,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} md={6}>
           <FormInput
             name="CompanyID"
-            label="Company ID"
+            label="Company ID *"
             type="number"
             value={formData.CompanyID}
             onChange={handleChange}
@@ -314,10 +299,10 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
-          <FormSelect
+        <Grid item xs={12} md={6} >
+          <FormSelect sx={{ width: "222px" }}
             name="ExternalSupplierYN"
-            label="External Supplier"
+            label="External Supplier *"
             value={formData.ExternalSupplierYN}
             onChange={handleChange}
             options={[
@@ -326,8 +311,6 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
             ]}
             error={!!errors.ExternalSupplierYN}
             helperText={errors.ExternalSupplierYN}
-            fullWidth
-            sx={{ minWidth: "200px" }}
           />
         </Grid>
       </Grid>

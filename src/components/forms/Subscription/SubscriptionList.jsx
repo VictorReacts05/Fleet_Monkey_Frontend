@@ -6,6 +6,7 @@ import ConfirmDialog from "../../Common/ConfirmDialog";
 import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
 import SearchBar from "../../Common/SearchBar";
 import { Add } from "@mui/icons-material";
+import { showToast } from "../../toastNotification";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
@@ -28,6 +29,7 @@ const SubscriptionList = () => {
   const confirmDelete = () => {
     if (!itemToDelete) return;
     deleteSubscription(itemToDelete.id);
+    showToast("Subscription deleted successfully", "success");
     setRows(getSubscriptions());
     setDeleteDialogOpen(false);
     setItemToDelete(null);
@@ -36,6 +38,7 @@ const SubscriptionList = () => {
   const cancelDelete = () => {
     setDeleteDialogOpen(false);
     setItemToDelete(null);
+
   };
 
   const columns = [

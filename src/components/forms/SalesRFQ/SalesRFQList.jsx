@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 
 const SalesRFQList = () => {
   const navigate = useNavigate();
@@ -109,7 +110,8 @@ const SalesRFQList = () => {
     try {
       setLoading(true);
       await deleteSalesRFQ(itemToDelete.id);
-      toast.success("SalesRFQ deleted successfully");
+      // toast.success("SalesRFQ deleted successfully");
+      showToast("SalesRFQ deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadSalesRFQs();

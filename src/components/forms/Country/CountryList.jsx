@@ -11,6 +11,7 @@ import StyledButton from "../../Common/StyledButton";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 
 
 const CountryList = () => {
@@ -123,6 +124,7 @@ const CountryList = () => {
     try {
       await deleteCountry(itemToDelete.id);
       toast.success("Country deleted successfully");
+      showToast("Country deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadCountries();

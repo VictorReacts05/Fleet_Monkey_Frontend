@@ -37,6 +37,20 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   left: 0,
 }));
 
+const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
+  fontSize: 60,
+  marginBottom: theme.spacing(2),
+  animation: "moveTruck 1s ease-in-out",
+  '@keyframes moveTruck': {
+    '0%': {
+      transform: 'translateX(-190px)', 
+    },
+    '100%': {
+      transform: 'translateX(0)', 
+    },
+  },
+}));
+
 const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
@@ -152,7 +166,7 @@ const Login = () => {
     <LoginContainer>
       <LoginPaper elevation={6}>
         <LogoBox>
-          <LocalShippingIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
+          <TruckIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
           <Typography variant="h4" fontWeight="bold" color="primary">
             Fleet Monkey
           </Typography>

@@ -13,6 +13,7 @@ import SearchBar from "../../Common/SearchBar";
 // Add imports
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import { showToast } from '../../toastNotification';
 
 const CurrencyList = ({ userId }) => {
   // Add this line to debug
@@ -138,7 +139,8 @@ const CurrencyList = ({ userId }) => {
       await deleteCurrency(deletedItemId, userId);
       
       // Show success message
-      toast.success('Currency deleted successfully');
+      // toast.success('Currency deleted successfully');
+      showToast('Currency deleted successfully', 'success');
       
       // Clear the item to delete
       setItemToDelete(null);

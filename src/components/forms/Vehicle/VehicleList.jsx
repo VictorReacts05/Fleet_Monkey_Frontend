@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
 import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 
 const VehicleList = () => {
   const [rows, setRows] = useState([]);
@@ -98,7 +99,8 @@ const VehicleList = () => {
   const confirmDelete = async () => {
     try {
       await deleteVehicle(itemToDelete.id);
-      toast.success('Vehicle deleted successfully');
+      // toast.success('Vehicle deleted successfully');
+      showToast("Vehicle deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadVehicles();
