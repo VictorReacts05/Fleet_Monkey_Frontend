@@ -284,7 +284,7 @@ const ResetPassword = () => {
         )}
 
         <Box sx={{ mt: 2, textAlign: "center" }}>
-          <Link to="/login" style={{ textDecoration: "none" }}>
+          <Link to="/" style={{ textDecoration: "none" }}>
             <Button
               startIcon={<ArrowBackIcon />}
               color="primary"

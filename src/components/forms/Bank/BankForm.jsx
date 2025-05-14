@@ -28,6 +28,12 @@ const BankForm = ({ bankId, onSave, onClose }) => {
     AccountName: true,
     AccountType: true,
     BankName: true,
+    BranchCode:true,
+    IBAN:true,
+    IFSC:true,
+    MICRA:true,
+
+    
     // BranchCode, IBAN, IFSC, MICRA are optional
   };
 
@@ -63,7 +69,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
     
     // First check if the field is required and empty
     if ((isSubmitting || submitted) && requiredFields[name] && !value) {
-      error = `${name.replace(/([A-Z])/g, ' $1').trim()} is required`;
+      error = `${name.replace(/([A-Z])/g, '$1').trim()} is required`;
     } 
     // Only validate format if there's a value
     else if (value) {
@@ -93,7 +99,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           }
           break;
         case "IBAN":
-          const strippedIBAN = value.replace(/\s+/g, '').toUpperCase();
+          const strippedIBAN = value.replace(/\s+/g,'').toUpperCase();
           if (!/^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(strippedIBAN)) {
             error = "Invalid IBAN format (e.g., GB29 NWBK 6016 1331 9268 19)";
           }
@@ -279,7 +285,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "47%",paddingBottom:"20px" }}>
           <FormInput
             label="MICR Code"
             name="MICRA"
