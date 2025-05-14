@@ -13,6 +13,7 @@ import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboar
 import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
 import RolesList from './components/forms/Role/RolesList';
+import { FormRoleApproverList } from './components/forms/FormRoleApprover'; // Import the FormRoleApproverList component
 
 // To this
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
@@ -332,6 +333,16 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <UOMList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Form Role Approvers route */}
+          <Route
+            path="/form-role-approvers"
+            element={
+              <ProtectedRoute>
+                <FormRoleApproverList />
               </ProtectedRoute>
             }
           />

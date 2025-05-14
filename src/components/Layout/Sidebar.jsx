@@ -30,6 +30,7 @@ import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
 import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // Added for Form Role Approver
 
 const drawerWidth = 240;
 
@@ -45,6 +46,7 @@ const menuItems = [
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
+  { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   {
     text: "Project Parameters",
