@@ -1,71 +1,114 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Stack } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Button,
+  Stack,
+  Tooltip,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
-import ConfirmDialog from "../../Common/ConfirmDialog";
-import FormDatePicker from "../../Common/FormDatePicker";
-import { fetchPurchaseRFQs, deletePurchaseRFQ } from "./PurchaseRFQAPI";
+import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
-import { Tooltip, IconButton } from "@mui/material";
-import SearchBar from './../../Common/SearchBar';
-import { showToast } from "../../toastNotification";
+import { showToast } from "../../toastNotification"; 
+import axios from "axios";
+import PurchaseRFQForm from "./PurchaseRFQForm";
+
+const getHeaders = () => {
+  return {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+};
 
 const PurchaseRFQList = () => {
-  const navigate = useNavigate();
-  const [rows, setRows] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalRows, setTotalRows] = useState(0);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [purchaseRFQs, setPurchaseRFQs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRFQ, setSelectedRFQ] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
 
   const columns = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "series", headerName: "Purchase RFQ Series", flex: 1 }
+    { field: "Series", headerName: "Series", flex: 1 },
+    {
+      field: "CustomerName",
+      headerName: "Customer",
+      flex: 1,
+      valueGetter: (params) => params.row.CustomerName || "-",
+    },
   ];
 
-  useEffect(() => {
-    loadPurchaseRFQs();
-  }, [page, rowsPerPage, fromDate, toDate]);
+  const navigate = useNavigate();
 
-  const loadPurchaseRFQs = async () => {
+  const fetchPurchaseRFQs = async () => {
     try {
       setLoading(true);
-      const formattedFromDate = fromDate
-        ? dayjs(fromDate).format("YYYY-MM-DD")
-        : null;
-      const formattedToDate = toDate
-        ? dayjs(toDate).format("YYYY-MM-DD")
-        : null;
-
-      const response = await fetchPurchaseRFQs(
-        page + 1,
-        rowsPerPage,
-        formattedFromDate,
-        formattedToDate
+      const { headers } = getHeaders();
+      const response = await axios.get(
+        "http://localhost:7000/api/purchase-rfq",
+        { headers }
       );
 
-      const purchaseRFQs = response.data || [];
+      console.log("Purchase RFQs API response:", response);
+      console.log("Purchase RFQs data structure:", response.data);
 
-      const mappedRows = purchaseRFQs.map((purchaseRFQ) => ({
-        id: purchaseRFQ.PurchaseRFQID,
-        series: purchaseRFQ.Series || "N/A"  // Changed from PurchaseRFQSeries to Series
-      }));
-
-      setRows(mappedRows);
-      setTotalRows(response.totalRecords || purchaseRFQs.length);
+      if (Array.isArray(response.data)) {
+        console.log("Response is an array with length:", response.data.length);
+        if (response.data.length > 0) {
+          console.log("First item properties:", Object.keys(response.data[0]));
+          console.log(
+            "First item PurchaseRFQID:",
+            response.data[0].PurchaseRFQID
+          );
+        }
+        setPurchaseRFQs(response.data);
+      } else if (response.data && Array.isArray(response.data.data)) {
+        console.log(
+          "Response has data property with length:",
+          response.data.data.length
+        );
+        if (response.data.data.length > 0) {
+          console.log(
+            "First item properties:",
+            Object.keys(response.data.data[0])
+          );
+          console.log(
+            "First item PurchaseRFQID:",
+            response.data.data[0].PurchaseRFQID
+          );
+        }
+        setPurchaseRFQs(response.data.data);
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        setPurchaseRFQs([]);
+      }
     } catch (error) {
-      console.error("Error loading PurchaseRFQs:", error);
+      console.error("Error fetching Purchase RFQs:", error);
       toast.error("Failed to load Purchase RFQs");
+      setPurchaseRFQs([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPurchaseRFQs();
+  }, []);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -76,20 +119,18 @@ const PurchaseRFQList = () => {
     setPage(0);
   };
 
-  const handleCreate = () => {
+  const handleCreateNew = () => {
     navigate("/purchase-rfq/create");
   };
 
-  const handleRowClick = (id) => {
-    navigate(`/purchase-rfq/edit/${id}`);
-  };
-
-  const handleEdit = (id) => {
-    navigate(`/purchase-rfq/edit/${id}`);
-  };
-
   const handleView = (id) => {
-    navigate(`/purchase-rfq/edit/${id}?view=true`);
+    console.log("View clicked for Purchase RFQ ID:", id);
+    if (id && id !== "undefined") {
+      navigate(`/purchase-rfq/view/${id}`);
+    } else {
+      console.error("Invalid Purchase RFQ ID:", id);
+      toast.error("Cannot view Purchase RFQ: Invalid ID");
+    }
   };
 
   const handleDeleteClick = (id) => {
@@ -101,6 +142,15 @@ const PurchaseRFQList = () => {
       toast.error("Item not found");
       
     }
+    setSelectedRFQ(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setViewDialogOpen(false);
+    setDeleteDialogOpen(false);
+    setSelectedRFQ(null);
+    fetchPurchaseRFQs(page + 1, rowsPerPage);
   };
 
   const confirmDelete = async () => {
@@ -109,82 +159,126 @@ const PurchaseRFQList = () => {
       await deletePurchaseRFQ(itemToDelete.id);
       // toast.success("Purchase RFQ deleted successfully");
       showToast("Purchase RFQ deleted successfully", "success");
+      const { headers } = getHeaders();
+      await axios.delete(
+        `http://localhost:7000/api/purchase-rfqs/${selectedRFQ}`,
+        { headers }
+      );
+      toast.success("Purchase RFQ deleted successfully");
       setDeleteDialogOpen(false);
-      setItemToDelete(null);
-      loadPurchaseRFQs();
+      fetchPurchaseRFQs(page + 1, rowsPerPage);
     } catch (error) {
-      toast.error("Failed to delete Purchase RFQ: " + error.message);
+      console.error("Error deleting Purchase RFQ:", error);
+      toast.error("Failed to delete Purchase RFQ");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFromDateChange = (date) => {
+    setFromDate(date);
+  };
+
+  const handleToDateChange = (date) => {
+    setToDate(date);
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
-    <Box>
+    <Box sx={{ p: 3 }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
+          mb: 3,
         }}
       >
-        <Typography variant="h5">Purchase RFQ Management</Typography>
+        <Typography variant="h5">Purchase RFQs</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
-            // onSearch={handleSearch}
+            onSearch={handleSearch}
             placeholder="Search Purchase RFQs..."
-            sx={{
-              width: "100%",
-              marginLeft: "auto",
-            }}
           />
-          <Tooltip title="Add New Purchase RFQ">
-            <IconButton
-              color="primary"
-              onClick={handleCreate}
-              sx={{
-                backgroundColor: "primary.main",
-                color: "white",
-                "&:hover": {
-                  backgroundColor: "primary.dark",
-                },
-                height: 40,
-                width: 40,
-                ml: 1,
-              }}
-            >
-              <Add />
-            </IconButton>
-          </Tooltip>
         </Stack>
       </Box>
 
       <DataTable
-        rows={rows}
-        columns={columns}
+        rows={purchaseRFQs.map((row) => ({
+          ...row,
+          id: row.PurchaseRFQID,
+        }))}
+        columns={[
+          ...columns,
+          {
+            field: "id",
+            headerName: "ID",
+            width: 100,
+            valueGetter: (params) =>
+              params.row.PurchaseRFQID || params.row.id || "No ID",
+          },
+        ]}
         loading={loading}
+        getRowId={(row) => {
+          console.log("DataTable getRowId called with row:", row);
+          return row.id || "unknown";
+        }}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={totalRows}
+        totalRows={purchaseRFQs.length}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
-        onRowClick={(params) => handleRowClick(params.id)}
-        onEdit={handleEdit}
         onView={handleView}
         onDelete={handleDeleteClick}
       />
 
-      <ConfirmDialog
+      <Dialog
+        open={viewDialogOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle>View Purchase RFQ</DialogTitle>
+        <DialogContent>
+          {selectedRFQ && (
+            <PurchaseRFQForm
+              purchaseRFQId={selectedRFQ}
+              onClose={handleDialogClose}
+              readOnly={true}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
         open={deleteDialogOpen}
-        title="Confirm Delete"
-        content={`Are you sure you want to delete this Purchase RFQ?`}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setDeleteDialogOpen(false);
-          setItemToDelete(null);
-        }}
-      />
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this Purchase RFQ? This action
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

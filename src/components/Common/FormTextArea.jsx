@@ -35,8 +35,12 @@ const CustomTextArea = styled(TextField)(({ theme }) => ({
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
+    "& .MuiFormHelperText-root": {
+    marginTop: 0,
+  }
   },
 }));
+
 
 const FormTextArea = ({ label, value, onChange, error, helperText, rows = 4, ...props }) => {
   return (
@@ -50,7 +54,8 @@ const FormTextArea = ({ label, value, onChange, error, helperText, rows = 4, ...
       error={error}
       helperText={helperText}
       variant="outlined"
-      margin="normal"
+      margin="dense"
+      sx={{ my: 0.5, ...props.sx }}
       {...props}
     />
   );

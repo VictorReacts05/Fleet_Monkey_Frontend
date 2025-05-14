@@ -5,12 +5,18 @@ import {
   RadioGroup, 
   FormControlLabel, 
   Radio, 
-  FormHelperText 
+  FormHelperText,
+  styled
 } from '@mui/material';
+
+// Add styled FormHelperText to remove margin
+const CustomFormHelperText = styled(FormHelperText)(() => ({
+  marginTop: 0,
+}));
 
 const FormRadioGroup = ({ label, value, onChange, options, error, helperText, ...props }) => {
   return (
-    <FormControl error={error} margin="normal">
+    <FormControl error={error} margin="dense" sx={{ my: 0.5, ...props.sx }}>
       <FormLabel>{label}</FormLabel>
       <RadioGroup value={value} onChange={onChange} {...props}>
         {options.map((option) => (
@@ -22,7 +28,7 @@ const FormRadioGroup = ({ label, value, onChange, options, error, helperText, ..
           />
         ))}
       </RadioGroup>
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText && <CustomFormHelperText>{helperText}</CustomFormHelperText>}
     </FormControl>
   );
 };

@@ -144,7 +144,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   useEffect(() => {
     const loadExistingParcels = async () => {
       if (!salesRFQId) {
-        console.log("No SalesRFQ ID provided, skipping parcel fetch");
+        // console.log("No SalesRFQ ID provided, skipping parcel fetch");
         return;
       }
 
@@ -581,7 +581,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
-            backgroundColor: "#252525",
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+            color: theme.palette.text.primary,
             cursor: "pointer",
           }}
         >

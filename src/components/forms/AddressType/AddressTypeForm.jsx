@@ -24,19 +24,21 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   }, [addressTypeId]);
 
   const loadAddressType = async () => {
-    try {
-      setLoading(true);
-      const response = await getAddressTypeById(addressTypeId);
-      setFormData({
-        addressType: response.AddressType || ''
-      });
-    } catch (error) {
-      console.error('Error loading address type:', error);
-      toast.error('Failed to load address type details');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const response = await getAddressTypeById(addressTypeId);
+    console.log('Loaded address type:', response); // Debug line
+    setFormData({
+      addressType: response.AddressType || ''
+    });
+  } catch (error) {
+    console.error('Error loading address type:', error);
+    toast.error('Failed to load address type details');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const getValidationError = (field, value) => {
     switch (field) {

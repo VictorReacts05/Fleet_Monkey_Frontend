@@ -21,6 +21,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import ForgotPassword from "./ForgotPassword";
 
 const LoginContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -252,7 +253,7 @@ const Login = () => {
                   size="small"
                 />
               }
-              label={<Typography variant="body2">Remember me</Typography>}
+              label="Remember me"
             />
             <Link to="/forgot-password" style={{ textDecoration: "none" }}>
               <Typography variant="body2" color="primary">
@@ -275,6 +276,31 @@ const Login = () => {
               "Sign In"
             )}
           </LoginButton>
+
+
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Don't have an account?{" "}
+            <Link to="./SignUp" style={{ textDecoration: "none" }}>
+              <Typography variant="body2" color="primary">
+                Sign Up
+              </Typography>
+            </Link>
+          </Typography>
+
+         {/*  <LoginButton
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="secondary"
+            disabled={loading}
+            sx={{ mt: 3 }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Sign Up"
+            )}
+          </LoginButton> */}
         </form>
 
         <Box sx={{ mt: 3, textAlign: "center" }}>

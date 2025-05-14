@@ -1,5 +1,5 @@
 import React from "react";
-import { FormControlLabel, Checkbox, styled } from "@mui/material";
+import { FormControlLabel, Checkbox, styled, Box } from "@mui/material";
 
 // Styled FormControlLabel for consistent height
 const CustomFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
@@ -17,20 +17,23 @@ const CustomFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   },
 }));
 
-const FormCheckbox = ({ label, name, checked, onChange, disabled = false }) => {
+const FormCheckbox = ({ label, name, checked, onChange, disabled = false, sx, ...props }) => {
   return (
-    <CustomFormControlLabel
-      control={
-        <Checkbox
-          checked={checked}
-          onChange={onChange}
-          name={name}
-          disabled={disabled}
-          color="primary"
-        />
-      }
-      label={label}
-    />
+    <Box sx={{ my: 0.5, ...sx }}>
+      <CustomFormControlLabel
+        control={
+          <Checkbox
+            checked={checked}
+            onChange={onChange}
+            name={name}
+            disabled={disabled}
+            color="primary"
+          />
+        }
+        label={label}
+        {...props}
+      />
+    </Box>
   );
 };
 

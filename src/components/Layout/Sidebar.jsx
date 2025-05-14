@@ -29,10 +29,12 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
+import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
 
 const drawerWidth = 240;
 
 const menuItems = [
+  { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" }, // Added Dashboard
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
   { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
@@ -50,6 +52,11 @@ const menuItems = [
     path: "/project-parameters",
   },
   {
+    text: "Roles",
+    icon: <PersonIcon />,
+    path: "/roles",
+  },
+  {
     text: "Subscriptions",
     icon: <SubscriptionsIcon />,
     path: "/subscriptions",
@@ -59,7 +66,6 @@ const menuItems = [
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
 ];
-
 
 const Sidebar = ({ open, variant, onClose }) => {
   const navigate = useNavigate();
@@ -80,13 +86,19 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  // Update to include both Sales RFQ and Purchase RFQ in the main menu
-  const mainMenuItems = menuItems.filter(item => 
-    item.text === "Sales RFQ" || item.text === "Purchase RFQ"
+  // Update to include Dashboard, Sales RFQ and Purchase RFQ in the main menu
+  const mainMenuItems = menuItems.filter(
+    (item) =>
+      item.text === "Dashboard" ||
+      item.text === "Sales RFQ" ||
+      item.text === "Purchase RFQ"
   );
-  
-  const mastersItems = menuItems.filter(item => 
-    item.text !== "Sales RFQ" && item.text !== "Purchase RFQ"
+
+  const mastersItems = menuItems.filter(
+    (item) =>
+      item.text !== "Dashboard" &&
+      item.text !== "Sales RFQ" &&
+      item.text !== "Purchase RFQ"
   );
 
   return (

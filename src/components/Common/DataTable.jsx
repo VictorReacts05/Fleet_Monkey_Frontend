@@ -93,10 +93,17 @@ const DataTable = ({
   };
 
   const renderCellContent = (row, column, rowIndex) => {
+    // If the column has a renderCell function, use it
+    if (column.renderCell) {
+      return column.renderCell({
+        row,
+        value: row[column.field || column.id],
+        rowIndex,
+      });
+    }
+
     // Handle Sr. No. column
     if (column.id === "srNo") {
-      // Fix the Sr. No. calculation to ensure it's always a number
-      // If page or rowsPerPage are undefined or NaN, default to 0 and 1 respectively
       const currentPage = typeof page === "number" && !isNaN(page) ? page : 0;
       const currentRowsPerPage =
         typeof rowsPerPage === "number" && !isNaN(rowsPerPage)
@@ -341,7 +348,6 @@ const DataTable = ({
         </Table>
       </TableContainer>
 
-      {/* Fix the TablePagination component */}
       {isPagination && (
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
@@ -361,7 +367,6 @@ const DataTable = ({
               onRowsPerPageChange(parseInt(e.target.value, 10));
           }}
           labelDisplayedRows={({ from, to, count }) => {
-            // Ensure from, to, and count are valid numbers
             const validFrom = isNaN(from) ? 1 : from;
             const validTo = isNaN(to) ? rows.length : to;
             const validCount = isNaN(count) ? rows.length : count;
