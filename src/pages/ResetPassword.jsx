@@ -56,6 +56,16 @@ const SubmitButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
+  fontSize: 60,
+  marginBottom: theme.spacing(2),
+  animation: "moveTruck 1s ease-in-out",
+  "@keyframes moveTruck": {
+    "0%": { transform: "translateX(-190px)" },
+    "100%": { transform: "translateX(0)" },
+  },
+}));
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -161,7 +171,7 @@ const ResetPassword = () => {
     <ResetPasswordContainer>
       <ResetPasswordPaper elevation={6}>
         <LogoBox>
-          <LocalShippingIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
+          <TruckIcon color="primary" />
           <Typography variant="h4" fontWeight="bold" color="primary">
             Fleet Monkey
           </Typography>
@@ -249,11 +259,13 @@ const ResetPassword = () => {
               disabled={loading}
               sx={{ mt: 3 }}
             >
+              <Link to="/" style={{ textDecoration: "none", color: "white" }}>
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
                 "Reset Password"
               )}
+              </Link>
             </SubmitButton>
           </form>
         ) : (
