@@ -146,7 +146,7 @@ const ResetPassword = () => {
 
       // Redirect to login page after 3 seconds
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
       }, 3000);
     } catch (error) {
       console.error("Error resetting password:", error);
@@ -258,14 +258,15 @@ const ResetPassword = () => {
               color="primary"
               disabled={loading}
               sx={{ mt: 3 }}
+              
             >
-              <Link to="/" style={{ textDecoration: "none", color: "white" }}>
+            
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
               ) : (
                 "Reset Password"
               )}
-              </Link>
+              
             </SubmitButton>
           </form>
         ) : (
