@@ -101,7 +101,6 @@ const CertificationList = () => {
     try {
       await deleteCertification(itemToDelete.id);
       toast.success("Certification deleted successfully");
-      showToast("Certification deleted successfully","success");
       loadCertifications();
     } catch (error) {
       toast.error("Failed to delete certification");
