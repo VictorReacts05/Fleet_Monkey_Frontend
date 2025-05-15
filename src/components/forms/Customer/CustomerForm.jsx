@@ -236,16 +236,12 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
       setLoading(true);
       if (customerId) {
         await updateCustomer(customerId, formData);
-        // toast.success("Customer updated successfully");
-        showToast(
-          "Customer updated successfully","success");
+        toast.success("Customer updated successfully");
+        
       } else {
         await createCustomer(formData);
-        // toast.success("Customer created successfully");
-        showToast(
-          "Customer created successfully",
-          "success"
-        );
+        toast.success("Customer created successfully");
+        
 
 
 

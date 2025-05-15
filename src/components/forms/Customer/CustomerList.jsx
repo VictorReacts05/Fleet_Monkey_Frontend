@@ -104,7 +104,6 @@ const CustomerList = () => {
     try {
       await deleteCustomer(itemToDelete.id);
       toast.success('Customer deleted successfully');
-      showToast('Customer deleted successfully', 'success');
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadCustomers();
