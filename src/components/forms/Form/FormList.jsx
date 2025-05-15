@@ -27,7 +27,16 @@ const FormList = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const columns = [
-    { field: "formName", headerName: "Form Name", flex: 1 }
+    { field: "formName", headerName: "Form Name", flex: 1 },
+    { 
+      field: "createdDateTime", 
+      headerName: "Created Date", 
+      flex: 1,
+      valueFormatter: (params) => {
+        if (!params.value) return "N/A";
+        return new Date(params.value).toLocaleDateString();
+      }
+    }
   ];
 
   const loadForms = async () => {
@@ -46,6 +55,7 @@ const FormList = () => {
       const formattedRows = forms.map((form) => ({
         id: form.FormID,
         formName: form.FormName || "N/A",
+        createdDateTime: form.CreatedDateTime,
         rowVersion: form.RowVersionColumn
       }));
 
@@ -120,12 +130,26 @@ const FormList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Forms..."
+            placeholder="Search forms..."
             sx={{
               width: "100%",
               marginLeft: "auto",
             }}
           />
+          <Tooltip title="Add Form">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 40,
+                width: 40,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 
@@ -156,7 +180,7 @@ const FormList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete this form?`}
+        message={`Are you sure you want to delete the form "${itemToDelete?.formName}"?`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />
