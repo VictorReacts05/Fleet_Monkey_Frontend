@@ -116,11 +116,11 @@ const CurrencyList = ({ userId }) => {
 
   const handleDelete = async (id) => {
     try {
-      const currency = rows.find((row) => row.id === id);
-      setItemToDelete(currency);
-      setDeleteDialogOpen(true);
+      await deleteCurrency(id); // personId comes from localStorage
+      toast.success('Currency deleted successfully');
+      loadCurrencies(); // reload list
     } catch (error) {
-      console.error('Error deleting currency:', error);
+      toast.error(`Failed to delete: ${error.message || error}`);
     }
   };
 

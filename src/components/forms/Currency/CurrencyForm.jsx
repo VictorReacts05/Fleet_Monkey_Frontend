@@ -30,11 +30,12 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       try {
         setLoading(true);
         const response = await getCurrencyById(currencyId);
-        
+        console.log('Currency response:', response);
         // Handle potential casing differences
+        const currency = response.data; // get nested data
         setFormData({
-          CurrencyName: response?.CurrencyName || response?.currencyName || '',
-          RowVersionColumn: response?.RowVersionColumn || response?.rowVersionColumn || ''
+        CurrencyName: currency.CurrencyName || '',
+        RowVersionColumn: currency.RowVersionColumn || ''
         });
       } catch (error) {
         toast.error('Failed to load currency details');
@@ -100,12 +101,11 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       if (currencyId) {
         transformedData.CurrencyID = currencyId;
         await updateCurrency(currencyId, transformedData);
-        // toast.success('Currency updated successfully');
-        showToast('Currency updated successfully', 'success');
+        toast.success('Currency updated successfully');
       } else {
         await createCurrency(transformedData);
-        // toast.success('Currency created successfully');
-        showToast('Currency created successfully', 'success');
+        toast.success('Currency created successfully');
+
       }
       
       if (onSave) onSave();
