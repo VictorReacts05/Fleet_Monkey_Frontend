@@ -90,7 +90,7 @@ const AddressTypeList = () => {
   const confirmDelete = async () => {
     try {
       await deleteAddressType(itemToDelete.id);
-      showToast("Address type deleted successfully","success");
+      toast.success("Address type deleted successfully"); 
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadAddressTypes();
