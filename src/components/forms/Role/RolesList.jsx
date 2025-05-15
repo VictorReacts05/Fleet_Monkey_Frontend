@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Box, Stack } from "@mui/material";
-import DataTable from "../../Common/DataTable";
-import { fetchRoles, updateRole } from "./RolesAPI";
-import { toast } from "react-toastify";
+// Update the imports at the top to include RolesModal
+import React, { useState, useEffect } from 'react';
+import { Typography, Box, Stack, Tooltip, IconButton } from '@mui/material';
+import { Add } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import DataTable from '../../Common/DataTable';
+import ConfirmDialog from '../../Common/ConfirmDialog';
+import FormCheckbox from '../../Common/FormCheckbox';
 import SearchBar from "../../Common/SearchBar";
-import FormCheckbox from "../../Common/FormCheckbox";
+import { fetchRoles, updateRole, deleteRole } from './RolesAPI';
+import RolesModal from './RolesModal'; // Add this import
 
 const RolesList = () => {
   const [rows, setRows] = useState([]);
@@ -156,6 +160,7 @@ const RolesList = () => {
     setPage(0);
   };
 
+  // Update the return statement to include the RolesModal component
   return (
     <Box>
       <Box
@@ -169,9 +174,23 @@ const RolesList = () => {
         <Typography variant="h5">Role Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar onSearch={handleSearch} placeholder="Search roles..." />
+          <Tooltip title="Add Role">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 40,
+                width: 40,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
-
+  
       <DataTable
         columns={columns}
         rows={rows}
@@ -185,7 +204,25 @@ const RolesList = () => {
         }}
         loading={loading}
         emptyMessage="No roles found"
-        hideActions={true}
+        hideActions={false} // Change to false to show edit/delete actions
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+  
+      {/* Add the RolesModal component */}
+      <RolesModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        roleId={selectedRoleId}
+        onSave={handleSave}
+      />
+  
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Confirm Delete"
+        message={`Are you sure you want to delete the role "${itemToDelete?.roleName}"?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );

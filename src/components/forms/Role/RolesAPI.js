@@ -127,12 +127,21 @@ export const deleteRole = async (id) => {
   }
 };
 
+// Add this function after the existing functions
+
 export const getRoleById = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    
+    if (response.data && response.data.data) {
+      return Array.isArray(response.data.data) 
+        ? response.data.data[0] 
+        : response.data.data;
+    }
+    
     return response.data;
   } catch (error) {
-    console.error("[ERROR] Failed to get role by ID:", {
+    console.error("[ERROR] Failed to get role:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
