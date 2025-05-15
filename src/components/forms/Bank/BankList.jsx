@@ -112,7 +112,7 @@ const BankList = () => {
     try {
       await deleteBank(itemToDelete.id);
       loadBanks();
-      showToast("Bank account deleted successfully","success");
+      toast.success("Bank account deleted successfully"); 
     } catch (error) {
       console.error("Delete error:", {
         message: error.message,

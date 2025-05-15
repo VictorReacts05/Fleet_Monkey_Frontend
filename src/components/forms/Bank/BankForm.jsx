@@ -181,11 +181,9 @@ const BankForm = ({ bankId, onSave, onClose }) => {
         // Include RowVersionColumn only for updates
         await updateBank(bankId, { ...apiData, RowVersionColumn: formData.RowVersionColumn });
         toast.success("Bank account updated successfully");
-        showToast("Bank account updated successfully","success");
       } else {
         await createBank(apiData);
         toast.success("Bank account created successfully");
-        showToast("Bank account created successfully","success");
       }
 
       onSave?.();
