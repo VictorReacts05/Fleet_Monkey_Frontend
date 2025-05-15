@@ -1,14 +1,11 @@
 import axios from "axios";
 
-// Update the API endpoint to match your backend structure
 const API_BASE_URL = "http://localhost:7000/api/country-Of-Origin";
 
-// Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem("token");
 };
 
-// Configure axios with auth headers
 const getAxiosConfig = () => {
   const token = getAuthToken();
   return {
@@ -46,21 +43,18 @@ export const createCountry = async (countryData) => {
   try {
     console.log("[DEBUG] Original countryData:", countryData);
 
-    // Get current user from localStorage for createdById
     const user = JSON.parse(localStorage.getItem("user")) || {};
     console.log("[DEBUG] Current user from localStorage:", user);
 
-    // Validate country name (check both possible field names)
     const countryName = countryData.countryOfOrigin || countryData.CountryOfOrigin;
     if (!countryName || typeof countryName !== "string") {
       throw new Error("Invalid or missing country name");
     }
 
-    // Prepare request data with correct field casing to match backend expectations
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      CountryOfOrigin: countryName, // Use capital letters to match backend model
-      CreatedByID: user.personId || 1, // Use capital letters to match backend model
+      CountryOfOrigin: countryName,
+      CreatedByID: user.personId || 1,
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };
@@ -97,11 +91,13 @@ export const createCountry = async (countryData) => {
 
 export const updateCountry = async (countryId, data) => {
   try {
+    console.log("[DEBUG] Update request data:", JSON.stringify(data, null, 2));
     const response = await axios.put(
       `${API_BASE_URL}/${countryId}`,
       data,
       getAxiosConfig()
     );
+    console.log("[DEBUG] Successful update response:", response.data);
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to update country:", {
@@ -115,10 +111,9 @@ export const updateCountry = async (countryId, data) => {
 
 export const deleteCountry = async (id, deletedById) => {
   try {
-    // If no deletedById is provided, get personId from localStorage
     if (!deletedById) {
       const user = JSON.parse(localStorage.getItem("user")) || {};
-      deletedById = user.personId || 1; // Fallback to 1 if no personId found
+      deletedById = user.personId || 1;
     }
 
     const requestData = { deletedById };
@@ -147,6 +142,21 @@ export const deleteCountry = async (id, deletedById) => {
       data: error.response?.data,
       requestBody: error.config?.data,
       headers: error.response?.headers,
+    });
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getCountryById = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    console.log("[DEBUG] getCountryById response:", response.data);
+    return response.data.data || response.data;
+  } catch (error) {
+    console.error("[ERROR] Failed to fetch country by ID:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
     });
     throw error.response?.data || error.message;
   }

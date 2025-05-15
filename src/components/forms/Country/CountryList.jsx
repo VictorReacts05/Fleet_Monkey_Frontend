@@ -124,7 +124,6 @@ const CountryList = () => {
     try {
       await deleteCountry(itemToDelete.id);
       toast.success("Country deleted successfully");
-      showToast("Country deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadCountries();
