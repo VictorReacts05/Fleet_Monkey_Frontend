@@ -154,8 +154,7 @@ const CityList = () => {
       await deleteCity(deletedItemId);
       
       // Show success message
-      // toast.success('City deleted successfully');
-      showToast('City deleted successfully',"success");
+      toast.success('City deleted successfully');
       
       // Clear the item to delete
       setItemToDelete(null);

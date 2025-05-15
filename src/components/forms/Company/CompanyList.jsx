@@ -135,7 +135,6 @@ const CompanyList = () => {
       setLoading(true);
       await deleteCompany(itemToDelete.id);
       toast.success("Company deleted successfully");
-      showToast("Company deleted successfully","success");
       loadCompanies();
     } catch (error) {
       console.error("Error deleting company:", error);

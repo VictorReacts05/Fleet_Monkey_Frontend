@@ -190,11 +190,9 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
         submitData.CompanyID = Number(companyId);
         await updateCompany(companyId, submitData);
         toast.success("Company updated successfully");
-        showToast("Company updated successfully", "success");
       } else {
         await createCompany(submitData);
         toast.success("Company created successfully");
-        showToast("Company created successfully", "success");
       }
       
       // Call both onSave and onClose to ensure the popup closes

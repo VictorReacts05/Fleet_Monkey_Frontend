@@ -163,11 +163,9 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       if (cityId) {
         await updateCity(cityId, cityData);
         toast.success("City updated successfully");
-        showToast("City updated successfully", "success");
       } else {
         await createCity(cityData);
         toast.success("City created successfully");
-        showToast("City created successfully","success");
       }
 
       onSave?.();
