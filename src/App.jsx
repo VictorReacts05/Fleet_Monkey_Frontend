@@ -14,6 +14,7 @@ import { ToastContainer } from 'react-toastify'; // Add this import for ToastCon
 import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
 import RolesList from './components/forms/Role/RolesList';
 import { FormRoleApproverList } from './components/forms/FormRoleApprover'; // Import the FormRoleApproverList component
+import FormList from './components/forms/Form/FormList'; // Add this import for FormList
 
 // To this
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
@@ -343,6 +344,16 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <FormRoleApproverList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Forms route here */}
+          <Route
+            path="/forms"
+            element={
+              <ProtectedRoute>
+                <FormList />
               </ProtectedRoute>
             }
           />

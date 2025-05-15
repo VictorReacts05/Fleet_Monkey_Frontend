@@ -31,6 +31,7 @@ import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
 import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // Added for Form Role Approver
+import DescriptionIcon from "@mui/icons-material/Description"; // Added for Forms
 
 const drawerWidth = 240;
 
@@ -47,6 +48,7 @@ const menuItems = [
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
   { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
+  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" }, // Added Forms
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   {
     text: "Project Parameters",
