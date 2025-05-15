@@ -30,8 +30,9 @@ import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
 import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // Added for Form Role Approver
-import DescriptionIcon from "@mui/icons-material/Description"; // Added for Forms
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // For Form Role Approver
+import DescriptionIcon from "@mui/icons-material/Description"; // For Forms
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"; // For Form Roles
 
 const drawerWidth = 240;
 
@@ -47,8 +48,9 @@ const menuItems = [
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
+  { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" }, // Add this line
   { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
-  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" }, // Added Forms
+  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   {
     text: "Project Parameters",

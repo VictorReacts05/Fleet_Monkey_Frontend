@@ -13,10 +13,9 @@ import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboar
 import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
 import RolesList from './components/forms/Role/RolesList';
-import { FormRoleApproverList } from './components/forms/FormRoleApprover'; // Import the FormRoleApproverList component
-import FormList from './components/forms/Form/FormList'; // Add this import for FormList
-
-// To this
+import { FormRoleApproverList } from './components/forms/FormRoleApprover';
+import FormList from './components/forms/Form/FormList';
+import { FormRoleList } from './components/forms/FormRole'; // Add this import
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
 import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
 import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
@@ -348,7 +347,7 @@ function AppContent() {
             }
           />
           
-          {/* Add the Forms route here */}
+          {/* Add the Forms route */}
           <Route
             path="/forms"
             element={
@@ -358,7 +357,17 @@ function AppContent() {
             }
           />
           
-          {/* Add the Roles route here */}
+          {/* Add the Form Roles route */}
+          <Route
+            path="/form-roles"
+            element={
+              <ProtectedRoute>
+                <FormRoleList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Roles route */}
           <Route
             path="/roles"
             element={
