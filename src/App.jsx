@@ -19,6 +19,8 @@ import { FormRoleList } from './components/forms/FormRole'; // Add this import
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
 import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
 import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
+// Import Supplier Quotation components
+import { SupplierQuotationList } from './components/forms/SupplierQuotation';
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -217,6 +219,38 @@ function AppContent() {
             }
           />
           <Route
+            path="/supplier-quotation"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/create"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/view/:id"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/edit/:id"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/customers"
             element={
               <ProtectedRoute>
@@ -376,6 +410,11 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Add Supplier Quotation routes */}
+          
+          
+          {/* Existing routes continue */}
         </Routes>
       </Box>
       <ToastNotification />

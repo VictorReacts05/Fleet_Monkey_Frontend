@@ -33,6 +33,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboar
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // For Form Role Approver
 import DescriptionIcon from "@mui/icons-material/Description"; // For Forms
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"; // For Form Roles
+import RequestQuote from '@mui/icons-material/RequestQuote'; // Added for Purchase RFQ
 
 const drawerWidth = 240;
 
@@ -40,6 +41,7 @@ const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" }, // Added Dashboard
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
+  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
   { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
@@ -97,14 +99,16 @@ const Sidebar = ({ open, variant, onClose }) => {
     (item) =>
       item.text === "Dashboard" ||
       item.text === "Sales RFQ" ||
-      item.text === "Purchase RFQ"
+      item.text === "Purchase RFQ" ||
+      item.text === "Supplier Quotation"
   );
 
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
       item.text !== "Sales RFQ" &&
-      item.text !== "Purchase RFQ"
+      item.text !== "Purchase RFQ" &&
+      item.text !== "Supplier Quotation"
   );
 
   return (
