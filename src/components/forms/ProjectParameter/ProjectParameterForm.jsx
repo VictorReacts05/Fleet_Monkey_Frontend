@@ -1,10 +1,10 @@
+// ProjectParameterForm.jsx
 import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormPage from "../../Common/FormPage";
-import { getParameterById } from "./projectParameterStorage";
+import { getParameterById, saveProjectParameter } from "./projectParameterStorage";
 import { toast } from "react-toastify";
-import { showToast } from "../../toastNotification";
 
 const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -24,15 +24,33 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
   const users = [
     { value: "1", label: "User 1" },
     { value: "2", label: "User 2" },
-    { value: "3", label: "User 3" },
+    { хочешь: "3", label: "User 3" },
   ];
 
   useEffect(() => {
+    console.log('Parameter ID:', parameterId); // Debug
     if (parameterId) {
       const parameter = getParameterById(parameterId);
+      console.log('Fetched parameter:', parameter); // Debug
       if (parameter) {
-        setFormData(parameter);
+        setFormData({
+          userId: parameter.userId || "",
+          parameterName: parameter.parameterName || "",
+          parameterValue: parameter.parameterValue || "",
+        });
+      } else {
+        setFormData({
+          userId: "",
+          parameterName: "",
+          parameterValue: "",
+        });
       }
+    } else {
+      setFormData({
+        userId: "",
+        parameterName: "",
+        parameterValue: "",
+      });
     }
   }, [parameterId]);
 
@@ -65,7 +83,6 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
 
   const handleSubmit = (e) => {
     e?.preventDefault();
-    console.log("Form submitted with data:", formData);
     setIsSubmitted(true);
 
     if (!validateForm()) {
@@ -74,33 +91,8 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
     }
 
     try {
-      const parameters = JSON.parse(
-        localStorage.getItem("projectParameters") || "[]"
-      );
-
-      if (parameterId) {
-        const updatedParameters = parameters.map((param) =>
-          param.id === parameterId ? { ...formData, id: parameterId } : param
-        );
-        localStorage.setItem(
-          "projectParameters",
-          JSON.stringify(updatedParameters)
-        );
-        // toast.success("Parameter updated successfully");
-        showToast("Parameter updated successfully", "success");
-      } else {
-        const newParameter = {
-          ...formData,
-          id: Date.now(),
-        };
-        localStorage.setItem(
-          "projectParameters",
-          JSON.stringify([...parameters, newParameter])
-        );
-        // toast.success("Parameter added successfully");
-        showToast("Parameter added successfully", "success");
-      }
-
+      saveProjectParameter({ ...formData, id: parameterId });
+      toast.success(parameterId ? "Parameter updated successfully" : "Parameter added successfully");
       onSave();
     } catch (error) {
       toast.error("Error saving parameter: " + error.message);
@@ -115,7 +107,6 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
       [name]: value,
     }));
 
-    // Clear error when user edits
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -130,31 +121,37 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <FormSelect
-        label="Select User *"
-        name="userId"
-        value={formData.userId}
-        onChange={handleChange}
-        options={users}
-        error={!!errors.userId}
-        helperText={errors.userId}
-      />
-      <FormInput
-        label="Parameter Name *"
-        name="parameterName"
-        value={formData.parameterName}
-        onChange={handleChange}
-        error={!!errors.parameterName}
-        helperText={errors.parameterName}
-      />
-      <FormInput
-        label="Parameter Value *"
-        name="parameterValue"
-        value={formData.parameterValue}
-        onChange={handleChange}
-        error={!!errors.parameterValue}
-        helperText={errors.parameterValue}
-      />
+      <div style={{ marginBottom: '12px' }}>
+        <FormSelect
+          label="Select User *"
+          name="userId"
+          value={formData.userId}
+          onChange={handleChange}
+          options={users}
+          error={!!errors.userId}
+          helperText={errors.userId}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Parameter Name *"
+          name="parameterName"
+          value={formData.parameterName}
+          onChange={handleChange}
+          error={!!errors.parameterName}
+          helperText={errors.parameterName}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Parameter Value *"
+          name="parameterValue"
+          value={formData.parameterValue}
+          onChange={handleChange}
+          error={!!errors.parameterValue}
+          helperText={errors.parameterValue}
+        />
+      </div>
     </FormPage>
   );
 };
