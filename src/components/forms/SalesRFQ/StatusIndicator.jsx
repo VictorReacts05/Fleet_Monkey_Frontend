@@ -171,33 +171,29 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
   };
 
   const handleClick = (event) => {
-    if (readOnly) return;
-    setAnchorEl(event.currentTarget);
+    // Only allow clicking if not read-only and not already approved
+    if (!readOnly && status !== "Approved") {
+      setAnchorEl(event.currentTarget);
+    }
   };
 
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  // Add these function definitions
   const handleApprove = () => {
-    console.log("Approve button clicked");
     updateStatus("Approved");
   };
 
-  const handleDisapprove = () => {
-    console.log("Disapprove button clicked");
-    updateStatus("Pending");
-  };
+  // Removed handleDisapprove function as it's no longer needed
 
-  // Determine chip color based on status
   const getChipProps = () => {
     switch (status) {
       case "Approved":
         return {
           color: "success",
           icon: <CheckCircle />,
-          clickable: !readOnly,
+          clickable: false, // Approved status is never clickable
         };
       case "Pending":
         return {
@@ -233,16 +229,15 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
           )
         }
         onClick={handleClick}
-        clickable={!readOnly}
+        clickable={chipProps.clickable}
         sx={{
-          cursor: readOnly ? "default" : "pointer",
+          cursor: chipProps.clickable ? "pointer" : "default",
           "& .MuiChip-label": {
             display: "flex",
             alignItems: "center",
           },
         }}
       />
-
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
         {status !== "Approved" && (
           <MenuItem onClick={handleApprove} disabled={loading}>
@@ -254,16 +249,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
             Approve
           </MenuItem>
         )}
-        {status === "Approved" && (
-          <MenuItem onClick={handleDisapprove} disabled={loading}>
-            {loading ? (
-              <CircularProgress size={16} sx={{ mr: 1 }} />
-            ) : (
-              <Cancel sx={{ mr: 1 }} color="error" />
-            )}
-            Disapprove
-          </MenuItem>
-        )}
+        {/* Removed the Disapprove menu item */}
       </Menu>
     </Box>
   );

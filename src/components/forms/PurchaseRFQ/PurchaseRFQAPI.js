@@ -339,73 +339,203 @@ export const fetchSalesRFQs = async () => {
 
 // Add or update these functions in your purchaserfqapi.js file
 
+// Update these functions in your API file
+
 // Fetch approval status for a Purchase RFQ
 export const fetchPurchaseRFQApprovalStatus = async (purchaseRFQId) => {
   try {
-    // Updated endpoint with correct query parameters
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+      
+    // Use query parameters instead of path parameters
     const response = await axios.get(
-      `http://localhost:7000/api/purchase-rfq-approval?PurchaseRFQID=${purchaseRFQId}&ApproverID=2`
+      `http://localhost:7000/api/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=2`,
+      { headers }
     );
-    
-    console.log("Approval status response:", response.data);
-    
-    // If we have data and it has records
-    if (response.data && response.data.data && response.data.data.length > 0) {
-      const approvalRecord = response.data.data[0];
-      return {
-        exists: true,
-        ApprovedYN: approvalRecord.ApprovedYN,
-        ApproverID: approvalRecord.ApproverID,
-        // Include any other fields you need
-      };
-    } else {
-      // No approval record exists yet
-      return {
-        exists: false,
-        ApprovedYN: null
-      };
-    }
+    return response.data;
   } catch (error) {
     console.error("Error fetching Purchase RFQ approval status:", error);
-    // Return a structured response even on error
-    return {
-      exists: false,
-      ApprovedYN: null,
-      error: error.message
-    };
+    throw error;
   }
 };
 
-// Update approval status for a Purchase RFQ
-export const updatePurchaseRFQApproval = async (purchaseRFQId, approved) => {
+// Update Purchase RFQ approval
+export const updatePurchaseRFQApproval = async (purchaseRFQId, isApproved = true) => {
   try {
-    const approvalData = {
-      PurchaseRFQID: purchaseRFQId,
-      ApproverID: 2,
-      ApprovedYN: approved ? 1 : 0,
-      FormName: "Purchase RFQ",
-      RoleName: "Purchase RFQ Approver",
-      UserID: 2,
-    };
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+    const userId = user?.personId || 2;
     
-    console.log("Sending approval data:", approvalData);
-    
-    const response = await axios.post(
-      "http://localhost:7000/api/purchase-rfq-approval",
-      approvalData
+    // First update the Purchase RFQ status
+    const statusResponse = await axios.put(
+      `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+      {
+        PurchaseRFQID: purchaseRFQId,
+        Status: isApproved ? "Approved" : "Pending"
+      },
+      { headers }
     );
-    
-    return response.data;
+
+    // Then create/update the approval record
+    const approvalData = {
+      PurchaseRFQID: parseInt(purchaseRFQId, 10),
+      ApproverID: 2,
+      ApprovedYN: isApproved ? 1 : 0,
+      ApproverDateTime: new Date().toISOString(),
+      CreatedByID: userId
+    };
+
+    // Try to create a new record first
+    try {
+      const approvalResponse = await axios.post(
+        `http://localhost:7000/api/purchase-rfq-approvals`,
+        approvalData,
+        { headers }
+      );
+      return approvalResponse.data;
+    } catch (postError) {
+      // If creation fails, try to update existing record
+      // Use the base endpoint without ID parameters
+      const approvalResponse = await axios.put(
+        `http://localhost:7000/api/purchase-rfq-approvals`,
+        approvalData,
+        { headers }
+      );
+      return approvalResponse.data;
+    }
   } catch (error) {
     console.error("Error updating Purchase RFQ approval:", error);
     throw error;
   }
 };
 
-// Approve a Purchase RFQ (alternative implementation if needed)
-export const approvePurchaseRFQ = async (purchaseRFQId) => {
-  return updatePurchaseRFQApproval(purchaseRFQId, true);
+// Approve or disapprove a Purchase RFQ
+// Update the approvePurchaseRFQ function to ensure Status is updated correctly
+export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+    const userId = user?.personId || 2;
+    
+    console.log(`API: Approving PurchaseRFQ ID: ${purchaseRFQId}, Approved: ${isApproved}`);
+    
+    // First, fetch the current PurchaseRFQ to get its SalesRFQID
+    try {
+      console.log(`API: Fetching PurchaseRFQ details to get SalesRFQID`);
+      const purchaseRFQResponse = await axios.get(
+        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        { headers }
+      );
+      
+      console.log(`API: PurchaseRFQ details:`, purchaseRFQResponse.data);
+      
+      // Extract the SalesRFQID from the response
+      let salesRFQId = null;
+      if (purchaseRFQResponse.data && purchaseRFQResponse.data.data) {
+        salesRFQId = purchaseRFQResponse.data.data.SalesRFQID;
+        console.log(`API: Found SalesRFQID: ${salesRFQId}`);
+      }
+      
+      // Set the status value based on isApproved
+      const statusValue = isApproved ? "Approved" : "Pending";
+      console.log(`API: Setting Status to: ${statusValue}`);
+      
+      // Prepare the update data with SalesRFQID included
+      const updateData = {
+        PurchaseRFQID: parseInt(purchaseRFQId, 10),
+        Status: statusValue,
+        SalesRFQID: salesRFQId // Include the SalesRFQID in the update
+      };
+      
+      console.log(`API: Update payload with SalesRFQID:`, updateData);
+      
+      // Update the PurchaseRFQ status
+      const statusResponse = await axios.put(
+        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        updateData,
+        { headers }
+      );
+      console.log(`API: Status update response:`, statusResponse.data);
+      
+      // Verify the status was updated correctly
+      if (statusResponse.data && statusResponse.data.data) {
+        console.log(`API: Updated Status in PurchaseRFQ table: ${statusResponse.data.data.Status}`);
+      }
+      
+      // Then create/update the approval record
+      const approvalData = {
+        PurchaseRFQID: parseInt(purchaseRFQId, 10),
+        ApproverID: 2,
+        ApprovedYN: isApproved ? 1 : 0,
+        ApproverDateTime: new Date().toISOString(),
+        CreatedByID: userId
+      };
+      
+      console.log(`API: Approval data:`, approvalData);
+      
+      // Check if approval record exists
+      console.log(`API: Checking for existing approval record`);
+      const checkResponse = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      console.log(`API: Check response:`, checkResponse);
+      
+      let approvalResponse;
+      if (checkResponse.data && checkResponse.data.length > 0) {
+        console.log(`API: Found existing approval record, updating`);
+        // Update existing record
+        approvalResponse = await axios.put(
+          `http://localhost:7000/api/purchase-rfq-approvals`,
+          approvalData,
+          { headers }
+        );
+        console.log(`API: Update approval response:`, approvalResponse.data);
+      } else {
+        console.log(`API: No existing approval record, creating new one`);
+        // Create new record
+        approvalResponse = await axios.post(
+          `http://localhost:7000/api/purchase-rfq-approvals`,
+          approvalData,
+          { headers }
+        );
+        console.log(`API: Create approval response:`, approvalResponse.data);
+      }
+      
+      return approvalResponse.data;
+      
+    } catch (fetchError) {
+      console.error(`API: Error fetching PurchaseRFQ details:`, fetchError);
+      console.error(`API: Error response:`, fetchError.response?.data);
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error("API: Error approving Purchase RFQ:", error);
+    console.error("API: Error details:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    throw error;
+  }
 };
+
+// Update Purchase RFQ approval
+/* export const updatePurchaseRFQApproval = async (purchaseRFQId, approvalData) => {
+  try {
+    const response = await axios.put(
+      `http://localhost:7000/api/purchase-rfq-approvals/${purchaseRFQId}/2`,
+      approvalData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating Purchase RFQ approval:", error);
+    throw error;
+  }
+}; */
 
 // Create a Purchase RFQ from a Sales RFQ
 export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {

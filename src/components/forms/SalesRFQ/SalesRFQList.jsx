@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Stack } from "@mui/material";
+import { Typography, Box, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import FormDatePicker from "../../Common/FormDatePicker";
 import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -30,7 +29,7 @@ const SalesRFQList = () => {
     { field: "series", headerName: "Series", flex: 1 },
     { field: "customerName", headerName: "Customer Name", flex: 1 },
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
-    /* { 
+    { 
       field: "status", 
       headerName: "Status", 
       flex: 1,
@@ -43,7 +42,7 @@ const SalesRFQList = () => {
         
         return <Chip label={status} color={color} size="small" />;
       }
-    }, */
+    },
     {
       field: "hasPurchaseRFQ",
       headerName: "Purchase RFQ",
@@ -130,14 +129,15 @@ const SalesRFQList = () => {
         const salesRFQId = Number(salesRFQ.SalesRFQID);
         const hasPurchaseRFQ = purchaseRFQs.includes(salesRFQId);
         
-        console.log(`SalesRFQ ID ${salesRFQId} has purchase RFQ: ${hasPurchaseRFQ}`);
+        // Log the status to debug
+        console.log(`SalesRFQ ID ${salesRFQId} status:`, salesRFQ.Status);
         
         return {
           id: salesRFQId,
           series: salesRFQ.Series || "N/A",
           customerName: salesRFQ.CustomerName || "N/A",
           supplierName: salesRFQ.SupplierName || "N/A",
-          status: salesRFQ.Status || "Pending",
+          status: salesRFQ.Status || "Pending", // Make sure this matches the API field name
           hasPurchaseRFQ: hasPurchaseRFQ,
           isEditable: !hasPurchaseRFQ,
           isDeletable: !hasPurchaseRFQ
@@ -213,18 +213,6 @@ const SalesRFQList = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSave = () => {
-    loadSalesRFQs();
-  };
-
-  const handleFromDateChange = (date) => {
-    setFromDate(date);
-  };
-
-  const handleToDateChange = (date) => {
-    setToDate(date);
   };
 
   const handleSearch = (term) => {

@@ -28,28 +28,41 @@ const getAuthHeader = () => {
 };
 
 // Fetch all SalesRFQs
-export const fetchSalesRFQs = async (
-  page = 1,
-  limit = 10,
-  fromDate = null,
-  toDate = null,
-  searchTerm = ""
-) => {
+export const fetchSalesRFQs = async (page = 1, pageSize = 10, fromDate = null, toDate = null) => {
   try {
-    const { headers } = getAuthHeader();
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
 
-    let params = new URLSearchParams();
-    params.append("page", page);
-    params.append("limit", limit);
+    let url = `http://localhost:7000/api/sales-rfq?page=${page}&pageSize=${pageSize}`;
+    
+    if (fromDate) {
+      url += `&fromDate=${fromDate}`;
+    }
+    
+    if (toDate) {
+      url += `&toDate=${toDate}`;
+    }
 
-    if (fromDate) params.append("fromDate", fromDate);
-    if (toDate) params.append("toDate", toDate);
-    if (searchTerm) params.append("search", searchTerm);
-
-    const response = await axios.get(`${API_BASE_URL}?${params.toString()}`, {
-      headers,
-    });
-    return response.data;
+    const response = await axios.get(url, { headers });
+    console.log("Raw API response for SalesRFQs:", response.data);
+    
+    if (response.data && response.data.data) {
+      // Make sure each item has a Status field
+      const processedData = response.data.data.map(item => ({
+        ...item,
+        // Ensure Status is capitalized correctly if it exists in the API response
+        Status: item.Status || item.status || "Pending"
+      }));
+      
+      return {
+        data: processedData,
+        totalRecords: response.data.totalRecords || processedData.length
+      };
+    }
+    
+    return { data: [], totalRecords: 0 };
   } catch (error) {
     console.error("Error fetching SalesRFQs:", error);
     throw error;

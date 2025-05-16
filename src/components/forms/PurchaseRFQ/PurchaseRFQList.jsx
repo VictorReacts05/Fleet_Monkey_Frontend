@@ -4,8 +4,6 @@ import {
   Box,
   Button,
   Stack,
-  Tooltip,
-  IconButton,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,9 +14,9 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
-import { Add, Visibility, Delete } from "@mui/icons-material";
 import axios from "axios";
 import PurchaseRFQForm from "./PurchaseRFQForm";
+import { Chip } from "@mui/material";
 
 const getHeaders = () => {
   return {
@@ -31,8 +29,6 @@ const getHeaders = () => {
 const PurchaseRFQList = () => {
   const [purchaseRFQs, setPurchaseRFQs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRFQ, setSelectedRFQ] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -41,6 +37,7 @@ const PurchaseRFQList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
 
+  // Update the columns definition to include status
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
     {
@@ -49,10 +46,26 @@ const PurchaseRFQList = () => {
       flex: 1,
       valueGetter: (params) => params.row.CustomerName || "-",
     },
+    { 
+      field: "Status", 
+      headerName: "Status", 
+      flex: 1,
+      renderCell: (params) => {
+        const status = params.value || 'Pending';
+        let color = 'default';
+        
+        if (status === 'Approved') color = 'success';
+        else if (status === 'Rejected') color = 'error';
+        else if (status === 'Pending') color = 'warning';
+        
+        return <Chip label={status} color={color} size="small" />;
+      }
+    },
   ];
 
   const navigate = useNavigate();
 
+  // Update the fetchPurchaseRFQs function to include status
   const fetchPurchaseRFQs = async () => {
     try {
       setLoading(true);
@@ -61,40 +74,28 @@ const PurchaseRFQList = () => {
         "http://localhost:7000/api/purchase-rfq",
         { headers }
       );
-
+  
       console.log("Purchase RFQs API response:", response);
-      console.log("Purchase RFQs data structure:", response.data);
-
+  
+      let purchaseRFQData = [];
+      
       if (Array.isArray(response.data)) {
-        console.log("Response is an array with length:", response.data.length);
-        if (response.data.length > 0) {
-          console.log("First item properties:", Object.keys(response.data[0]));
-          console.log(
-            "First item PurchaseRFQID:",
-            response.data[0].PurchaseRFQID
-          );
-        }
-        setPurchaseRFQs(response.data);
+        purchaseRFQData = response.data;
       } else if (response.data && Array.isArray(response.data.data)) {
-        console.log(
-          "Response has data property with length:",
-          response.data.data.length
-        );
-        if (response.data.data.length > 0) {
-          console.log(
-            "First item properties:",
-            Object.keys(response.data.data[0])
-          );
-          console.log(
-            "First item PurchaseRFQID:",
-            response.data.data[0].PurchaseRFQID
-          );
-        }
-        setPurchaseRFQs(response.data.data);
+        purchaseRFQData = response.data.data;
       } else {
         console.error("Unexpected API response format:", response.data);
-        setPurchaseRFQs([]);
+        purchaseRFQData = [];
       }
+      
+      // Map the data to include status
+      const mappedData = purchaseRFQData.map(rfq => ({
+        ...rfq,
+        id: rfq.PurchaseRFQID,
+        Status: rfq.Status || 'Pending'
+      }));
+      
+      setPurchaseRFQs(mappedData);
     } catch (error) {
       console.error("Error fetching Purchase RFQs:", error);
       toast.error("Failed to load Purchase RFQs");
@@ -115,10 +116,6 @@ const PurchaseRFQList = () => {
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(0);
-  };
-
-  const handleCreateNew = () => {
-    navigate("/purchase-rfq/create");
   };
 
   const handleView = (id) => {
@@ -162,30 +159,22 @@ const PurchaseRFQList = () => {
     }
   };
 
-  const handleFromDateChange = (date) => {
-    setFromDate(date);
-  };
-
-  const handleToDateChange = (date) => {
-    setToDate(date);
-  };
-
   const handleSearch = (term) => {
     setSearchTerm(term);
     setPage(0);
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 3,
+          mb: 2,
         }}
       >
-        <Typography variant="h5">Purchase RFQs</Typography>
+        <Typography variant="h5">Purchase RFQ Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}

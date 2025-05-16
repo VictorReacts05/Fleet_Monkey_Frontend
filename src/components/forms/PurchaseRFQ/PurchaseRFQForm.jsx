@@ -4,10 +4,6 @@ import {
   Box,
   Typography,
   Button,
-  FormControlLabel,
-  Checkbox,
-  Menu,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,15 +19,10 @@ import {
   Paper,
   useTheme,
   alpha,
-  IconButton,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
-  createPurchaseRFQ,
-  updatePurchaseRFQ,
   getPurchaseRFQById,
   fetchSalesRFQs,
-  approvePurchaseRFQ,
   fetchPurchaseRFQApprovalStatus,
   updatePurchaseRFQApproval,
   fetchServiceTypes,
@@ -39,13 +30,10 @@ import {
   fetchCurrencies,
 } from "./purchaserfqapi";
 import { toast } from "react-toastify";
-import FormInput from "../../Common/FormInput";
-import FormSelect from "../../Common/FormSelect";
-import FormDatePicker from "../../Common/FormDatePicker";
 import FormPage from "../../Common/FormPage";
-import ParcelTab from "../SalesRFQ/ParcelTab";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import StatusIndicator from "./StatusIndicator";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -378,28 +366,6 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId, loadApprovalStatus]);
 
-  const handleMenuOpen = (event) => {
-    setMenuAnchor(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
-  };
-
-  const handleApprove = () => {
-    setConfirmAction("approve");
-    setConfirmMessage("Are you sure you want to approve this Purchase RFQ?");
-    setConfirmDialogOpen(true);
-    handleMenuClose();
-  };
-
-  const handleDisapprove = () => {
-    setConfirmAction("disapprove");
-    setConfirmMessage("Are you sure you want to disapprove this Purchase RFQ?");
-    setConfirmDialogOpen(true);
-    handleMenuClose();
-  };
-
   const handleConfirmAction = async () => {
     try {
       setLoading(true);
@@ -430,6 +396,14 @@ const PurchaseRFQForm = ({
     setConfirmDialogOpen(false);
   };
 
+  // In the PurchaseRFQForm component, add this function if it doesn't exist
+  const handleStatusChange = (newStatus) => {
+    setFormData(prev => ({
+      ...prev,
+      Status: newStatus
+    }));
+  };
+  
   return (
     <FormPage
       title={
@@ -447,59 +421,36 @@ const PurchaseRFQForm = ({
           </Typography>
           {purchaseRFQId && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              {approvalStatus === "approved" ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    backgroundColor: "#e6f7e6",
-                    color: "#2e7d32",
-                    borderRadius: "4px",
-                    padding: "6px 12px",
-                    fontWeight: "medium",
-                    mr: 2,
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  backgroundColor: formData.Status === "Approved" ? "#e6f7e6" : "#ffebee",
+                  color: formData.Status === "Approved" ? "#2e7d32" : "#d32f2f",
+                  borderRadius: "4px",
+                  padding: "6px 12px",
+                  fontWeight: "medium",
+                }}
+              >
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    marginRight: "8px",
+                    color: formData.Status === "Approved" ? "#2e7d32" : "#d32f2f" 
                   }}
                 >
-                  <Typography variant="body2">Status: Approved</Typography>
-                </Box>
-              ) : approvalStatus === "disapproved" ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    backgroundColor: "#ffebee",
-                    color: "#d32f2f",
-                    borderRadius: "4px",
-                    padding: "6px 12px",
-                    fontWeight: "medium",
-                    mr: 2,
+                  Status:{" "}
+                </Typography>
+                <StatusIndicator
+                  status={formData.Status}
+                  purchaseRFQId={purchaseRFQId}
+                  onStatusChange={(newStatus) => {
+                    console.log("Status changed to:", newStatus);
+                    handleStatusChange(newStatus);
                   }}
-                >
-                  <Typography variant="body2">Status: Disapproved</Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={handleMenuOpen}
-                    endIcon={<MoreVertIcon />}
-                    sx={{ mr: 2 }}
-                  >
-                    Status
-                  </Button>
-                  <Menu
-                    id="purchase-rfq-menu"
-                    anchorEl={menuAnchor}
-                    keepMounted
-                    open={Boolean(menuAnchor)}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem onClick={handleApprove}>Approve</MenuItem>
-                    <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
-                  </Menu>
-                </Box>
-              )}
+                  readOnly={formData.Status === "Approved"}
+                />
+              </Box>
             </Box>
           )}
         </Box>
