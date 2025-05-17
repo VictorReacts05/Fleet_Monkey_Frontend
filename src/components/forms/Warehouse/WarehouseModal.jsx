@@ -1,29 +1,167 @@
-export const createWarehouse = async (warehouseData) => {
-  try {
-    const { headers, personId } = getAuthHeader();
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box } from '@mui/material';
+import FormInput from '../../Common/FormInput';
+import { createWarehouse, updateWarehouse, fetchWarehouses } from './WarehouseAPI';
+import { toast } from 'react-toastify';
 
-    if (!personId) {
-      throw new Error("User authentication required: personId is missing for createdByID");
-    }
+const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => {
+  const [formData, setFormData] = useState({
+    warehouseName: '',
+  });
+  const [errors, setErrors] = useState({
+    warehouseName: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const apiData = {
-      ...warehouseData,
-      createdByID: personId,
-      createdById: personId,
+  useEffect(() => {
+    const loadWarehouse = async () => {
+      if (!warehouseId) {
+        setFormData({ warehouseName: '' });
+        setErrors({ warehouseName: '' });
+        return;
+      }
+
+      try {
+        setLoading(true);
+        if (initialData) {
+          setFormData({
+            warehouseName: initialData.warehouseName || '',
+          });
+        } else {
+          const response = await fetchWarehouses(1, 100);
+          const warehouses = response.data || [];
+          const warehouse = warehouses.find(w => w.WarehouseID === warehouseId);
+
+          if (warehouse) {
+            setFormData({
+              warehouseName: warehouse.WarehouseName || '',
+            });
+          } else {
+            toast.error('Warehouse not found');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading warehouse:', error);
+        toast.error('Failed to load warehouse details');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    console.log("Creating warehouse with data:", apiData);
-
-    const response = await axios.post(API_BASE_URL, apiData, { headers });
-    return response.data;
-  } catch (error) {
-    console.error("Error creating warehouse:", error);
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-      const errorMessage = error.response.data.message || error.response.data.error || 'Failed to create warehouse';
-      throw new Error(errorMessage);
+    if (open) {
+      loadWarehouse();
     }
-    throw new Error(error.message || 'An unexpected error occurred');
-  }
+  }, [warehouseId, open, initialData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors(prevState => ({
+        ...prevState,
+        [name]: '',
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.warehouseName.trim()) {
+      newErrors.warehouseName = 'Warehouse Name is required';
+    } else if (formData.warehouseName.length < 3) {
+      newErrors.warehouseName = 'Warehouse Name must be at least 3 characters long';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitted(true);
+
+    console.log('Form data on submit:', formData);
+
+    if (!validateForm()) {
+      console.log('Validation failed, errors:', errors);
+      toast.error('Please fix the form errors');
+      return;
+    }
+
+    const { headers, personId } = getAuthHeader();
+    if (!headers.Authorization || !personId) {
+      toast.error('You must be logged in to save a warehouse');
+      return;
+    }
+
+    console.log('Validation passed, proceeding with API call');
+
+    try {
+      setLoading(true);
+      if (warehouseId) {
+        const updateData = {
+          WarehouseID: warehouseId,
+          WarehouseName: formData.warehouseName,
+        };
+        console.log('Updating warehouse with data:', updateData);
+        await updateWarehouse(warehouseId, updateData);
+        toast.success('Warehouse updated successfully');
+      } else {
+        console.log('Creating warehouse with data:', { WarehouseName: formData.warehouseName });
+        await createWarehouse({
+          WarehouseName: formData.warehouseName,
+        });
+        toast.success('Warehouse created successfully');
+      }
+
+      setLoading(false);
+      onClose();
+      setTimeout(() => onSave(), 300);
+    } catch (error) {
+      console.error('Error saving warehouse:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      if (errorMessage.toLowerCase().includes('warehouse name')) {
+        setErrors({ warehouseName: errorMessage });
+      } else {
+        toast.error('Failed to save warehouse: ' + errorMessage);
+      }
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{warehouseId ? 'Edit Warehouse' : 'Add Warehouse'}</DialogTitle>
+      <form onSubmit={handleSubmit}>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <FormInput
+              label="Warehouse Name"
+              name="warehouseName"
+              value={formData.warehouseName}
+              onChange={handleChange}
+              fullWidth
+              disabled={loading}
+              error={isSubmitted && !!errors.warehouseName}
+              helperText={isSubmitted && errors.warehouseName}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button type="submit" variant="contained" color="primary" disabled={loading}>
+            {warehouseId ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
 };
+
+export default WarehouseModal;
