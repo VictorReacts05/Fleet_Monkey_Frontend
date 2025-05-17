@@ -14,39 +14,35 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
-    // Dynamic background color based on theme mode
     backgroundColor:
       theme.palette.mode === "light"
-        ? theme.palette.background.paper // Light mode: white or paper background
-        : theme.palette.grey[800], // Dark mode: dark gray (similar to #595959)
+        ? theme.palette.background.paper
+        : theme.palette.grey[800],
     "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
-      // Dynamic text color
       color:
         theme.palette.mode === "light"
-          ? theme.palette.text.primary // Light mode: dark text
-          : theme.palette.common.white, // Dark mode: white text
+          ? theme.palette.text.primary
+          : theme.palette.common.white,
     },
     "& fieldset": {
-      // Dynamic border color
       borderColor:
         theme.palette.mode === "light"
-          ? theme.palette.grey[400] // Light mode: lighter border
-          : "#8a8a8a", // Dark mode: keep as is
+          ? theme.palette.grey[400]
+          : "#8a8a8a",
     },
     "&:hover fieldset": {
       borderColor:
         theme.palette.mode === "light"
-          ? theme.palette.grey[600] // Light mode: darker on hover
-          : "#a0a0a0", // Dark mode: keep as is
+          ? theme.palette.grey[600]
+          : "#a0a0a0",
     },
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main, // Same for both modes
+      borderColor: theme.palette.primary.main,
     },
     "& input:-webkit-autofill": {
-      // Dynamic autofill background and text color
       boxShadow: `0 0 0 1000px ${
         theme.palette.mode === "light"
           ? theme.palette.background.paper
@@ -61,20 +57,25 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   },
   "& .MuiInputLabel-root": {
     top: "-6px",
-    // Dynamic label color
     color:
       theme.palette.mode === "light"
-        ? theme.palette.text.secondary // Light mode: grey label
-        : "#dcdcdc", // Dark mode: light grey
+        ? theme.palette.text.secondary
+        : "#dcdcdc",
     "&.MuiInputLabel-shrink": {
       top: 0,
+    },
+    "&.Mui-error": {
+      color: theme.palette.error.main, // Apply red color when error is true
+    },
+    "&.Mui-focused": {
+      color: theme.palette.primary.main,
     },
   },
   "& .MuiFormHelperText-root": {
     marginTop: 0,
     marginBottom: 0,
     height: "auto",
-    color: theme.palette.error.main, // Error color remains the same
+    color: theme.palette.error.main,
   },
 }));
 
@@ -97,7 +98,7 @@ const FormInput = ({
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography
             variant="body2"
-            color="text.secondary"
+            color={hasError ? "error.main" : "text.secondary"} // Turn red on error
             fontWeight="medium"
           >
             {label}
