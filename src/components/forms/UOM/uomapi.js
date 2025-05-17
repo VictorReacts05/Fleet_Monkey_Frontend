@@ -2,22 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:7000/api/uoms';
 
-// Helper function to get personId from localStorage
-const getPersonId = () => {
-  try {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user && user.personId) {
-      console.log("Found personId in localStorage:", user.personId);
-      return user.personId;
-    }
-    console.warn("No personId found in localStorage, using default");
-    return 1015;
-  } catch (error) {
-    console.error("Error getting personId from localStorage:", error);
-    return 1015; 
-  }
-};
-
 export const fetchUOMs = async () => {
   try {
     const response = await axios.get(API_URL);
@@ -49,21 +33,19 @@ export const getUOMById = async (id) => {
 
 export const createUOM = async (uomData) => {
   try {
-    // Get personId from localStorage
-    const personId = getPersonId();
-    
     // Log the data being sent to help diagnose issues
     console.log("Creating UOM with data:", uomData);
     console.log("UOM value:", uomData.UOM);
     console.log("UOM value type:", typeof uomData.UOM);
 
-    // Fix: Use UOM (uppercase) in the payload to match backend expectations
-    const payload = {
-      UOM: uomData.UOM.trim(),
-      CreatedByID: personId
-    };
+    // Fix: Use UOM (uppercase) instead of uom (lowercase)
+    const payload = JSON.stringify({
+      uom: uomData.UOM.trim(),
+      createdByID: 1015
+    });
 
-    console.log("Sending payload:", payload);
+    console.log("Sending stringified JSON:", payload);
+    console.log("Content-Type:", "application/json");
 
     const response = await axios.post(API_URL, payload, {
       headers: {
@@ -75,14 +57,6 @@ export const createUOM = async (uomData) => {
     return response.data;
   } catch (error) {
     console.error("Error creating UOM:", error);
-    // Check for duplicate key error
-    if (error.response?.data?.message?.includes('Violation of UNIQUE KEY constraint')) {
-      // Create a more user-friendly error message
-      const customError = new Error(`A UOM with the name "${uomData.UOM}" already exists. Please use a different name.`);
-      customError.isUniqueConstraintError = true;
-      throw customError;
-    }
-    
     // Log more detailed error information if available
     if (error.response) {
       console.error("Response data:", error.response.data);
@@ -95,22 +69,20 @@ export const createUOM = async (uomData) => {
 
 export const updateUOM = async (id, uomData) => {
   try {
-    // Get personId from localStorage
-    const personId = getPersonId();
-    
     // Log the data being sent to help diagnose issues
     console.log(`Updating UOM ${id} with data:`, uomData);
     console.log("UOM value for update:", uomData.UOM);
     console.log("UOM value type:", typeof uomData.UOM);
 
     // Use the correct case for UOM property (uppercase)
-    const payload = {
-      UOM: uomData.UOM.trim(),
-      ModifiedByID: personId // Use ModifiedByID for updates
-    };
+    const payload = JSON.stringify({
+      uom: uomData.UOM.trim(),
+      createdByID: 1015
+    });
 
-    console.log("Sending payload for update:", payload);
+    console.log("Sending JSON payload for update:", payload);
     console.log("Update URL:", `${API_URL}/${id}`);
+    console.log("Content-Type:", "application/json");
 
     const response = await axios.put(`${API_URL}/${id}`, payload, {
       headers: {
@@ -134,22 +106,18 @@ export const updateUOM = async (id, uomData) => {
 
 export const deleteUOM = async (id) => {
   try {
-    // Get personId from localStorage
-    const personId = getPersonId();
-    
     // Add more detailed logging
     console.log(`Attempting to delete UOM with ID: ${id}`);
     console.log("ID type:", typeof id);
     
     // Format the payload exactly as the API expects
-    const payload = {
-      UOMID: parseInt(id), // Ensure it's an integer
-      DeletedByID: personId
-    };
+    const payload = JSON.stringify({
+      uomID: parseInt(id), // Ensure it's an integer
+      deletedByID: 1015
+    });
     
-    console.log("Delete payload:", payload);
     
-    // Send the payload directly (not stringified)
+    // Send the stringified JSON payload
     const response = await axios.delete(`${API_URL}/${id}`, {
       data: payload,
       headers: {

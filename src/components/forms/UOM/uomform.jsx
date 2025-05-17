@@ -71,7 +71,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       console.error("Failed to load UOM:", error);
       toast.error("Failed to load UOM: " + error.message);
     }
-  }; 
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -86,10 +86,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    if(e){
-      e.preventDefault();
-    }
+  const handleSubmit = async () => {
     if (!validateForm()) {
       toast.error("Please fix the form errors");
       return;
