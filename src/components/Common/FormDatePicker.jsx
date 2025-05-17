@@ -10,29 +10,51 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     padding: 0,
     borderRadius: theme.shape.borderRadius * 1.5,
     boxSizing: "border-box",
-    backgroundColor: "#595959", // Your custom background
-
-  },"& input": {
+    // Dynamic background color based on theme mode
+    backgroundColor:
+      theme.palette.mode === "light"
+        ? theme.palette.background.paper // Light mode: white or paper background
+        : theme.palette.grey[800], // Dark mode: dark gray (similar to #595959)
+    "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
-      color: theme.palette.common.white,
+      // Dynamic text color
+      color:
+        theme.palette.mode === "light"
+          ? theme.palette.text.primary // Light mode: dark text
+          : theme.palette.common.white, // Dark mode: white text
     },
     "& fieldset": {
-      borderColor: "#8a8a8a",
+      // Dynamic border color
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[400] // Light mode: lighter border
+          : "#8a8a8a", // Dark mode: keep as is
     },
     "&:hover fieldset": {
-      borderColor: "#a0a0a0",
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[600] // Light mode: darker on hover
+          : "#a0a0a0", // Dark mode: keep as is
     },
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main,
+      borderColor: theme.palette.primary.main, // Same for both modes
     },
     // Autofill override
     "& input:-webkit-autofill": {
-      boxShadow: "0 0 0 1000px #595959 inset !important",
-      WebkitTextFillColor: "white !important",
+      boxShadow: `0 0 0 1000px ${
+        theme.palette.mode === "light"
+          ? theme.palette.background.paper
+          : theme.palette.grey[800]
+      } inset !important`,
+      WebkitTextFillColor:
+        theme.palette.mode === "light"
+          ? theme.palette.text.primary
+          : "white !important",
       transition: "background-color 9999s ease-out 0s",
     },
+  },
   "& .MuiInputBase-input": {
     height: "100%",
     padding: "0 14px",
@@ -41,14 +63,23 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     alignItems: "center",
   },
   "& .MuiInputAdornment-root": {
-    marginRight: 8, // adjust icon spacing
+    marginRight: 8, // Adjust icon spacing
   },
   "& .MuiSvgIcon-root": {
-    fontSize: "20px", // optional: scale down the calendar icon
+    fontSize: "20px",
+    // Dynamic icon color
+    color:
+      theme.palette.mode === "light"
+        ? theme.palette.text.secondary // Light mode: grey icon
+        : theme.palette.common.white, // Dark mode: white icon
   },
   "& .MuiInputLabel-root": {
     top: "-6px",
-    color: "#dcdcdc",
+    // Dynamic label color
+    color:
+      theme.palette.mode === "light"
+        ? theme.palette.text.secondary // Light mode: grey label
+        : "#dcdcdc", // Dark mode: light grey
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
@@ -57,6 +88,8 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     marginTop: 0,
     marginBottom: 0,
     height: 0,
+    // Dynamic helper text color (for errors)
+    color: theme.palette.error.main,
   },
 }));
 
@@ -90,7 +123,6 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
             InputLabelProps: {
               shrink: true,
             },
-            // Use the custom styled component
             InputProps: {
               sx: {
                 height: 38,
@@ -102,7 +134,6 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
               }
             }
           },
-          // Style the calendar popup button to match height
           openPickerButton: {
             sx: {
               height: 38,
