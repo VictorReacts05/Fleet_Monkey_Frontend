@@ -2,32 +2,22 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:7000/api/warehouses";
 
-// Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("user")
-    );
+    console.log("Raw user data from localStorage:", localStorage.getItem("user"));
     console.log("Parsed user object:", user);
 
     if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
+      console.warn("User authentication data not found, proceeding without auth token");
       return { headers: {}, personId: null };
     }
 
-    // Try different possible keys for personId
     const personId = user.personId || user.id || user.userId || null;
     console.log("Extracted personId:", personId);
 
     if (!personId) {
-      console.warn(
-        "No personId found in user object. Available keys:",
-        Object.keys(user)
-      );
+      console.warn("No personId found in user object. Available keys:", Object.keys(user));
     }
 
     return {
@@ -42,7 +32,6 @@ const getAuthHeader = () => {
   }
 };
 
-// Fetch all warehouses
 export const fetchWarehouses = async (
   page = 1,
   limit = 10,
@@ -62,20 +51,18 @@ export const fetchWarehouses = async (
   }
 };
 
-// Create a new warehouse
 export const createWarehouse = async (warehouseData) => {
   try {
     const { headers, personId } = getAuthHeader();
 
     if (!personId) {
-      throw new Error("personId is required for createdByID");
+      throw new Error("User authentication required: personId is missing for createdByID");
     }
 
-    // Prepare data with createdByID
     const apiData = {
       ...warehouseData,
       createdByID: personId,
-      createdById: personId, // Include both to handle backend naming
+      createdById: personId,
     };
 
     console.log("Creating warehouse with data:", apiData);
@@ -87,31 +74,30 @@ export const createWarehouse = async (warehouseData) => {
     if (error.response) {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
+      const errorMessage = error.response.data.message || error.response.data.error || 'Failed to create warehouse';
+      throw new Error(errorMessage);
     }
-    throw error.response?.data || error.message;
+    throw new Error(error.message || 'An unexpected error occurred');
   }
 };
 
-// Update an existing warehouse
 export const updateWarehouse = async (warehouseId, data) => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.put(`${API_BASE_URL}/${warehouseId}`, data, {
       headers,
     });
-    return response.data; // Return response.data for consistency
+    return response.data;
   } catch (error) {
     console.error("Error updating warehouse:", error);
     throw error.response?.data || error.message;
   }
 };
 
-// Delete a warehouse
 export const deleteWarehouse = async (id, personId = null) => {
   try {
     const { headers, personId: storedPersonId } = getAuthHeader();
 
-    // Use provided personId or fallback to storedPersonId
     const deletedByID = personId || storedPersonId;
     console.log("deleteWarehouse - Using deletedByID:", deletedByID);
 
@@ -123,7 +109,7 @@ export const deleteWarehouse = async (id, personId = null) => {
 
     const requestBody = {
       deletedByID,
-      deletedById: deletedByID, // Include both to handle backend naming
+      deletedById: deletedByID,
     };
 
     console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
@@ -152,7 +138,6 @@ export const deleteWarehouse = async (id, personId = null) => {
   }
 };
 
-// Get a warehouse by ID
 export const getWarehouseById = async (id) => {
   try {
     const { headers } = getAuthHeader();

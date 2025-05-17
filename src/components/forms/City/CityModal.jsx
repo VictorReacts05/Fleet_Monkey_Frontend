@@ -222,7 +222,6 @@ const CityModal = ({ open, onClose, cityId, onSave, initialData }) => {
               name="cityName"
               value={formData.cityName}
               onChange={handleChange}
-              required
               fullWidth
               disabled={loading}
               autoFocus

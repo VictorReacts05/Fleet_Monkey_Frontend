@@ -117,7 +117,7 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
         value={formData.warehouseName}
         onChange={handleChange}
         error={errors.warehouseName}
-        required
+        
       />
     </FormPage>
   );
