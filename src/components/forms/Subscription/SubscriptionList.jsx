@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Stack, Tooltip, IconButton } from "@mui/material";
+import { Typography, Box, Stack, Tooltip, IconButton } from "@mui/material";
 import DataTable from "../../Common/DataTable";
 import SubscriptionModal from "./SubscriptionModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
 import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
 import SearchBar from "../../Common/SearchBar";
 import { Add } from "@mui/icons-material";
+import { toast } from "react-toastify";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
@@ -15,20 +16,51 @@ const SubscriptionList = () => {
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const updateRows = () => {
+    const subscriptions = getSubscriptions();
+    const filteredRows = subscriptions
+      .filter(sub =>
+        (sub.planName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (sub.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .map(sub => ({
+        id: Number(sub.id),
+        planName: sub.planName || '',
+        description: sub.description || '',
+        fees: sub.fees || '',
+        billingType: sub.billingType || ''
+      }));
+    console.log('Subscriptions after update:', subscriptions);
+    console.log('Filtered rows after update:', filteredRows);
+    setRows(filteredRows);
+  };
 
   useEffect(() => {
-    setRows(getSubscriptions());
-  }, []);
+    updateRows();
+  }, [searchTerm]);
 
-  const handleDelete = (row) => {
+  const handleDelete = (id) => {
+    console.log('Deleting subscription with id:', id);
+    const row = rows.find(r => r.id === Number(id));
+    if (!row) {
+      console.error('Row not found for id:', id);
+      return;
+    }
     setItemToDelete(row);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
-    if (!itemToDelete) return;
-    deleteSubscription(itemToDelete.id);
-    setRows(getSubscriptions());
+    if (!itemToDelete || !itemToDelete.id) {
+      console.error('Invalid itemToDelete:', itemToDelete);
+      return;
+    }
+    const idToDelete = Number(itemToDelete.id);
+    deleteSubscription(idToDelete);
+    toast.success("Subscription plan deleted successfully");
+    updateRows();
     setDeleteDialogOpen(false);
     setItemToDelete(null);
   };
@@ -45,8 +77,14 @@ const SubscriptionList = () => {
     { id: "billingType", label: "Billing Type", align: "center" },
   ];
 
-  const handleEdit = (row) => {
-    setSelectedSubscriptionId(row.id);
+  const handleEdit = (id) => {
+    console.log('Editing subscription with id:', id);
+    const row = rows.find(r => r.id === Number(id));
+    if (!row) {
+      console.error('Row not found for id:', id);
+      return;
+    }
+    setSelectedSubscriptionId(Number(row.id));
     setModalOpen(true);
   };
 
@@ -61,7 +99,7 @@ const SubscriptionList = () => {
   };
 
   const handleSave = () => {
-    setRows(getSubscriptions());
+    updateRows();
     setModalOpen(false);
   };
 

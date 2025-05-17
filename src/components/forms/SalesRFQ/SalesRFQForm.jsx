@@ -33,6 +33,7 @@ import FormPage from "../../Common/FormPage";
 import ParcelTab from "./ParcelTab";
 import { createPurchaseRFQFromSalesRFQ } from "../PurchaseRFQ/PurchaseRFQAPI";
 import { useNavigate } from "react-router-dom";
+import { showToast } from "../../toastNotification";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -703,7 +704,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       const result = await createPurchaseRFQFromSalesRFQ(salesRFQId);
 
       if (result.success) {
-        toast.success("Purchase RFQ created successfully");
+        // toast.success("Purchase RFQ created successfully");
+        showToast("Purchase RFQ created successfully", "success");
         setPurchaseRFQDialogOpen(false);
 
         navigate("/purchase-rfq");

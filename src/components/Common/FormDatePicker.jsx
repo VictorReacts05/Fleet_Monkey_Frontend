@@ -8,8 +8,11 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
-    backgroundColor: "#595959",
-    "& input": {
+    borderRadius: theme.shape.borderRadius * 1.5,
+    boxSizing: "border-box",
+    backgroundColor: "#595959", // Your custom background
+
+  },"& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
@@ -30,6 +33,18 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
       WebkitTextFillColor: "white !important",
       transition: "background-color 9999s ease-out 0s",
     },
+  "& .MuiInputBase-input": {
+    height: "100%",
+    padding: "0 14px",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+  },
+  "& .MuiInputAdornment-root": {
+    marginRight: 8, // adjust icon spacing
+  },
+  "& .MuiSvgIcon-root": {
+    fontSize: "20px", // optional: scale down the calendar icon
   },
   "& .MuiInputLabel-root": {
     top: "-6px",

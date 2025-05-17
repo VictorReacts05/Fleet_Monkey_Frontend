@@ -14,6 +14,9 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import { Add } from "@mui/icons-material";
+import { showToast } from "../../toastNotification"; 
 import axios from "axios";
 import PurchaseRFQForm from "./PurchaseRFQForm";
 import { Chip } from "@mui/material";
@@ -129,6 +132,14 @@ const PurchaseRFQList = () => {
   };
 
   const handleDeleteClick = (id) => {
+    const item = rows.find((row) => row.id === id);
+    if (item) {
+      setItemToDelete(item);
+      setDeleteDialogOpen(true);
+    } else {
+      toast.error("Item not found");
+      
+    }
     setSelectedRFQ(id);
     setDeleteDialogOpen(true);
   };
@@ -143,6 +154,9 @@ const PurchaseRFQList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
+      await deletePurchaseRFQ(itemToDelete.id);
+      // toast.success("Purchase RFQ deleted successfully");
+      showToast("Purchase RFQ deleted successfully", "success");
       const { headers } = getHeaders();
       await axios.delete(
         `http://localhost:7000/api/purchase-rfqs/${selectedRFQ}`,

@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton, Chip } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 import axios from "axios";
 
 const SalesRFQList = () => {
@@ -199,7 +200,8 @@ const SalesRFQList = () => {
     try {
       setLoading(true);
       await deleteSalesRFQ(itemToDelete.id);
-      toast.success("SalesRFQ deleted successfully");
+      // toast.success("SalesRFQ deleted successfully");
+      showToast("SalesRFQ deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadSalesRFQs();

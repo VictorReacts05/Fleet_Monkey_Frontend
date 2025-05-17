@@ -21,8 +21,8 @@ import LockIcon from "@mui/icons-material/Lock";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import ForgotPassword from "./ForgotPassword";
 
+// Styled Components
 const LoginContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
   width: "100vw",
@@ -30,48 +30,9 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   alignItems: "center",
   justifyContent: "center",
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  margin: 0,
-  padding: 0,
-  overflow: "hidden",
   position: "fixed",
   top: 0,
   left: 0,
-}));
-
-const CustomTextField = styled(TextField)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    height: 38,
-    padding: 0,
-    backgroundColor: "#595959", // Your custom background
-    "& input": {
-      padding: "0 14px",
-      height: "100%",
-      boxSizing: "border-box",
-      color: theme.palette.common.white, // white text for contrast
-    },
-    "& fieldset": {
-      borderColor: "#8a8a8a", // optional: adjust border color
-    },
-    "&:hover fieldset": {
-      borderColor: "#a0a0a0",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main,
-    },
-    // Autofill override
-    "& input:-webkit-autofill": {
-      boxShadow: "0 0 0 1000px #595959 inset !important",
-      WebkitTextFillColor: "white !important",
-      transition: "background-color 9999s ease-out 0s",
-    },
-  },
-  "& .MuiInputLabel-root": {
-    top: "-6px",
-    color: "#dcdcdc",
-    "&.MuiInputLabel-shrink": {
-      top: 0,
-    },
-  },
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
@@ -96,12 +57,20 @@ const LoginButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
+  fontSize: 60,
+  marginBottom: theme.spacing(2),
+  animation: "moveTruck 1s ease-in-out",
+  "@keyframes moveTruck": {
+    "0%": { transform: "translateX(-190px)" },
+    "100%": { transform: "translateX(0)" },
+  },
+}));
+
 const Login = () => {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
-  const [loginIdError, setLoginIdError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [formError, setFormError] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -109,36 +78,21 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let valid = true;
+    setError("");
 
-    setLoginIdError("");
-    setPasswordError("");
-    setFormError("");
-
-    if (!loginId.trim()) {
-      setLoginIdError("Login ID is required.");
-      valid = false;
+    if (!loginId.trim() || !password.trim()) {
+      setError("Please enter both login ID and password");
+      return;
     }
-
-    if (!password.trim()) {
-      setPasswordError("Password is required.");
-      valid = false;
-    } else if (password.length < 4) {
-      setPasswordError("Password must be at least 4 characters.");
-      valid = false;
-    }
-
-    if (!valid) return;
 
     setLoading(true);
-
     try {
       const result = await login(loginId, password);
       if (!result.success) {
-        setFormError(result.error || "Invalid credentials.");
+        setError(result.error);
       }
     } catch (err) {
-      setFormError("An unexpected error occurred. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -153,7 +107,7 @@ const Login = () => {
     <LoginContainer>
       <LoginPaper elevation={6}>
         <LogoBox>
-          <LocalShippingIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
+          <TruckIcon color="primary" />
           <Typography variant="h4" fontWeight="bold" color="primary">
             Fleet Monkey
           </Typography>
@@ -168,18 +122,18 @@ const Login = () => {
 
         <Divider sx={{ my: 2 }} />
 
-        {formError && (
+        {error && (
           <Typography
             color="error"
             variant="body2"
             align="center"
-            sx={{ mb: 2, p: 1, bgcolor: "white", borderRadius: 1 }}
+            sx={{ mb: 2, p: 1, bgcolor: "error.light", borderRadius: 1 }}
           >
-            {formError}
+            {error}
           </Typography>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
             label="Login ID"
@@ -187,8 +141,6 @@ const Login = () => {
             margin="normal"
             value={loginId}
             onChange={(e) => setLoginId(e.target.value)}
-            error={!!loginIdError}
-            helperText={loginIdError}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -201,13 +153,11 @@ const Login = () => {
           <TextField
             fullWidth
             label="Password"
-            type={showPassword ? "text" : "password"}
             variant="outlined"
             margin="normal"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            error={!!passwordError}
-            helperText={passwordError}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -239,7 +189,7 @@ const Login = () => {
                   size="small"
                 />
               }
-              label="Remember me"
+              label={<Typography variant="body2">Remember me</Typography>}
             />
             <Link to="/forgot-password" style={{ textDecoration: "none" }}>
               <Typography variant="body2" color="primary">
@@ -254,7 +204,6 @@ const Login = () => {
             variant="contained"
             color="primary"
             disabled={loading}
-            sx={{ mt: 3 }}
           >
             {loading ? (
               <CircularProgress size={24} color="inherit" />
@@ -263,37 +212,15 @@ const Login = () => {
             )}
           </LoginButton>
 
-
           <Typography variant="body2" align="center" sx={{ mt: 2 }}>
             Don't have an account?{" "}
             <Link to="./SignUp" style={{ textDecoration: "none" }}>
-              <Typography variant="body2" color="primary">
+              <Typography variant="body2" color="primary" component="span">
                 Sign Up
               </Typography>
             </Link>
           </Typography>
-
-         {/*  <LoginButton
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="secondary"
-            disabled={loading}
-            sx={{ mt: 3 }}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Sign Up"
-            )}
-          </LoginButton> */}
         </form>
-
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2" color="textSecondary">
-            &copy; {new Date().getFullYear()} Fleet Monkey. All rights reserved.
-          </Typography>
-        </Box>
       </LoginPaper>
     </LoginContainer>
   );

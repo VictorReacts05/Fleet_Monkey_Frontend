@@ -40,6 +40,7 @@ const ProjectParameterList = () => {
       parameterName: param.parameterName || '',
       parameterValue: param.parameterValue || ''
     }));
+    showToast("Parameter deleted successfully", "success"); 
     setRows(formattedRows);
     setDeleteDialogOpen(false);
     setItemToDelete(null);

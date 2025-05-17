@@ -1,8 +1,10 @@
+// ProjectParameterForm.jsx
 import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
 import FormSelect from "../../Common/FormSelect";
 import FormPage from "../../Common/FormPage";
-import { getParameterById } from "./projectParameterStorage";
+import { getParameterById, saveProjectParameter } from "./projectParameterStorage";
+import { toast } from "react-toastify";
 
 const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -22,93 +24,95 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
   const users = [
     { value: "1", label: "User 1" },
     { value: "2", label: "User 2" },
-    { value: "3", label: "User 3" },
+    { хочешь: "3", label: "User 3" },
   ];
 
   useEffect(() => {
+    console.log('Parameter ID:', parameterId); // Debug
     if (parameterId) {
       const parameter = getParameterById(parameterId);
+      console.log('Fetched parameter:', parameter); // Debug
       if (parameter) {
-        setFormData(parameter);
+        setFormData({
+          userId: parameter.userId || "",
+          parameterName: parameter.parameterName || "",
+          parameterValue: parameter.parameterValue || "",
+        });
+      } else {
+        setFormData({
+          userId: "",
+          parameterName: "",
+          parameterValue: "",
+        });
       }
+    } else {
+      setFormData({
+        userId: "",
+        parameterName: "",
+        parameterValue: "",
+      });
     }
   }, [parameterId]);
 
   const validateForm = () => {
-    let isValid = true;
-    const newErrors = { ...errors };
+    const newErrors = {};
 
-    // User validation
     if (!formData.userId) {
       newErrors.userId = "User selection is required";
-      isValid = false;
     }
 
-    // Parameter Name validation
     if (!formData.parameterName.trim()) {
       newErrors.parameterName = "Parameter name is required";
-      isValid = false;
     } else if (!/^[A-Za-z0-9\s-]{2,}$/.test(formData.parameterName)) {
       newErrors.parameterName =
         "Parameter name must be at least 2 characters (alphanumeric)";
-      isValid = false;
     } else if (formData.parameterName.length > 50) {
       newErrors.parameterName = "Parameter name cannot exceed 50 characters";
-      isValid = false;
     }
 
-    // Parameter Value validation
     if (!formData.parameterValue.trim()) {
       newErrors.parameterValue = "Parameter value is required";
-      isValid = false;
     } else if (formData.parameterValue.length > 100) {
-      newErrors.parameterValue = "Parameter value cannot exceed 100 characters";
-      isValid = false;
+      newErrors.parameterValue =
+        "Parameter value cannot exceed 100 characters";
     }
 
     setErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setIsSubmitted(true);
 
     if (!validateForm()) {
+      toast.error("Please fix the form errors");
       return;
     }
 
-    const parameters = JSON.parse(
-      localStorage.getItem("projectParameters") || "[]"
-    );
-
-    if (parameterId) {
-      const updatedParameters = parameters.map((param) =>
-        param.id === parameterId ? { ...formData, id: parameterId } : param
-      );
-      localStorage.setItem(
-        "projectParameters",
-        JSON.stringify(updatedParameters)
-      );
-    } else {
-      const newParameter = {
-        ...formData,
-        id: Date.now(),
-      };
-      localStorage.setItem(
-        "projectParameters",
-        JSON.stringify([...parameters, newParameter])
-      );
+    try {
+      saveProjectParameter({ ...formData, id: parameterId });
+      toast.success(parameterId ? "Parameter updated successfully" : "Parameter added successfully");
+      onSave();
+    } catch (error) {
+      toast.error("Error saving parameter: " + error.message);
     }
-
-    onSave();
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   return (
@@ -117,31 +121,37 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <FormSelect
-        label="Select User"
-        name="userId"
-        value={formData.userId}
-        onChange={handleChange}
-        options={users}
-        error={isSubmitted && errors.userId}
-        helperText={isSubmitted && errors.userId}
-      />
-      <FormInput
-        label="Parameter Name"
-        name="parameterName"
-        value={formData.parameterName}
-        onChange={handleChange}
-        error={isSubmitted && errors.parameterName}
-        helperText={isSubmitted && errors.parameterName}
-      />
-      <FormInput
-        label="Parameter Value"
-        name="parameterValue"
-        value={formData.parameterValue}
-        onChange={handleChange}
-        error={isSubmitted && errors.parameterValue}
-        helperText={isSubmitted && errors.parameterValue}
-      />
+      <div style={{ marginBottom: '12px' }}>
+        <FormSelect
+          label="Select User *"
+          name="userId"
+          value={formData.userId}
+          onChange={handleChange}
+          options={users}
+          error={!!errors.userId}
+          helperText={errors.userId}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Parameter Name *"
+          name="parameterName"
+          value={formData.parameterName}
+          onChange={handleChange}
+          error={!!errors.parameterName}
+          helperText={errors.parameterName}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Parameter Value *"
+          name="parameterValue"
+          value={formData.parameterValue}
+          onChange={handleChange}
+          error={!!errors.parameterValue}
+          helperText={errors.parameterValue}
+        />
+      </div>
     </FormPage>
   );
 };

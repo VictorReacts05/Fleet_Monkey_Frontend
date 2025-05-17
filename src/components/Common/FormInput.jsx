@@ -10,21 +10,19 @@ import {
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
-// Add a styled version of TextField that also modifies the helper text
-// Update the styled TextField to match the styling in the screenshots
 const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
-    backgroundColor: "#595959", // Your custom background
+    backgroundColor: "#595959",
     "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
-      color: theme.palette.common.white, // white text for contrast
+      color: theme.palette.common.white,
     },
     "& fieldset": {
-      borderColor: "#8a8a8a", // optional: adjust border color
+      borderColor: "#8a8a8a",
     },
     "&:hover fieldset": {
       borderColor: "#a0a0a0",
@@ -32,7 +30,6 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.main,
     },
-    // Autofill override
     "& input:-webkit-autofill": {
       boxShadow: "0 0 0 1000px #595959 inset !important",
       WebkitTextFillColor: "white !important",
@@ -46,11 +43,11 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
       top: 0,
     },
   },
-  // Update margin settings to match the CSS in screenshots
   "& .MuiFormHelperText-root": {
     marginTop: 0,
     marginBottom: 0,
-    height: 0,
+    height: "auto", // Ensure error text is visible
+    color: theme.palette.error.main, // Red for errors
   },
 }));
 
@@ -62,24 +59,16 @@ const FormInput = ({
   tooltip,
   startIcon,
   endIcon,
+  required = false, // Explicitly handle required prop
   ...props
 }) => {
   const hasError = Boolean(error);
 
   return (
-    // Update Box margins to match the pb69ky class in your screenshots
-    <Box sx={{ 
-      marginTop: "4px", 
-      marginBottom: "4px",
-      ...(props.sx || {})
-    }}>
+    <Box sx={{ marginTop: "4px", marginBottom: "4px", ...(props.sx || {}) }}>
       {tooltip ? (
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            fontWeight="medium"
-          >
+          <Typography variant="body2" color="text.secondary" fontWeight="medium">
             {label}
           </Typography>
           <Tooltip title={tooltip} arrow placement="top">
@@ -96,9 +85,10 @@ const FormInput = ({
         value={value}
         onChange={onChange}
         error={hasError}
-        helperText={hasError ? error : " "}
+        helperText={hasError ? error : " "} // Ensure spacing for layout
         variant="outlined"
-        margin="none" // Change from dense to none
+        margin="none"
+        required={required} // Controlled by prop
         InputProps={{
           startAdornment: startIcon ? (
             <InputAdornment position="start">{startIcon}</InputAdornment>

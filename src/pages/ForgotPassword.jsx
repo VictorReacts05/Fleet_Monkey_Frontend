@@ -53,6 +53,16 @@ const SubmitButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
+  fontSize: 60,
+  marginBottom: theme.spacing(2),
+  animation: "moveTruck 1s ease-in-out",
+  "@keyframes moveTruck": {
+    "0%": { transform: "translateX(-190px)" },
+    "100%": { transform: "translateX(0)" },
+  },
+}));
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -135,7 +145,7 @@ const ForgotPassword = () => {
     <ForgotPasswordContainer>
       <ForgotPasswordPaper elevation={6}>
         <LogoBox>
-          <LocalShippingIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
+          <TruckIcon color="primary" />
           <Typography variant="h4" fontWeight="bold" color="primary">
             Fleet Monkey
           </Typography>

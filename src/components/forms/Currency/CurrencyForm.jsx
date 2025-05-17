@@ -8,6 +8,7 @@ import {
   fetchCurrencies,
 } from "./CurrencyAPI";
 import { toast } from 'react-toastify';
+import { showToast } from '../../toastNotification';
 
 const CurrencyForm = ({ currencyId, onSave, onClose }) => {
   // Initialize with empty strings to maintain controlled inputs
@@ -29,11 +30,12 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       try {
         setLoading(true);
         const response = await getCurrencyById(currencyId);
-        
+        console.log('Currency response:', response);
         // Handle potential casing differences
+        const currency = response.data; // get nested data
         setFormData({
-          CurrencyName: response?.CurrencyName || response?.currencyName || '',
-          RowVersionColumn: response?.RowVersionColumn || response?.rowVersionColumn || ''
+        CurrencyName: currency.CurrencyName || '',
+        RowVersionColumn: currency.RowVersionColumn || ''
         });
       } catch (error) {
         toast.error('Failed to load currency details');
@@ -103,6 +105,7 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       } else {
         await createCurrency(transformedData);
         toast.success('Currency created successfully');
+
       }
       
       if (onSave) onSave();

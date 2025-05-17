@@ -7,6 +7,7 @@ const ProjectParameterModal = ({ open, onClose, parameterId, onSave }) => {
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogContent>
         <ProjectParameterForm
+          open={open}
           parameterId={parameterId}
           onClose={onClose}
           onSave={onSave}
