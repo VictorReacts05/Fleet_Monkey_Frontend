@@ -6,7 +6,6 @@ import ConfirmDialog from "../../Common/ConfirmDialog";
 import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
 import SearchBar from "../../Common/SearchBar";
 import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification";
 import { toast } from "react-toastify";
 
 const SubscriptionList = () => {
@@ -33,7 +32,8 @@ const SubscriptionList = () => {
         fees: sub.fees || '',
         billingType: sub.billingType || ''
       }));
-    console.log('Formatted rows:', filteredRows);
+    console.log('Subscriptions after update:', subscriptions);
+    console.log('Filtered rows after update:', filteredRows);
     setRows(filteredRows);
   };
 
@@ -41,14 +41,24 @@ const SubscriptionList = () => {
     updateRows();
   }, [searchTerm]);
 
-  const handleDelete = (row) => {
+  const handleDelete = (id) => {
+    console.log('Deleting subscription with id:', id);
+    const row = rows.find(r => r.id === Number(id));
+    if (!row) {
+      console.error('Row not found for id:', id);
+      return;
+    }
     setItemToDelete(row);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
-    if (!itemToDelete) return;
-    deleteSubscription(Number(itemToDelete.id));
+    if (!itemToDelete || !itemToDelete.id) {
+      console.error('Invalid itemToDelete:', itemToDelete);
+      return;
+    }
+    const idToDelete = Number(itemToDelete.id);
+    deleteSubscription(idToDelete);
     toast.success("Subscription plan deleted successfully");
     updateRows();
     setDeleteDialogOpen(false);
@@ -67,10 +77,11 @@ const SubscriptionList = () => {
     { id: "billingType", label: "Billing Type", align: "center" },
   ];
 
-  const handleEdit = (row) => {
-    console.log('Editing row:', row);
-    if (!row || typeof row !== 'object' || !row.id) {
-      console.error('Invalid row or row.id:', row);
+  const handleEdit = (id) => {
+    console.log('Editing subscription with id:', id);
+    const row = rows.find(r => r.id === Number(id));
+    if (!row) {
+      console.error('Row not found for id:', id);
       return;
     }
     setSelectedSubscriptionId(Number(row.id));
