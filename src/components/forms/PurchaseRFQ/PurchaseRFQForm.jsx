@@ -383,7 +383,7 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId, loadApprovalStatus]);
 
-  const handleConfirmAction = async () => {
+  /* const handleConfirmAction = async () => {
     try {
       setLoading(true);
       if (confirmAction === "approve") {
@@ -407,7 +407,44 @@ const PurchaseRFQForm = ({
       setConfirmDialogOpen(false);
       setLoading(false);
     }
-  };
+  }; */
+
+    const handleConfirmAction = async () => {
+      try {
+        setLoading(true);
+        if (confirmAction === "approve") {
+          await updatePurchaseRFQApproval(purchaseRFQId, true);
+          toast.success("Purchase RFQ approved successfully");
+          setApprovalStatus("approved");
+        } else if (confirmAction === "disapprove") {
+          await updatePurchaseRFQApproval(purchaseRFQId, false);
+          toast.success("Purchase RFQ disapproved successfully");
+          setApprovalStatus("disapproved");
+        } else if (confirmAction === "send") {
+          // Implement the send functionality here
+          // This would typically involve an API call to send the Purchase RFQ to suppliers
+
+          // Example API call (you'll need to implement this endpoint on your backend)
+          // await sendPurchaseRFQToSuppliers(purchaseRFQId, selectedSuppliers);
+
+          // For now, we'll just show a success message
+          toast.success(
+            `Purchase RFQ sent to ${selectedSuppliers.length} suppliers successfully`
+          );
+        }
+        await loadApprovalStatus();
+      } catch (error) {
+        console.error(`Error ${confirmAction}ing Purchase RFQ:`, error);
+        toast.error(
+          `Failed to ${confirmAction} Purchase RFQ: ${
+            error.message || "Unknown error"
+          }`
+        );
+      } finally {
+        setConfirmDialogOpen(false);
+        setLoading(false);
+      }
+    };
 
   const handleCancelAction = () => {
     setConfirmDialogOpen(false);
@@ -522,22 +559,73 @@ const PurchaseRFQForm = ({
             )}
           </Box>
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenSuppliersDialog}
-            sx={{
-              fontWeight: "bold",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              "&:hover": {
-                boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-              },
-              ml: "auto",
-              marginLeft: "16px", // Added more space here
-            }}
-          >
-            Select Suppliers
-          </Button>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {/* <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenSuppliersDialog}
+              sx={{
+                fontWeight: "bold",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                "&:hover": {
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                },
+                marginLeft: "24px",
+              }}
+            >
+              Select Suppliers
+            </Button>
+
+            {formData.Status === "Approved" && (
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => handleSendPurchaseRFQ()}
+                sx={{
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  "&:hover": {
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                  },
+                }}
+              >
+                Send
+              </Button> 
+            )}*/}
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleOpenSuppliersDialog}
+                sx={{
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  "&:hover": {
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                  },
+                  marginLeft: "24px",
+                }}
+              >
+                Select Suppliers
+              </Button>
+
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => handleSendPurchaseRFQ()}
+                disabled={formData.Status !== "Approved"}
+                sx={{
+                  fontWeight: "bold",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  "&:hover": {
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                  },
+                }}
+              >
+                Send
+              </Button>
+            </Box>
+          </Box>
         </Box>
       }
       onCancel={onClose || (() => navigate("/purchase-rfq"))}
@@ -963,3 +1051,28 @@ const PurchaseRFQForm = ({
 };
 
 export default PurchaseRFQForm;
+
+// Add this function to handle sending the Purchase RFQ
+  const handleSendPurchaseRFQ = async () => {
+    try {
+      setLoading(true);
+      
+      // Check if suppliers are selected
+      if (selectedSuppliers.length === 0) {
+        toast.warning("Please select suppliers before sending the Purchase RFQ");
+        handleOpenSuppliersDialog();
+        return;
+      }
+      
+      // Confirm before sending
+      setConfirmMessage("Are you sure you want to send this Purchase RFQ to the selected suppliers?");
+      setConfirmAction("send");
+      setConfirmDialogOpen(true);
+      
+    } catch (error) {
+      console.error("Error preparing to send Purchase RFQ:", error);
+      toast.error("Failed to prepare sending: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };

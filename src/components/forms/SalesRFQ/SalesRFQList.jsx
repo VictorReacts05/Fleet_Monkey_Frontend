@@ -65,11 +65,6 @@ const SalesRFQList = () => {
   }, [page, rowsPerPage, fromDate, toDate]);
   
   // Add a separate effect to reload sales RFQs when purchaseRFQs changes
-  useEffect(() => {
-    if (purchaseRFQs.length > 0) {
-      loadSalesRFQs();
-    }
-  }, [purchaseRFQs]);
 
   // Fetch all purchase RFQs to check which sales RFQs have associated purchase RFQs
   const fetchPurchaseRFQs = async () => {
