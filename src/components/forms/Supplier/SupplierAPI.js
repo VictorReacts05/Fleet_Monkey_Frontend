@@ -18,11 +18,19 @@ export const fetchSuppliers = async (page = 1, limit = 10, fromDate = null, toDa
 };
 
 export const createSupplier = async (supplierData) => {
-  try {
-    const response = await axios.post(API_BASE_URL, supplierData);
-    return response.data;
+ try {
+    const response = await fetch('/api/suppliers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const errorData = await response.json(); // Parse the error response
+      throw new Error(errorData.message || 'Failed to create supplier');
+    }
+    return response.json();
   } catch (error) {
-    throw error.response?.data || error.message;
+    throw new Error(error.message || 'An unexpected error occurred');
   }
 };
 

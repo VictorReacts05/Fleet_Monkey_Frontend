@@ -62,7 +62,6 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
         CompanyID: data?.CompanyID?.toString() || "",
         ExternalSupplierYN: data?.ExternalSupplierYN ? "1" : "0",
       });
-      
     } catch (error) {
       toast.error("Failed to load supplier: " + error.message);
     } finally {
@@ -73,29 +72,37 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Required field validation
     if (!formData.SupplierName.trim()) {
       newErrors.SupplierName = "Supplier Name is required";
     }
 
     if (!formData.SupplierGroupID) {
       newErrors.SupplierGroupID = "Supplier Group ID is required";
+    } else if (isNaN(parseInt(formData.SupplierGroupID))) {
+      newErrors.SupplierGroupID = "Supplier Group ID must be a valid number";
     }
 
     if (!formData.SupplierAddressID) {
       newErrors.SupplierAddressID = "Supplier Address ID is required";
+    } else if (isNaN(parseInt(formData.SupplierAddressID))) {
+      newErrors.SupplierAddressID = "Supplier Address ID must be a valid number";
     }
 
     if (!formData.SupplierTypeID) {
       newErrors.SupplierTypeID = "Supplier Type ID is required";
+    } else if (isNaN(parseInt(formData.SupplierTypeID))) {
+      newErrors.SupplierTypeID = "Supplier Type ID must be a valid number";
     }
+
     const exportCodeRegex = /^[A-Z0-9-_]+$/;
-    if (!exportCodeRegex.test(formData.SupplierExportCode)) {
-      newErrors.SupplierExportCode = "Invalid Export Code format";
+    if (formData.SupplierExportCode && !exportCodeRegex.test(formData.SupplierExportCode)) {
+      newErrors.SupplierExportCode = "Invalid Export Code format (use A-Z, 0-9, -, or _)";
     }
 
     if (!formData.SAPartner) {
       newErrors.SAPartner = "South Africa Partner is required";
+    } else if (isNaN(parseInt(formData.SAPartner))) {
+      newErrors.SAPartner = "South Africa Partner must be a valid number";
     }
 
     if (!formData.SAPartnerExportCode.trim()) {
@@ -104,10 +111,14 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
 
     if (!formData.BillingCurrencyID) {
       newErrors.BillingCurrencyID = "Billing Currency ID is required";
+    } else if (isNaN(parseInt(formData.BillingCurrencyID))) {
+      newErrors.BillingCurrencyID = "Billing Currency ID must be a valid number";
     }
 
     if (!formData.CompanyID) {
       newErrors.CompanyID = "Company ID is required";
+    } else if (isNaN(parseInt(formData.CompanyID))) {
+      newErrors.CompanyID = "Company ID must be a valid number";
     }
 
     if (!formData.ExternalSupplierYN) {
@@ -121,39 +132,42 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setIsSubmitted(true);
-    
+
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      const errorMessages = Object.values(errors).filter(Boolean).join(", ");
+      toast.error(`Please fix the following errors: ${errorMessages}`);
       return;
     }
 
     try {
       setLoading(true);
       const submitData = {
-        supplierName: formData.SupplierName,
-        supplierGroupID: parseInt(formData.SupplierGroupID),
-        supplierTypeID: parseInt(formData.SupplierTypeID),
-        supplierAddressID: parseInt(formData.SupplierAddressID),
-        supplierExportCode: formData.SupplierExportCode,
-        saPartner: parseInt(formData.SAPartner),
-        saPartnerExportCode: formData.SAPartnerExportCode,
-        billingCurrencyID: parseInt(formData.BillingCurrencyID),
-        companyID: parseInt(formData.CompanyID),
-        externalSupplierYN: formData.ExternalSupplierYN === "1",
-        userID: 1
+        SupplierName: formData.SupplierName,
+        SupplierGroupID: parseInt(formData.SupplierGroupID),
+        SupplierTypeID: parseInt(formData.SupplierTypeID),
+        SupplierAddressID: parseInt(formData.SupplierAddressID),
+        SupplierExportCode: formData.SupplierExportCode,
+        SAPartner: parseInt(formData.SAPartner),
+        SAPartnerExportCode: formData.SAPartnerExportCode,
+        BillingCurrencyID: parseInt(formData.BillingCurrencyID),
+        CompanyID: parseInt(formData.CompanyID),
+        ExternalSupplierYN: formData.ExternalSupplierYN === "1",
+        UserID: 1
       };
+
+      console.log('Submitting data:', submitData);
 
       if (supplierId) {
         await updateSupplier(supplierId, submitData);
-        // toast.success("Supplier updated successfully");
-        showToast("Supplier updated successfully", "success");
+        toast.success("Supplier updated successfully");
       } else {
+        console.log('Calling createSupplier');
         await createSupplier(submitData);
-        // toast.success("Supplier created successfully");
-        showToast("Supplier created successfully", "success");
+        toast.success("Supplier created successfully");
       }
       onSave();
     } catch (error) {
+      console.error('Submission error:', error);
       toast.error(
         `Failed to ${supplierId ? "update" : "create"} supplier: ` +
           error.message
@@ -170,7 +184,6 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       [name]: value,
     }));
 
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -244,7 +257,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
         <Grid item xs={12} md={6}>
           <FormInput
             name="SupplierExportCode"
-            label="Supplier Export Code *"
+            label="Supplier Export Code"
             value={formData.SupplierExportCode}
             onChange={handleChange}
             error={!!errors.SupplierExportCode}
@@ -299,8 +312,9 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
           />
         </Grid>
 
-        <Grid item xs={12} md={6} >
-          <FormSelect sx={{ width: "222px" }}
+        <Grid item xs={12} md={6}>
+          <FormSelect
+            sx={{ width: "222px" }}
             name="ExternalSupplierYN"
             label="External Supplier *"
             value={formData.ExternalSupplierYN}

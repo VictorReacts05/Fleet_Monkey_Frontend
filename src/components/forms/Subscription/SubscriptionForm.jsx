@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import FormInput from '../../Common/FormInput';
 import FormSelect from '../../Common/FormSelect';
 import FormPage from '../../Common/FormPage';
-import { getSubscriptionById } from './subscriptionStorage';
+import { getSubscriptionById, saveSubscription } from './subscriptionStorage';
 import { showToast } from '../../toastNotification';
+import { toast } from 'react-toastify';
 
 const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -29,19 +30,40 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
   ];
 
   useEffect(() => {
+    console.log('Subscription ID:', subscriptionId);
     if (subscriptionId) {
       const subscription = getSubscriptionById(subscriptionId);
+      console.log('Fetched subscription:', subscription);
       if (subscription) {
-        setFormData(subscription);
+        setFormData({
+          planName: subscription.planName || '',
+          description: subscription.description || '',
+          fees: subscription.fees.toString() || '',
+          billingType: subscription.billingType || '',
+        });
+      } else {
+        console.error('Subscription not found for ID:', subscriptionId);
+        setFormData({
+          planName: '',
+          description: '',
+          fees: '',
+          billingType: '',
+        });
       }
+    } else {
+      setFormData({
+        planName: '',
+        description: '',
+        fees: '',
+        billingType: '',
+      });
     }
-  }, [subscriptionId]); // Corrected dependency array
+  }, [subscriptionId]);
 
   const validateForm = () => {
     let isValid = true;
     const newErrors = { ...errors };
 
-    // Plan Name validation
     if (!formData.planName.trim()) {
       newErrors.planName = 'Plan name is required';
       isValid = false;
@@ -53,7 +75,6 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       isValid = false;
     }
 
-    // Description validation
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
       isValid = false;
@@ -65,7 +86,6 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       isValid = false;
     }
 
-    // Fees validation
     if (!formData.fees) {
       newErrors.fees = 'Fees are required';
       isValid = false;
@@ -83,7 +103,6 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       }
     }
 
-    // Billing Type validation
     if (!formData.billingType) {
       newErrors.billingType = 'Billing type is required';
       isValid = false;
@@ -101,24 +120,18 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       return;
     }
 
-    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
-
-    if (subscriptionId) {
-      const updatedSubscriptions = subscriptions.map(sub =>
-        sub.id === subscriptionId ? { ...formData, id: subscriptionId } : sub
-      );
-      localStorage.setItem('subscriptions', JSON.stringify(updatedSubscriptions));
-      showToast('Subscription updated successfully', 'success');
-    } else {
-      const newSubscription = {
+    try {
+      const subscriptionToSave = {
         ...formData,
-        id: Date.now(),
+        id: subscriptionId,
+        fees: parseFloat(formData.fees),
       };
-      localStorage.setItem('subscriptions', JSON.stringify([...subscriptions, newSubscription]));
-      showToast('Subscription added successfully', 'success');
+      saveSubscription(subscriptionToSave);
+      toast.success('Subscription saved successfully');
+      onSave();
+    } catch (error) {
+      toast.error('Error saving subscription: ' + error.message);
     }
-
-    onSave();
   };
 
   const handleChange = (e) => {
@@ -134,40 +147,48 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <FormInput
-        label="Subscription Plan Name"
-        name="planName"
-        value={formData.planName}
-        onChange={handleChange}
-        error={isSubmitted && errors.planName}
-        helperText={isSubmitted && errors.planName}
-      />
-      <FormInput
-        label="Description"
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        error={isSubmitted && errors.description}
-        helperText={isSubmitted && errors.description}
-      />
-      <FormInput
-        label="Fees"
-        name="fees"
-        type="number"
-        value={formData.fees}
-        onChange={handleChange}
-        error={isSubmitted && errors.fees}
-        helperText={isSubmitted && errors.fees}
-      />
-      <FormSelect
-        label="Select Billing"
-        name="billingType"
-        value={formData.billingType}
-        onChange={handleChange}
-        options={billingTypes}
-        error={isSubmitted && errors.billingType}
-        helperText={isSubmitted && errors.billingType}
-      />
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Subscription Plan Name"
+          name="planName"
+          value={formData.planName}
+          onChange={handleChange}
+          error={isSubmitted && errors.planName}
+          helperText={isSubmitted && errors.planName}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormInput
+          label="Description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          error={isSubmitted && errors.description}
+          helperText={isSubmitted && errors.description}
+        />
+      </div>
+      <div style={{ marginBottom: '14px' }}>
+        <FormInput
+          label="Fees"
+          name="fees"
+          type="number"
+          value={formData.fees}
+          onChange={handleChange}
+          error={isSubmitted && errors.fees}
+          helperText={isSubmitted && errors.fees}
+        />
+      </div>
+      <div style={{ marginBottom: '16px' }}>
+        <FormSelect
+          label="Select Billing"
+          name="billingType"
+          value={formData.billingType}
+          onChange={handleChange}
+          options={billingTypes}
+          error={isSubmitted && errors.billingType}
+          helperText={isSubmitted && errors.billingType}
+        />
+      </div>
     </FormPage>
   );
 };

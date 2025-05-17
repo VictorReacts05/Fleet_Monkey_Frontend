@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Stack, Tooltip, IconButton } from "@mui/material";
+import { Typography, Box, Stack, Tooltip, IconButton } from "@mui/material";
 import DataTable from "../../Common/DataTable";
 import SubscriptionModal from "./SubscriptionModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
@@ -7,6 +7,7 @@ import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
 import SearchBar from "../../Common/SearchBar";
 import { Add } from "@mui/icons-material";
 import { showToast } from "../../toastNotification";
+import { toast } from "react-toastify";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
@@ -16,10 +17,29 @@ const SubscriptionList = () => {
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const updateRows = () => {
+    const subscriptions = getSubscriptions();
+    const filteredRows = subscriptions
+      .filter(sub =>
+        (sub.planName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (sub.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .map(sub => ({
+        id: Number(sub.id),
+        planName: sub.planName || '',
+        description: sub.description || '',
+        fees: sub.fees || '',
+        billingType: sub.billingType || ''
+      }));
+    console.log('Formatted rows:', filteredRows);
+    setRows(filteredRows);
+  };
 
   useEffect(() => {
-    setRows(getSubscriptions());
-  }, []);
+    updateRows();
+  }, [searchTerm]);
 
   const handleDelete = (row) => {
     setItemToDelete(row);
@@ -28,9 +48,9 @@ const SubscriptionList = () => {
 
   const confirmDelete = () => {
     if (!itemToDelete) return;
-    deleteSubscription(itemToDelete.id);
-    showToast("Subscription deleted successfully", "success");
-    setRows(getSubscriptions());
+    deleteSubscription(Number(itemToDelete.id));
+    toast.success("Subscription plan deleted successfully");
+    updateRows();
     setDeleteDialogOpen(false);
     setItemToDelete(null);
   };
@@ -38,7 +58,6 @@ const SubscriptionList = () => {
   const cancelDelete = () => {
     setDeleteDialogOpen(false);
     setItemToDelete(null);
-
   };
 
   const columns = [
@@ -49,7 +68,12 @@ const SubscriptionList = () => {
   ];
 
   const handleEdit = (row) => {
-    setSelectedSubscriptionId(row.id);
+    console.log('Editing row:', row);
+    if (!row || typeof row !== 'object' || !row.id) {
+      console.error('Invalid row or row.id:', row);
+      return;
+    }
+    setSelectedSubscriptionId(Number(row.id));
     setModalOpen(true);
   };
 
@@ -64,7 +88,7 @@ const SubscriptionList = () => {
   };
 
   const handleSave = () => {
-    setRows(getSubscriptions());
+    updateRows();
     setModalOpen(false);
   };
 
