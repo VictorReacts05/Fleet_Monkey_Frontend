@@ -99,6 +99,26 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
   const [status, setStatus] = useState("");
   const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
+  const [fieldDisabled, setFieldDisabled] = useState({
+    Series: true,
+    CompanyID: true,
+    CustomerID: true,
+    SupplierID: true,
+    ExternalRefNo: true,
+    DeliveryDate: true,
+    PostingDate: true,
+    RequiredByDate: true,
+    DateReceived: true,
+    ServiceTypeID: false,
+    CollectionAddressID: true,
+    DestinationAddressID: true,
+    ShippingPriorityID: true,
+    Terms: true,
+    CurrencyID: true,
+    CollectFromSupplierYN: true,
+    PackagingRequiredYN: true,
+    FormCompletedYN: true,
+  });
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -178,7 +198,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             label:
               type.ServiceType ||
               type.ServiceTypeName ||
-              "UnknownVP Service Type",
+              "Unknown Service Type",
           })),
         ];
         const addressesOptions = [
@@ -444,6 +464,83 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       ...prev,
       [name]: value,
     }));
+
+    if (name === "ServiceTypeID") {
+      const serviceTypeLabel = serviceTypes.find(
+        (st) => st.value === value
+      )?.label;
+
+      if (
+        ["International Procurement", "Local Procurement"].includes(
+          serviceTypeLabel
+        )
+      ) {
+        setFieldDisabled({
+          ...fieldDisabled,
+          Series: !isEditing,
+          CompanyID: true,
+          CustomerID: !isEditing,
+          SupplierID: true,
+          ExternalRefNo: !isEditing,
+          DeliveryDate: !isEditing,
+          PostingDate: !isEditing,
+          RequiredByDate: !isEditing,
+          DateReceived: !isEditing,
+          ServiceTypeID: false,
+          CollectionAddressID: !isEditing,
+          DestinationAddressID: !isEditing,
+          ShippingPriorityID: !isEditing,
+          Terms: !isEditing,
+          CurrencyID: !isEditing,
+          CollectFromSupplierYN: !isEditing,
+          PackagingRequiredYN: !isEditing,
+          FormCompletedYN: !isEditing,
+        });
+      } else if (["Buyout", "CPCR", "Direct"].includes(serviceTypeLabel)) {
+        setFieldDisabled({
+          ...fieldDisabled,
+          Series: !isEditing,
+          CompanyID: true,
+          CustomerID: !isEditing,
+          SupplierID: !isEditing,
+          ExternalRefNo: !isEditing,
+          DeliveryDate: !isEditing,
+          PostingDate: !isEditing,
+          RequiredByDate: !isEditing,
+          DateReceived: !isEditing,
+          ServiceTypeID: false,
+          CollectionAddressID: !isEditing,
+          DestinationAddressID: !isEditing,
+          ShippingPriorityID: !isEditing,
+          Terms: !isEditing,
+          CurrencyID: !isEditing,
+          CollectFromSupplierYN: !isEditing,
+          PackagingRequiredYN: !isEditing,
+          FormCompletedYN: !isEditing,
+        });
+      } else {
+        setFieldDisabled({
+          Series: true,
+          CompanyID: true,
+          CustomerID: true,
+          SupplierID: true,
+          ExternalRefNo: true,
+          DeliveryDate: true,
+          PostingDate: true,
+          RequiredByDate: true,
+          DateReceived: true,
+          ServiceTypeID: false,
+          CollectionAddressID: true,
+          DestinationAddressID: true,
+          ShippingPriorityID: true,
+          Terms: true,
+          CurrencyID: true,
+          CollectFromSupplierYN: true,
+          PackagingRequiredYN: true,
+          FormCompletedYN: true,
+        });
+      }
+    }
   };
 
   const handleCheckboxChange = (name) => (e) => {
@@ -709,7 +806,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   onChange={handleChange}
                   error={!!errors.Series}
                   helperText={errors.Series}
-                  disabled={true}
+                  disabled={fieldDisabled.Series}
                 />
               ) : (
                 <ReadOnlyField label="Series" value={formData.Series} />
@@ -724,11 +821,33 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 value={formData.CompanyID || ""}
                 onChange={() => {}}
                 options={[DEFAULT_COMPANY]}
-                disabled={true}
+                disabled={fieldDisabled.CompanyID}
                 readOnly={true}
               />
             ) : (
               <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormSelect
+                name="ServiceTypeID"
+                label="Service Type"
+                value={formData.ServiceTypeID || ""}
+                onChange={handleChange}
+                options={serviceTypes}
+                error={!!errors.ServiceTypeID}
+                helperText={errors.ServiceTypeID}
+                disabled={fieldDisabled.ServiceTypeID}
+              />
+            ) : (
+              <ReadOnlyField
+                label="Service Type"
+                value={
+                  serviceTypes.find((st) => st.value === formData.ServiceTypeID)
+                    ?.label || "-"
+                }
+              />
             )}
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -741,7 +860,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={customers}
                 error={!!errors.CustomerID}
                 helperText={errors.CustomerID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CustomerID}
               />
             ) : (
               <ReadOnlyField
@@ -763,7 +882,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={suppliers}
                 error={!!errors.SupplierID}
                 helperText={errors.SupplierID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.SupplierID}
               />
             ) : (
               <ReadOnlyField
@@ -784,7 +903,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={handleChange}
                 error={!!errors.ExternalRefNo}
                 helperText={errors.ExternalRefNo}
-                disabled={!isEditing}
+                disabled={fieldDisabled.ExternalRefNo}
               />
             ) : (
               <ReadOnlyField
@@ -802,7 +921,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("DeliveryDate", date)}
                 error={!!errors.DeliveryDate}
                 helperText={errors.DeliveryDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DeliveryDate}
               />
             ) : (
               <ReadOnlyField
@@ -824,7 +943,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("PostingDate", date)}
                 error={!!errors.PostingDate}
                 helperText={errors.PostingDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.PostingDate}
               />
             ) : (
               <ReadOnlyField
@@ -846,7 +965,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("RequiredByDate", date)}
                 error={!!errors.RequiredByDate}
                 helperText={errors.RequiredByDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.RequiredByDate}
               />
             ) : (
               <ReadOnlyField
@@ -868,7 +987,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("DateReceived", date)}
                 error={!!errors.DateReceived}
                 helperText={errors.DateReceived}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DateReceived}
               />
             ) : (
               <ReadOnlyField
@@ -884,28 +1003,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
-                name="ServiceTypeID"
-                label="Service Type"
-                value={formData.ServiceTypeID || ""}
-                onChange={handleChange}
-                options={serviceTypes}
-                error={!!errors.ServiceTypeID}
-                helperText={errors.ServiceTypeID}
-                disabled={!isEditing}
-              />
-            ) : (
-              <ReadOnlyField
-                label="Service Type"
-                value={
-                  serviceTypes.find((st) => st.value === formData.ServiceTypeID)
-                    ?.label || "-"
-                }
-              />
-            )}
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            {isEditing ? (
-              <FormSelect
                 name="CollectionAddressID"
                 label="Collection Address"
                 value={formData.CollectionAddressID || ""}
@@ -913,7 +1010,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={addresses}
                 error={!!errors.CollectionAddressID}
                 helperText={errors.CollectionAddressID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CollectionAddressID}
               />
             ) : (
               <ReadOnlyField
@@ -936,7 +1033,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={addresses}
                 error={!!errors.DestinationAddressID}
                 helperText={errors.DestinationAddressID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DestinationAddressID}
               />
             ) : (
               <ReadOnlyField
@@ -959,7 +1056,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={mailingPriorities}
                 error={!!errors.ShippingPriorityID}
                 helperText={errors.ShippingPriorityID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.ShippingPriorityID}
               />
             ) : (
               <ReadOnlyField
@@ -981,7 +1078,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={handleChange}
                 error={!!errors.Terms}
                 helperText={errors.Terms}
-                disabled={!isEditing}
+                disabled={fieldDisabled.Terms}
               />
             ) : (
               <ReadOnlyField label="Terms" value={formData.Terms} />
@@ -997,7 +1094,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={currencies}
                 error={!!errors.CurrencyID}
                 helperText={errors.CurrencyID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CurrencyID}
               />
             ) : (
               <ReadOnlyField
@@ -1020,7 +1117,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="CollectFromSupplierYN"
                         checked={formData.CollectFromSupplierYN}
                         onChange={handleCheckboxChange("CollectFromSupplierYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.CollectFromSupplierYN}
                       />
                     }
                     label="Collect From Supplier"
@@ -1040,7 +1137,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="PackagingRequiredYN"
                         checked={formData.PackagingRequiredYN}
                         onChange={handleCheckboxChange("PackagingRequiredYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.PackagingRequiredYN}
                       />
                     }
                     label="Packaging Required"
@@ -1060,7 +1157,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="FormCompletedYN"
                         checked={formData.FormCompletedYN}
                         onChange={handleCheckboxChange("FormCompletedYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.FormCompletedYN}
                       />
                     }
                     label="Form Completed"

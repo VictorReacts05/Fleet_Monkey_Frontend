@@ -74,87 +74,37 @@ const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) =>
       const headers = user?.token
         ? { Authorization: `Bearer ${user.token}` }
         : {};
-      const userId = user?.personId || 2;
       
-      // First, update the Status in the PurchaseRFQ table using the correct API endpoint
-      try {
-        // Use the specific approve API endpoint
-        const approveEndpoint = `http://localhost:7000/api/purchase-rfq/approve/`;
-        
-        // Create the payload with just the purchaseRFQID
-        const approveData = {
-          purchaseRFQID: parseInt(purchaseRFQId, 10)
-        };
-        
-        console.log("Sending approval request with data:", approveData);
-        
-        // Make the API call to update the status
-        const statusResponse = await axios.post(
-          approveEndpoint,
-          approveData,
-          { headers }
-        );
-        
-        console.log("PurchaseRFQ status update response:", statusResponse.data);
-        
-        // Now handle the approval record - this part is working correctly so we keep it unchanged
-        const isApproved = newStatus === "Approved";
-        const approvalData = {
-          PurchaseRFQID: parseInt(purchaseRFQId, 10),
-          ApproverID: 2,
-          ApprovedYN: isApproved ? 1 : 0,
-          ApproverDateTime: new Date().toISOString(),
-          CreatedByID: userId
-        };
-        
-        console.log("Updating approval record with data:", approvalData);
-        
-        // Check if approval record exists first
-        const checkResponse = await axios.get(
-          `http://localhost:7000/api/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=2`,
-          { headers }
-        );
-        
-        let approvalResponse;
-        
-        if (checkResponse.data.success && checkResponse.data.data && checkResponse.data.data.length > 0) {
-          // Update existing record
-          console.log("Existing approval record found, updating...");
-          approvalResponse = await axios.put(
-            `http://localhost:7000/api/purchase-rfq-approvals`,
-            approvalData,
-            { headers }
-          );
-        } else {
-          // Create new record
-          console.log("No existing approval record, creating new one...");
-          approvalResponse = await axios.post(
-            `http://localhost:7000/api/purchase-rfq-approvals`,
-            approvalData,
-            { headers }
-          );
-        }
-        
-        console.log("Approval record response:", approvalResponse.data);
-        
-        // Call the onStatusChange callback to update parent component's state
-        if (onStatusChange) {
-          onStatusChange(newStatus);
-        }
-        
-        // Refresh the approval record
-        fetchApprovalRecord();
-        
-        toast.success(`PurchaseRFQ ${isApproved ? "approved" : "disapproved"} successfully`);
-      } catch (error) {
-        console.error("Error updating PurchaseRFQ:", error);
-        console.error("Error details:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
-        });
-        throw error;
+      // Use the specific approve API endpoint which handles both the status update and approval record
+      const approveEndpoint = `http://localhost:7000/api/purchase-rfq/approve/`;
+      
+      // Create the payload with just the purchaseRFQID
+      const approveData = {
+        purchaseRFQID: parseInt(purchaseRFQId, 10)
+      };
+      
+      console.log("Sending approval request with data:", approveData);
+      
+      // Make the API call to update the status
+      const statusResponse = await axios.post(
+        approveEndpoint,
+        approveData,
+        { headers }
+      );
+      
+      console.log("PurchaseRFQ status update response:", statusResponse.data);
+      
+      // Call the onStatusChange callback to update parent component's state
+      if (onStatusChange) {
+        onStatusChange(newStatus);
       }
+      
+      // Refresh the approval record
+      fetchApprovalRecord();
+      
+      const isApproved = newStatus === "Approved";
+      toast.success(`PurchaseRFQ ${isApproved ? "approved" : "disapproved"} successfully`);
+      
     } catch (error) {
       console.error("Error updating status:", error);
       console.error("Error details:", {

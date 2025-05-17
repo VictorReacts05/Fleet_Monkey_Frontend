@@ -19,6 +19,14 @@ import {
   Paper,
   useTheme,
   alpha,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import {
   getPurchaseRFQById,
@@ -34,6 +42,7 @@ import FormPage from "../../Common/FormPage";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import StatusIndicator from "./StatusIndicator";
+import SearchIcon from "@mui/icons-material/Search";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -99,6 +108,14 @@ const PurchaseRFQForm = ({
   const [salesRFQs, setSalesRFQs] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Add new state variables for supplier selection
+  const [suppliersDialogOpen, setSuppliersDialogOpen] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+
   const [approvalStatus, setApprovalStatus] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -398,12 +415,63 @@ const PurchaseRFQForm = ({
 
   // In the PurchaseRFQForm component, add this function if it doesn't exist
   const handleStatusChange = (newStatus) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      Status: newStatus
+      Status: newStatus,
     }));
   };
-  
+
+  // Add function to fetch suppliers
+  const fetchSuppliers = async () => {
+    try {
+      setLoadingSuppliers(true);
+      const response = await axios.get("http://localhost:7000/api/suppliers");
+      if (response.data && Array.isArray(response.data.data)) {
+        setSuppliers(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+      toast.error("Failed to load suppliers");
+    } finally {
+      setLoadingSuppliers(false);
+    }
+  };
+
+  // Function to handle opening the suppliers dialog
+  const handleOpenSuppliersDialog = () => {
+    fetchSuppliers();
+    setSuppliersDialogOpen(true);
+  };
+
+  // Function to handle closing the suppliers dialog
+  const handleCloseSuppliersDialog = () => {
+    setSuppliersDialogOpen(false);
+  };
+
+  // Function to handle supplier selection
+  const handleSupplierToggle = (supplier) => {
+    const currentIndex = selectedSuppliers.findIndex(
+      (s) => s.SupplierID === supplier.SupplierID
+    );
+    const newSelectedSuppliers = [...selectedSuppliers];
+
+    if (currentIndex === -1) {
+      newSelectedSuppliers.push(supplier);
+    } else {
+      newSelectedSuppliers.splice(currentIndex, 1);
+    }
+
+    setSelectedSuppliers(newSelectedSuppliers);
+  };
+
+  // Function to confirm supplier selection
+  const handleConfirmSupplierSelection = () => {
+    // Here you would typically do something with the selected suppliers
+    // For example, send them to an API or update the form state
+    toast.success(`Selected ${selectedSuppliers.length} suppliers`);
+    handleCloseSuppliersDialog();
+  };
+
   return (
     <FormPage
       title={
@@ -415,28 +483,28 @@ const PurchaseRFQForm = ({
             width: "100%",
           }}
         >
-          <Typography variant="h6">
-            View Purchase RFQ
-            {formData.Series ? ` - ${formData.Series}` : ""}
-          </Typography>
-          {purchaseRFQId && (
-            <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+            <Typography variant="h6">View Purchase RFQ</Typography>
+
+            {purchaseRFQId && (
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  backgroundColor: formData.Status === "Approved" ? "#e6f7e6" : "#ffebee",
+                  backgroundColor:
+                    formData.Status === "Approved" ? "#e6f7e6" : "#ffebee",
                   color: formData.Status === "Approved" ? "#2e7d32" : "#d32f2f",
                   borderRadius: "4px",
                   padding: "6px 12px",
                   fontWeight: "medium",
                 }}
               >
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
+                <Typography
+                  variant="body2"
+                  sx={{
                     marginRight: "8px",
-                    color: formData.Status === "Approved" ? "#2e7d32" : "#d32f2f" 
+                    color:
+                      formData.Status === "Approved" ? "#2e7d32" : "#d32f2f",
                   }}
                 >
                   Status:{" "}
@@ -451,14 +519,33 @@ const PurchaseRFQForm = ({
                   readOnly={formData.Status === "Approved"}
                 />
               </Box>
-            </Box>
-          )}
+            )}
+          </Box>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenSuppliersDialog}
+            sx={{
+              fontWeight: "bold",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              "&:hover": {
+                boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+              },
+              ml: "auto",
+              marginLeft: "16px", // Added more space here
+            }}
+          >
+            Select Suppliers
+          </Button>
         </Box>
       }
       onCancel={onClose || (() => navigate("/purchase-rfq"))}
       loading={loading}
       readOnly={true}
     >
+      {/* Remove the Select Suppliers button from here since we moved it to the title bar */}
+
       <Grid
         container
         spacing={1}
@@ -493,13 +580,6 @@ const PurchaseRFQForm = ({
                 ?.label ||
               (formData.SalesRFQID ? `Sales RFQ #${formData.SalesRFQID}` : "-")
             }
-          />
-        </Grid>
-
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField
-            label="Supplier Name"
-            value={formData.SupplierName || "-"}
           />
         </Grid>
 
@@ -728,6 +808,134 @@ const PurchaseRFQForm = ({
           </Paper>
         </Box>
       )}
+
+      {/* ... existing parcels section ... */}
+
+      {/* Suppliers Selection Dialog */}
+      <Dialog
+        open={suppliersDialogOpen}
+        onClose={handleCloseSuppliersDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h5" component="div">
+            Select Suppliers
+          </Typography>
+          {selectedSuppliers.length > 0 && (
+            <Typography variant="body2" sx={{ mr: 2 }}>
+              {selectedSuppliers.length} suppliers selected
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Search suppliers..."
+              value={supplierSearchTerm}
+              onChange={(e) => setSupplierSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              variant="outlined"
+              size="small"
+            />
+          </Box>
+
+          {loadingSuppliers ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List
+              sx={{
+                width: "100%",
+                bgcolor: "background.paper",
+                maxHeight: "400px",
+                overflow: "auto",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+              }}
+            >
+              {suppliers.length > 0 ? (
+                suppliers
+                  .filter((supplier) =>
+                    supplier.SupplierName?.toLowerCase().includes(
+                      supplierSearchTerm.toLowerCase()
+                    )
+                  )
+                  .map((supplier) => {
+                    const isSelected = selectedSuppliers.some(
+                      (s) => s.SupplierID === supplier.SupplierID
+                    );
+
+                    return (
+                      <React.Fragment key={supplier.SupplierID}>
+                        <ListItem
+                          button
+                          onClick={() => handleSupplierToggle(supplier)}
+                          sx={{
+                            backgroundColor: isSelected
+                              ? alpha("#1976d2", 0.1)
+                              : "transparent",
+                            "&:hover": {
+                              backgroundColor: isSelected
+                                ? alpha("#1976d2", 0.2)
+                                : alpha("#1976d2", 0.05),
+                            },
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={isSelected}
+                              tabIndex={-1}
+                              disableRipple
+                              color="primary"
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={supplier.SupplierName}
+                            secondary={
+                              supplier.ContactPerson || "No contact person"
+                            }
+                          />
+                        </ListItem>
+                        <Divider />
+                      </React.Fragment>
+                    );
+                  })
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No suppliers found" />
+                </ListItem>
+              )}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSuppliersDialog}>Cancel</Button>
+          <Button
+            onClick={handleConfirmSupplierSelection}
+            variant="contained"
+            color="primary"
+            disabled={selectedSuppliers.length === 0}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog
         open={confirmDialogOpen}
