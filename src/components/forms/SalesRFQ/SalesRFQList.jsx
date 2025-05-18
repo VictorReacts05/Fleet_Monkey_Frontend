@@ -118,7 +118,7 @@ const SalesRFQList = () => {
       );
 
       const salesRFQs = response.data || [];
-      console.log("Sales RFQs loaded:", salesRFQs);
+      // console.log("Sales RFQs loaded:", salesRFQs);
 
       const mappedRows = salesRFQs.map((salesRFQ) => {
         // Convert to number for consistent comparison
@@ -126,7 +126,7 @@ const SalesRFQList = () => {
         const hasPurchaseRFQ = purchaseRFQs.includes(salesRFQId);
         
         // Log the status to debug
-        console.log(`SalesRFQ ID ${salesRFQId} status:`, salesRFQ.Status);
+        // console.log(`SalesRFQ ID ${salesRFQId} status:`, salesRFQ.Status);
         
         return {
           id: salesRFQId,

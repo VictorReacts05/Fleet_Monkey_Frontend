@@ -109,7 +109,7 @@ const PurchaseRFQForm = ({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Add new state variables for supplier selection
+  // Supplier selection state
   const [suppliersDialogOpen, setSuppliersDialogOpen] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState([]);
@@ -118,7 +118,6 @@ const PurchaseRFQForm = ({
 
   const [approvalStatus, setApprovalStatus] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
-  const [menuAnchor, setMenuAnchor] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
@@ -131,15 +130,9 @@ const PurchaseRFQForm = ({
       setLoading(true);
       setParcelLoading(true);
 
-      // Fetch Purchase RFQ data
       const response = await getPurchaseRFQById(purchaseRFQId);
-      console.log("Purchase RFQ response:", response);
-
       if (response && response.data) {
         const rfqData = response.data;
-        console.log("Purchase RFQ data:", rfqData);
-
-        // Format dates if they exist
         let formattedData = {
           ...rfqData,
           DeliveryDate: rfqData.DeliveryDate
@@ -157,9 +150,7 @@ const PurchaseRFQForm = ({
           SalesRFQID: rfqData.SalesRFQID ? rfqData.SalesRFQID.toString() : "",
         };
 
-        // Fetch additional data
         try {
-          // Fetch collection address details
           if (rfqData.CollectionAddressID) {
             const collectionAddressResponse = await axios.get(
               `http://localhost:7000/api/addresses/${rfqData.CollectionAddressID}`
@@ -175,7 +166,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch destination address details
           if (rfqData.DestinationAddressID) {
             const destinationAddressResponse = await axios.get(
               `http://localhost:7000/api/addresses/${rfqData.DestinationAddressID}`
@@ -191,106 +181,64 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch shipping priority details
           if (rfqData.ShippingPriorityID) {
             try {
               const prioritiesResponse = await fetchShippingPriorities();
-              console.log("Shipping priorities response:", prioritiesResponse);
-
-              // Handle nested or direct array response
               const priorities = Array.isArray(prioritiesResponse)
                 ? prioritiesResponse
                 : prioritiesResponse.data || [];
-
               if (Array.isArray(priorities)) {
                 const matchingPriority = priorities.find(
                   (p) =>
                     parseInt(p.ShippingPriorityID || p.MailingPriorityID) ===
                     parseInt(rfqData.ShippingPriorityID)
                 );
-
                 if (matchingPriority) {
-                  console.log("Matching priority found:", matchingPriority);
                   formattedData.ShippingPriorityName =
                     matchingPriority.PriorityName || "Unknown Priority";
-                  console.log(
-                    "Set ShippingPriorityName:",
-                    formattedData.ShippingPriorityName
-                  );
                 } else {
-                  console.warn(
-                    `No matching shipping priority for ID: ${rfqData.ShippingPriorityID}`
-                  );
                   formattedData.ShippingPriorityName = `Unknown Priority (${rfqData.ShippingPriorityID})`;
                 }
               } else {
-                console.error(
-                  "Shipping priorities is not an array:",
-                  priorities
-                );
                 formattedData.ShippingPriorityName = `Error: Invalid priorities data`;
               }
             } catch (priorityError) {
-              console.error(
-                "Error fetching shipping priorities:",
-                priorityError
-              );
               formattedData.ShippingPriorityName = `Error: Failed to fetch priority`;
             }
           }
 
-          // Fetch service type details
           if (rfqData.ServiceTypeID) {
             try {
               const serviceTypesResponse = await fetchServiceTypes();
-              console.log("Service types response:", serviceTypesResponse);
-
-              // Handle nested or direct array response
               const serviceTypes = Array.isArray(serviceTypesResponse)
                 ? serviceTypesResponse
                 : serviceTypesResponse.data || [];
-
               if (Array.isArray(serviceTypes)) {
                 const matchingServiceType = serviceTypes.find(
                   (s) =>
                     parseInt(s.ServiceTypeID) ===
                     parseInt(rfqData.ServiceTypeID)
                 );
-
                 if (matchingServiceType) {
-                  console.log(
-                    "Matching service type found:",
-                    matchingServiceType
-                  );
                   formattedData.ServiceType =
                     matchingServiceType.ServiceType || "Unknown Service Type";
-                  console.log("Set ServiceType:", formattedData.ServiceType);
                 } else {
-                  console.warn(
-                    `No matching service type for ID: ${rfqData.ServiceTypeID}`
-                  );
                   formattedData.ServiceType = `Unknown Service Type (${rfqData.ServiceTypeID})`;
                 }
               } else {
-                console.error("Service types is not an array:", serviceTypes);
                 formattedData.ServiceType = `Error: Invalid service types data`;
               }
             } catch (serviceTypeError) {
-              console.error("Error fetching service types:", serviceTypeError);
               formattedData.ServiceType = `Error: Failed to fetch service type`;
             }
           }
 
-          // Fetch currency details
           if (rfqData.CurrencyID) {
             try {
               const currenciesResponse = await fetchCurrencies();
-              console.log("Currencies response:", currenciesResponse);
-
               const currencies = Array.isArray(currenciesResponse)
                 ? currenciesResponse
                 : currenciesResponse.data || [];
-
               if (Array.isArray(currencies)) {
                 const matchingCurrency = currencies.find(
                   (c) => parseInt(c.CurrencyID) === parseInt(rfqData.CurrencyID)
@@ -298,33 +246,20 @@ const PurchaseRFQForm = ({
                 if (matchingCurrency) {
                   formattedData.CurrencyName =
                     matchingCurrency.CurrencyName || "Unknown Currency";
-                  console.log("Set CurrencyName:", formattedData.CurrencyName);
-                } else {
-                  console.warn(
-                    `No matching currency for ID: ${rfqData.CurrencyID}`
-                  );
                 }
-              } else {
-                console.error("Currencies is not an array:", currencies);
               }
-            } catch (currencyError) {
-              console.error("Error fetching currencies:", currencyError);
-            }
+            } catch (currencyError) {}
           }
         } catch (fetchError) {
           console.error("Error fetching additional data:", fetchError);
         }
 
-        console.log("Final formatted data:", formattedData);
         setFormData(formattedData);
-
-        // Set parcels if they exist
         if (rfqData.parcels && Array.isArray(rfqData.parcels)) {
           setParcels(rfqData.parcels);
         }
       }
 
-      // Fetch Sales RFQs for dropdown
       const salesRFQsData = await fetchSalesRFQs();
       if (salesRFQsData && Array.isArray(salesRFQsData)) {
         const formattedSalesRFQs = salesRFQsData.map((rfq) => ({
@@ -352,25 +287,16 @@ const PurchaseRFQForm = ({
     if (!purchaseRFQId) return;
     try {
       const approvalData = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
-      console.log("Purchase RFQ Approval data received:", approvalData);
-
       setApprovalRecord(approvalData);
-
       if (approvalData.exists) {
-        if (approvalData.ApprovedYN === true || approvalData.ApprovedYN === 1) {
-          setApprovalStatus("approved");
-        } else if (
-          approvalData.ApprovedYN === false ||
-          approvalData.ApprovedYN === 0
-        ) {
-          setApprovalStatus("disapproved");
-        } else {
-          setApprovalStatus(null);
-        }
+        setApprovalStatus(
+          approvalData.ApprovedYN === true || approvalData.ApprovedYN === 1
+            ? "approved"
+            : "disapproved"
+        );
       } else {
         setApprovalStatus(null);
       }
-      console.log("Set approvalStatus to:", approvalStatus);
     } catch (error) {
       console.error("Failed to load approval status:", error);
       setApprovalStatus(null);
@@ -383,7 +309,7 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId, loadApprovalStatus]);
 
-  /* const handleConfirmAction = async () => {
+  const handleConfirmAction = async () => {
     try {
       setLoading(true);
       if (confirmAction === "approve") {
@@ -394,63 +320,105 @@ const PurchaseRFQForm = ({
         await updatePurchaseRFQApproval(purchaseRFQId, false);
         toast.success("Purchase RFQ disapproved successfully");
         setApprovalStatus("disapproved");
-      }
-      await loadApprovalStatus();
-    } catch (error) {
-      console.error(`Error ${confirmAction}ing Purchase RFQ:`, error);
-      toast.error(
-        `Failed to ${confirmAction} Purchase RFQ: ${
-          error.message || "Unknown error"
-        }`
-      );
-    } finally {
-      setConfirmDialogOpen(false);
-      setLoading(false);
-    }
-  }; */
+      } else if (confirmAction === "send") {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const createdByID = user?.personId || 1;
+        const supplierIDs = selectedSuppliers.map(
+          (supplier) => supplier.SupplierID
+        );
 
-    const handleConfirmAction = async () => {
-      try {
-        setLoading(true);
-        if (confirmAction === "approve") {
-          await updatePurchaseRFQApproval(purchaseRFQId, true);
-          toast.success("Purchase RFQ approved successfully");
-          setApprovalStatus("approved");
-        } else if (confirmAction === "disapprove") {
-          await updatePurchaseRFQApproval(purchaseRFQId, false);
-          toast.success("Purchase RFQ disapproved successfully");
-          setApprovalStatus("disapproved");
-        } else if (confirmAction === "send") {
-          // Implement the send functionality here
-          // This would typically involve an API call to send the Purchase RFQ to suppliers
+        console.log("Sending RFQ to suppliers...");
+        const emailData = {
+          purchaseRFQID: parseInt(purchaseRFQId, 10),
+          supplierIDs: supplierIDs,
+          createdByID: createdByID,
+        };
 
-          // Example API call (you'll need to implement this endpoint on your backend)
-          // await sendPurchaseRFQToSuppliers(purchaseRFQId, selectedSuppliers);
+        console.log("Email request data:", emailData);
 
-          // For now, we'll just show a success message
-          toast.success(
-            `Purchase RFQ sent to ${selectedSuppliers.length} suppliers successfully`
+        const response = await axios.post(
+          "http://localhost:7000/api/rfqsent/send-rfq", // Updated endpoint
+          emailData,
+          {
+            headers: {
+              Authorization: `Bearer ${user?.token}`,
+            },
+          }
+        );
+
+        console.log("Send RFQ response:", response.data);
+
+        const results = [];
+        let successCount = 0;
+        let failCount = 0;
+
+        if (
+          response.data &&
+          response.data.success &&
+          Array.isArray(response.data.results)
+        ) {
+          response.data.results.forEach((result) => {
+            const supplier = selectedSuppliers.find(
+              (s) => s.SupplierID === result.supplierID
+            );
+            const supplierName =
+              supplier?.SupplierName || `Supplier ID ${result.supplierID}`;
+
+            if (result.success) {
+              successCount++;
+              console.log(
+                `Success for ${supplierName}: Quotation ID ${result.supplierQuotationID}`
+              );
+              console.log(`Email sent successfully to ${supplierName}`);
+            } else {
+              failCount++;
+              console.warn(`Failed for ${supplierName}: ${result.message}`);
+              toast.warning(`Failed for ${supplierName}: ${result.message}`);
+            }
+
+            results.push({
+              supplierID: result.supplierID,
+              supplierName: supplierName,
+              success: result.success,
+              message: result.message,
+              supplierQuotationID: result.supplierQuotationID,
+              emailSent: result.success,
+              emailMessage: result.message,
+            });
+          });
+
+          if (successCount > 0) {
+            toast.success(
+              `Created ${successCount} supplier quotations and sent emails successfully`
+            );
+          }
+
+          if (failCount > 0) {
+            toast.warning(
+              `Failed to process ${failCount} supplier quotations/emails`
+            );
+          }
+        } else {
+          throw new Error(
+            response.data?.message || "Invalid response from server"
           );
         }
-        await loadApprovalStatus();
-      } catch (error) {
-        console.error(`Error ${confirmAction}ing Purchase RFQ:`, error);
-        toast.error(
-          `Failed to ${confirmAction} Purchase RFQ: ${
-            error.message || "Unknown error"
-          }`
-        );
-      } finally {
-        setConfirmDialogOpen(false);
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error in handleConfirmAction:", error);
+      toast.error(
+        `An error occurred: ${error.response?.data?.message || error.message}`
+      );
+    } finally {
+      setLoading(false);
+      setConfirmDialogOpen(false);
+    }
+  };
 
   const handleCancelAction = () => {
     setConfirmDialogOpen(false);
   };
 
-  // In the PurchaseRFQForm component, add this function if it doesn't exist
   const handleStatusChange = (newStatus) => {
     setFormData((prev) => ({
       ...prev,
@@ -458,7 +426,6 @@ const PurchaseRFQForm = ({
     }));
   };
 
-  // Add function to fetch suppliers
   const fetchSuppliers = async () => {
     try {
       setLoadingSuppliers(true);
@@ -474,18 +441,15 @@ const PurchaseRFQForm = ({
     }
   };
 
-  // Function to handle opening the suppliers dialog
   const handleOpenSuppliersDialog = () => {
     fetchSuppliers();
     setSuppliersDialogOpen(true);
   };
 
-  // Function to handle closing the suppliers dialog
   const handleCloseSuppliersDialog = () => {
     setSuppliersDialogOpen(false);
   };
 
-  // Function to handle supplier selection
   const handleSupplierToggle = (supplier) => {
     const currentIndex = selectedSuppliers.findIndex(
       (s) => s.SupplierID === supplier.SupplierID
@@ -501,12 +465,30 @@ const PurchaseRFQForm = ({
     setSelectedSuppliers(newSelectedSuppliers);
   };
 
-  // Function to confirm supplier selection
   const handleConfirmSupplierSelection = () => {
-    // Here you would typically do something with the selected suppliers
-    // For example, send them to an API or update the form state
     toast.success(`Selected ${selectedSuppliers.length} suppliers`);
     handleCloseSuppliersDialog();
+  };
+
+  const handleSendPurchaseRFQ = async () => {
+    try {
+      if (selectedSuppliers.length === 0) {
+        toast.warning(
+          "Please select suppliers before sending the Purchase RFQ"
+        );
+        handleOpenSuppliersDialog();
+        return;
+      }
+
+      setConfirmMessage(
+        `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations?`
+      );
+      setConfirmAction("send");
+      setConfirmDialogOpen(true);
+    } catch (error) {
+      console.error("Error preparing to send Purchase RFQ:", error);
+      toast.error("Failed to prepare sending: " + error.message);
+    }
   };
 
   return (
@@ -522,7 +504,6 @@ const PurchaseRFQForm = ({
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Typography variant="h6">View Purchase RFQ</Typography>
-
             {purchaseRFQId && (
               <Box
                 sx={{
@@ -549,18 +530,14 @@ const PurchaseRFQForm = ({
                 <StatusIndicator
                   status={formData.Status}
                   purchaseRFQId={purchaseRFQId}
-                  onStatusChange={(newStatus) => {
-                    console.log("Status changed to:", newStatus);
-                    handleStatusChange(newStatus);
-                  }}
+                  onStatusChange={handleStatusChange}
                   readOnly={formData.Status === "Approved"}
                 />
               </Box>
             )}
           </Box>
-
           <Box sx={{ display: "flex", gap: 2 }}>
-            {/* <Button
+            <Button
               variant="contained"
               color="primary"
               onClick={handleOpenSuppliersDialog}
@@ -575,56 +552,21 @@ const PurchaseRFQForm = ({
             >
               Select Suppliers
             </Button>
-
-            {formData.Status === "Approved" && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => handleSendPurchaseRFQ()}
-                sx={{
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  "&:hover": {
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-                  },
-                }}
-              >
-                Send
-              </Button> 
-            )}*/}
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleOpenSuppliersDialog}
-                sx={{
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  "&:hover": {
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-                  },
-                  marginLeft: "24px",
-                }}
-              >
-                Select Suppliers
-              </Button>
-
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => handleSendPurchaseRFQ()}
-                disabled={formData.Status !== "Approved"}
-                sx={{
-                  fontWeight: "bold",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  "&:hover": {
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-                  },
-                }}
-              >
-                Send
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleSendPurchaseRFQ}
+              disabled={formData.Status !== "Approved"}
+              sx={{
+                fontWeight: "bold",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                "&:hover": {
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+                },
+              }}
+            >
+              Send
+            </Button>
           </Box>
         </Box>
       }
@@ -632,8 +574,6 @@ const PurchaseRFQForm = ({
       loading={loading}
       readOnly={true}
     >
-      {/* Remove the Select Suppliers button from here since we moved it to the title bar */}
-
       <Grid
         container
         spacing={1}
@@ -652,14 +592,12 @@ const PurchaseRFQForm = ({
             <ReadOnlyField label="Series" value={formData.Series} />
           </Grid>
         )}
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Company"
             value={formData.CompanyName || DEFAULT_COMPANY.label}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Sales RFQ"
@@ -670,21 +608,18 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Customer Name"
             value={formData.CustomerName || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="External Ref No."
             value={formData.ExternalRefNo || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Delivery Date"
@@ -695,7 +630,6 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Posting Date"
@@ -706,7 +640,6 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Required By Date"
@@ -717,7 +650,6 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Date Received"
@@ -728,60 +660,51 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Service Type"
             value={formData.ServiceType || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collection Address"
             value={formData.CollectionAddress || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Shipping Priority"
             value={formData.ShippingPriorityName || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Currency"
             value={formData.CurrencyName || "-"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collect From Supplier"
             value={formData.CollectFromSupplierYN ? "Yes" : "No"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Packaging Required"
             value={formData.PackagingRequiredYN ? "Yes" : "No"}
           />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Form Completed"
@@ -789,8 +712,6 @@ const PurchaseRFQForm = ({
           />
         </Grid>
       </Grid>
-
-      {/* Parcels section */}
       {parcels.length > 0 ? (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
@@ -896,10 +817,6 @@ const PurchaseRFQForm = ({
           </Paper>
         </Box>
       )}
-
-      {/* ... existing parcels section ... */}
-
-      {/* Suppliers Selection Dialog */}
       <Dialog
         open={suppliersDialogOpen}
         onClose={handleCloseSuppliersDialog}
@@ -940,7 +857,6 @@ const PurchaseRFQForm = ({
               size="small"
             />
           </Box>
-
           {loadingSuppliers ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
@@ -967,7 +883,6 @@ const PurchaseRFQForm = ({
                     const isSelected = selectedSuppliers.some(
                       (s) => s.SupplierID === supplier.SupplierID
                     );
-
                     return (
                       <React.Fragment key={supplier.SupplierID}>
                         <ListItem
@@ -1024,7 +939,6 @@ const PurchaseRFQForm = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={confirmDialogOpen}
         onClose={handleCancelAction}
@@ -1051,28 +965,3 @@ const PurchaseRFQForm = ({
 };
 
 export default PurchaseRFQForm;
-
-// Add this function to handle sending the Purchase RFQ
-  const handleSendPurchaseRFQ = async () => {
-    try {
-      setLoading(true);
-      
-      // Check if suppliers are selected
-      if (selectedSuppliers.length === 0) {
-        toast.warning("Please select suppliers before sending the Purchase RFQ");
-        handleOpenSuppliersDialog();
-        return;
-      }
-      
-      // Confirm before sending
-      setConfirmMessage("Are you sure you want to send this Purchase RFQ to the selected suppliers?");
-      setConfirmAction("send");
-      setConfirmDialogOpen(true);
-      
-    } catch (error) {
-      console.error("Error preparing to send Purchase RFQ:", error);
-      toast.error("Failed to prepare sending: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
