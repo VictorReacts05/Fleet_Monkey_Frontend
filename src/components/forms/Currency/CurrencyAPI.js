@@ -6,18 +6,26 @@ const API_BASE_URL = "http://localhost:7000/api/currencies";
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
+    const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
+
+    if (!token || !user) {
+      console.warn("User authentication data not found");
       return { headers: {}, personId: null };
     }
+
+    const personId = user.personId || null;
+
+    if (!personId) {
+      console.warn("No personId found in user object");
+      return { headers: {}, personId: null };
+    }
+
     return {
       headers: {
-        Authorization: `Bearer ${user.token}`,
+        Authorization: `Bearer ${token}`,
       },
-      personId: user.personId || null, // Adjust key based on your user object structure
+      personId,
     };
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
@@ -129,12 +137,12 @@ export const deleteCurrency = async (id, personId = null) => {
     // Use provided personId or fallback to storedPersonId from localStorage
     const deletedById = personId || storedPersonId;
     if (!deletedById) {
-      throw new Error("personId is required for deletedById");
+      throw new Error("personId is required for DeletedByID");
     }
 
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       headers,
-      data: { deletedById },
+      data: { DeletedByID: Number(deletedById) } // Fixed casing and ensure it's a number
     });
     return response.data;
   } catch (error) {
