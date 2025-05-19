@@ -30,6 +30,10 @@ import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
 import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // For Form Role Approver
+import DescriptionIcon from "@mui/icons-material/Description"; // For Forms
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"; // For Form Roles
+import RequestQuote from '@mui/icons-material/RequestQuote'; // Added for Purchase RFQ
 
 const drawerWidth = 240;
 
@@ -37,6 +41,7 @@ const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" }, // Added Dashboard
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
+  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
   { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
@@ -45,6 +50,9 @@ const menuItems = [
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
+  { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" }, // Add this line
+  { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
+  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   {
     text: "Project Parameters",
@@ -91,14 +99,16 @@ const Sidebar = ({ open, variant, onClose }) => {
     (item) =>
       item.text === "Dashboard" ||
       item.text === "Sales RFQ" ||
-      item.text === "Purchase RFQ"
+      item.text === "Purchase RFQ" ||
+      item.text === "Supplier Quotation"
   );
 
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
       item.text !== "Sales RFQ" &&
-      item.text !== "Purchase RFQ"
+      item.text !== "Purchase RFQ" &&
+      item.text !== "Supplier Quotation"
   );
 
   return (

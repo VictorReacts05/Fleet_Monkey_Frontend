@@ -21,7 +21,7 @@ const SearchBar = ({ onSearch, placeholder = "Search...", initialValue = "" }) =
   };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 500 }}>
+    <Box sx={{ width: '100%', maxWidth: 525 }}>
       <TextField
         fullWidth
         variant="outlined"

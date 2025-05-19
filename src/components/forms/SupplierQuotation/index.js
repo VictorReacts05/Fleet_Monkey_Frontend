@@ -1,0 +1,1 @@
+export { default as SupplierQuotationList } from './SupplierQuotationList';

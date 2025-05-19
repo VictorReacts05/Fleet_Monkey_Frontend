@@ -13,11 +13,14 @@ import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboar
 import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
 import RolesList from './components/forms/Role/RolesList';
-
-// To this
+import { FormRoleApproverList } from './components/forms/FormRoleApprover';
+import FormList from './components/forms/Form/FormList';
+import { FormRoleList } from './components/forms/FormRole'; // Add this import
 import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
 import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
 import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
+// Import Supplier Quotation components
+import { SupplierQuotationList } from './components/forms/SupplierQuotation';
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -216,6 +219,38 @@ function AppContent() {
             }
           />
           <Route
+            path="/supplier-quotation"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/create"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/view/:id"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-quotation/edit/:id"
+            element={
+              <ProtectedRoute>
+                <SupplierQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/customers"
             element={
               <ProtectedRoute>
@@ -336,7 +371,37 @@ function AppContent() {
             }
           />
           
-          {/* Add the Roles route here */}
+          {/* Add the Form Role Approvers route */}
+          <Route
+            path="/form-role-approvers"
+            element={
+              <ProtectedRoute>
+                <FormRoleApproverList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Forms route */}
+          <Route
+            path="/forms"
+            element={
+              <ProtectedRoute>
+                <FormList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Form Roles route */}
+          <Route
+            path="/form-roles"
+            element={
+              <ProtectedRoute>
+                <FormRoleList />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Add the Roles route */}
           <Route
             path="/roles"
             element={
@@ -345,6 +410,11 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Add Supplier Quotation routes */}
+          
+          
+          {/* Existing routes continue */}
         </Routes>
       </Box>
       <ToastNotification />

@@ -6,17 +6,13 @@ import {
   FormControlLabel,
   Checkbox,
   Button,
-  IconButton,
-  Menu,
-  MenuItem,
+  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  CircularProgress,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
   createSalesRFQ,
   updateSalesRFQ,
@@ -28,8 +24,6 @@ import {
   fetchAddresses,
   fetchMailingPriorities,
   fetchCurrencies,
-  approveSalesRFQ,
-  fetchSalesRFQApprovalStatus,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -44,6 +38,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import StatusIndicator from "./StatusIndicator";
+import axios from "axios";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -101,16 +96,30 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(!readOnly);
   const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [approvalStatus, setApprovalStatus] = useState(null);
   const [purchaseRFQDialogOpen, setPurchaseRFQDialogOpen] = useState(false);
   const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
-  const [approvalRecord, setApprovalRecord] = useState(null);
   const [status, setStatus] = useState("");
-    const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
+  const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
+  const [fieldDisabled, setFieldDisabled] = useState({
+    Series: true,
+    CompanyID: true,
+    CustomerID: true,
+    SupplierID: true,
+    ExternalRefNo: true,
+    DeliveryDate: true,
+    PostingDate: true,
+    RequiredByDate: true,
+    DateReceived: true,
+    ServiceTypeID: false,
+    CollectionAddressID: true,
+    DestinationAddressID: true,
+    ShippingPriorityID: true,
+    Terms: true,
+    CurrencyID: true,
+    CollectFromSupplierYN: true,
+    PackagingRequiredYN: true,
+    FormCompletedYN: true,
+  });
 
   useEffect(() => {
     const loadDropdownData = async () => {
@@ -319,133 +328,41 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DEFAULT_COMPANY.value,
   ]);
 
-    const loadApprovalStatus = useCallback(async () => {
-      if (!salesRFQId) return;
-      try {
-        const approvalData = await fetchSalesRFQApprovalStatus(salesRFQId);
-
-        // Log the entire response to see its structure
-        console.log("Full approval data response:", approvalData);
-
-        // Check if the data is nested in a data property
-        // If approvalData has a data array, use the first item
-        const actualApprovalData =
-          approvalData?.data &&
-          Array.isArray(approvalData.data) &&
-          approvalData.data.length > 0
-            ? approvalData.data[0]
-            : approvalData;
-
-        console.log(
-          "SalesRFQ Approval - ApprovedYN:",
-          actualApprovalData?.ApprovedYN
-        );
-
-        setApprovalRecord(actualApprovalData);
-
-        // First check if we have a direct Status field from the API
-        if (actualApprovalData && actualApprovalData.Status) {
-          setStatus(actualApprovalData.Status);
-          setApprovalStatus(
-            actualApprovalData.Status === "Approved"
-              ? "approved"
-              : "disapproved"
-          );
-        }
-        // Otherwise use the ApprovedYN field
-        else if (
-          actualApprovalData &&
-          actualApprovalData.ApprovedYN !== undefined
-        ) {
-          const isApproved =
-            actualApprovalData.ApprovedYN === 1 ||
-            actualApprovalData.ApprovedYN === true ||
-            actualApprovalData.ApprovedYN === "1";
-          const newStatus = isApproved ? "approved" : "disapproved";
-          setApprovalStatus(newStatus);
-
-          // Also update the status state to match the approval status
-          const newDisplayStatus = isApproved ? "Approved" : "Pending";
-          setStatus(newDisplayStatus);
-        } else {
-          setApprovalStatus(null);
-        }
-
-        // Also try to get the status from the SalesRFQ record itself
-        try {
-          const salesRFQResponse = await getSalesRFQById(salesRFQId);
-          // console.log("Full SalesRFQ response:", salesRFQResponse);
-
-          // Check if the data is nested in a data property
-          const salesRFQData = salesRFQResponse?.data;
-
-          // Check for both Status and status (case-sensitive fields)
-          console.log(
-            "SalesRFQ Table - Status:",
-            salesRFQData?.Status || salesRFQData?.status
-          );
-
-          if (salesRFQData && (salesRFQData.Status || salesRFQData.status)) {
-            // Use whichever one is defined
-            setStatus(salesRFQData.Status || salesRFQData.status);
-          }
-        } catch (error) {
-          console.error("Error fetching SalesRFQ for status:", error);
-        }
-      } catch (error) {
-        console.error("Failed to load approval status:", error);
-        if (error.response) {
-          console.error("Server response:", error.response.data);
-        }
-        setApprovalStatus(null);
-        setApprovalRecord(null);
-      }
-    }, [salesRFQId]);
-
   useEffect(() => {
     if (salesRFQId && dropdownsLoaded) {
       loadSalesRFQ();
-      loadApprovalStatus();
     }
-  }, [salesRFQId, dropdownsLoaded, loadSalesRFQ, loadApprovalStatus]);
+  }, [salesRFQId, dropdownsLoaded, loadSalesRFQ]);
 
-    useEffect(() => {
-      const loadSalesRFQ = async () => {
-        if (salesRFQId) {
-          try {
-            setLoading(true);
-            const response = await getSalesRFQById(salesRFQId);
-            if (response.data) {
-              // Check for both Status and status (case-sensitive fields)
-              console.log(
-                "SalesRFQ Table - Status:",
-                response.data.Status || response.data.status
-              );
+  useEffect(() => {
+    const loadSalesRFQ = async () => {
+      if (salesRFQId) {
+        try {
+          setLoading(true);
+          const response = await getSalesRFQById(salesRFQId);
+          if (response.data) {
+            console.log(
+              "SalesRFQ Table - Status:",
+              response.data.Status || response.data.status
+            );
 
-              // If Status is explicitly set in the API response, use it
-              if (response.data.Status || response.data.status) {
-                setStatus(response.data.Status || response.data.status);
-              }
-              // Otherwise, derive it from the approval status
-              else if (response.data.ApprovedYN !== undefined) {
-                setStatus(response.data.ApprovedYN ? "Approved" : "Pending");
-              }
-              // Default fallback
-              else {
-                setStatus("Pending");
-              }
+            if (response.data.Status || response.data.status) {
+              setStatus(response.data.Status || response.data.status);
+            } else {
+              setStatus("Pending");
             }
-          } catch (error) {
-            console.error("Error loading SalesRFQ:", error);
-            toast.error("Failed to load SalesRFQ details");
-          } finally {
-            setLoading(false);
           }
+        } catch (error) {
+          console.error("Error loading SalesRFQ:", error);
+          toast.error("Failed to load SalesRFQ details");
+        } finally {
+          setLoading(false);
         }
-      };
+      }
+    };
 
-      loadSalesRFQ();
-    }, [salesRFQId]);
+    loadSalesRFQ();
+  }, [salesRFQId]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -548,6 +465,83 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       ...prev,
       [name]: value,
     }));
+
+    if (name === "ServiceTypeID") {
+      const serviceTypeLabel = serviceTypes.find(
+        (st) => st.value === value
+      )?.label;
+
+      if (
+        ["International Procurement", "Local Procurement"].includes(
+          serviceTypeLabel
+        )
+      ) {
+        setFieldDisabled({
+          ...fieldDisabled,
+          Series: !isEditing,
+          CompanyID: true,
+          CustomerID: !isEditing,
+          SupplierID: true,
+          ExternalRefNo: !isEditing,
+          DeliveryDate: !isEditing,
+          PostingDate: !isEditing,
+          RequiredByDate: !isEditing,
+          DateReceived: !isEditing,
+          ServiceTypeID: false,
+          CollectionAddressID: !isEditing,
+          DestinationAddressID: !isEditing,
+          ShippingPriorityID: !isEditing,
+          Terms: !isEditing,
+          CurrencyID: !isEditing,
+          CollectFromSupplierYN: !isEditing,
+          PackagingRequiredYN: !isEditing,
+          FormCompletedYN: !isEditing,
+        });
+      } else if (["Buyout", "CPCR", "Direct"].includes(serviceTypeLabel)) {
+        setFieldDisabled({
+          ...fieldDisabled,
+          Series: !isEditing,
+          CompanyID: true,
+          CustomerID: !isEditing,
+          SupplierID: !isEditing,
+          ExternalRefNo: !isEditing,
+          DeliveryDate: !isEditing,
+          PostingDate: !isEditing,
+          RequiredByDate: !isEditing,
+          DateReceived: !isEditing,
+          ServiceTypeID: false,
+          CollectionAddressID: !isEditing,
+          DestinationAddressID: !isEditing,
+          ShippingPriorityID: !isEditing,
+          Terms: !isEditing,
+          CurrencyID: !isEditing,
+          CollectFromSupplierYN: !isEditing,
+          PackagingRequiredYN: !isEditing,
+          FormCompletedYN: !isEditing,
+        });
+      } else {
+        setFieldDisabled({
+          Series: true,
+          CompanyID: true,
+          CustomerID: true,
+          SupplierID: true,
+          ExternalRefNo: true,
+          DeliveryDate: true,
+          PostingDate: true,
+          RequiredByDate: true,
+          DateReceived: true,
+          ServiceTypeID: false,
+          CollectionAddressID: true,
+          DestinationAddressID: true,
+          ShippingPriorityID: true,
+          Terms: true,
+          CurrencyID: true,
+          CollectFromSupplierYN: true,
+          PackagingRequiredYN: true,
+          FormCompletedYN: true,
+        });
+      }
+    }
   };
 
   const handleCheckboxChange = (name) => (e) => {
@@ -558,7 +552,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   };
 
   const handleDateChange = (field, date) => {
-    // Make sure to convert the date to a dayjs object
     const dayjsDate = date ? dayjs(date) : null;
 
     setFormData((prevData) => ({
@@ -568,8 +561,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   };
 
   useEffect(() => {
-    // This effect will run when the component mounts
-    // to ensure all date fields are properly formatted as dayjs objects
     if (formData) {
       const formattedData = {
         ...formData,
@@ -598,13 +589,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         ? { Authorization: `Bearer ${user.token}` }
         : {};
 
-      // Fetch all purchase RFQs
       const response = await axios.get("http://localhost:7000/api/sales-rfq", {
         headers,
       });
 
       if (response.data && response.data.data) {
-        // Check if any purchase RFQ has this sales RFQ ID as its source
         const hasPurchaseRFQ = response.data.data.some(
           (rfq) => rfq.SourceSalesRFQID === parseInt(salesRFQId, 10)
         );
@@ -639,96 +628,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setParcels(newParcels);
   };
 
-  const handleMenuOpen = (event) => {
-    setMenuAnchor(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchor(null);
-  };
-
-  const handleApprove = async () => {
-    try {
-      setLoading(true);
-      const response = await approveSalesRFQ(salesRFQId, true);
-
-      if (response.success) {
-        toast.success("SalesRFQ approved successfully");
-        setApprovalStatus("approved");
-        setStatus("Approved"); // Update the status state
-      } else {
-        toast.error(`Failed to approve: ${response.message}`);
-      }
-    } catch (error) {
-      console.error("Error approving SalesRFQ:", error);
-      toast.error(`Error approving SalesRFQ: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDisapprove = async () => {
-    try {
-      setLoading(true);
-      const response = await approveSalesRFQ(salesRFQId, false);
-
-      if (response.success) {
-        toast.success("SalesRFQ disapproved successfully");
-        setApprovalStatus("disapproved");
-        setStatus("Pending"); // Update the status state
-      } else {
-        toast.error(`Failed to disapprove: ${response.message}`);
-      }
-    } catch (error) {
-      console.error("Error disapproving SalesRFQ:", error);
-      toast.error(`Error disapproving SalesRFQ: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirmAction = async () => {
-    setConfirmDialogOpen(false);
-
-    try {
-      setLoading(true);
-
-      const isApproved = confirmAction === "approve";
-      await approveSalesRFQ(salesRFQId, isApproved);
-
-      toast.success(
-        `SalesRFQ ${isApproved ? "approved" : "disapproved"} successfully`
-      );
-      const newStatus = isApproved ? "approved" : "disapproved";
-      setApprovalStatus(newStatus);
-      console.log("Set approvalStatus after approval:", newStatus);
-      // Optionally reload status after a delay to ensure backend sync
-      setTimeout(() => loadApprovalStatus(), 1000);
-    } catch (error) {
-      console.error(
-        `Error ${
-          confirmAction === "approve" ? "approving" : "disapproving"
-        } SalesRFQ:`,
-        error
-      );
-      const errorMessage =
-        error.response?.data?.message || error.message || "Unknown error";
-      toast.error(`Failed to ${confirmAction} SalesRFQ: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreatePurchaseRFQ = async () => {
     try {
       setCreatingPurchaseRFQ(true);
       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
       console.log("Purchase RFQ creation response:", response);
 
-      // Extract the Purchase RFQ ID from the response
       let purchaseRFQId = null;
 
-      // Check for the ID in different possible locations in the response
       if (response && response.data && response.data.data) {
         purchaseRFQId =
           response.data.data.PurchaseRFQID || response.data.data.id;
@@ -741,7 +648,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         response.data &&
         typeof response.data === "object"
       ) {
-        // Look for any property that might contain the ID
         const possibleIdProps = ["PurchaseRFQID", "id", "purchaseRFQId"];
         for (const prop of possibleIdProps) {
           if (response.data[prop]) {
@@ -754,10 +660,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
 
       if (purchaseRFQId) {
-        // First toast - success message
         toast.success(`Purchase RFQ has been created successfully!`);
-
-        // Second toast - with link to view the created Purchase RFQ
         toast.info(
           <div>
             View Purchase RFQ details{" "}
@@ -770,7 +673,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               }}
               onClick={(e) => {
                 e.preventDefault();
-                // Make sure we're passing the correct ID to the navigation
                 console.log("Navigating to Purchase RFQ:", purchaseRFQId);
                 navigate(`/purchase-rfq/view/${purchaseRFQId}`);
               }}
@@ -778,10 +680,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               here
             </a>
           </div>,
-          { autoClose: 8000 } // Keep this toast visible longer
+          { autoClose: 8000 }
         );
 
-        // Close the dialog if it's open
         setPurchaseRFQDialogOpen(false);
       } else {
         toast.error("Purchase RFQ was created but the ID is unavailable");
@@ -807,7 +708,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         showToast("Purchase RFQ created successfully", "success");
         setPurchaseRFQDialogOpen(false);
 
-        // Navigate to the Purchase RFQ list
         navigate("/purchase-rfq");
       } else {
         toast.error(result.message || "Failed to create Purchase RFQ");
@@ -844,62 +744,33 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             </Typography>
             {!isEditing && salesRFQId && (
               <Box sx={{ display: "flex", alignItems: "center" }}>
-                {approvalStatus !== null ? (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      backgroundColor:
-                        status === "Approved" ? "#e6f7e6" : "#ffebee",
-                      color: status === "Approved" ? "#2e7d32" : "#d32f2f",
-                      borderRadius: "4px",
-                      padding: "6px 12px",
-                      fontWeight: "medium",
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor:
+                      status === "Approved" ? "#e6f7e6" : "#ffebee",
+                    color: status === "Approved" ? "#2e7d32" : "#d32f2f",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    fontWeight: "medium",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ marginRight: "8px" }}>
+                    Status:{" "}
+                  </Typography>
+                  <StatusIndicator
+                    status={status}
+                    salesRFQId={salesRFQId}
+                    onStatusChange={(newStatus) => {
+                      console.log("Status changed to:", newStatus);
+                      setStatus(newStatus);
                     }}
-                  >
-                    <Typography variant="body2" sx={{ marginRight: "8px" }}>
-                      Status:{" "}
-                    </Typography>
-                    {/* <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                      {status || "Pending"}
-                    </Typography> */}
-                    <StatusIndicator
-                      status={status}
-                      salesRFQId={salesRFQId}
-                      onStatusChange={(newStatus) => {
-                        console.log("Status changed to:", newStatus);
-                        setStatus(newStatus);
-                        // Also update the approvalStatus to match
-                        setApprovalStatus(
-                          newStatus === "Approved" ? "approved" : "disapproved"
-                        );
-                      }}
-                      initialStatus={status}
-                      skipFetch={true}
-                      readOnly={false} // Change this to false to make it clickable
-                    />
-                  </Box>
-                ) : (
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={handleMenuOpen}
-                      endIcon={<MoreVertIcon />}
-                      sx={{ ml: 1 }}
-                    >
-                      Status
-                    </Button>
-                    <Menu
-                      anchorEl={menuAnchor}
-                      open={Boolean(menuAnchor)}
-                      onClose={handleMenuClose}
-                    >
-                      <MenuItem onClick={handleApprove}>Approve</MenuItem>
-                      <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
-                    </Menu>
-                  </Box>
-                )}
+                    initialStatus={status}
+                    skipFetch={true}
+                    readOnly={status === "Approved"}
+                  />
+                </Box>
               </Box>
             )}
           </Box>
@@ -937,7 +808,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   onChange={handleChange}
                   error={!!errors.Series}
                   helperText={errors.Series}
-                  disabled={true}
+                  disabled={fieldDisabled.Series}
                 />
               ) : (
                 <ReadOnlyField label="Series" value={formData.Series} />
@@ -952,11 +823,33 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 value={formData.CompanyID || ""}
                 onChange={() => {}}
                 options={[DEFAULT_COMPANY]}
-                disabled={true}
+                disabled={fieldDisabled.CompanyID}
                 readOnly={true}
               />
             ) : (
               <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormSelect
+                name="ServiceTypeID"
+                label="Service Type"
+                value={formData.ServiceTypeID || ""}
+                onChange={handleChange}
+                options={serviceTypes}
+                error={!!errors.ServiceTypeID}
+                helperText={errors.ServiceTypeID}
+                disabled={fieldDisabled.ServiceTypeID}
+              />
+            ) : (
+              <ReadOnlyField
+                label="Service Type"
+                value={
+                  serviceTypes.find((st) => st.value === formData.ServiceTypeID)
+                    ?.label || "-"
+                }
+              />
             )}
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -969,7 +862,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={customers}
                 error={!!errors.CustomerID}
                 helperText={errors.CustomerID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CustomerID}
               />
             ) : (
               <ReadOnlyField
@@ -991,7 +884,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={suppliers}
                 error={!!errors.SupplierID}
                 helperText={errors.SupplierID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.SupplierID}
               />
             ) : (
               <ReadOnlyField
@@ -1012,7 +905,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={handleChange}
                 error={!!errors.ExternalRefNo}
                 helperText={errors.ExternalRefNo}
-                disabled={!isEditing}
+                disabled={fieldDisabled.ExternalRefNo}
               />
             ) : (
               <ReadOnlyField
@@ -1030,7 +923,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("DeliveryDate", date)}
                 error={!!errors.DeliveryDate}
                 helperText={errors.DeliveryDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DeliveryDate}
               />
             ) : (
               <ReadOnlyField
@@ -1052,7 +945,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("PostingDate", date)}
                 error={!!errors.PostingDate}
                 helperText={errors.PostingDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.PostingDate}
               />
             ) : (
               <ReadOnlyField
@@ -1074,7 +967,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("RequiredByDate", date)}
                 error={!!errors.RequiredByDate}
                 helperText={errors.RequiredByDate}
-                disabled={!isEditing}
+                disabled={fieldDisabled.RequiredByDate}
               />
             ) : (
               <ReadOnlyField
@@ -1096,7 +989,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={(date) => handleDateChange("DateReceived", date)}
                 error={!!errors.DateReceived}
                 helperText={errors.DateReceived}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DateReceived}
               />
             ) : (
               <ReadOnlyField
@@ -1112,28 +1005,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
-                name="ServiceTypeID"
-                label="Service Type"
-                value={formData.ServiceTypeID || ""}
-                onChange={handleChange}
-                options={serviceTypes}
-                error={!!errors.ServiceTypeID}
-                helperText={errors.ServiceTypeID}
-                disabled={!isEditing}
-              />
-            ) : (
-              <ReadOnlyField
-                label="Service Type"
-                value={
-                  serviceTypes.find((st) => st.value === formData.ServiceTypeID)
-                    ?.label || "-"
-                }
-              />
-            )}
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            {isEditing ? (
-              <FormSelect
                 name="CollectionAddressID"
                 label="Collection Address"
                 value={formData.CollectionAddressID || ""}
@@ -1141,7 +1012,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={addresses}
                 error={!!errors.CollectionAddressID}
                 helperText={errors.CollectionAddressID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CollectionAddressID}
               />
             ) : (
               <ReadOnlyField
@@ -1164,7 +1035,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={addresses}
                 error={!!errors.DestinationAddressID}
                 helperText={errors.DestinationAddressID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.DestinationAddressID}
               />
             ) : (
               <ReadOnlyField
@@ -1187,7 +1058,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={mailingPriorities}
                 error={!!errors.ShippingPriorityID}
                 helperText={errors.ShippingPriorityID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.ShippingPriorityID}
               />
             ) : (
               <ReadOnlyField
@@ -1209,7 +1080,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 onChange={handleChange}
                 error={!!errors.Terms}
                 helperText={errors.Terms}
-                disabled={!isEditing}
+                disabled={fieldDisabled.Terms}
               />
             ) : (
               <ReadOnlyField label="Terms" value={formData.Terms} />
@@ -1225,7 +1096,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={currencies}
                 error={!!errors.CurrencyID}
                 helperText={errors.CurrencyID}
-                disabled={!isEditing}
+                disabled={fieldDisabled.CurrencyID}
               />
             ) : (
               <ReadOnlyField
@@ -1248,7 +1119,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="CollectFromSupplierYN"
                         checked={formData.CollectFromSupplierYN}
                         onChange={handleCheckboxChange("CollectFromSupplierYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.CollectFromSupplierYN}
                       />
                     }
                     label="Collect From Supplier"
@@ -1268,7 +1139,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="PackagingRequiredYN"
                         checked={formData.PackagingRequiredYN}
                         onChange={handleCheckboxChange("PackagingRequiredYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.PackagingRequiredYN}
                       />
                     }
                     label="Packaging Required"
@@ -1288,7 +1159,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                         name="FormCompletedYN"
                         checked={formData.FormCompletedYN}
                         onChange={handleCheckboxChange("FormCompletedYN")}
-                        disabled={!isEditing}
+                        disabled={fieldDisabled.FormCompletedYN}
                       />
                     }
                     label="Form Completed"
@@ -1308,30 +1179,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           onParcelsChange={handleParcelsChange}
           readOnly={!isEditing}
         />
-        <Dialog
-          open={confirmDialogOpen}
-          onClose={() => setConfirmDialogOpen(false)}
-        >
-          <DialogTitle>Confirm Action</DialogTitle>
-          <DialogContent>
-            <DialogContentText>{confirmMessage}</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setConfirmDialogOpen(false)}
-              color="secondary"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmAction}
-              color={confirmAction === "approve" ? "primary" : "error"}
-              variant="contained"
-            >
-              {confirmAction === "approve" ? "Approve" : "Disapprove"}
-            </Button>
-          </DialogActions>
-        </Dialog>
         <Dialog
           open={purchaseRFQDialogOpen}
           onClose={() =>
