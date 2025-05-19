@@ -31,7 +31,7 @@ import {
 import {
   getPurchaseRFQById,
   fetchSalesRFQs,
-  fetchPurchaseRFQApprovalStatus,
+  fetchPurchaseRFQApprovalStatus, // Fixed typo
   updatePurchaseRFQApproval,
   fetchServiceTypes,
   fetchShippingPriorities,
@@ -122,6 +122,12 @@ const PurchaseRFQForm = ({
   const [confirmAction, setConfirmAction] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
   const [parcelLoading, setParcelLoading] = useState(false);
+  const [emailSendingStatus, setEmailSendingStatus] = useState({
+    sending: false,
+    progress: 0,
+    totalSuppliers: 0,
+    completedSuppliers: 0,
+  });
 
   const loadPurchaseRFQData = useCallback(async () => {
     if (!purchaseRFQId) return;
@@ -136,7 +142,7 @@ const PurchaseRFQForm = ({
         let formattedData = {
           ...rfqData,
           DeliveryDate: rfqData.DeliveryDate
-            ? new Date(rfqData.DeliveryDate)
+            ? new Date(rfqData.DeliveryDate) // Fixed typo
             : null,
           PostingDate: rfqData.PostingDate
             ? new Date(rfqData.PostingDate)
@@ -309,6 +315,28 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId, loadApprovalStatus]);
 
+  const addSupplier = async (supplierData) => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const response = await axios.post(
+        "http://localhost:7000/api/suppliers",
+        supplierData,
+        {
+          headers: {
+            Authorization: `Bearer ${user?.token}`,
+          },
+        }
+      );
+      toast.success("Supplier added successfully");
+      await fetchSuppliers();
+      return response.data.data;
+    } catch (error) {
+      console.error("Error adding supplier:", error);
+      toast.error("Failed to add supplier: " + error.message);
+      throw error;
+    }
+  };
+
   const handleConfirmAction = async () => {
     try {
       setLoading(true);
@@ -327,6 +355,18 @@ const PurchaseRFQForm = ({
           (supplier) => supplier.SupplierID
         );
 
+        setEmailSendingStatus({
+          sending: true,
+          progress: 0,
+          totalSuppliers: supplierIDs.length,
+          completedSuppliers: 0,
+        });
+
+        const toastId = toast.info(
+          `Sending RFQ to ${supplierIDs.length} suppliers. This may take some time...`,
+          { autoClose: false }
+        );
+
         console.log("Sending RFQ to suppliers...");
         const emailData = {
           purchaseRFQID: parseInt(purchaseRFQId, 10),
@@ -334,10 +374,10 @@ const PurchaseRFQForm = ({
           createdByID: createdByID,
         };
 
-        console.log("Email request data:", emailData);
+        console.log("Email request data:", JSON.stringify(emailData, null, 2));
 
         const response = await axios.post(
-          "http://localhost:7000/api/rfqsent/send-rfq", // Updated endpoint
+          "http://localhost:7000/api/rfqsent/send-rfq",
           emailData,
           {
             headers: {
@@ -346,7 +386,13 @@ const PurchaseRFQForm = ({
           }
         );
 
-        console.log("Send RFQ response:", response.data);
+        console.log("Send RFQ response:", JSON.stringify(response.data, null, 2));
+
+        toast.update(toastId, {
+          render: "Email sending process completed!",
+          type: "success",
+          autoClose: 5000,
+        });
 
         const results = [];
         let successCount = 0;
@@ -403,12 +449,25 @@ const PurchaseRFQForm = ({
             response.data?.message || "Invalid response from server"
           );
         }
+
+        setEmailSendingStatus({
+          sending: false,
+          progress: 100,
+          totalSuppliers: supplierIDs.length,
+          completedSuppliers: supplierIDs.length,
+        });
       }
     } catch (error) {
       console.error("Error in handleConfirmAction:", error);
       toast.error(
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
+      setEmailSendingStatus({
+        sending: false,
+        progress: 0,
+        totalSuppliers: 0,
+        completedSuppliers: 0,
+      });
     } finally {
       setLoading(false);
       setConfirmDialogOpen(false);
@@ -470,26 +529,27 @@ const PurchaseRFQForm = ({
     handleCloseSuppliersDialog();
   };
 
-  const handleSendPurchaseRFQ = async () => {
-    try {
-      if (selectedSuppliers.length === 0) {
-        toast.warning(
-          "Please select suppliers before sending the Purchase RFQ"
-        );
-        handleOpenSuppliersDialog();
-        return;
-      }
+    const handleSendPurchaseRFQ = async () => {
+      try {
+        if (selectedSuppliers.length === 0) {
+          toast.warning(
+            "Please select suppliers before sending the Purchase RFQ"
+          );
+          handleOpenSuppliersDialog();
+          return;
+        }
 
-      setConfirmMessage(
-        `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations?`
-      );
-      setConfirmAction("send");
-      setConfirmDialogOpen(true);
-    } catch (error) {
-      console.error("Error preparing to send Purchase RFQ:", error);
-      toast.error("Failed to prepare sending: " + error.message);
-    }
-  };
+        // Skip opening the suppliers dialog and go straight to confirmation
+        setConfirmMessage(
+          `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations? This process may take some time.`
+        );
+        setConfirmAction("send");
+        setConfirmDialogOpen(true);
+      } catch (error) {
+        console.error("Error preparing to send Purchase RFQ:", error);
+        toast.error("Failed to prepare sending: " + error.message);
+      }
+    };
 
   return (
     <FormPage
@@ -556,16 +616,34 @@ const PurchaseRFQForm = ({
               variant="contained"
               color="secondary"
               onClick={handleSendPurchaseRFQ}
-              disabled={formData.Status !== "Approved"}
+              disabled={
+                formData.Status !== "Approved" || emailSendingStatus.sending
+              }
               sx={{
                 fontWeight: "bold",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                 "&:hover": {
                   boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
                 },
+                position: "relative",
               }}
             >
-              Send
+              {emailSendingStatus.sending ? (
+                <>
+                  <CircularProgress
+                    size={24}
+                    color="inherit"
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      marginLeft: "-12px",
+                    }}
+                  />
+                  <span style={{ visibility: "hidden" }}>Send</span>
+                </>
+              ) : (
+                "Send"
+              )}
             </Button>
           </Box>
         </Box>
@@ -574,6 +652,38 @@ const PurchaseRFQForm = ({
       loading={loading}
       readOnly={true}
     >
+      {emailSendingStatus.sending && (
+        <Box
+          sx={{
+            width: "100%",
+            mb: 3,
+            p: 2,
+            bgcolor: "info.light",
+            borderRadius: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{ mb: 1, color: "info.dark", fontWeight: "bold" }}
+          >
+            Sending RFQ to suppliers... This may take some time.
+          </Typography>
+          <Box sx={{ width: "100%", display: "flex", alignItems: "center" }}>
+            <CircularProgress
+              variant="indeterminate"
+              size={24}
+              sx={{ mr: 2 }}
+            />
+            <Typography variant="body2">
+              Please wait while we process your request. Do not close this page.
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <Grid
         container
         spacing={1}
@@ -949,13 +1059,30 @@ const PurchaseRFQForm = ({
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {confirmMessage}
+            {confirmAction === "send" && (
+              <Typography
+                variant="body2"
+                color="warning.main"
+                sx={{ mt: 2, fontWeight: "medium" }}
+              >
+                Note: Email sending may take several minutes depending on the
+                number of suppliers. Please do not close this page during the
+                process.
+              </Typography>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCancelAction} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleConfirmAction} color="primary" autoFocus>
+          <Button
+            onClick={handleConfirmAction}
+            color="primary"
+            autoFocus
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
             Confirm
           </Button>
         </DialogActions>

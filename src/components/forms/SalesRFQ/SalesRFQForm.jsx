@@ -660,10 +660,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
 
       if (purchaseRFQId) {
-        toast.success(`Purchase RFQ has been created successfully!`);
         toast.info(
           <div>
-            View Purchase RFQ details{" "}
+            Purchase RFQ has been created successfully and you can view Purchase RFQ details{" "}
             <a
               href={`/purchase-rfq/view/${purchaseRFQId}`}
               style={{
