@@ -509,20 +509,26 @@ const PurchaseRFQForm = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  backgroundColor:
-                    formData.Status === "Approved" ? "#e6f7e6" : "#ffebee",
-                  color: formData.Status === "Approved" ? "#2e7d32" : "#d32f2f",
+                  background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
-                  padding: "6px 12px",
-                  fontWeight: "medium",
-                }}
+                  padding: "0px 10px",
+                  height: "37px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease-in-out",
+                  marginLeft: "16px", // Added left margin for spacing
+                  "&:hover": {
+                    boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                    transform: "scale(1.02)", // Slight scale on hover
+                  },
+                  }}
               >
                 <Typography
                   variant="body2"
                   sx={{
+                    fontWeight: "700", // Bolder text
                     marginRight: "8px",
-                    color:
-                      formData.Status === "Approved" ? "#2e7d32" : "#d32f2f",
+                    color: useTheme().palette.mode === "light" ? "white" : "black",
+                    fontSize: "0.9rem",
                   }}
                 >
                   Status:{" "}

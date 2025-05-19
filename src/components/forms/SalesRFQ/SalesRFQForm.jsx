@@ -753,8 +753,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                     display: "flex",
                     alignItems: "center",
                     background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
-                    borderRadius: "12px",
-                    padding: "2px 10px",
+                    borderRadius: "4px",
+                    padding: "0px 10px",
+                    height: "37px",
+                   
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
                     marginLeft: "16px", // Added left margin for spacing
