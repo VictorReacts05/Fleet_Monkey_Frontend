@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import {
   Box,
   Typography,
@@ -6,6 +6,7 @@ import {
   Menu,
   MenuItem,
   CircularProgress,
+  useTheme,
 } from "@mui/material";
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios";
@@ -213,7 +214,13 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
   const chipProps = getChipProps();
 
   return (
-    <Box>
+    <Box 
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"}}
+        
+        >
       <Chip
         label={
           <Typography variant="body2">
@@ -231,10 +238,19 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         onClick={handleClick}
         clickable={chipProps.clickable}
         sx={{
+          height: 28, // Match button height
+          minWidth: 80, // Consistent width
+          padding: "2px 0px", // Compact padding
+          borderRadius: "12px", // Rounded corners
+          position: "relative",
           cursor: chipProps.clickable ? "pointer" : "default",
           "& .MuiChip-label": {
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
+            color: useTheme().palette.mode === "light" ? "white" : "black",
+            
+            borderRadius: "12px",
           },
         }}
       />

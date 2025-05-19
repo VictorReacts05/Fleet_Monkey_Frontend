@@ -6,11 +6,6 @@ const API_BASE_URL = "http://localhost:7000/api/address-types";
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    // console.log(
-    //   "Raw user data from localStorage:",
-    //   localStorage.getItem("user")
-    // );
-    // console.log("Parsed user object:", user);
 
     if (!user || !user.token) {
       console.warn(
@@ -19,15 +14,12 @@ const getAuthHeader = () => {
       return { headers: {}, personId: null };
     }
 
-    // Try different possible keys for personId
-    const personId = user.personId || user.id || user.userId || null;
-    // console.log("Extracted personId:", personId);
+    // Get personId from the nested user object
+    const personId = user.user?.personId || user.personId || null;
 
     if (!personId) {
-      console.warn(
-        "No personId found in user object. Available keys:",
-        Object.keys(user)
-      );
+      console.warn("No personId found in user object");
+      return { headers: {}, personId: null };
     }
 
     return {
@@ -56,7 +48,7 @@ export const fetchAddressTypes = async (
 
     const { headers } = getAuthHeader();
     const response = await axios.get(url, { headers });
-    console.log(response.headers)
+    // console.log(response.headers)
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -135,47 +127,22 @@ export const updateAddressType = async (id, addressTypeData) => {
 };
 
 // Delete an address type
-export const deleteAddressType = async (id, personId = null) => {
+export const deleteAddressType = async (id) => {
   try {
-    const { headers, personId: storedPersonId } = getAuthHeader();
-
-    // Use provided personId or fallback to storedPersonId
-    const deletedByID = personId || storedPersonId;
-    // console.log("deleteAddressType - Using deletedByID:", deletedByID);
-
-    if (!deletedByID) {
-      throw new Error(
-        "personId is required for deletedByID. Check localStorage or pass personId explicitly."
-      );
+    const { headers, personId } = getAuthHeader();
+    
+    if (!personId) {
+      throw new Error('personId is required for deletedByID');
     }
-
-    const requestBody = {
-      deletedByID,
-      deletedById: deletedByID, // Include both to handle backend naming
-    };
-
-    // console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
-    // console.log("Request body:", requestBody);
-
+    
     const response = await axios.delete(`${API_BASE_URL}/${id}`, {
       headers,
-      data: requestBody,
+      data: { DeletedByID: Number(personId) }
     });
-
-    console.log("Delete response:", response.data);
+    
     return response.data;
   } catch (error) {
-    console.error("Error deleting address type:", error);
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-      console.error("Request URL:", error.config.url);
-      console.error("Request body sent:", error.config.data);
-    } else if (error.request) {
-      console.error("No response received, request:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
+    console.error('Error deleting address type:', error);
     throw error.response?.data || error.message;
   }
 };
@@ -184,7 +151,7 @@ export const deleteAddressType = async (id, personId = null) => {
 export const getAddressTypeById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    // console.log(`Fetching address type with ID: ${id}`);
+    // console.log(Fetching address type with ID: ${id});
     
     const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
     console.log("Address type data response:", response.data);

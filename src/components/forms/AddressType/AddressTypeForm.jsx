@@ -89,7 +89,7 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
         setLoading(true);
 
         const addressTypeData = {
-          AddressType: formData.addressType,
+          AddressType: formData.addressType, // Changed to match API expectation
         };
 
         if (addressTypeId) {
@@ -105,7 +105,7 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
       } catch (error) {
         console.error("Error saving address type:", error);
         toast.error(
-          error.message || "Failed to save address type. Please try again."
+          error.response?.data?.message || error.message || "Failed to save address type. Please try again."
         );
       } finally {
         setLoading(false);

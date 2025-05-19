@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import {
   Grid,
   Box,
@@ -12,7 +12,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Chip,
+  Fade,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
   createSalesRFQ,
   updateSalesRFQ,
@@ -39,6 +42,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import StatusIndicator from "./StatusIndicator";
 import axios from "axios";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -704,7 +709,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       const result = await createPurchaseRFQFromSalesRFQ(salesRFQId);
 
       if (result.success) {
-        // toast.success("Purchase RFQ created successfully");
         showToast("Purchase RFQ created successfully", "success");
         setPurchaseRFQDialogOpen(false);
 
@@ -743,35 +747,64 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 : "Create Sales RFQ"}
             </Typography>
             {!isEditing && salesRFQId && (
-              <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Fade in={true} timeout={500}>
                 <Box
-                  sx={{
+                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    backgroundColor:
-                      status === "Approved" ? "#e6f7e6" : "#ffebee",
-                    color: status === "Approved" ? "#2e7d32" : "#d32f2f",
-                    borderRadius: "4px",
-                    padding: "6px 12px",
-                    fontWeight: "medium",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ marginRight: "8px" }}>
-                    Status:{" "}
-                  </Typography>
-                  <StatusIndicator
-                    status={status}
-                    salesRFQId={salesRFQId}
-                    onStatusChange={(newStatus) => {
-                      console.log("Status changed to:", newStatus);
-                      setStatus(newStatus);
-                    }}
-                    initialStatus={status}
-                    skipFetch={true}
-                    readOnly={status === "Approved"}
-                  />
-                </Box>
-              </Box>
+                    background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                    borderRadius: "12px",
+                    padding: "2px 10px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    transition: "all 0.3s ease-in-out",
+                    marginLeft: "16px", // Added left margin for spacing
+                    "&:hover": {
+                      boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                      transform: "scale(1.02)", // Slight scale on hover
+                    },
+  }}
+>
+  <Chip
+  
+    icon={
+      status === "Approved" ? (
+        <CheckCircleIcon sx={{ 
+          color: useTheme().palette.mode === "light" ? "white !important" : "black !important", fontSize: "20px" }} />
+      ) : (
+        <CancelIcon sx={{ color: "#D81B60 !important", fontSize: "20px" }} />
+      )
+    }
+    label={
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: "700", // Bolder text
+          color: useTheme().palette.mode === "light" ? "white" : "black",
+          fontSize: "0.9rem",
+        }}
+      >
+        Status:
+      </Typography>
+    }
+    sx={{
+      backgroundColor: "transparent",
+          }}
+  />
+  <StatusIndicator
+    
+    status={status}
+    salesRFQId={salesRFQId}
+    onStatusChange={(newStatus) => {
+      console.log("Status changed to:", newStatus);
+      setStatus(newStatus);
+    }}
+    initialStatus={status}
+    skipFetch={true}
+    readOnly={status === "Approved"}
+    
+  />
+</Box>
+              </Fade>
             )}
           </Box>
         }

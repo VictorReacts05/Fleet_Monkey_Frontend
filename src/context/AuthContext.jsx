@@ -23,22 +23,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (loginId, password) => {
     try {
-      // Existing authentication logic
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         LoginID: loginId,
         Password: password,
       });
       
       if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        // Store the complete response data
+        const userData = {
+          token: response.data.token,
+          user: response.data.user
+        };
+        
+        localStorage.setItem("user", JSON.stringify(userData));
         setUser(response.data.user);
         setIsAuthenticated(true);
         
         // Update Redux store with login details
         dispatch(setLoginDetails(response.data));
         
-        // Change redirection from sales-rfq to dashboard
         navigate("/dashboard");
         
         return { success: true };
@@ -52,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.message || "Authentication failed",
       };
     }
-  };
+};
 
   const logout = () => {
     localStorage.removeItem('token');
