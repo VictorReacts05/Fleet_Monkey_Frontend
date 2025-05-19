@@ -29,15 +29,12 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (response.data.token) {
-        // Store the complete response data
-        const userData = {
-          token: response.data.token,
-          user: response.data.user
-        };
+        // Store token and user separately
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         
-        localStorage.setItem("user", JSON.stringify(userData));
         setUser(response.data.user);
-        setIsAuthenticated(true);
+        setIsAuthenticated(true);   
         
         // Update Redux store with login details
         dispatch(setLoginDetails(response.data));

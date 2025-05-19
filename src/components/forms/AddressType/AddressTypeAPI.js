@@ -5,17 +5,16 @@ const API_BASE_URL = "http://localhost:7000/api/address-types";
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
+    const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
 
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
+    if (!token || !user) {
+      console.warn("User authentication data not found");
       return { headers: {}, personId: null };
     }
 
-    // Get personId from the nested user object
-    const personId = user.user?.personId || user.personId || null;
+    // Get personId directly from user object since it's not nested
+    const personId = user.personId || null;
 
     if (!personId) {
       console.warn("No personId found in user object");
@@ -24,7 +23,7 @@ const getAuthHeader = () => {
 
     return {
       headers: {
-        Authorization: `Bearer ${user.token}`,
+        Authorization: `Bearer ${token}`,
       },
       personId,
     };
