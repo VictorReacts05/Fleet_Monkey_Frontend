@@ -44,6 +44,7 @@ import ToastNotification from './components/toastNotification';
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import SalesQuotationList from './components/forms/SalesQuotation/SalesQuotationList';
 
 
 // Create wrapper components that use the hooks properly
@@ -250,6 +251,41 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+        
+        <Route
+            path="/sales-Quotation"
+            element={
+              <ProtectedRoute>
+                <SalesQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-Quotation/create"
+            element={
+              <ProtectedRoute>
+                <SalesQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-Quotation/view/:id"
+            element={
+              <ProtectedRoute>
+                <SalesQuotationList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-Quotation/edit/:id"
+            element={
+              <ProtectedRoute>
+                <SalesQuotationList />
+              </ProtectedRoute>
+            }
+          />
+        
+
           <Route
             path="/customers"
             element={
