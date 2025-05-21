@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import StatusIndicator from "./StatusIndicator"; // Import StatusIndicator component
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -100,6 +101,19 @@ const SupplierQuotationForm = ({
   const [parcelLoading, setParcelLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastDisplayed, setToastDisplayed] = useState(false);
+  const [status, setStatus] = useState("Pending"); // Add status state
+
+  // Add status change handler
+  const handleStatusChange = (newStatus) => {
+    console.log("Status changed to:", newStatus);
+    setStatus(newStatus);
+    
+    // Also update the formData to reflect the new status
+    setFormData(prev => ({
+      ...prev,
+      Status: newStatus
+    }));
+  };
 
   const calculateTotals = useCallback(
     (updatedParcels) => {
@@ -129,10 +143,13 @@ const SupplierQuotationForm = ({
       const response = await getSupplierQuotationById(supplierQuotationId);
       console.log("API Response:", response.data);
 
+      // In the loadSupplierQuotationData function:
       if (response && response.data) {
-        // Get the actual quotation data from the data property
         const quotationData = response.data.data || {};
         console.log("Quotation Data:", quotationData);
+      
+        // Set the status from the API response
+        setStatus(quotationData.Status || "Pending");
 
         let formattedData = {
           ...quotationData,
@@ -485,10 +502,47 @@ const SupplierQuotationForm = ({
 
       <FormPage
         title={
-          isEditMode ? "Edit Supplier Quotation" : "View Supplier Quotation"
+          <>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography variant="h6" component="span">
+                {isEditMode ? "Edit Supplier Quotation" : "View Supplier Quotation"}
+              </Typography>
+              {!isEditMode && (
+                <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  backgroundColor:
+                    status === "Approved" ? "#e6f7e6" : "#ffebee",
+                  color: status === "Approved" ? "#2e7d32" : "#d32f2f",
+                  borderRadius: "4px",
+                  padding: "6px 12px",
+                  fontWeight: "medium",
+                }}
+                >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    marginRight: "8px",
+                    color:
+                      status === "Approved" ? "#2e7d32" : "#d32f2f",
+                  }}
+                >
+                  Status:{" "}
+                </Typography>
+                <StatusIndicator 
+                  status={status} 
+                  supplierQuotationId={supplierQuotationId}
+                  onStatusChange={handleStatusChange}
+                  readOnly={loading || isEditing}
+                />
+                </Box>
+              )}
+            </Box>
+          </>
         }
         onCancel={handleCancel}
-        onSubmit={isEditing ? handleSave : undefined} // MODIFIED: Changed onSave to onSubmit
+        onSubmit={isEditing ? handleSave : undefined}
         loading={loading}
         readOnly={readOnly && !isEditing}
       >
@@ -512,35 +566,7 @@ const SupplierQuotationForm = ({
           </Alert>
         )}
 
-        {!isEditMode && (
-          <Box sx={{ mb: 2 }}>
-            <Button
-              variant="contained"
-              color={isEditing ? "secondary" : "primary"}
-              onClick={handleEditToggle}
-              disabled={loading || parcelLoading}
-            >
-              {isEditing ? "Cancel Edit" : "Edit"}
-            </Button>
-          </Box>
-        )}
-
-        {/* REMOVE: Direct save button for testing */}
-        {/* {isEditing && (
-          <Box sx={{ mb: 2, ml: 2, display: 'inline-block' }}>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => {
-                console.log("Direct save button clicked");
-                handleSave();
-              }}
-              disabled={loading || parcelLoading}
-            >
-              Save Changes
-            </Button>
-          </Box>
-        )} */}
+        {/* Remove the edit button section when viewing */}
 
         <Grid
           container

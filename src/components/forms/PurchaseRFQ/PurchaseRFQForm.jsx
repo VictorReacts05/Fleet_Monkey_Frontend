@@ -601,6 +601,7 @@ const PurchaseRFQForm = ({
               variant="contained"
               color="primary"
               onClick={handleOpenSuppliersDialog}
+              disabled={formData.Status !== "Approved"}
               sx={{
                 fontWeight: "bold",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
@@ -617,7 +618,8 @@ const PurchaseRFQForm = ({
               color="secondary"
               onClick={handleSendPurchaseRFQ}
               disabled={
-                formData.Status !== "Approved" || emailSendingStatus.sending
+                formData.Status !== "Approved" ||
+                selectedSuppliers.length === 0
               }
               sx={{
                 fontWeight: "bold",
