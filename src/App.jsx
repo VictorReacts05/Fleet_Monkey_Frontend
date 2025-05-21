@@ -20,7 +20,7 @@ import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
 import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
 import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
 // Import Supplier Quotation components
-import { SupplierQuotationList } from './components/forms/SupplierQuotation';
+import { SupplierQuotationList, SupplierQuotationForm } from './components/forms/SupplierQuotation';
 import CustomerList from './components/forms/Customer/CustomerList';
 import CompanyList from './components/forms/Company/CompanyList';
 import SupplierList from './components/forms/Supplier/SupplierList';
@@ -218,6 +218,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          // Supplier Quotation routes
           <Route
             path="/supplier-quotation"
             element={
@@ -230,7 +231,7 @@ function AppContent() {
             path="/supplier-quotation/create"
             element={
               <ProtectedRoute>
-                <SupplierQuotationList />
+                <SupplierQuotationForm />
               </ProtectedRoute>
             }
           />
@@ -238,7 +239,7 @@ function AppContent() {
             path="/supplier-quotation/view/:id"
             element={
               <ProtectedRoute>
-                <SupplierQuotationList />
+                <SupplierQuotationForm readOnly={true} />
               </ProtectedRoute>
             }
           />
@@ -246,7 +247,7 @@ function AppContent() {
             path="/supplier-quotation/edit/:id"
             element={
               <ProtectedRoute>
-                <SupplierQuotationList />
+                <SupplierQuotationForm />
               </ProtectedRoute>
             }
           />

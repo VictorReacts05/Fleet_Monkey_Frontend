@@ -8,7 +8,6 @@ import ConfirmDialog from '../../Common/ConfirmDialog';
 import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchUOMs, deleteUOM } from "./UOMAPI";
 import UOMModal from './UOMModal';
-import { showToast } from '../../toastNotification';
 
 const UOMList = () => {
   const [rows, setRows] = useState([]);
@@ -88,7 +87,6 @@ const UOMList = () => {
     try {
       await deleteUOM(itemToDelete.id);
       toast.success('UOM deleted successfully');
-      showToast("UOM deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadUOMs();

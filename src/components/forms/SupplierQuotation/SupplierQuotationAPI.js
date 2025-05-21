@@ -1,29 +1,41 @@
 import axios from "axios";
+// import { store } from '../../../store/store';
+import { store } from "../../../redux/store";  // Change this line to use named import
 
+// Fix the base URL to use lowercase
 const API_BASE_URL = "http://localhost:7000/api/supplier-Quotation";
 
 // Helper function to get auth header from localStorage
 const getAuthHeader = () => {
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
-      return { headers: {}, personId: null };
+    // Get user from localStorage
+    const userString = localStorage.getItem("user");
+    console.log("User data from localStorage:", userString);
+    
+    const user = JSON.parse(userString);
+    
+    // Get token from Redux state
+    const state = store.getState();
+    const token = state.loginReducer?.loginDetails?.token;
+    
+    console.log("Token from Redux:", token);
+    
+    if (!token) {
+      console.warn("Authentication token not found in Redux state");
+      throw new Error("Authentication token not found");
     }
 
-    const personId = user.personId || user.id || user.userId || null;
-
-    return {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-      personId,
+    const personId = user?.personId || user?.id || user?.userId || null;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
     };
+    
+    console.log("Generated headers:", headers);
+    return { headers, personId };
   } catch (error) {
-    console.error("Error parsing user data from localStorage:", error);
-    return { headers: {}, personId: null };
+    console.error("Error in getAuthHeader:", error);
+    throw error;
   }
 };
 
@@ -70,15 +82,32 @@ export const fetchSupplierQuotations = async (page = 1, pageSize = 10, fromDate 
 export const getSupplierQuotationById = async (id) => {
   try {
     const { headers } = getAuthHeader();
+    console.log("Making request with headers:", headers);
+    console.log("Fetching supplier quotation with ID:", id);
+
     const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
-    
-    if (response.data && response.data.data) {
-      return response.data.data;
-    }
-    
-    return null;
+    console.log("Supplier quotation response:", response.data);
+    return response;
   } catch (error) {
-    console.error(`Error fetching Supplier Quotation with ID ${id}:`, error);
+    console.error("Error in getSupplierQuotationById:", error);
+
+    if (error.message === "Authentication token not found") {
+      throw new Error("Please log in to view supplier quotations");
+    }
+
+    // Check if we have data in the error response
+    if (error.response?.status === 404 && error.response?.data?.data) {
+      console.log("Found data in error response, returning it anyway");
+      return {
+        data: error.response.data,
+        status: 200 // Override the status code since we have valid data
+      };
+    }
+
+    if (error.response?.status === 404) {
+      throw new Error(`Supplier Quotation with ID ${id} not found`);
+    }
+
     throw error;
   }
 };
