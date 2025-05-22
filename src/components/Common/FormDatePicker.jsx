@@ -5,18 +5,24 @@ import { styled, TextField, Box } from '@mui/material';
 
 // Add styled TextField to match the height and styling of other form components
 const CustomTextField = styled(TextField)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === "dark" ? "#595959 !important" : "#fff !important",
+  borderRadius: theme.shape.borderRadius * 1.5,
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
     borderRadius: theme.shape.borderRadius * 1.5,
     boxSizing: "border-box",
-    backgroundColor: "#595959", // Your custom background
-
-  },"& input": {
+    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff",
+    "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
-      color: theme.palette.common.white,
+      color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
+    },
+    // Add this block for placeholder color
+    "& input::placeholder": {
+      color: theme.palette.mode === "dark" ? "#fff" : "#757575",
+      opacity: 1,
     },
     "& fieldset": {
       borderColor: "#8a8a8a",
@@ -27,28 +33,30 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.main,
     },
-    // Autofill override
     "& input:-webkit-autofill": {
-      boxShadow: "0 0 0 1000px #595959 inset !important",
-      WebkitTextFillColor: "white !important",
+      boxShadow: `0 0 0 1000px ${theme.palette.mode === "dark" ? "#595959" : "#fff"} inset !important`,
+      WebkitTextFillColor: theme.palette.mode === "dark" ? "white" : theme.palette.text.primary,
       transition: "background-color 9999s ease-out 0s",
     },
+  },
   "& .MuiInputBase-input": {
     height: "100%",
     padding: "0 14px",
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
+    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
   },
   "& .MuiInputAdornment-root": {
-    marginRight: 8, // adjust icon spacing
+    marginRight: 8,
   },
   "& .MuiSvgIcon-root": {
-    fontSize: "20px", // optional: scale down the calendar icon
+    fontSize: "20px",
+    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
   },
   "& .MuiInputLabel-root": {
     top: "-6px",
-    color: "#dcdcdc",
+    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
@@ -56,7 +64,8 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiFormHelperText-root": {
     marginTop: 0,
     marginBottom: 0,
-    height: 0,
+    height: "auto",
+    color: theme.palette.error.main,
   },
 }));
 
@@ -69,11 +78,15 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
   };
 
   return (
-    <Box sx={{ 
-      marginTop: "4px", 
-      marginBottom: "4px",
-      ...(props.sx || {})
-    }}>
+    <Box
+      sx={{
+        marginTop: "4px",
+        marginBottom: "4px",
+        backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff",
+        borderRadius: 2,
+        ...(props.sx || {})
+      }}
+    >
       <DatePicker
         label={label}
         value={dayjsValue}
@@ -90,10 +103,11 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
             InputLabelProps: {
               shrink: true,
             },
-            // Use the custom styled component
+            // Inline style for the input root
             InputProps: {
               sx: {
                 height: 38,
+                backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff", // <-- mode-aware background
               }
             },
             sx: {

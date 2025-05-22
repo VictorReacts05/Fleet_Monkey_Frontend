@@ -20,8 +20,7 @@ const CustomSelect = styled(Select)(({ theme }) => ({
     height: "100%",
     boxSizing: "border-box",
     lineHeight: "38px",
-    backgroundColor: "#595959", // Your custom background
-
+    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff", // <-- updated to be mode-aware
   },
   "& input:-webkit-autofill": {
     boxShadow: "0 0 0 1000px #595959 inset !important",

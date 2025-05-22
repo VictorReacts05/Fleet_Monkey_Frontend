@@ -124,10 +124,9 @@ const Login = () => {
 
         {error && (
           <Typography
-            color="error"
             variant="body2"
             align="center"
-            sx={{ mb: 2, p: 1, bgcolor: "error.light", borderRadius: 1 }}
+            sx={{ color: "#fff", bgcolor: "error.main", borderRadius: 1, p: 1, mb: 2 }}
           >
             {error}
           </Typography>

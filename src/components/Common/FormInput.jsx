@@ -14,12 +14,12 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     height: 38,
     padding: 0,
-    backgroundColor: "#595959",
+    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff",
     "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
-      color: theme.palette.common.white,
+      color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary, // <-- update here
     },
     "& fieldset": {
       borderColor: "#8a8a8a",
@@ -38,7 +38,7 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   },
   "& .MuiInputLabel-root": {
     top: "-6px",
-    color: "#dcdcdc",
+    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary, // <-- update here
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
@@ -75,7 +75,7 @@ const FormInput = ({
             <IconButton size="small" sx={{ ml: 0.5, p: 0 }}>
               <InfoOutlinedIcon fontSize="small" color="action" />
             </IconButton>
-          </Tooltip>
+          </Tooltip> 
         </Box>
       ) : null}
 
@@ -85,7 +85,7 @@ const FormInput = ({
         value={value}
         onChange={onChange}
         error={hasError}
-        helperText={hasError ? error : " "} // Ensure spacing for layout
+        helperText={hasError ? error : undefined} // <-- Only render helperText if there is an error
         variant="outlined"
         margin="none"
         required={required} // Controlled by prop

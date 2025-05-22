@@ -57,16 +57,17 @@ const SalesRFQList = () => {
   ];
  
   useEffect(() => {
-    const loadData = async () => {
-      await fetchPurchaseRFQs(); // Fetch purchase RFQs first
-      loadSalesRFQs(); // Then load sales RFQs
-    };
-    
-    loadData();
+    // Fetch purchase RFQs on mount and when page/rowsPerPage changes
+    fetchPurchaseRFQs();
+    // eslint-disable-next-line
   }, [page, rowsPerPage, fromDate, toDate]);
   
-  // Add a separate effect to reload sales RFQs when purchaseRFQs changes
-
+  useEffect(() => {
+    // Only load sales RFQs after purchaseRFQs is fetched/updated
+    loadSalesRFQs();
+    // eslint-disable-next-line
+  }, [purchaseRFQs, page, rowsPerPage, fromDate, toDate]);
+  
   // Fetch all purchase RFQs to check which sales RFQs have associated purchase RFQs
   const fetchPurchaseRFQs = async () => {
     try {
