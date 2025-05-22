@@ -214,44 +214,60 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
   const chipProps = getChipProps();
 
   return (
-    <Box>
-      <Chip
-        label={
-          <Typography variant="body2">
-            {loading ? "Processing..." : status || "Unknown"}
-          </Typography>
-        }
-        color={chipProps.color}
-        icon={
-          loading ? (
-            <CircularProgress size={16} color="inherit" />
-          ) : (
-            chipProps.icon
-          )
-        }
-        onClick={handleClick}
-        clickable={chipProps.clickable}
-        sx={{
-          cursor: chipProps.clickable ? "pointer" : "default",
-          "& .MuiChip-label": {
+    <Box 
+          sx={{
             display: "flex",
             alignItems: "center",
-          },
-        }}
-      />
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
-        {status !== "Approved" && (
-          <MenuItem onClick={handleApprove} disabled={loading}>
-            {loading ? (
-              <CircularProgress size={16} sx={{ mr: 1 }} />
-            ) : (
-              <CheckCircle sx={{ mr: 1 }} color="success" />
+            justifyContent: "center"}}
+            
+            >
+          <Chip
+            label={
+              <Typography variant="body2">
+                {loading ? "Processing..." : status || "Unknown"}
+              </Typography>
+            }
+            color={chipProps.color}
+            icon={
+              loading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                chipProps.icon
+              )
+            }
+            onClick={handleClick}
+            clickable={chipProps.clickable}
+            sx={{
+              height: 28, // Match button height
+              minWidth: 80, // Consistent width
+              padding: "2px 0px", // Compact padding
+              borderRadius: "12px", // Rounded corners
+              position: "relative",
+              cursor: chipProps.clickable ? "pointer" : "default",
+              "& .MuiChip-label": {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: useTheme().palette.mode === "light" ? "white" : "black",
+                
+                borderRadius: "12px",
+              },
+            }}
+          />
+          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+            {status !== "Approved" && (
+              <MenuItem onClick={handleApprove} disabled={loading}>
+                {loading ? (
+                  <CircularProgress size={16} sx={{ mr: 1 }} />
+                ) : (
+                  <CheckCircle sx={{ mr: 1 }} color="success" />
+                )}
+                Approve
+              </MenuItem>
             )}
-            Approve
-          </MenuItem>
-        )}
-      </Menu>
-    </Box>
+            {/* Removed the Disapprove menu item */}
+          </Menu>
+        </Box>
   );
 };
 

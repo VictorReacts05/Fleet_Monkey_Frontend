@@ -22,17 +22,30 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
       color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary, // <-- update here
     },
     "& fieldset": {
-      borderColor: "#8a8a8a",
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[400]
+          : "#8a8a8a",
     },
     "&:hover fieldset": {
-      borderColor: "#a0a0a0",
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[600]
+          : "#a0a0a0",
     },
     "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.main,
     },
     "& input:-webkit-autofill": {
-      boxShadow: "0 0 0 1000px #595959 inset !important",
-      WebkitTextFillColor: "white !important",
+      boxShadow: `0 0 0 1000px ${
+        theme.palette.mode === "light"
+          ? theme.palette.background.paper
+          : theme.palette.grey[800]
+      } inset !important`,
+      WebkitTextFillColor:
+        theme.palette.mode === "light"
+          ? theme.palette.text.primary
+          : "white !important",
       transition: "background-color 9999s ease-out 0s",
     },
   },
@@ -42,12 +55,18 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     "&.MuiInputLabel-shrink": {
       top: 0,
     },
+    "&.Mui-error": {
+      color: theme.palette.error.main, // Apply red color when error is true
+    },
+    "&.Mui-focused": {
+      color: theme.palette.primary.main,
+    },
   },
   "& .MuiFormHelperText-root": {
     marginTop: 0,
     marginBottom: 0,
-    height: "auto", // Ensure error text is visible
-    color: theme.palette.error.main, // Red for errors
+    height: "auto",
+    color: theme.palette.error.main,
   },
 }));
 
@@ -59,7 +78,7 @@ const FormInput = ({
   tooltip,
   startIcon,
   endIcon,
-  required = false, // Explicitly handle required prop
+  required = false,
   ...props
 }) => {
   const hasError = Boolean(error);
@@ -68,7 +87,11 @@ const FormInput = ({
     <Box sx={{ marginTop: "4px", marginBottom: "4px", ...(props.sx || {}) }}>
       {tooltip ? (
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography variant="body2" color="text.secondary" fontWeight="medium">
+          <Typography
+            variant="body2"
+            color={hasError ? "error.main" : "text.secondary"} // Turn red on error
+            fontWeight="medium"
+          >
             {label}
           </Typography>
           <Tooltip title={tooltip} arrow placement="top">
@@ -88,7 +111,7 @@ const FormInput = ({
         helperText={hasError ? error : undefined} // <-- Only render helperText if there is an error
         variant="outlined"
         margin="none"
-        required={required} // Controlled by prop
+        required={required}
         InputProps={{
           startAdornment: startIcon ? (
             <InputAdornment position="start">{startIcon}</InputAdornment>

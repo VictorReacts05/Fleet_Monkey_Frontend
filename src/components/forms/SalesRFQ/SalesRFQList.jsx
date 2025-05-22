@@ -31,7 +31,7 @@ const SalesRFQList = () => {
     { field: "customerName", headerName: "Customer Name", flex: 1 },
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
     { 
-      field: "status", 
+      field: "status",
       headerName: "Status", 
       flex: 1,
       renderCell: (params) => {

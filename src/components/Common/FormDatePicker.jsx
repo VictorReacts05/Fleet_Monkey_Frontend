@@ -25,13 +25,20 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
       opacity: 1,
     },
     "& fieldset": {
-      borderColor: "#8a8a8a",
+      // Dynamic border color
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[400] // Light mode: lighter border
+          : "#8a8a8a", // Dark mode: keep as is
     },
     "&:hover fieldset": {
-      borderColor: "#a0a0a0",
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[600] // Light mode: darker on hover
+          : "#a0a0a0", // Dark mode: keep as is
     },
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main,
+      borderColor: theme.palette.primary.main, // Same for both modes
     },
     "& input:-webkit-autofill": {
       boxShadow: `0 0 0 1000px ${theme.palette.mode === "dark" ? "#595959" : "#fff"} inset !important`,
@@ -116,7 +123,6 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
               }
             }
           },
-          // Style the calendar popup button to match height
           openPickerButton: {
             sx: {
               height: 38,

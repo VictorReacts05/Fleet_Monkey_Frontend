@@ -28,21 +28,22 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // Added for Purchase RFQ
-import DashboardIcon from "@mui/icons-material/Dashboard"; // Added for Dashboard
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings"; // For Form Role Approver
-import DescriptionIcon from "@mui/icons-material/Description"; // For Forms
-import AssignmentIndIcon from "@mui/icons-material/AssignmentInd"; // For Form Roles
-import RequestQuote from '@mui/icons-material/RequestQuote'; // Added for Purchase RFQ
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import DescriptionIcon from "@mui/icons-material/Description";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import RequestQuote from '@mui/icons-material/RequestQuote';
+import FindInPageSharpIcon from '@mui/icons-material/FindInPageSharp';
 
-const drawerWidth = 240;
+const drawerWidth = 240; // Added missing drawerWidth constant
 
 const menuItems = [
-  { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" }, // Added Dashboard
+  { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
   { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
   { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
-  { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
+  { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
@@ -50,25 +51,13 @@ const menuItems = [
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
-  { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" }, // Add this line
+  { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" },
   { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
   { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
-  {
-    text: "Project Parameters",
-    icon: <SettingsApplicationsIcon />,
-    path: "/project-parameters",
-  },
-  {
-    text: "Roles",
-    icon: <PersonIcon />,
-    path: "/roles",
-  },
-  {
-    text: "Subscriptions",
-    icon: <SubscriptionsIcon />,
-    path: "/subscriptions",
-  },
+  { text: "Project Parameters", icon: <SettingsApplicationsIcon />, path: "/project-parameters" },
+  { text: "Roles", icon: <PersonIcon />, path: "/roles" },
+  { text: "Subscriptions", icon: <SubscriptionsIcon />, path: "/subscriptions" },
   { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
@@ -94,21 +83,24 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  // Update to include Dashboard, Sales RFQ and Purchase RFQ in the main menu
+  // Fixed the mainMenuItems filter
   const mainMenuItems = menuItems.filter(
     (item) =>
       item.text === "Dashboard" ||
       item.text === "Sales RFQ" ||
       item.text === "Purchase RFQ" ||
-      item.text === "Supplier Quotation"
+      item.text === "Supplier Quotation" ||
+      item.text === "Sales Quotation"
   );
 
+  // Fixed the mastersItems filter
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
       item.text !== "Sales RFQ" &&
       item.text !== "Purchase RFQ" &&
-      item.text !== "Supplier Quotation"
+      item.text !== "Supplier Quotation" &&
+      item.text !== "Sales Quotation"
   );
 
   return (
@@ -140,7 +132,6 @@ const Sidebar = ({ open, variant, onClose }) => {
     >
       <Box sx={{ overflow: "auto" }}>
         <List>
-          {/* Map through main menu items (Sales RFQ and Purchase RFQ) */}
           {mainMenuItems.map((item) => (
             <ListItem
               key={item.text}

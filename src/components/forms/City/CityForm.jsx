@@ -26,6 +26,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// Add this import at the top with other imports
+import { fetchCities } from "./CityAPI";
+
 const CityForm = ({ cityId, onSave, onClose }) => {
   const classes = useStyles();
   const [formData, setFormData] = useState({
@@ -144,38 +147,76 @@ const CityForm = ({ cityId, onSave, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    e?.preventDefault();
-    setSubmitted(true);
-
-    if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const cityData = {
-        CityName: formData.cityName.trim(),
-        CountryID: formData.countryId,
-      };
-
-      if (cityId) {
-        await updateCity(cityId, cityData);
-        toast.success("City updated successfully");
-      } else {
-        await createCity(cityData);
-        toast.success("City created successfully");
+      e?.preventDefault();
+      setSubmitted(true);
+  
+      if (!validateForm()) {
+        toast.error("Please fix the errors in the form");
+        return;
       }
-
-      onSave?.();
-      onClose?.();
-    } catch (error) {
-      console.error("Error saving city:", error);
-      toast.error(`Failed to save city: ${error.message || "Unknown error"}`);
-    } finally {
-      setLoading(false);
-    }
+  
+      try {
+        setLoading(true);
+    
+        // Check for duplicate city
+        const response = await fetchCities(1, 1000); // Get all cities
+        
+        // Ensure we're accessing the correct data structure
+        const existingCities = Array.isArray(response) ? response : 
+                              Array.isArray(response.data) ? response.data : [];
+        
+        // Convert form data to match API field names
+        const normalizedCityName = formData.cityName.trim().toLowerCase();
+        const normalizedCountryId = Number(formData.countryId);
+        
+        // Check for duplicates
+        const isDuplicate = existingCities.some(city => {
+          // Ensure city object exists and has required properties
+          if (!city || !city.CityName || !city.CountryID) return false;
+          
+          const sameName = city.CityName.toLowerCase() === normalizedCityName;
+          const sameCountry = Number(city.CountryID) === normalizedCountryId;
+          const notCurrentCity = !cityId || Number(city.CityID) !== Number(cityId);
+          
+          console.log('Comparing:', {
+            existing: city.CityName.toLowerCase(),
+            new: normalizedCityName,
+            sameName,
+            sameCountry,
+            notCurrentCity
+          });
+          
+          return sameName && sameCountry && notCurrentCity;
+        });
+    
+        if (isDuplicate) {
+          toast.error("A city with this name already exists in the selected country");
+          setLoading(false);
+          return;
+        }
+    
+        // Prepare data for API with correct field names
+        const cityData = {
+          CityName: formData.cityName.trim(),
+          CountryID: normalizedCountryId
+        };
+    
+        if (cityId) {
+          await updateCity(cityId, cityData);
+          toast.success("City updated successfully");
+        } else {
+          await createCity(cityData);
+          toast.success("City created successfully");
+        }
+    
+        onSave?.();
+        onClose?.();
+      } catch (error) {
+        console.error("Error saving city:", error);
+        toast.error(`Failed to save city: ${error.message || "Unknown error"}`);
+      } finally {
+        setLoading(false);
+      }
   };
 
   const handleCancel = () => {
