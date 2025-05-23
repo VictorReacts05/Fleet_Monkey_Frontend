@@ -5,14 +5,21 @@ import {
   Typography,
   Fade,
   Chip,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+  alpha,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
-import FormPage from "../../Common/FormPage"; // Verify: src/components/Common/FormPage.jsx
-import StatusIndicator from "./StatusIndicator"; // Verify: src/components/forms/SalesQuotation/StatusIndicator.jsx
+import FormPage from "../../Common/FormPage";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-import ParcelTab from "./ParcelTab"; // Verify: src/components/forms/SalesQuotation/ParcelTab.jsx
+import StatusIndicator from "./StatusIndicator"; // Import StatusIndicator component
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -37,65 +44,85 @@ const ReadOnlyField = ({ label, value }) => {
   );
 };
 
-const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose }) => {
+const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
   const { id } = useParams();
   const theme = useTheme();
-  const navigate = useNavigate(); // Add this line to get the navigate function
-  const salesQuotationId = propSalesQuotationId || id;
+  const navigate = useNavigate();
+  const salesOrderId = propSalesOrderId || id;
   const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
   // Static form data
-  const [formData] = useState({
-    Series: "SQ2025-001",
+  const [formData, setFormData] = useState({
+    Series: "SO2025-001",
     CompanyID: DEFAULT_COMPANY.value,
+    CompanyName: DEFAULT_COMPANY.label,
     CustomerID: "CUST001",
-    CustomerName: "John",
+    CustomerName: "John Smith",
     SupplierID: "SUP001",
-    SupplierName: "ABC Inc",
+    SupplierName: "ABC Suppliers Inc",
     ExternalRefNo: "EXT-REF-12345",
     DeliveryDate: new Date("2025-06-15"),
-    PostingDate: new Date("2025-06-20"),
-    RequiredByDate: new Date("2025-06-28"),
-    DateReceived: new Date("2025-06-30"),
+    PostingDate: new Date("2025-06-10"),
+    RequiredByDate: new Date("2025-06-20"),
+    DateReceived: new Date("2025-06-05"),
     ServiceTypeID: "ST001",
-    ServiceType: "International Procurement",
+    ServiceType: "International Shipping",
     CollectionAddressID: "ADDR001",
     CollectionAddress: "123 Main St, Springfield, IL 62701",
     DestinationAddressID: "ADDR002",
     DestinationAddress: "456 Market St, Chicago, IL 60601",
     ShippingPriorityID: "SP001",
-    ShippingPriorityName: "High Priority",
-    Terms: "Net 30",
+    ShippingPriorityName: "Express",
+    Terms: "Net 30 days",
     CurrencyID: "CUR001",
     CurrencyName: "USD",
-    CollectFromCustomerYN: true,
+    CollectFromSupplierYN: true,
     PackagingRequiredYN: true,
-    FormCompletedYN: true,
-    SalesAmount: 15000.0,
-    TaxAmount: "-",
-    Total: 16200.0,
+    FormCompletedYN: 1,
+    SalesAmount: 12500.0,
+    TaxesAndOtherCharges: 1250.0,
+    Total: 13750.0,
   });
+
+  // Static status
+  const [status, setStatus] = useState("Approved");
+
+  // Add status change handler
+  const handleStatusChange = (newStatus) => {
+    console.log("Status changed to:", newStatus);
+    setStatus(newStatus);
+  };
 
   // Static parcel data
   const [parcels] = useState([
     {
-      ParcelID: "P001",
-      Description: "Electronics",
-      Quantity: 10,
-      Weight: 50.5,
-      Dimensions: "20x20x20 cm",
+      id: 1,
+      srNo: 1,
+      itemId: 101,
+      itemName: "Electronics Package",
+      uomId: 1,
+      uomName: "Box",
+      quantity: 5,
     },
     {
-      ParcelID: "P002",
-      Description: "Documents",
-      Quantity: 5,
-      Weight: 2.3,
-      Dimensions: "30x20x5 cm",
+      id: 2,
+      srNo: 2,
+      itemId: 102,
+      itemName: "Office Supplies",
+      uomId: 2,
+      uomName: "Carton",
+      quantity: 3,
+    },
+    {
+      id: 3,
+      srNo: 3,
+      itemId: 103,
+      itemName: "Medical Equipment",
+      uomId: 3,
+      uomName: "Pallet",
+      quantity: 1,
     },
   ]);
-
-  // Static status
-  const [status] = useState("Approved");
 
   // Handle cancel button click
   const handleCancel = () => {
@@ -104,7 +131,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
       onClose();
     } else {
       // Otherwise navigate back to the list page
-      navigate('/sales-quotation');
+      navigate('/sales-order');
     }
   };
 
@@ -120,7 +147,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
           }}
         >
           <Typography variant="h6">
-            View Sales Quotation
+            View Sales Order
           </Typography>
           <Fade in={true} timeout={500}>
             <Box
@@ -140,46 +167,17 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
                 },
               }}
             >
-              <Chip
-                icon={
-                  status === "Approved" ? (
-                    <CheckCircleIcon
-                      sx={{
-                        color: theme.palette.mode === "light" ? "white !important" : "black !important",
-                        fontSize: "20px",
-                      }}
-                    />
-                  ) : (
-                    <CancelIcon sx={{ color: "#D81B60 !important", fontSize: "20px" }} />
-                  )
-                }
-                label={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: "700",
-                      color: theme.palette.mode === "light" ? "white" : "black",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    Status:
-                  </Typography>
-                }
-                sx={{ backgroundColor: "transparent" }}
-              />
-              <StatusIndicator
-                status={status}
-                salesQuotationId={salesQuotationId}
-                onStatusChange={() => {}} // No-op since static
-                initialStatus={status}
-                skipFetch={true}
-                readOnly={true}
+              <StatusIndicator 
+                status={status} 
+                salesOrderId={salesOrderId} 
+                onStatusChange={handleStatusChange}
+                readOnly={false}
               />
             </Box>
           </Fade>
         </Box>
       }
-      onCancel={handleCancel} // Change this line to use our new handler
+      onCancel={handleCancel}
       readOnly={true}
     >
       <Grid
@@ -199,7 +197,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
           <ReadOnlyField label="Series" value={formData.Series} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+          <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
@@ -249,7 +247,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Taxes and Other Charges"
-            value={`${formData.TaxAmount}`}
+            value={`${formData.TaxesAndOtherCharges.toFixed(2)}`}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -258,25 +256,92 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
             value={`${formData.Total.toFixed(2)}`}
           />
         </Grid>
-        
-            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-              <ReadOnlyField label="Collect From Customer" value={formData.CollectFromCustomerYN} />
-            </Grid>
-            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-              <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
-            </Grid>
-            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-              <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN} />
-            </Grid>
-          </Grid>
-        
-      <ParcelTab
-        salesQuotationId={salesQuotationId}
-        parcels={parcels}
-        readOnly={true}
-      />
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN === 1 ? "Yes" : "No"} />
+        </Grid>
+      </Grid>
+
+      {/* Parcels Table */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Parcels
+        </Typography>
+        <TableContainer
+          component={Paper}
+          sx={{
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            borderRadius: "8px",
+            overflow: "hidden",
+          }}
+        >
+          <Table>
+            <TableHead
+              sx={{
+                backgroundColor: "#1976d2",
+                height: "56px",
+              }}
+            >
+              <TableRow>
+                <TableCell
+                  align="center"
+                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                >
+                  Sr. No.
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                >
+                  Item
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                >
+                  UOM
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
+                >
+                  Quantity
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {parcels.map((parcel) => (
+                <TableRow
+                  key={parcel.id}
+                  sx={{
+                    height: "52px",
+                    "&:nth-of-type(odd)": {
+                      backgroundColor: alpha("#1976d2", 0.05),
+                    },
+                    "&:hover": {
+                      backgroundColor: alpha("#1976d2", 0.1),
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    },
+                  }}
+                >
+                  <TableCell align="center">{parcel.srNo}</TableCell>
+                  <TableCell align="center">{parcel.itemName}</TableCell>
+                  <TableCell align="center">{parcel.uomName}</TableCell>
+                  <TableCell align="center">{parcel.quantity}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     </FormPage>
   );
 };
 
-export default SalesQuotationForm;
+export default SalesOrderForm;

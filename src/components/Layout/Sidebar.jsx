@@ -35,6 +35,8 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import RequestQuote from '@mui/icons-material/RequestQuote';
 import FindInPageSharpIcon from '@mui/icons-material/FindInPageSharp';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 
 const drawerWidth = 240; // Added missing drawerWidth constant
 
@@ -44,6 +46,8 @@ const menuItems = [
   { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
   { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
   { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
+  { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
+  { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
@@ -83,24 +87,28 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  // Fixed the mainMenuItems filter
+  // Update the mainMenuItems filter
   const mainMenuItems = menuItems.filter(
     (item) =>
       item.text === "Dashboard" ||
       item.text === "Sales RFQ" ||
       item.text === "Purchase RFQ" ||
       item.text === "Supplier Quotation" ||
-      item.text === "Sales Quotation"
+      item.text === "Sales Quotation" ||
+      item.text === "Sales Order" ||
+      item.text === "Purchase Order"
   );
 
-  // Fixed the mastersItems filter
+  // Update the mastersItems filter
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
       item.text !== "Sales RFQ" &&
       item.text !== "Purchase RFQ" &&
       item.text !== "Supplier Quotation" &&
-      item.text !== "Sales Quotation"
+      item.text !== "Sales Quotation" &&
+      item.text !== "Sales Order" &&
+      item.text !== "Purchase Order"
   );
 
   return (

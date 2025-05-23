@@ -16,6 +16,7 @@ import {
   Button,
   Alert,
   TextField,
+  Fade,
 } from "@mui/material";
 import { getSupplierQuotationById } from "./SupplierQuotationAPI";
 import { toast } from "react-toastify";
@@ -532,7 +533,7 @@ const SupplierQuotationForm = ({
                 </Typography>
                 <StatusIndicator 
                   status={status} 
-                  supplierQuotationId={supplierQuotationId}
+                  supplierQuotationId={supplierQuotationId} 
                   onStatusChange={handleStatusChange}
                   readOnly={loading || isEditing}
                 />

@@ -46,6 +46,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SalesQuotationList from './components/forms/SalesQuotation/SalesQuotationList';
 import SalesQuotationForm from './components/forms/SalesQuotation/SalesQuotationForm';
+// Import Sales Order components
+import SalesOrderList from './components/forms/SalesOrder/SalesOrderList';
+import SalesOrderForm from './components/forms/SalesOrder/SalesOrderForm';
+import SalesOrderPage from './components/forms/SalesOrder/SalesOrderPage';
+import PurchaseOrderList from './components/forms/PurchaseOrder/PurchaseOrderList';
+import PurchaseOrderForm from './components/forms/PurchaseOrder/PurchaseOrderForm';
+import PurchaseOrderPage from './components/forms/PurchaseOrder/PurchaseOrderPage';
 
 
 // Create wrapper components that use the hooks properly
@@ -160,46 +167,6 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <PurchaseRFQForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/edit/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/create"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/view/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm readOnly={true} />
               </ProtectedRoute>
             }
           />
@@ -446,6 +413,76 @@ function AppContent() {
           />
           {/* Add Supplier Quotation routes */}
           {/* Existing routes continue */}
+          
+          {/* Purchase Order routes */}
+          <Route
+            path="/purchase-order"
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-order/add"
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-order/view/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-order/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Sales Order routes */}
+          <Route
+            path="/sales-order"
+            element={
+              <ProtectedRoute>
+                <SalesOrderList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-order/add"
+            element={
+              <ProtectedRoute>
+                <SalesOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-order/view/:id"
+            element={
+              <ProtectedRoute>
+                <SalesOrderForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-order/edit/:id"
+            element={
+              <ProtectedRoute>
+                <SalesOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* ... existing routes continue ... */}
         </Routes>
       </Box>
       <ToastNotification />
