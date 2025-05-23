@@ -48,16 +48,16 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
     Series: "SQ2025-001",
     CompanyID: DEFAULT_COMPANY.value,
     CustomerID: "CUST001",
-    CustomerName: "Acme Corporation",
+    CustomerName: "John",
     SupplierID: "SUP001",
-    SupplierName: "Global Suppliers Inc.",
+    SupplierName: "ABC Inc",
     ExternalRefNo: "EXT-REF-12345",
     DeliveryDate: new Date("2025-06-15"),
-    PostingDate: new Date("2025-05-20"),
-    RequiredByDate: new Date("2025-06-10"),
-    DateReceived: new Date("2025-05-18"),
+    PostingDate: new Date("2025-06-20"),
+    RequiredByDate: new Date("2025-06-28"),
+    DateReceived: new Date("2025-06-30"),
     ServiceTypeID: "ST001",
-    ServiceType: "International Freight",
+    ServiceType: "International Procurement",
     CollectionAddressID: "ADDR001",
     CollectionAddress: "123 Main St, Springfield, IL 62701",
     DestinationAddressID: "ADDR002",
@@ -70,9 +70,9 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
     CollectFromCustomerYN: true,
     PackagingRequiredYN: true,
     FormCompletedYN: true,
-    SalesAmount: 15000.00,
-    TaxAmount: 1200.00,
-    Total: 16200.00,
+    SalesAmount: 15000.0,
+    TaxAmount: "-",
+    Total: 16200.0,
   });
 
   // Static parcel data
@@ -231,23 +231,22 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Sales Amount"
-            value={formData.SalesAmount ? `${formData.CurrencyName} ${formData.SalesAmount.toFixed(2)}` : "-"}
+            value={`${formData.SalesAmount.toFixed(2)}`}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Taxes and Other Charges"
-            value={formData.TaxAmount ? `${formData.CurrencyName} ${formData.TaxAmount.toFixed(2)}` : "-"}
+            value={`${formData.TaxAmount}`}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Total"
-            value={formData.Total ? `${formData.CurrencyName} ${formData.Total.toFixed(2)}` : "-"}
+            value={`${formData.Total.toFixed(2)}`}
           />
         </Grid>
-        <Grid item xs={12} sx={{ width: "100%" }}>
-          <Grid container spacing={1}>
+        
             <Grid item xs={12} md={3} sx={{ width: "24%" }}>
               <ReadOnlyField label="Collect From Customer" value={formData.CollectFromCustomerYN} />
             </Grid>
@@ -258,8 +257,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
               <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN} />
             </Grid>
           </Grid>
-        </Grid>
-      </Grid>
+        
       <ParcelTab
         salesQuotationId={salesQuotationId}
         parcels={parcels}

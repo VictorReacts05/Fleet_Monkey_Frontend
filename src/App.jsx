@@ -45,6 +45,7 @@ import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import SalesQuotationList from './components/forms/SalesQuotation/SalesQuotationList';
+import SalesQuotationForm from './components/forms/SalesQuotation/SalesQuotationForm';
 
 
 // Create wrapper components that use the hooks properly
@@ -104,9 +105,8 @@ function AppContent() {
           <Route path="/" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          
-          // Remove this line - it's causing an error
-          // import ForgotPassword from "./pages/ForgotPassword";
+          // Remove this line - it's causing an error // import ForgotPassword
+          from "./pages/ForgotPassword";
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/dashboard"
@@ -252,14 +252,17 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-        
-        <Route
+          <Route
             path="/sales-Quotation"
             element={
               <ProtectedRoute>
                 <SalesQuotationList />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/sales-quotation/view/:id"
+            element={<SalesQuotationForm readOnly={true} />}
           />
           <Route
             path="/sales-Quotation/create"
@@ -285,8 +288,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-        
-
           <Route
             path="/customers"
             element={
@@ -407,7 +408,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          
           {/* Add the Form Role Approvers route */}
           <Route
             path="/form-role-approvers"
@@ -417,7 +417,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          
           {/* Add the Forms route */}
           <Route
             path="/forms"
@@ -427,7 +426,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          
           {/* Add the Form Roles route */}
           <Route
             path="/form-roles"
@@ -437,7 +435,6 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          
           {/* Add the Roles route */}
           <Route
             path="/roles"
@@ -447,10 +444,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          
           {/* Add Supplier Quotation routes */}
-          
-          
           {/* Existing routes continue */}
         </Routes>
       </Box>

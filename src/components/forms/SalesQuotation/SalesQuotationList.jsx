@@ -70,7 +70,8 @@ const SalesQuotationList = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  // Remove or comment out the viewDialogOpen state since we won't need it
+  // const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -159,8 +160,8 @@ const SalesQuotationList = () => {
     if (id && id !== "undefined") {
       const quotation = salesQuotations.find(q => q.SalesQuotationID === id);
       if (quotation) {
-        setSelectedQuotation(id);
-        setViewDialogOpen(true);
+        // Instead of opening a dialog, navigate to a view page
+        navigate(`/sales-quotation/view/${id}`);
       } else {
         toast.error("Sales Quotation not found");
       }
@@ -256,6 +257,8 @@ const SalesQuotationList = () => {
         onDelete={handleDeleteClick}
       />
 
+      {/* Remove or comment out the view dialog */}
+      {/* 
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -272,9 +275,10 @@ const SalesQuotationList = () => {
             />
           )}
         </DialogContent>
-        
       </Dialog>
+      */}
 
+      {/* Keep the delete dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
