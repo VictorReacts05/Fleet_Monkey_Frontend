@@ -1,16 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/sales-quotation";
-
-// Simple headers function instead of importing getAuthHeader
-const getHeaders = () => {
-  // Return basic headers without auth
-  return {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  };
-};
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Get Sales Quotation parcels by ID
 export const fetchSalesQuotationParcels = async (salesQuotationId) => {
@@ -19,28 +8,22 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
       return [];
     }
     
-    console.log("Fetching parcels for Sales Quotation ID:", salesQuotationId);
     const response = await axios.get(
-      `http://localhost:7000/api/sales-quotation-parcels?salesQuotationId=${salesQuotationId}`
+      `${APIBASEURL}/sales-quotation-parcels?salesQuotationId=${salesQuotationId}`
     );
-    console.log("Parcels response:", response.data);
-    
     if (response.data && response.data.data) {
       const parcels = response.data.data;
       
       // Fetch all UOMs once to avoid multiple API calls
       let uomMap = {};
       try {
-        const uomResponse = await axios.get(`http://localhost:7000/api/uoms`);
-        console.log("UOM response:", uomResponse.data);
+        const uomResponse = await axios.get(`${APIBASEURL}/uoms`);
         
         if (uomResponse.data && uomResponse.data.data) {
           uomMap = uomResponse.data.data.reduce((acc, uom) => {
             console.log("UOM object structure:", JSON.stringify(uom));
             
             const uomName = uom.UOM || uom.UOMName || uom.Name || uom.Description;
-            
-            console.log(`Mapping UOM: ID=${uom.UOMID}, Name=${uomName}`);
             
             if (uom.UOMID && uomName) {
               acc[uom.UOMID] = uomName;
@@ -57,7 +40,7 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
       // Fetch all items once to avoid multiple API calls
       let itemMap = {};
       try {
-        const itemResponse = await axios.get(`http://localhost:7000/api/items`);
+        const itemResponse = await axios.get(`${APIBASEURL}/items`);
         if (itemResponse.data && itemResponse.data.data) {
           itemMap = itemResponse.data.data.reduce((acc, item) => {
             acc[item.ItemID] = item.ItemName || item.Description;
@@ -78,14 +61,12 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
         }
         
         if (parcel.UOMID) {
-          console.log(`Looking for UOM ID: ${parcel.UOMID}, Type: ${typeof parcel.UOMID}`);
-          console.log(`UOM name from map: ${uomMap[parcel.UOMID]}`);
           
           if (uomMap[parcel.UOMID]) {
             parcel.UOMName = uomMap[parcel.UOMID];
           } else {
             try {
-              const singleUomResponse = axios.get(`http://localhost:7000/api/uoms/${parcel.UOMID}`);
+              const singleUomResponse = axios.get(`${APIBASEURL}/uoms/${parcel.UOMID}`);
               singleUomResponse.then(response => {
                 if (response.data && response.data.data) {
                   parcel.UOMName = response.data.data.UOM || response.data.data.UOMName;
@@ -106,18 +87,16 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
   } catch (error) {
     console.error("Error fetching Sales Quotation parcels:", error);
     try {
-      console.log("Trying fallback method to fetch parcels");
-      const response = await axios.get(`http://localhost:7000/api/sales-quotation-parcels`);
+      const response = await axios.get(`${APIBASEURL}/sales-quotation-parcels`);
       if (response.data && response.data.data) {
         const filteredParcels = response.data.data.filter(
           parcel => String(parcel.SalesQuotationId) === String(salesQuotationId)
         );
-        console.log(`Filtered ${filteredParcels.length} parcels for Sales Quotation ID ${salesQuotationId}`);
         
         const uomIds = filteredParcels.map(p => p.UOMID).filter(id => id);
         if (uomIds.length > 0) {
           try {
-            const uomResponse = await axios.get(`http://localhost:7000/api/uoms`);
+            const uomResponse = await axios.get(`${APIBASEURL}/uoms`);
             if (uomResponse.data && uomResponse.data.data) {
               const uomMap = uomResponse.data.data.reduce((acc, uom) => {
                 acc[uom.UOMID] = uom.UOMName;

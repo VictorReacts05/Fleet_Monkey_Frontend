@@ -26,12 +26,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-const API_URL = "http://localhost:7000/api";
-
 // Function to fetch items from API
 const fetchItems = async () => {
   try {
-    const response = await axios.get(`${API_URL}/items`);
+    const response = await axios.get(`${APIBASEURL}/items`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching items:", error);
@@ -42,7 +40,7 @@ const fetchItems = async () => {
 // Function to fetch UOMs from API
 const fetchUOMs = async () => {
   try {
-    const response = await axios.get(`${API_URL}/uoms`);
+    const response = await axios.get(`${APIBASEURL}/uoms`);
     if (response.data && response.data.data) {
       return response.data.data;
     } else if (Array.isArray(response.data)) {
@@ -69,7 +67,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [activeTab] = useState("parcels"); // Keep activeTab state but with fixed value
+  const [activeTab] = useState("parcels"); 
 
   const theme = useTheme();
 
@@ -144,19 +142,15 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   useEffect(() => {
     const loadExistingParcels = async () => {
       if (!salesRFQId) {
-        // console.log("No SalesRFQ ID provided, skipping parcel fetch");
         return;
       }
 
       try {
         setLoadingExistingParcels(true);
-
-        // Try different endpoint formats that might be available
         let response;
         try {
-          // First try the direct endpoint
           response = await axios.get(
-            `${API_URL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
+            `${APIBASEURL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
           );
         } catch (err) {
           console.log(
@@ -165,15 +159,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           );
           try {
             response = await axios.get(
-              `${API_URL}/sales-rfq/${salesRFQId}/parcels`
+              `${APIBASEURL}/sales-rfq/${salesRFQId}/parcels`
             );
           } catch (err2) {
-            console.log(
-              "Second endpoint attempt failed, trying final alternative...",
-              err2.message
-            );
             response = await axios.get(
-              `${API_URL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
+              `${APIBASEURL}/sales-rfq-parcels/salesrfq/${salesRFQId}`
             );
           }
         }
@@ -195,9 +185,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             console.warn("Unexpected response format:", response.data);
           }
 
-          // Ensure we're only processing parcels for this specific SalesRFQ ID
           const filteredParcels = parcelData.filter((parcel) => {
-            // Check for different possible property names for SalesRFQ ID
             const parcelSalesRFQId =
               parcel.SalesRFQID ||
               parcel.salesRFQID ||
@@ -214,11 +202,9 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             return;
           }
 
-          // If items or UOMs are not loaded yet, fetch them directly
           let itemsToUse = items;
           let uomsToUse = uoms;
 
-          // If items list is empty or doesn't have enough items, fetch them directly
           if (items.length <= 1) {
             try {
               const itemsResponse = await fetchItems();
@@ -235,7 +221,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             }
           }
 
-          // If UOMs list is empty or doesn't have enough UOMs, fetch them directly
           if (uoms.length <= 1) {
             try {
               const uomsResponse = await fetchUOMs();
@@ -267,32 +252,25 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             }
           }
 
-          // Format the parcels data for our component
           const formattedParcels = filteredParcels.map((parcel, index) => {
-            // Get item and UOM details
             let itemName = "Unknown Item";
             let uomName = "Unknown UOM";
 
             try {
-              // Try to find item name from our items list
               const itemId = String(parcel.ItemID || "");
               const uomId = String(parcel.UOMID || "");
 
-              // Try to find item in our items list
               const item = itemsToUse.find((i) => i.value === itemId);
               if (item) {
                 itemName = item.label;
               } else {
-                // If not found, use the ID as the name
                 itemName = `Item #${itemId}`;
               }
 
-              // Try to find UOM in our UOMs list
               const uom = uomsToUse.find((u) => u.value === uomId);
               if (uom) {
                 uomName = uom.label;
               } else {
-                // If not found, use the ID as the name
                 uomName = `UOM #${uomId}`;
               }
             } catch (err) {
@@ -307,7 +285,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
               uomName,
-              srNo: index + 1, // Add explicit sr. no. field
+              srNo: index + 1, 
             };
           });
 
@@ -324,10 +302,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       }
     };
 
-    // Clear parcels when salesRFQId changes
     setParcels([]);
 
-    // Then load the parcels for the new salesRFQId
     loadExistingParcels();
   }, [salesRFQId, items, uoms]);
 
@@ -362,7 +338,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         uomId: parcelToEdit.uomId,
         quantity: parcelToEdit.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
-        originalId: id, // Store the original ID for reference
+        originalId: id,
       },
     ]);
   };
@@ -507,7 +483,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
     try {
       // Try to update using the SalesRFQParcel endpoint
       const response = await axios.put(
-        `${API_URL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
+        `${APIBASEURL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
         {
           SalesRFQID: salesRFQId,
           ItemID: parseInt(parcel.ItemID, 10),
@@ -524,7 +500,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       // Try alternative endpoint
       try {
         const altResponse = await axios.put(
-          `${API_URL}/sales-rfq/${salesRFQId}/parcels/${parcel.SalesRFQParcelID}`,
+          `${APIBASEURL}/sales-rfq/${salesRFQId}/parcels/${parcel.SalesRFQParcelID}`,
           {
             ItemID: parseInt(parcel.ItemID, 10),
             UOMID: parseInt(parcel.UOMID, 10),

@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/country-Of-Origin";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getAuthToken = () => {
   return localStorage.getItem("token");
@@ -23,7 +22,7 @@ export const fetchCountries = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/country-Of-Origin?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -64,14 +63,14 @@ export const createCountry = async (countryData) => {
       JSON.stringify(dataWithCreator, null, 2)
     );
     console.log("[DEBUG] Full request config:", {
-      url: API_BASE_URL,
+      url: `${APIBASEURL}/country-Of-Origin`,
       method: "POST",
       data: dataWithCreator,
       headers: getAxiosConfig().headers,
     });
 
     const response = await axios.post(
-      API_BASE_URL,
+      `${APIBASEURL}/country-Of-Origin`,
       dataWithCreator,
       getAxiosConfig()
     );
@@ -93,7 +92,7 @@ export const updateCountry = async (countryId, data) => {
   try {
     console.log("[DEBUG] Update request data:", JSON.stringify(data, null, 2));
     const response = await axios.put(
-      `${API_BASE_URL}/${countryId}`,
+      `${APIBASEURL}/country-Of-Origin/${countryId}`,
       data,
       getAxiosConfig()
     );
@@ -122,13 +121,13 @@ export const deleteCountry = async (id, deletedById) => {
       JSON.stringify(requestData, null, 2)
     );
     console.log("[DEBUG] Full request config:", {
-      url: `${API_BASE_URL}/${id}`,
+      url: `${APIBASEURL}/country-Of-Origin/${id}`,
       method: "DELETE",
       data: requestData,
       headers: getAxiosConfig().headers,
     });
 
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/country-Of-Origin/${id}`, {
       ...getAxiosConfig(),
       data: requestData,
     });
@@ -149,7 +148,7 @@ export const deleteCountry = async (id, deletedById) => {
 
 export const getCountryById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/country-Of-Origin/${id}`, getAxiosConfig());
     console.log("[DEBUG] getCountryById response:", response.data);
     return response.data.data || response.data;
   } catch (error) {

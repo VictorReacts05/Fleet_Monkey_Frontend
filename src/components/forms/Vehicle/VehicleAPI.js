@@ -1,16 +1,10 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/vehicles";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("user")
-    );
-    console.log("Parsed user object:", user);
 
     if (!user || !user.token) {
       console.warn(
@@ -21,7 +15,6 @@ const getAuthHeader = () => {
 
     // Try different possible keys for personId
     const personId = user.personId || user.id || user.userId || null;
-    console.log("Extracted personId:", personId);
 
     if (!personId) {
       console.warn(
@@ -50,7 +43,7 @@ export const fetchVehicles = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}?page=${page}&limit=${limit}`;
+    let url = `${APIBASEURL}/vehicles?page=${page}&limit=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -71,9 +64,7 @@ export const createVehicle = async (vehicleData) => {
       throw new Error("personId is required for createdByID");
     }
 
-    // Prepare data with proper field names to match backend expectations
     const apiData = {
-      // Map frontend camelCase to backend PascalCase field names
       TruckNumberPlate: vehicleData.truckNumberPlate,
       VIN: vehicleData.vin,
       CompanyID: Number(vehicleData.companyID),
@@ -84,12 +75,9 @@ export const createVehicle = async (vehicleData) => {
       CreatedByID: Number(personId)
     };
 
-    console.log("Creating vehicle with formatted data:", apiData);
-
-    const response = await axios.post(API_BASE_URL, apiData, { headers });
+    const response = await axios.post(`${APIBASEURL}/vehicles`, apiData, { headers });
     return response.data;
   } catch (error) {
-    console.error("Error creating vehicle:", error);
     if (error.response) {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
@@ -107,7 +95,6 @@ export const updateVehicle = async (id, vehicleData) => {
       throw new Error("personId is required for CreatedByID");
     }
 
-    // Prepare data with proper field names to match backend expectations
     const apiData = {
       VehicleID: Number(id),
       TruckNumberPlate: vehicleData.truckNumberPlate,
@@ -120,14 +107,11 @@ export const updateVehicle = async (id, vehicleData) => {
       CreatedByID: Number(personId)
     };
     
-    // Include RowVersionColumn if available
     if (vehicleData.RowVersionColumn) {
       apiData.RowVersionColumn = vehicleData.RowVersionColumn;
     }
 
-    console.log("Updating vehicle with formatted data:", apiData);
-    
-    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
+    const response = await axios.put(`${APIBASEURL}/vehicles/${id}`, apiData, {
       headers,
     });
     return response.data;
@@ -146,9 +130,7 @@ export const deleteVehicle = async (id, personId = null) => {
   try {
     const { headers, personId: storedPersonId } = getAuthHeader();
 
-    // Use provided personId or fallback to storedPersonId
     const deletedByID = personId || storedPersonId;
-    console.log("deleteVehicle - Using deletedByID:", deletedByID);
 
     if (!deletedByID) {
       throw new Error(
@@ -158,13 +140,13 @@ export const deleteVehicle = async (id, personId = null) => {
 
     const requestBody = {
       deletedByID,
-      deletedById: deletedByID, // Include both to handle backend naming
+      deletedById: deletedByID, 
     };
 
-    console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
+    console.log("Sending DELETE request to:", `${APIBASEURL}/vehicles/${id}`);
     console.log("Request body:", requestBody);
 
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/vehicles/${id}`, {
       headers,
       data: requestBody,
     });
@@ -191,7 +173,7 @@ export const deleteVehicle = async (id, personId = null) => {
 export const getVehicleById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/vehicles/${id}`, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -203,7 +185,7 @@ export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      "http://localhost:7000/api/companies",
+      `${APIBASEURL}/companies`,
       { headers }
     );
     return response.data;
@@ -217,7 +199,7 @@ export const fetchCompanies = async () => {
 export const fetchVehicleTypes = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/vehicletype", {
+    const response = await axios.get(`${APIBASEURL}/vehicletype`, {
       headers,
     });
     return response.data;
@@ -226,7 +208,7 @@ export const fetchVehicleTypes = async () => {
     try {
       const { headers } = getAuthHeader();
       const response = await axios.get(
-        "http://localhost:7000/api/vehicletype",
+       `${APIBASEURL}/vehicletype`,
         { headers }
       );
       return response.data;

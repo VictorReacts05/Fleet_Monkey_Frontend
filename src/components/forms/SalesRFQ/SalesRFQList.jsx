@@ -11,6 +11,7 @@ import { Tooltip, IconButton, Chip } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
 import { showToast } from "../../toastNotification";
 import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const SalesRFQList = () => {
   const navigate = useNavigate();
@@ -63,9 +64,7 @@ const SalesRFQList = () => {
   }, [page, rowsPerPage, fromDate, toDate]);
   
   useEffect(() => {
-    // Only load sales RFQs after purchaseRFQs is fetched/updated
     loadSalesRFQs();
-    // eslint-disable-next-line
   }, [purchaseRFQs, page, rowsPerPage, fromDate, toDate]);
   
   // Fetch all purchase RFQs to check which sales RFQs have associated purchase RFQs
@@ -77,15 +76,11 @@ const SalesRFQList = () => {
         : {};
 
       // We need to fetch from the Purchase RFQ endpoint
-      const response = await axios.get("http://localhost:7000/api/purchase-rfq", {
+      const response = await axios.get(`${APIBASEURL}/purchase-rfq`, {
         headers,
       });
 
-      console.log("Purchase RFQ API response:", response.data);
-
       if (response.data && response.data.data) {
-        // Extract all sales RFQ IDs that have purchase RFQs
-        // The field is SalesRFQID, not SourceSalesRFQID
         const purchaseRFQSourceIds = response.data.data
           .filter(rfq => rfq.SalesRFQID)
           .map(rfq => rfq.SalesRFQID);
@@ -93,7 +88,6 @@ const SalesRFQList = () => {
         // Convert IDs to numbers for consistent comparison
         const numericSourceIds = purchaseRFQSourceIds.map(id => Number(id));
         
-        console.log("Sales RFQs with Purchase RFQs:", numericSourceIds);
         setPurchaseRFQs(numericSourceIds);
       }
     } catch (error) {
@@ -122,19 +116,15 @@ const SalesRFQList = () => {
       // console.log("Sales RFQs loaded:", salesRFQs);
 
       const mappedRows = salesRFQs.map((salesRFQ) => {
-        // Convert to number for consistent comparison
         const salesRFQId = Number(salesRFQ.SalesRFQID);
         const hasPurchaseRFQ = purchaseRFQs.includes(salesRFQId);
-        
-        // Log the status to debug
-        // console.log(`SalesRFQ ID ${salesRFQId} status:`, salesRFQ.Status);
         
         return {
           id: salesRFQId,
           series: salesRFQ.Series || "N/A",
           customerName: salesRFQ.CustomerName || "N/A",
           supplierName: salesRFQ.SupplierName || "N/A",
-          status: salesRFQ.Status || "Pending", // Make sure this matches the API field name
+          status: salesRFQ.Status || "Pending", 
           hasPurchaseRFQ: hasPurchaseRFQ,
           isEditable: !hasPurchaseRFQ,
           isDeletable: !hasPurchaseRFQ

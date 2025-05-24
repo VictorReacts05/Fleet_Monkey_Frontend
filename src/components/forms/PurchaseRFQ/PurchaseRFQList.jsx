@@ -20,6 +20,7 @@ import { showToast } from "../../toastNotification";
 import axios from "axios";
 import PurchaseRFQForm from "./PurchaseRFQForm";
 import { Chip } from "@mui/material";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -74,11 +75,9 @@ const PurchaseRFQList = () => {
       setLoading(true);
       const { headers } = getHeaders();
       const response = await axios.get(
-        "http://localhost:7000/api/purchase-rfq",
+        `${APIBASEURL}/purchase-rfq`,
         { headers }
       );
-  
-      console.log("Purchase RFQs API response:", response);
   
       let purchaseRFQData = [];
       
@@ -100,7 +99,6 @@ const PurchaseRFQList = () => {
       
       setPurchaseRFQs(mappedData);
     } catch (error) {
-      console.error("Error fetching Purchase RFQs:", error);
       toast.error("Failed to load Purchase RFQs");
       setPurchaseRFQs([]);
     } finally {
@@ -159,7 +157,7 @@ const PurchaseRFQList = () => {
       showToast("Purchase RFQ deleted successfully", "success");
       const { headers } = getHeaders();
       await axios.delete(
-        `http://localhost:7000/api/purchase-rfqs/${selectedRFQ}`,
+        `${APIBASEURL}/purchase-rfqs/${selectedRFQ}`,
         { headers }
       );
       toast.success("Purchase RFQ deleted successfully");

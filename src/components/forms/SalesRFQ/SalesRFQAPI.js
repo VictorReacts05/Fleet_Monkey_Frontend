@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/sales-rfq";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth header and personId from localStorage
 const getAuthHeader = () => {
@@ -35,7 +34,7 @@ export const fetchSalesRFQs = async (page = 1, pageSize = 10, fromDate = null, t
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `http://localhost:7000/api/sales-rfq?page=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/sales-rfq?page=${page}&pageSize=${pageSize}`;
     
     if (fromDate) {
       url += `&fromDate=${fromDate}`;
@@ -109,7 +108,7 @@ export const createSalesRFQ = async (salesRFQData) => {
     };
 
     console.log("Creating SalesRFQ with data:", apiData);
-    const response = await axios.post(API_BASE_URL, apiData, { headers });
+    const response = await axios.post(`${APIBASEURL}/sales-rfq`, apiData, { headers });
 
     console.log("SalesRFQ creation response:", response.data);
 
@@ -132,7 +131,7 @@ export const createSalesRFQ = async (salesRFQData) => {
         console.log("Formatted parcels for API:", formattedParcels);
 
         const parcelPromises = formattedParcels.map((parcel) =>
-          axios.post("http://localhost:7000/api/sales-rfq-parcels", parcel, {
+          axios.post(`${APIBASEURL}/sales-rfq-parcels`, parcel, {
             headers,
           })
         );
@@ -170,7 +169,7 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
 
     // Use the confirmed endpoint
     response = await axios.get(
-      `http://localhost:7000/api/sales-rfq-parcels?salesRFQID=${salesRFQId}`,
+      `${APIBASEURL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`,
       { headers }
     );
     console.log("Fetched parcels using query endpoint:", response.data);
@@ -240,7 +239,7 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
     };
 
     console.log("Updating SalesRFQ with ID:", id, "Data:", apiData);
-    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
+    const response = await axios.put(`${APIBASEURL}/sales-rfq/${id}`, apiData, {
       headers,
     });
 
@@ -325,7 +324,7 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
             );
             return axios
               .delete(
-                `http://localhost:7000/api/sales-rfq-parcels/${parcelId}`,
+                `${APIBASEURL}/sales-rfq-parcels/${parcelId}`,
                 {
                   headers,
                   data: personId ? { DeletedByID: Number(personId) } : {},
@@ -395,9 +394,8 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
           }));
 
         if (formattedParcels.length > 0) {
-          console.log("Creating new parcels:", formattedParcels);
           const parcelPromises = formattedParcels.map((parcel) =>
-            axios.post("http://localhost:7000/api/sales-rfq-parcels", parcel, {
+            axios.post(`${APIBASEURL}/sales-rfq-parcels`, parcel, {
               headers,
             })
           );
@@ -436,7 +434,7 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
 export const deleteSalesRFQ = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.delete(`${APIBASEURL}/sales-rfq/${id}`, { headers });
     return response.data;
   } catch (error) {
     console.error("Error deleting SalesRFQ:", error);
@@ -448,7 +446,7 @@ export const deleteSalesRFQ = async (id) => {
 export const getSalesRFQById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/sales-rfq/${id}`, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -459,7 +457,7 @@ export const getSalesRFQById = async (id) => {
 export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/companies", {
+    const response = await axios.get(`${APIBASEURL}/companies`, {
       headers,
     });
     return response.data.data || [];
@@ -472,7 +470,7 @@ export const fetchCompanies = async () => {
 export const fetchCustomers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/customers", {
+    const response = await axios.get(`${APIBASEURL}/customers`, {
       headers,
     });
     return response.data.data || [];
@@ -485,7 +483,7 @@ export const fetchCustomers = async () => {
 export const fetchSuppliers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/suppliers", {
+    const response = await axios.get(`${APIBASEURL}/suppliers`, {
       headers,
     });
     return response.data.data || [];
@@ -499,7 +497,7 @@ export const fetchServiceTypes = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      "http://localhost:7000/api/service-types",
+      `${APIBASEURL}/service-types`,
       { headers }
     );
     return response.data.data || [];
@@ -513,7 +511,7 @@ export const fetchServiceTypes = async () => {
 export const fetchAddresses = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/addresses", {
+    const response = await axios.get(`${APIBASEURL}/addresses`, {
       headers,
     });
     return response.data.data || [];
@@ -527,7 +525,7 @@ export const fetchMailingPriorities = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      "http://localhost:7000/api/mailing-priorities",
+      `${APIBASEURL}/mailing-priorities`,
       { headers }
     );
     return response.data.data || [];
@@ -540,7 +538,7 @@ export const fetchMailingPriorities = async () => {
 export const fetchCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get("http://localhost:7000/api/currencies", {
+    const response = await axios.get(`${APIBASEURL}/currencies`, {
       headers,
     });
     return response.data.data || [];
@@ -579,7 +577,7 @@ export const fetchCurrencies = async () => {
 //     let response;
 //     if (existingApproval) {
 //       response = await axios.put(
-//         `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
+//         `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
 //         approvalData,
 //         { headers }
 //       );
@@ -588,7 +586,7 @@ export const fetchCurrencies = async () => {
 //       try {
 //         // Attempt to create new approval
 //         response = await axios.post(
-//           `http://localhost:7000/api/sales-rfq-approvals`,
+//           `${APIBASEURL}/sales-rfq-approvals`,
 //           approvalData,
 //           { headers }
 //         );
@@ -604,7 +602,7 @@ export const fetchCurrencies = async () => {
 //           );
 //           // Fallback to updating the existing approval
 //           response = await axios.put(
-//             `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
+//             `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
 //             approvalData,
 //             { headers }
 //           );
@@ -630,7 +628,7 @@ export const fetchCurrencies = async () => {
 //   try {
 //     const { headers } = getAuthHeader();
 //     const response = await axios.get(
-//       `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/2`,
+//       `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
 //       { headers }
 //     );
 //     console.log("GET approval response:", response.data);
@@ -658,7 +656,7 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
     const { headers } = getAuthHeader();
 
     // Instead of fetching from approvals endpoint, get the SalesRFQ status directly
-    const response = await axios.get(`${API_BASE_URL}/${salesRFQId}`, {
+    const response = await axios.get(`${APIBASEURL}/sales-rfq/${salesRFQId}`, {
       headers,
     });
     // console.log("GET SalesRFQ response
@@ -690,7 +688,7 @@ export const approveSalesRFQ = async (salesRFQId, approve = true) => {
     console.log(`Updating SalesRFQ status to ${approve ? 'Approved' : 'Pending'} for ID: ${salesRFQId}`);
     
     const response = await axios.put(
-      `${API_BASE_URL}/${salesRFQId}`,
+      `${APIBASEURL}/sales-rfq/${salesRFQId}`,
       { Status: approve ? 'Approved' : 'Pending' },
       { headers }
     );

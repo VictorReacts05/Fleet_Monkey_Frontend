@@ -1,11 +1,10 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoginDetails, setLogoutNull } from "../redux/actions/login/loginActions";
+import APIBASEURL from "../utils/apiBaseUrl";
 
-const API_BASE_URL = "http://localhost:7000/api";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -23,20 +22,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (loginId, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const response = await axios.post(`${APIBASEURL}/auth/login`, {
         LoginID: loginId,
         Password: password,
       });
       
       if (response.data.token) {
-        // Store token and user separately
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
         
         setUser(response.data.user);
         setIsAuthenticated(true);   
         
-        // Update Redux store with login details
         dispatch(setLoginDetails(response.data));
         
         navigate("/dashboard");

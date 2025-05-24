@@ -23,7 +23,8 @@ import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import StatusIndicator from "./StatusIndicator"; // Import StatusIndicator component
+import StatusIndicator from "./StatusIndicator";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -192,7 +193,7 @@ const SupplierQuotationForm = ({
         if (quotationData.PurchaseRFQID && !quotationData.PurchaseRFQSeries) {
           try {
             const purchaseRFQResponse = await axios.get(
-              `http://localhost:7000/api/purchase-rfq/${quotationData.PurchaseRFQID}`
+              `${APIBASEURL}/purchase-rfq/${quotationData.PurchaseRFQID}`
             );
             if (purchaseRFQResponse.data && purchaseRFQResponse.data.data) {
               const purchaseRFQ = purchaseRFQResponse.data.data;
@@ -209,7 +210,7 @@ const SupplierQuotationForm = ({
         if (quotationData.SalesRFQID && !quotationData.SalesRFQSeries) {
           try {
             const salesRFQResponse = await axios.get(
-              `http://localhost:7000/api/sales-rfq/${quotationData.SalesRFQID}`
+              `${APIBASEURL}/sales-rfq/${quotationData.SalesRFQID}`
             );
             if (salesRFQResponse.data && salesRFQResponse.data.data) {
               const salesRFQ = salesRFQResponse.data.data;
@@ -227,7 +228,7 @@ const SupplierQuotationForm = ({
         if (response.data.parcels && Array.isArray(response.data.parcels)) {
           try {
             const uomResponse = await axios.get(
-              `http://localhost:7000/api/uoms`
+              `${APIBASEURL}/uoms`
             );
             let uomMap = {};
 
@@ -405,7 +406,7 @@ const SupplierQuotationForm = ({
       
       // Update the supplier quotation
       const quotationResponse = await axios.put(
-        `http://localhost:7000/api/supplier-quotation/${supplierQuotationId}`,
+        `${APIBASEURL}/supplier-quotation/${supplierQuotationId}`,
         quotationUpdateData,
         { headers }
       );
@@ -430,7 +431,7 @@ const SupplierQuotationForm = ({
         console.log(`Updating parcel ${parcel.SupplierQuotationParcelID} with data:`, parcelData);
         
         const parcelResponse = await axios.put(
-          `http://localhost:7000/api/supplier-quotation-parcel/${parcel.SupplierQuotationParcelID}`,
+          `${APIBASEURL}/supplier-quotation-parcel/${parcel.SupplierQuotationParcelID}`,
           parcelData,
           { headers }
         );

@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/address-types";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
@@ -41,7 +40,7 @@ export const fetchAddressTypes = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/address-types?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -66,12 +65,14 @@ export const createAddressType = async (addressTypeData) => {
     // Prepare data with proper field names to match backend expectations
     const apiData = {
       AddressType: addressTypeData.addressType || addressTypeData.AddressType,
-      CreatedByID: Number(personId)
+      CreatedByID: Number(personId),
     };
 
     console.log("Creating address type with formatted data:", apiData);
 
-    const response = await axios.post(API_BASE_URL, apiData, { headers });
+    const response = await axios.post(`${APIBASEURL}/address-types`, apiData, {
+      headers,
+    });
     return response.data;
   } catch (error) {
     console.error("Error creating address type:", error);
@@ -87,28 +88,32 @@ export const createAddressType = async (addressTypeData) => {
 export const updateAddressType = async (id, addressTypeData) => {
   try {
     const { headers, personId } = getAuthHeader();
-    
+
     if (!personId) {
       throw new Error("personId is required for ModifiedByID");
     }
-    
+
     // Prepare data with proper field names to match backend expectations
     const apiData = {
       AddressTypeID: Number(id),
       AddressType: addressTypeData.addressType || addressTypeData.AddressType,
-      CreatedByID: Number(personId) // Changed from CreatedByID to ModifiedByID for updates
+      CreatedByID: Number(personId), // Changed from CreatedByID to ModifiedByID for updates
     };
-    
+
     // Include RowVersionColumn if available
     if (addressTypeData.RowVersionColumn) {
       apiData.RowVersionColumn = addressTypeData.RowVersionColumn;
     }
-    
+
     console.log("Updating address type with formatted data:", apiData);
-    
-    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
-      headers,
-    });
+
+    const response = await axios.put(
+      `${APIBASEURL}/address-types/${id}`,
+      apiData,
+      {
+        headers,
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error updating address type:", error);
@@ -129,19 +134,19 @@ export const updateAddressType = async (id, addressTypeData) => {
 export const deleteAddressType = async (id) => {
   try {
     const { headers, personId } = getAuthHeader();
-    
+
     if (!personId) {
-      throw new Error('personId is required for deletedByID');
+      throw new Error("personId is required for deletedByID");
     }
-    
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+
+    const response = await axios.delete(`${APIBASEURL}/address-types/${id}`, {
       headers,
-      data: { DeletedByID: Number(personId) }
+      data: { DeletedByID: Number(personId) },
     });
-    
+
     return response.data;
   } catch (error) {
-    console.error('Error deleting address type:', error);
+    console.error("Error deleting address type:", error);
     throw error.response?.data || error.message;
   }
 };
@@ -151,30 +156,32 @@ export const getAddressTypeById = async (id) => {
   try {
     const { headers } = getAuthHeader();
     // console.log(Fetching address type with ID: ${id});
-    
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+
+    const response = await axios.get(`${APIBASEURL}/address-types/${id}`, {
+      headers,
+    });
     console.log("Address type data response:", response.data);
-    
+
     // Handle different response structures
     let addressTypeData = null;
-    
+
     if (response.data.data) {
       // If data is in response.data.data
-      addressTypeData = Array.isArray(response.data.data) 
-        ? response.data.data[0] 
+      addressTypeData = Array.isArray(response.data.data)
+        ? response.data.data[0]
         : response.data.data;
     } else if (response.data.AddressTypeID) {
       // If direct object
       addressTypeData = response.data;
     }
-    
+
     if (!addressTypeData) {
-      console.warn('Address type data not found in response:', response.data);
+      console.warn("Address type data not found in response:", response.data);
       // Return the raw response data as fallback
       return response.data;
     }
-    
-    console.log('Processed address type data:', addressTypeData);
+
+    console.log("Processed address type data:", addressTypeData);
     return addressTypeData;
   } catch (error) {
     console.error("Error fetching address type:", error);

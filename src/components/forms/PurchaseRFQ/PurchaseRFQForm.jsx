@@ -43,6 +43,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import StatusIndicator from "./StatusIndicator";
 import SearchIcon from "@mui/icons-material/Search";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -159,7 +160,7 @@ const PurchaseRFQForm = ({
         try {
           if (rfqData.CollectionAddressID) {
             const collectionAddressResponse = await axios.get(
-              `http://localhost:7000/api/addresses/${rfqData.CollectionAddressID}`
+              `${APIBASEURL}/addresses/${rfqData.CollectionAddressID}`
             );
             if (
               collectionAddressResponse.data &&
@@ -174,7 +175,7 @@ const PurchaseRFQForm = ({
 
           if (rfqData.DestinationAddressID) {
             const destinationAddressResponse = await axios.get(
-              `http://localhost:7000/api/addresses/${rfqData.DestinationAddressID}`
+              `${APIBASEURL}/addresses/${rfqData.DestinationAddressID}`
             );
             if (
               destinationAddressResponse.data &&
@@ -319,7 +320,7 @@ const PurchaseRFQForm = ({
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       const response = await axios.post(
-        "http://localhost:7000/api/suppliers",
+        `${APIBASEURL}/suppliers`,
         supplierData,
         {
           headers: {
@@ -377,7 +378,7 @@ const PurchaseRFQForm = ({
         console.log("Email request data:", JSON.stringify(emailData, null, 2));
 
         const response = await axios.post(
-          "http://localhost:7000/api/rfqsent/send-rfq",
+          `${APIBASEURL}/rfqsent/send-rfq`,
           emailData,
           {
             headers: {
@@ -488,7 +489,7 @@ const PurchaseRFQForm = ({
   const fetchSuppliers = async () => {
     try {
       setLoadingSuppliers(true);
-      const response = await axios.get("http://localhost:7000/api/suppliers");
+      const response = await axios.get(`${APIBASEURL}/suppliers`);
       if (response.data && Array.isArray(response.data.data)) {
         setSuppliers(response.data.data);
       }

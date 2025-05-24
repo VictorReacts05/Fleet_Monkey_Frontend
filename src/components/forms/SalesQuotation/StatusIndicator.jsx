@@ -11,6 +11,7 @@ import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios"; 
 import { toast } from "react-toastify"; 
 import { useState, useEffect } from "react";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const StatusIndicator = ({ status, salesQuotationId, onStatusChange, readOnly }) => { 
   const theme = useTheme(); 
@@ -48,7 +49,7 @@ const StatusIndicator = ({ status, salesQuotationId, onStatusChange, readOnly })
 
       const approverID = 2; 
       const response = await axios.get( 
-        `http://localhost:7000/api/sales-quotation-approvals?SalesQuotationID=${salesQuotationId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/sales-quotation-approvals?SalesQuotationID=${salesQuotationId}&ApproverID=${approverID}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 
@@ -101,7 +102,7 @@ const StatusIndicator = ({ status, salesQuotationId, onStatusChange, readOnly })
         ? { Authorization: `Bearer ${user.token}` } 
         : {}; 
 
-      const approveEndpoint = `http://localhost:7000/api/sales-quotation/approve/`; 
+      const approveEndpoint = `${APIBASEURL}/sales-quotation/approve/`; 
       const approveData = { 
         salesQuotationID: parseInt(salesQuotationId, 10), 
       }; 

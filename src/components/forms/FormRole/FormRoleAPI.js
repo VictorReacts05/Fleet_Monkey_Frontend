@@ -1,8 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/formRole";
-const FORMS_API_URL = "http://localhost:7000/api/forms";
-const ROLES_API_URL = "http://localhost:7000/api/roles";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -40,7 +37,7 @@ export const fetchFormRoles = async (
   searchTerm = ""
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/formRole?pageNumber=${page}&pageSize=${limit}`;
     if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     const response = await axios.get(url, getAxiosConfig());
@@ -68,7 +65,7 @@ export const createFormRole = async (formRoleData) => {
 
     console.log("[DEBUG] Creating form role:", requestData);
     
-    const response = await axios.post(API_BASE_URL, requestData, getAxiosConfig());
+    const response = await axios.post(`${APIBASEURL}/formRole`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to create form role:", {
@@ -94,7 +91,7 @@ export const updateFormRole = async (id, formRoleData) => {
 
     console.log("[DEBUG] Updating form role:", requestData);
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestData, getAxiosConfig());
+    const response = await axios.put(`${APIBASEURL}/formRole/${id}`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to update form role:", {
@@ -110,7 +107,7 @@ export const deleteFormRole = async (id) => {
   try {
     const user = getUserData();
     
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/formRole/${id}`, {
       ...getAxiosConfig(),
       data: {
         formRoleId: Number(id)
@@ -130,7 +127,7 @@ export const deleteFormRole = async (id) => {
 
 export const getFormRoleById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/formRole/${id}`, getAxiosConfig());
     
     if (response.data && response.data.data) {
       return Array.isArray(response.data.data) 
@@ -152,7 +149,7 @@ export const getFormRoleById = async (id) => {
 // Fetch all forms for dropdown
 export const fetchForms = async () => {
   try {
-    const response = await axios.get(FORMS_API_URL, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/forms`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch forms:", error);
@@ -163,7 +160,7 @@ export const fetchForms = async () => {
 // Fetch all roles for dropdown
 export const fetchRoles = async () => {
   try {
-    const response = await axios.get(ROLES_API_URL, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/roles`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch roles:", error);

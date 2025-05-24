@@ -20,6 +20,7 @@ import { showToast } from "../../toastNotification";
 import axios from "axios";
 import SalesQuotationForm from "./SalesQuotationForm";
 import { Chip } from "@mui/material";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -109,7 +110,7 @@ const SalesQuotationList = () => {
     //   setLoading(true);
     //   const { headers } = getHeaders();
     // //   const response = await axios.get(
-    // //     "http://localhost:7000/api/sales-quotation",
+    // //     `${APIBASEURL}/sales-quotation`,
     // //     { headers }
     // //   );
   
@@ -193,7 +194,7 @@ const SalesQuotationList = () => {
       setLoading(true);
       const { headers } = getHeaders();
       await axios.delete(
-        `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
+        `${APIBASEURL}/sales-quotation/${selectedQuotation}`,
         { headers }
       );
       showToast("Sales Quotation deleted successfully", "success");

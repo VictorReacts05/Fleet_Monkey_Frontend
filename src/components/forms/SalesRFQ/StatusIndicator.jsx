@@ -8,7 +8,7 @@ import {
   CircularProgress,
   useTheme,
 } from "@mui/material";
-import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
+import { CheckCircle, PendingActions } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -37,7 +37,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
       
       try {
         const response = await axios.get(
-          `http://localhost:7000/api/sales-rfq-approvals/${salesRFQId}/${approverID}`,
+          `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/${approverID}`,
           { headers }
         );
         console.log("Fetching approval record for SalesRFQID:", salesRFQId);
@@ -82,7 +82,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
 
       // 1. Update the Status in SalesRFQ table
       const salesRFQResponse = await axios.put(
-        `http://localhost:7000/api/sales-rfq/${salesRFQId}`,
+        `${APIBASEURL}/sales-rfq/${salesRFQId}`,
         {
           Status: newStatus,
           SalesRFQID: salesRFQId,
@@ -116,7 +116,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         try {
           // Try POST first (create new record)
           approvalResponse = await axios.post(
-            `http://localhost:7000/api/sales-rfq-approvals`,
+            `${APIBASEURL}/sales-rfq-approvals`,
             approvalData,
             { headers }
           );
@@ -126,7 +126,7 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
           if (postError.response && postError.response.status === 400) {
             console.log("POST failed, trying PUT instead");
             approvalResponse = await axios.put(
-              `http://localhost:7000/api/sales-rfq-approvals`,
+              `${APIBASEURL}/sales-rfq-approvals`,
               approvalData,
               { headers }
             );

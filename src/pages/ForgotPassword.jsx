@@ -15,6 +15,7 @@ import { styled } from "@mui/material/styles";
 import EmailIcon from "@mui/icons-material/Email";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import APIBASEURL from "../utils/apiBaseUrl";
 
 const ForgotPasswordContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -92,29 +93,18 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      // Add logging to see what's being sent
-      console.log("Sending request with email:", email);
       
-      const response = await axios.post("http://localhost:7000/api/auth/forgot-password", {
+      const response = await axios.post(`${APIBASEURL}/auth/forgot-password`, {
         EmailID: email,
       });
-
-      console.log("Server response:", response.data);
       
       setMessage({
         text: "Password reset link has been sent to your email",
         type: "success",
       });
     } catch (error) {
-      console.error("Error requesting password reset:", error);
-      
-      // More detailed error logging
+
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        console.error("Error response headers:", error.response.headers);
         
         setMessage({
           text: error.response.data?.message || 
@@ -122,15 +112,11 @@ const ForgotPassword = () => {
           type: "error",
         });
       } else if (error.request) {
-        // The request was made but no response was received
-        console.error("No response received:", error.request);
         setMessage({
           text: "No response from server. Please check your connection and try again.",
           type: "error",
         });
       } else {
-        // Something happened in setting up the request that triggered an Error
-        console.error("Error setting up request:", error.message);
         setMessage({
           text: "Failed to send request. Please try again later.",
           type: "error",

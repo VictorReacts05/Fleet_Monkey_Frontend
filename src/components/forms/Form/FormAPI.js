@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/forms";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -38,7 +37,7 @@ export const fetchForms = async (
   searchTerm = ""
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/forms?pageNumber=${page}&pageSize=${limit}`;
     if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     const response = await axios.get(url, getAxiosConfig());
@@ -65,7 +64,7 @@ export const createForm = async (formData) => {
 
     console.log("[DEBUG] Creating form:", requestData);
     
-    const response = await axios.post(API_BASE_URL, requestData, getAxiosConfig());
+    const response = await axios.post(`${APIBASEURL}/forms`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to create form:", {
@@ -94,7 +93,7 @@ export const updateForm = async (id, formData) => {
 
     console.log("[DEBUG] Updating form:", requestData);
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestData, getAxiosConfig());
+    const response = await axios.put(`${APIBASEURL}/forms/${id}`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to update form:", {
@@ -110,7 +109,7 @@ export const deleteForm = async (id) => {
   try {
     const user = getUserData();
     
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/forms/${id}`, {
       ...getAxiosConfig(),
       data: {
         deletedById: user.personId || 1
@@ -130,7 +129,7 @@ export const deleteForm = async (id) => {
 
 export const getFormById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/forms/${id}`, getAxiosConfig());
     
     if (response.data && response.data.data) {
       return Array.isArray(response.data.data) 

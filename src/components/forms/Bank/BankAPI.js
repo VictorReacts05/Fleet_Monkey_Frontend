@@ -1,18 +1,14 @@
 import axios from 'axios';
-
-// Try another endpoint format based on other working endpoints in the app
-const API_BASE_URL = "http://localhost:7000/api/bank-accounts"; // Changed to match likely backend naming
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
 export const fetchBanks = async (pageNumber = 1, pageSize = 10) => {
   try {
-    // console.log(`Fetching banks: page=${pageNumber}, size=${pageSize}`);
-    const response = await axios.get(API_BASE_URL, {
+    const response = await axios.get(`${APIBASEURL}/bank-accounts`, {
       params: {
         pageNumber,
         pageSize
       }
     });
-    // console.log('Fetch response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Fetch error:', {
@@ -43,7 +39,7 @@ export const createBank = async (bankData) => {
     
     console.log("[DEBUG] Bank create request data:", requestData);
     
-    const response = await axios.post(API_BASE_URL, requestData);
+    const response = await axios.post(`${APIBASEURL}/bank-accounts`, requestData);
     return response.data;
   } catch (error) {
     console.error("Create bank error:", {
@@ -59,7 +55,6 @@ export const updateBank = async (id, bankData) => {
   try {
     const user = JSON.parse(localStorage.getItem("user")) || {};
     
-    // Transform data to match backend expectations - use capital letters for field names
     const requestData = {
       BankAccountID: Number(id),
       AccountName: bankData.AccountName,
@@ -76,9 +71,7 @@ export const updateBank = async (id, bankData) => {
       requestData.RowVersionColumn = bankData.RowVersionColumn;
     }
     
-    console.log("[DEBUG] Bank update request data:", requestData);
-    
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestData);
+    const response = await axios.put(`${APIBASEURL}/bank-accounts/${id}`, requestData);
     return response.data;
   } catch (error) {
     console.error("Update bank error:", {
@@ -94,7 +87,7 @@ export const deleteBank = async (id) => {
   try {
     // console.log(`Deleting bank ID ${id}`);
     const user = JSON.parse(localStorage.getItem('user')) || {};
-    await axios.delete(`${API_BASE_URL}/${id}`, {
+    await axios.delete(`${APIBASEURL}/bank-accounts/${id}`, {
       data: { 
         deletedById: user.personId || 1
       }
@@ -113,7 +106,7 @@ export const deleteBank = async (id) => {
 
 export const getBankById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    const response = await axios.get(`${APIBASEURL}/bank-accounts/${id}`);
     
     // Check if the response contains a success message
     if (response.data.message && response.data.message.includes("successfully")) {

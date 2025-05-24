@@ -1,7 +1,5 @@
 import axios from "axios";
-
-// Update the API endpoint to match your backend structure
-const API_BASE_URL = "http://localhost:7000/api/currencies";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
@@ -42,7 +40,7 @@ export const fetchCurrencies = async (
 ) => {
   try {
     // Change from /all to just the base endpoint with query parameters
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/currencies?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -59,7 +57,7 @@ export const fetchCurrencies = async (
 // Update the createCurrency function to use proper field casing
 export const createCurrency = async (currencyData, personId = null) => {
   try {
-    const url = `${API_BASE_URL}`;
+    const url = `${APIBASEURL}/currencies`;
     const { headers, personId: storedPersonId } = getAuthHeader();
 
     // Use provided personId or fallback to storedPersonId from localStorage
@@ -119,7 +117,7 @@ export const updateCurrency = async (id, currencyData) => {
     
     console.log("[DEBUG] Currency update request data:", requestBody);
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestBody, {
+    const response = await axios.put(`${APIBASEURL}/currencies/${id}`, requestBody, {
       headers,
     });
     return response.data;
@@ -140,7 +138,7 @@ export const deleteCurrency = async (id, personId = null) => {
       throw new Error("personId is required for DeletedByID");
     }
 
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/currencies/${id}`, {
       headers,
       data: { DeletedByID: Number(deletedById) } // Fixed casing and ensure it's a number
     });
@@ -155,7 +153,7 @@ export const deleteCurrency = async (id, personId = null) => {
 export const getCurrencyById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/currencies/${id}`, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
