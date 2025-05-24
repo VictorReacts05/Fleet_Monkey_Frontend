@@ -4,7 +4,7 @@ import CertificationForm from './CertificationForm';
 
 const CertificationModal = ({ open, onClose, certificationId, onSave }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogContent>
         <CertificationForm
           certificationId={certificationId}

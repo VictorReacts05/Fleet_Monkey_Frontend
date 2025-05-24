@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import ProjectParameterModal from './ProjectParameterModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getProjectParameters, deleteProjectParameter } from './projectParameterStorage';
 import { Add } from "@mui/icons-material";
-import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
 
 const ProjectParameterList = () => {
   const [rows, setRows] = useState([]);
@@ -40,6 +40,7 @@ const ProjectParameterList = () => {
       parameterName: param.parameterName || '',
       parameterValue: param.parameterValue || ''
     }));
+    showToast("Parameter deleted successfully", "success"); 
     setRows(formattedRows);
     setDeleteDialogOpen(false);
     setItemToDelete(null);
@@ -81,6 +82,11 @@ const ProjectParameterList = () => {
     setModalOpen(false);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -92,23 +98,30 @@ const ProjectParameterList = () => {
         }}
       >
         <Typography variant="h5">Project Parameter Management</Typography>
-        {/* <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button> */}
-        <Tooltip title="Add Project Parameters">
-          <IconButton
-            onClick={handleCreate}
+        <Stack direction="row" spacing={1} alignItems="center">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Project Parameters..."
             sx={{
-              backgroundColor: "primary.main",
-              color: "white",
-              "&:hover": { backgroundColor: "primary.dark" },
-              height: 40,
-              width: 40,
+              width: "100%",
+              marginLeft: "auto",
             }}
-          >
-            <Add />
-          </IconButton>
-        </Tooltip>
+          />
+          <Tooltip title="Add Project Parameters">
+            <IconButton
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
+                height: 40,
+                width: 40,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Box>
 
       <DataTable

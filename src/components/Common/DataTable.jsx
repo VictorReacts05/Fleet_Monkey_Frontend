@@ -39,6 +39,7 @@ const DataTable = ({
     id: "actions",
     label: "Actions",
   },
+  isPagination = true,
 }) => {
   const theme = useTheme();
 
@@ -92,13 +93,23 @@ const DataTable = ({
   };
 
   const renderCellContent = (row, column, rowIndex) => {
+    // If the column has a renderCell function, use it
+    if (column.renderCell) {
+      return column.renderCell({
+        row,
+        value: row[column.field || column.id],
+        rowIndex,
+      });
+    }
+
     // Handle Sr. No. column
     if (column.id === "srNo") {
-      // Fix the Sr. No. calculation to ensure it's always a number
-      // If page or rowsPerPage are undefined or NaN, default to 0 and 1 respectively
-      const currentPage = typeof page === 'number' && !isNaN(page) ? page : 0;
-      const currentRowsPerPage = typeof rowsPerPage === 'number' && !isNaN(rowsPerPage) ? rowsPerPage : 1;
-      return (currentPage * currentRowsPerPage) + rowIndex + 1;
+      const currentPage = typeof page === "number" && !isNaN(page) ? page : 0;
+      const currentRowsPerPage =
+        typeof rowsPerPage === "number" && !isNaN(rowsPerPage)
+          ? rowsPerPage
+          : 1;
+      return currentPage * currentRowsPerPage + rowIndex + 1;
     }
 
     // Support both field and id properties for backward compatibility
@@ -144,6 +155,12 @@ const DataTable = ({
           {!hideActions && (
             <TableCell align="center">
               <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                <Skeleton
+                  animation="wave"
+                  variant="circular"
+                  width={30}
+                  height={30}
+                />
                 <Skeleton
                   animation="wave"
                   variant="circular"
@@ -330,31 +347,33 @@ const DataTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-      
-      {/* Fix the TablePagination component */}
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={typeof totalRows === 'number' ? totalRows : rows.length}
-        rowsPerPage={typeof rowsPerPage === 'number' && !isNaN(rowsPerPage) ? rowsPerPage : 10}
-        page={typeof page === 'number' && !isNaN(page) ? page : 0}
-        onPageChange={(e, newPage) => {
-          console.log("TablePagination onPageChange:", newPage);
-          if (onPageChange) onPageChange(newPage);
-        }}
-        onRowsPerPageChange={(e) => {
-          console.log("TablePagination onRowsPerPageChange:", e.target.value);
-          if (onRowsPerPageChange) onRowsPerPageChange(parseInt(e.target.value, 10));
-        }}
-        labelDisplayedRows={({ from, to, count }) => {
-          console.log("TablePagination labelDisplayedRows:", { from, to, count });
-          // Ensure from, to, and count are valid numbers
-          const validFrom = isNaN(from) ? 1 : from;
-          const validTo = isNaN(to) ? rows.length : to;
-          const validCount = isNaN(count) ? rows.length : count;
-          return `${validFrom}–${validTo} of ${validCount}`;
-        }}
-      />
+
+      {isPagination && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={typeof totalRows === "number" ? totalRows : rows.length}
+          rowsPerPage={
+            typeof rowsPerPage === "number" && !isNaN(rowsPerPage)
+              ? rowsPerPage
+              : 10
+          }
+          page={typeof page === "number" && !isNaN(page) ? page : 0}
+          onPageChange={(e, newPage) => {
+            if (onPageChange) onPageChange(newPage);
+          }}
+          onRowsPerPageChange={(e) => {
+            if (onRowsPerPageChange)
+              onRowsPerPageChange(parseInt(e.target.value, 10));
+          }}
+          labelDisplayedRows={({ from, to, count }) => {
+            const validFrom = isNaN(from) ? 1 : from;
+            const validTo = isNaN(to) ? rows.length : to;
+            const validCount = isNaN(count) ? rows.length : count;
+            return `${validFrom}–${validTo} of ${validCount}`;
+          }}
+        />
+      )}
     </Paper>
   );
 };

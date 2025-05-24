@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button, Stack } from "@mui/material";
+import { Typography, Box, IconButton, Stack, Tooltip } from "@mui/material";
+import { Add } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { toast } from "react-toastify";
+
 import DataTable from "../../Common/DataTable";
 import AddressTypeModal from "./AddressTypeModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import FormDatePicker from "../../Common/FormDatePicker";
+import SearchBar from "../../Common/SearchBar";
 import { fetchAddressTypes, deleteAddressType } from "./AddressTypeAPI";
-import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import { Add } from "@mui/icons-material";
-import { Tooltip, IconButton } from "@mui/material";
+import { showToast } from "../../toastNotification";
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(0); // 0-based index
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -22,8 +23,8 @@ const AddressTypeList = () => {
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Update the columns to only include the addressType field
   const columns = [
     { field: "addressType", headerName: "Address Type", flex: 1 },
   ];
@@ -31,6 +32,7 @@ const AddressTypeList = () => {
   const loadAddressTypes = async () => {
     try {
       setLoading(true);
+
       const formattedFromDate = fromDate
         ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
         : null;
@@ -38,33 +40,25 @@ const AddressTypeList = () => {
         ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
         : null;
 
-      // Fetch all address types to get the actual count
-      const allResponse = await fetchAddressTypes(
-        1,
-        1000,
-        formattedFromDate,
-        formattedToDate
-      );
-      const allAddressTypes = allResponse.data || [];
-      const actualTotalCount = allAddressTypes.length;
-
-      // Now fetch the paginated data
       const response = await fetchAddressTypes(
         page + 1,
         rowsPerPage,
         formattedFromDate,
-        formattedToDate
+        formattedToDate,
+        searchTerm
       );
 
       const addressTypes = response.data || [];
+      const totalCount = response.totalRecords || 0;
 
-      const formattedRows = addressTypes.map((addressType) => ({
+      const formattedRows = addressTypes.map((addressType, i) => ({
         id: addressType.AddressTypeID,
         addressType: addressType.AddressType || "N/A",
+        serialNumber: page * rowsPerPage + i + 1,
       }));
 
       setRows(formattedRows);
-      setTotalRows(actualTotalCount);
+      setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading address types:", error);
       toast.error("Failed to load address types: " + error.message);
@@ -73,10 +67,9 @@ const AddressTypeList = () => {
     }
   };
 
-  // Add these missing functions
   useEffect(() => {
     loadAddressTypes();
-  }, [page, rowsPerPage, fromDate, toDate]);
+  }, [page, rowsPerPage, fromDate, toDate, searchTerm]);
 
   const handleCreate = () => {
     setSelectedAddressTypeId(null);
@@ -97,7 +90,7 @@ const AddressTypeList = () => {
   const confirmDelete = async () => {
     try {
       await deleteAddressType(itemToDelete.id);
-      toast.success("Address type deleted successfully");
+      toast.success("Address type deleted successfully"); 
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadAddressTypes();
@@ -116,7 +109,11 @@ const AddressTypeList = () => {
     setSelectedAddressTypeId(null);
   };
 
-  // Make sure the DataTable component has the correct props for pagination
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -129,17 +126,9 @@ const AddressTypeList = () => {
       >
         <Typography variant="h5">Address Type Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Address Types..."
           />
           <Tooltip title="Add Address Type">
             <IconButton
@@ -163,20 +152,15 @@ const AddressTypeList = () => {
         rows={rows}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => {
-          // console.log('Page changed to:', newPage);
-          setPage(newPage);
-        }}
-        onRowsPerPageChange={(e) => {
-          const newRowsPerPage = parseInt(e.target.value, 10);
-          // console.log('Rows per page changed to:', newRowsPerPage);
-          setRowsPerPage(newRowsPerPage);
+        totalRows={totalRows}
+        onPageChange={setPage}
+        onRowsPerPageChange={(newRowsPerPage) => {
           setPage(0);
+          setRowsPerPage(newRowsPerPage);
         }}
+        loading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={totalRows}
-        loading={loading}
       />
 
       <AddressTypeModal

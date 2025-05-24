@@ -22,7 +22,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
-// Styled components for custom elements
+// Styled Components
 const LoginContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
   width: "100vw",
@@ -30,12 +30,9 @@ const LoginContainer = styled(Box)(({ theme }) => ({
   alignItems: "center",
   justifyContent: "center",
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  margin: 0,
-  padding: 0,
-  overflow: 'hidden',
-  position: 'fixed',
+  position: "fixed",
   top: 0,
-  left: 0
+  left: 0,
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
@@ -60,6 +57,16 @@ const LoginButton = styled(Button)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
+const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
+  fontSize: 60,
+  marginBottom: theme.spacing(2),
+  animation: "moveTruck 1s ease-in-out",
+  "@keyframes moveTruck": {
+    "0%": { transform: "translateX(-190px)" },
+    "100%": { transform: "translateX(0)" },
+  },
+}));
+
 const Login = () => {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
@@ -79,7 +86,6 @@ const Login = () => {
     }
 
     setLoading(true);
-
     try {
       const result = await login(loginId, password);
       if (!result.success) {
@@ -101,7 +107,7 @@ const Login = () => {
     <LoginContainer>
       <LoginPaper elevation={6}>
         <LogoBox>
-          <LocalShippingIcon color="primary" sx={{ fontSize: 60, mb: 2 }} />
+          <TruckIcon color="primary" />
           <Typography variant="h4" fontWeight="bold" color="primary">
             Fleet Monkey
           </Typography>
@@ -118,10 +124,9 @@ const Login = () => {
 
         {error && (
           <Typography
-            color="error"
             variant="body2"
             align="center"
-            sx={{ mb: 2, p: 1, bgcolor: "error.light", borderRadius: 1 }}
+            sx={{ color: "#fff", bgcolor: "error.main", borderRadius: 1, p: 1, mb: 2 }}
           >
             {error}
           </Typography>
@@ -147,9 +152,9 @@ const Login = () => {
           <TextField
             fullWidth
             label="Password"
-            type={showPassword ? "text" : "password"}
             variant="outlined"
             margin="normal"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             InputProps={{
@@ -198,7 +203,6 @@ const Login = () => {
             variant="contained"
             color="primary"
             disabled={loading}
-            sx={{ mt: 3 }}
           >
             {loading ? (
               <CircularProgress size={24} color="inherit" />
@@ -206,13 +210,16 @@ const Login = () => {
               "Sign In"
             )}
           </LoginButton>
-        </form>
 
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Typography variant="body2" color="textSecondary">
-            &copy; {new Date().getFullYear()} Fleet Monkey. All rights reserved.
+          <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+            Don't have an account?{" "}
+            <Link to="./SignUp" style={{ textDecoration: "none" }}>
+              <Typography variant="body2" color="primary" component="span">
+                Sign Up
+              </Typography>
+            </Link>
           </Typography>
-        </Box>
+        </form>
       </LoginPaper>
     </LoginContainer>
   );

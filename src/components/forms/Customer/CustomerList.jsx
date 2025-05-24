@@ -15,6 +15,9 @@ import { fetchCustomers, deleteCustomer } from './CustomerAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { Add } from '@mui/icons-material';
+import SearchBar from "../../Common/SearchBar";
+import { showToast } from '../../toastNotification';
+
 
 const CustomerList = () => {
   const [rows, setRows] = useState([]);
@@ -119,6 +122,11 @@ const CustomerList = () => {
     setSelectedCustomerId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -131,29 +139,25 @@ const CustomerList = () => {
       >
         <Typography variant="h5">Customer Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Customers..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Customer">
-            <IconButton 
+            <IconButton
               color="primary"
               onClick={handleCreate}
-              sx={{ 
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
                 width: 40,
-                ml: 1
+                ml: 1,
               }}
             >
               <Add />

@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import FormInput from '../../Common/FormInput';
-import FormPage from '../../Common/FormPage';
-import { createAddressType, updateAddressType, getAddressTypeById } from './AddressTypeAPI';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import FormInput from "../../Common/FormInput";
+import FormPage from "../../Common/FormPage";
+import {
+  createAddressType,
+  updateAddressType,
+  getAddressTypeById,
+} from "./AddressTypeAPI";
+import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification";
 
 const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
-    addressType: ''
+    addressType: "",
   });
 
   const [errors, setErrors] = useState({
-    addressType: ''
+    addressType: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -26,63 +31,82 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
     try {
       setLoading(true);
       const response = await getAddressTypeById(addressTypeId);
+      console.log("Loaded address type response:", response);
+
+      // Handle different response structures
+      const addressTypeData = response.AddressTypeID
+        ? response
+        : response.data
+        ? Array.isArray(response.data)
+          ? response.data[0]
+          : response.data
+        : response;
+
       setFormData({
-        addressType: response.AddressType || ''
+        addressType: addressTypeData.AddressType || "",
       });
     } catch (error) {
-      console.error('Error loading address type:', error);
-      toast.error('Failed to load address type details');
+      console.error("Error loading address type:", error);
+      toast.error(
+        error.message || "Failed to load address type details. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = { addressType: '' };
-
-    if (!formData.addressType.trim()) {
-      newErrors.addressType = 'Address type name is required';
-      isValid = false;
-    } else if (formData.addressType.length < 2) {
-      newErrors.addressType = 'Address type name must be at least 2 characters';
-      isValid = false;
-    } else if (!/^[a-zA-Z\s-]+$/.test(formData.addressType)) {
-      newErrors.addressType = 'Address type name can only contain letters, spaces, and hyphens';
-      isValid = false;
+  const getValidationError = (field, value) => {
+    switch (field) {
+      case "addressType":
+        if (!value.trim()) {
+          return "Address type name is required";
+        } else if (value.length < 2) {
+          return "Address type name must be at least 2 characters";
+        } else if (!/^[a-zA-Z\s-]+$/.test(value)) {
+          return "Address type name can only contain letters, spaces, and hyphens";
+        }
+        return "";
+      default:
+        return "";
     }
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      addressType: getValidationError("addressType", formData.addressType),
+    };
 
     setErrors(newErrors);
-    return isValid;
+    return !newErrors.addressType;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setIsSubmitted(true);
 
     if (validateForm()) {
       try {
         setLoading(true);
-        
+
         const addressTypeData = {
-          AddressType: formData.addressType
+          AddressType: formData.addressType, // Changed to match API expectation
         };
-        
+
         if (addressTypeId) {
-          // Update existing address type
           await updateAddressType(addressTypeId, addressTypeData);
-          toast.success('Address type updated successfully');
+          toast.success("Address type updated successfully");
         } else {
-          // Create new address type
           await createAddressType(addressTypeData);
-          toast.success('Address type created successfully');
+          toast.success("Address type created successfully");
         }
-        
+
         if (onSave) onSave();
         if (onClose) onClose();
       } catch (error) {
-        console.error('Error saving address type:', error);
-        toast.error(`Failed to save address type: ${error.message || 'Unknown error'}`);
+        console.error("Error saving address type:", error);
+        toast.error(
+          error.response?.data?.message || error.message || "Failed to save address type. Please try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -91,16 +115,20 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     if (isSubmitted) {
-      validateForm();
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: getValidationError(name, value),
+      }));
     }
   };
 
   return (
     <FormPage
-      title={addressTypeId ? 'Edit Address Type' : 'Add Address Type'}
+      title={addressTypeId ? "Edit Address Type" : "Create Address Type"}
       onSubmit={handleSubmit}
       onCancel={onClose}
       loading={loading}

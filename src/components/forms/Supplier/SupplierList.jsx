@@ -1,63 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
+import { Typography, Box, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import SupplierModal from './SupplierModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchSuppliers, deleteSupplier } from './SupplierAPI';
 import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
 
 const SupplierList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalRows, setTotalRows] = useState(0); // Add this line
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const columns = [
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
-    { field: "supplierTypeName", headerName: "Supplier Type", flex: 1 },
-    { field: "exportCode", headerName: "Export Code", flex: 1 },
-    { field: "companyName", headerName: "Company Name", flex: 1 },
-    { field: "addressTypeId", headerName: "Address Type", flex: 1 },
-    { field: "billingCurrencyName", headerName: "Currency Name", flex: 1 },
+    { field: "supplierEmail", headerName: "Supplier Email", flex: 1 },
   ];
 
   const loadSuppliers = async () => {
     try {
       setLoading(true);
-      // Format dates to start of day and end of day
-      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      
       
       const response = await fetchSuppliers(
         page + 1,
-        rowsPerPage,
-        formattedFromDate,
-        formattedToDate
+        rowsPerPage
       );
       
       const suppliers = response.data || [];
-      const totalCount = response.pagination?.totalRecords || suppliers.length;
+      const totalCount = response.totalRecords || suppliers.length;
       
       const formattedRows = suppliers.map((supplier) => ({
         id: supplier.SupplierID,
         supplierName: supplier.SupplierName || "N/A",
-        supplierTypeName: supplier.SupplierTypeName || "N/A",
-        exportCode: supplier.SupplierExportCode || "N/A",
-        companyName: supplier.CompanyName || "N/A",
-        addressTypeId: supplier.SupplierAddressID || "N/A",
-        billingCurrencyName: supplier.BillingCurrencyName || "N/A",
+        supplierEmail: supplier.SupplierEmail || "N/A",
       }));
 
       setRows(formattedRows);
@@ -72,7 +56,7 @@ const SupplierList = () => {
 
   useEffect(() => {
     loadSuppliers();
-  }, [page, rowsPerPage, fromDate, toDate]);
+  }, [page, rowsPerPage]);
 
   const handleCreate = () => {
     setSelectedSupplierId(null);
@@ -112,6 +96,11 @@ const SupplierList = () => {
     setSelectedSupplierId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -124,26 +113,14 @@ const SupplierList = () => {
       >
         <Typography variant="h5">Supplier Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Suppliers..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          {/* <Button
-            variant="contained"
-            color="primary"
-            onClick={handleCreate}
-            sx={{width: 200, height: 56}}
-          >
-            Add Supplier
-          </Button> */}
           <Tooltip title="Add Supplier">
             <IconButton
               onClick={handleCreate}
@@ -161,15 +138,6 @@ const SupplierList = () => {
         </Stack>
       </Box>
 
-      {/* Remove this duplicate section
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h5">Supplier Management</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Create New
-        </Button>
-      </Box>
-      */}
-
       <DataTable
         columns={columns}
         rows={rows}
@@ -182,7 +150,7 @@ const SupplierList = () => {
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={totalRows} // Use the totalRows state instead of rows.length
+        totalRows={totalRows}
         loading={loading}
       />
 

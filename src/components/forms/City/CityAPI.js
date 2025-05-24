@@ -1,8 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/cities";
-const CITIES_ALL_URL = "http://localhost:7000/api/cities/all";
-const COUNTRY_API_URL = "http://localhost:7000/api/country-Of-Origin";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -43,7 +40,7 @@ export const fetchCities = async (
   try {
     const user = getUserFromLocalStorage();
 
-    let url = `${CITIES_ALL_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/cities?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -68,7 +65,7 @@ export const createCity = async (cityData) => {
     if (!cityData.cityName || typeof cityData.cityName !== "string") {
       throw new Error("Invalid or missing cityName");
     }
-    if (!cityData.countryId || typeof cityData.countryId !== "number") {
+    if (!cityData.countryId || isNaN(cityData.countryId)) {
       throw new Error("Invalid or missing countryId");
     }
     if (!user.personId) {
@@ -77,18 +74,18 @@ export const createCity = async (cityData) => {
       );
     }
 
-    // Prepare request data
+    // Prepare request data with correct field names (capital letters to match backend)
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      cityName: cityData.cityName,
-      countryId: cityData.countryId,
-      createdById: user.personId,
+      CityName: cityData.cityName,         // Changed from cityName to CityName
+      CountryID: Number(cityData.countryId), // Changed from countryId to CountryID
+      CreatedByID: user.personId,          // Changed from createdById to CreatedByID
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };
 
     const response = await axios.post(
-      API_BASE_URL,
+      `${APIBASEURL}/cities`,
       dataWithCreator,
       getAxiosConfig()
     );
@@ -115,14 +112,19 @@ export const updateCity = async (cityId, data) => {
       );
     }
 
+    // Prepare data with correct field names (capital letters to match backend)
     const dataWithUpdater = {
-      ...data,
-      updatedById: user.personId,
+      CityID: Number(cityId),                // Added CityID with proper capitalization
+      CityName: data.cityName,               // Changed from cityName to CityName
+      CountryID: Number(data.countryId),     // Changed from countryId to CountryID
+      CreatedByID: user.personId,            // Changed from createdById to CreatedByID
       updatedDateTime: new Date().toISOString(),
     };
 
+    console.log("[DEBUG] City update request data:", dataWithUpdater);
+
     const response = await axios.put(
-      `${API_BASE_URL}/${cityId}`,
+      `${APIBASEURL}/cities/${cityId}`,
       dataWithUpdater,
       getAxiosConfig()
     );
@@ -158,7 +160,7 @@ export const deleteCity = async (id, deletedById) => {
 
     const requestData = { deletedById: finalDeletedById };
 
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/cities/${id}`, {
       ...getAxiosConfig(),
       data: requestData,
     });
@@ -180,7 +182,7 @@ export const getCityById = async (id) => {
   try {
     const user = getUserFromLocalStorage();
 
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/cities/${id}`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to get city by ID:", {
@@ -197,7 +199,7 @@ export const fetchCountries = async () => {
   try {
     const user = getUserFromLocalStorage();
 
-    const url = `${COUNTRY_API_URL}?pageSize=100`;
+    const url = `${APIBASEURL}/country-Of-Origin?pageSize=100`;
 
     const response = await axios.get(url, getAxiosConfig());
     return response.data;

@@ -1,23 +1,29 @@
 import axios from "axios";
-
-// Update the API endpoint to match your backend structure
-const API_BASE_URL = "http://localhost:7000/api/currencies";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
+    const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
+
+    if (!token || !user) {
+      console.warn("User authentication data not found");
       return { headers: {}, personId: null };
     }
+
+    const personId = user.personId || null;
+
+    if (!personId) {
+      console.warn("No personId found in user object");
+      return { headers: {}, personId: null };
+    }
+
     return {
       headers: {
-        Authorization: `Bearer ${user.token}`,
+        Authorization: `Bearer ${token}`,
       },
-      personId: user.personId || null, // Adjust key based on your user object structure
+      personId,
     };
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
@@ -33,7 +39,8 @@ export const fetchCurrencies = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}/all?pageNumber=${page}&pageSize=${limit}`;
+    // Change from /all to just the base endpoint with query parameters
+    let url = `${APIBASEURL}/currencies?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -47,22 +54,26 @@ export const fetchCurrencies = async (
 };
 
 // Create a new currency
+// Update the createCurrency function to use proper field casing
 export const createCurrency = async (currencyData, personId = null) => {
   try {
-    const url = `${API_BASE_URL}`;
+    const url = `${APIBASEURL}/currencies`;
     const { headers, personId: storedPersonId } = getAuthHeader();
 
     // Use provided personId or fallback to storedPersonId from localStorage
     const createdById = personId || storedPersonId;
     if (!createdById) {
-      console.warn("No personId provided for createdById");
+      console.warn("No personId provided for CreatedByID");
     }
 
-    // Include createdById in the request body
+    // Ensure we're using the correct field names with proper capitalization
+    // to match what the backend expects
     const requestBody = {
-      ...currencyData,
-      createdById: createdById,
+      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
+      CreatedByID: currencyData.CreatedByID || createdById || 1,
     };
+
+    console.log("[DEBUG] Currency create request data:", requestBody);
 
     const response = await axios.post(url, requestBody, {
       headers: {
@@ -88,15 +99,30 @@ export const createCurrency = async (currencyData, personId = null) => {
   }
 };
 
-// Update an existing currency
+// Update the updateCurrency function to use proper field casing
 export const updateCurrency = async (id, currencyData) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.put(`${API_BASE_URL}/${id}`, currencyData, {
+    
+    // Ensure we're using the correct field names with proper capitalization
+    const requestBody = {
+      CurrencyID: Number(id),
+      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
+      CreatedByID: currencyData.CreatedByID || currencyData.createdById || 1,
+    };
+    
+    if (currencyData.RowVersionColumn || currencyData.rowVersionColumn) {
+      requestBody.RowVersionColumn = currencyData.RowVersionColumn || currencyData.rowVersionColumn;
+    }
+    
+    console.log("[DEBUG] Currency update request data:", requestBody);
+    
+    const response = await axios.put(`${APIBASEURL}/currencies/${id}`, requestBody, {
       headers,
     });
     return response.data;
   } catch (error) {
+    console.error("Error updating currency:", error);
     throw error.response?.data || error.message;
   }
 };
@@ -109,12 +135,12 @@ export const deleteCurrency = async (id, personId = null) => {
     // Use provided personId or fallback to storedPersonId from localStorage
     const deletedById = personId || storedPersonId;
     if (!deletedById) {
-      throw new Error("personId is required for deletedById");
+      throw new Error("personId is required for DeletedByID");
     }
 
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/currencies/${id}`, {
       headers,
-      data: { deletedById },
+      data: { DeletedByID: Number(deletedById) } // Fixed casing and ensure it's a number
     });
     return response.data;
   } catch (error) {
@@ -127,7 +153,7 @@ export const deleteCurrency = async (id, personId = null) => {
 export const getCurrencyById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/currencies/${id}`, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

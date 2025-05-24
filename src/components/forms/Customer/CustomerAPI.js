@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:7000/api/customers';
-const API_BASE_URL_GET = 'http://localhost:7000/api/customers/all';
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
 // Add axios interceptor to include auth token
 axios.interceptors.request.use(config => {
@@ -28,7 +26,7 @@ const getUserData = () => {
 
 export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
   try {
-    let url = `${API_BASE_URL_GET}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/customers?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
@@ -60,81 +58,149 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
   }
 };
 
+// Add or update these functions in CustomerAPI.js
+
 export const fetchCurrencies = async () => {
   try {
-    const response = await axios.get('http://localhost:7000/api/currencies/all');
-    return response.data;
+    const response = await axios.get(`${APIBASEURL}/currencies`);
+    
+    // Log the response for debugging
+    console.log('Currencies API response:', response.data);
+    
+    // Check different possible response structures
+    let currenciesData = [];
+    
+    if (response.data && response.data.data) {
+      // If data is in response.data.data
+      currenciesData = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      // If response.data is directly an array
+      currenciesData = response.data;
+    } else if (response.data.results) {
+      // If data is in response.data.results
+      currenciesData = response.data.results;
+    }
+    
+    // Map the currencies to ensure consistent field names
+    const formattedCurrencies = currenciesData.map(currency => ({
+      CurrencyID: currency.CurrencyID || currency.currencyID || currency.id,
+      CurrencyName: currency.CurrencyName || currency.currencyName || currency.name
+    }));
+    
+    return {
+      success: true,
+      data: formattedCurrencies
+    };
   } catch (error) {
     console.error('Error fetching currencies:', error);
-    throw error.response?.data || error.message;
+    return {
+      success: false,
+      data: [],
+      error: error.message
+    };
   }
 };
 
 export const fetchCompanies = async () => {
   try {
-    const response = await axios.get('http://localhost:7000/api/companies/all');
-    return response.data;
+    const response = await axios.get(`${APIBASEURL}/companies`);
+    
+    // Log the response for debugging
+    console.log('Companies API response:', response.data);
+    
+    // Check different possible response structures
+    let companiesData = [];
+    
+    if (response.data && response.data.data) {
+      // If data is in response.data.data
+      companiesData = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      // If response.data is directly an array
+      companiesData = response.data;
+    } else if (response.data.results) {
+      // If data is in response.data.results
+      companiesData = response.data.results;
+    }
+    
+    // Map the companies to ensure consistent field names
+    const formattedCompanies = companiesData.map(company => ({
+      CompanyID: company.CompanyID || company.companyID || company.id,
+      CompanyName: company.CompanyName || company.companyName || company.name
+    }));
+    
+    return {
+      success: true,
+      data: formattedCompanies
+    };
   } catch (error) {
     console.error('Error fetching companies:', error);
-    throw error.response?.data || error.message;
+    return {
+      success: false,
+      data: [],
+      error: error.message
+    };
   }
 };
 
 export const createCustomer = async (customerData) => {
   try {
-    const user = getUserData();
+    console.log('Creating customer with data:', customerData);
     
-    // Ensure field names match what the API expects
-    const payload = {
-      customerName: customerData.CustomerName,
-      companyId: customerData.CompanyID,
-      importCode: customerData.ImportCode,
-      billingCurrencyId: customerData.BillingCurrencyID,
-      website: customerData.Website,
-      customerNotes: customerData.CustomerNotes,
-      createdById: user.personId
+    // Get user from localStorage for CreatedByID
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    
+    // Ensure all required fields are present and properly formatted
+    const requestData = {
+      CustomerName: customerData.CustomerName,
+      CompanyID: customerData.CompanyID ? Number(customerData.CompanyID) : null,
+      ImportCode: customerData.ImportCode,
+      BillingCurrencyID: customerData.BillingCurrencyID ? Number(customerData.BillingCurrencyID) : null,
+      Website: customerData.Website,
+      CustomerNotes: customerData.CustomerNotes,
+      CreatedByID: user.personId || 1 // Default to 1 if not available
     };
     
+    console.log('Formatted request data:', requestData);
     
-    // Validate required fields before sending
-    if (!payload.customerName || !payload.companyId) {
-      throw new Error('CustomerName and CompanyID are required fields');
-    }
-    
-    const response = await axios.post(API_BASE_URL, payload);
+    const response = await axios.post(`${APIBASEURL}/customers`, requestData);
     return response.data;
   } catch (error) {
     console.error('Error in createCustomer:', error);
-    throw error.response?.data || error.message;
+    throw error.response?.data || error;
   }
 };
 
 export const updateCustomer = async (id, customerData) => {
   try {
-    const user = getUserData();
+    console.log('Updating customer with ID:', id, 'Data:', customerData);
     
-    // Ensure field names match what the API expects
-    const payload = {
-      customerName: customerData.CustomerName,
-      companyId: customerData.CompanyID,
-      importCode: customerData.ImportCode,
-      billingCurrencyId: customerData.BillingCurrencyID,
-      website: customerData.Website,
-      customerNotes: customerData.CustomerNotes,
-      updatedById: user.personId
+    // Get user from localStorage for ModifiedByID
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    
+    // Ensure all required fields are present and properly formatted
+    const requestData = {
+      CustomerID: Number(id),
+      CustomerName: customerData.CustomerName,
+      CompanyID: customerData.CompanyID ? Number(customerData.CompanyID) : null,
+      ImportCode: customerData.ImportCode,
+      BillingCurrencyID: customerData.BillingCurrencyID ? Number(customerData.BillingCurrencyID) : null,
+      Website: customerData.Website,
+      CustomerNotes: customerData.CustomerNotes,
+      ModifiedByID: user.personId || 1 // Default to 1 if not available
     };
     
-    
-    // Validate required fields before sending
-    if (!payload.customerName || !payload.companyId) {
-      throw new Error('CustomerName and CompanyID are required fields');
+    // Include RowVersionColumn if available
+    if (customerData.RowVersionColumn) {
+      requestData.RowVersionColumn = customerData.RowVersionColumn;
     }
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, payload);
+    console.log('Formatted update request data:', requestData);
+    
+    const response = await axios.put(`${APIBASEURL}/customers/${id}`, requestData);
     return response.data;
   } catch (error) {
     console.error('Error in updateCustomer:', error);
-    throw error.response?.data || error.message;
+    throw error.response?.data || error;
   }
 };
 
@@ -142,7 +208,7 @@ export const deleteCustomer = async (id) => {
   try {
     const user = getUserData();
     
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/customers/${id}`, {
       data: {
         deletedById: user.personId
       }
@@ -156,30 +222,35 @@ export const deleteCustomer = async (id) => {
 
 export const getCustomerById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    console.log(`Fetching customer with ID: ${id}`);
+    const response = await axios.get(`${APIBASEURL}/customers/${id}`);
     
-    // Check if the data is in an array format
-    const customerData = response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0 
-      ? response.data.data[0]  // Get the first item from the array
-      : response.data.data || response.data;
+    console.log('Customer data response:', response.data);
     
+    // Handle different response structures
+    let customerData = null;
     
-    // Map the API response fields to match the form field names
-    const mappedData = {
-      CustomerName: customerData.CustomerName || customerData.customerName || '',
-      CompanyID: customerData.CompanyID || customerData.companyId || '',
-      ImportCode: customerData.ImportCode || customerData.importCode || '',
-      BillingCurrencyID: customerData.BillingCurrencyID || customerData.billingCurrencyId || '',
-      Website: customerData.Website || customerData.website || '',
-      CustomerNotes: customerData.CustomerNotes || customerData.customerNotes || '',
-      // Include these for reference in the table
-      CompanyName: customerData.CompanyName || customerData.companyName || '',
-      CurrencyName: customerData.BillingCurrencyName || customerData.billingCurrencyName || ''
-    };
+    if (response.data.data) {
+      // If data is in response.data.data
+      customerData = Array.isArray(response.data.data) 
+        ? response.data.data[0] 
+        : response.data.data;
+    } else if (response.data.result === 0) {
+      // If using result code format
+      customerData = response.data.data;
+    } else if (response.data.CustomerID) {
+      // If direct object
+      customerData = response.data;
+    }
     
-    return mappedData;
+    if (!customerData) {
+      throw new Error('Customer data not found in response');
+    }
+    
+    console.log('Processed customer data:', customerData);
+    return customerData;
   } catch (error) {
-    console.error('Error in getCustomerById:', error);
-    throw error.response?.data || error.message;
+    console.error('Error fetching customer:', error);
+    throw error;
   }
 };

@@ -1,3 +1,4 @@
+// projectParameterStorage.js
 const STORAGE_KEY = 'projectParameters';
 
 export const getProjectParameters = () => {
@@ -28,5 +29,5 @@ export const deleteProjectParameter = (id) => {
 
 export const getParameterById = (id) => {
   const parameters = getProjectParameters();
-  return parameters.find(param => param.id === id) || null;
+  return parameters.find(param => param.id === Number(id)) || null;
 };

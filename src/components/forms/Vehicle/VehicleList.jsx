@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 
 const VehicleList = () => {
   const [rows, setRows] = useState([]);
@@ -31,7 +33,7 @@ const VehicleList = () => {
     { field: "length", headerName: "Length (m)", flex: 1 },
     { field: "width", headerName: "Width (m)", flex: 1 },
     { field: "height", headerName: "Height (m)", flex: 1 },
-    { field: "vehicleTypeName", headerName: "Vehicle Type", flex: 1 },
+    // { field: "vehicleTypeName", headerName: "Vehicle Type", flex: 1 },
   ];
 
   const loadVehicles = async () => {
@@ -60,8 +62,8 @@ const VehicleList = () => {
         length: vehicle.Length?.toFixed(2) || "N/A",
         width: vehicle.Width?.toFixed(2) || "N/A",
         height: vehicle.Height?.toFixed(2) || "N/A",
-        vehicleTypeName: vehicle.VehicleTypeName || "N/A",
-        vehicleTypeId: vehicle.VehicleTypeID,
+        // vehicleTypeName: vehicle.VehicleTypeName || "N/A",
+        // vehicleTypeId: vehicle.VehicleTypeID,
       }));
 
       setRows(formattedRows);
@@ -97,7 +99,8 @@ const VehicleList = () => {
   const confirmDelete = async () => {
     try {
       await deleteVehicle(itemToDelete.id);
-      toast.success('Vehicle deleted successfully');
+      // toast.success('Vehicle deleted successfully');
+      showToast("Vehicle deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadVehicles();
@@ -116,6 +119,11 @@ const VehicleList = () => {
     setSelectedVehicleId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -128,17 +136,13 @@ const VehicleList = () => {
       >
         <Typography variant="h5">Vehicle Management</Typography>
         <Stack direction="row" spacing={1}>
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Vehicles..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Vehicle">
             <IconButton

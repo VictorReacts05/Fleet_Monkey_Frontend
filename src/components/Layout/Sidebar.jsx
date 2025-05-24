@@ -28,38 +28,44 @@ import HomeIcon from "@mui/icons-material/Home";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useTheme as useMuiTheme } from "@mui/material/styles";
 import CategoryIcon from "@mui/icons-material/Category";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import DescriptionIcon from "@mui/icons-material/Description";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import RequestQuote from '@mui/icons-material/RequestQuote';
+import FindInPageSharpIcon from '@mui/icons-material/FindInPageSharp';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 
-const drawerWidth = 240;
+const drawerWidth = 240; // Added missing drawerWidth constant
 
 const menuItems = [
+  { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
   { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
-  { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
-  { text: "Countries", icon: <PublicIcon />, path: "/countries" },
-  { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
-  { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
-  { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
-  { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
+  { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
+  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
+  { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
+  { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
+  { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
-  {
-    text: "Project Parameters",
-    icon: <SettingsApplicationsIcon />,
-    path: "/project-parameters",
-  },
+  { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
+  { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
+  { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
+  { text: "Countries", icon: <PublicIcon />, path: "/countries" },
+  { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
-  {
-    text: "Subscriptions",
-    icon: <SubscriptionsIcon />,
-    path: "/subscriptions",
-  },
+  { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" },
+  { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
+  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
+  { text: "Project Parameters", icon: <SettingsApplicationsIcon />, path: "/project-parameters" },
+  { text: "Roles", icon: <PersonIcon />, path: "/roles" },
+  { text: "Subscriptions", icon: <SubscriptionsIcon />, path: "/subscriptions" },
+  { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
+  { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
-  { text: "Address Types", icon: <HomeIcon />, path: "/address-types" },
-  {
-    text: "Units of Measurement",
-    icon: <CategoryIcon />,
-    path: "/uoms",
-  },
 ];
 
 const Sidebar = ({ open, variant, onClose }) => {
@@ -81,7 +87,29 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  const mastersItems = menuItems.filter((item) => item.text !== "Sales RFQ");
+  // Update the mainMenuItems filter
+  const mainMenuItems = menuItems.filter(
+    (item) =>
+      item.text === "Dashboard" ||
+      item.text === "Sales RFQ" ||
+      item.text === "Purchase RFQ" ||
+      item.text === "Supplier Quotation" ||
+      item.text === "Sales Quotation" ||
+      item.text === "Sales Order" ||
+      item.text === "Purchase Order"
+  );
+
+  // Update the mastersItems filter
+  const mastersItems = menuItems.filter(
+    (item) =>
+      item.text !== "Dashboard" &&
+      item.text !== "Sales RFQ" &&
+      item.text !== "Purchase RFQ" &&
+      item.text !== "Supplier Quotation" &&
+      item.text !== "Sales Quotation" &&
+      item.text !== "Sales Order" &&
+      item.text !== "Purchase Order"
+  );
 
   return (
     <Drawer
@@ -112,36 +140,39 @@ const Sidebar = ({ open, variant, onClose }) => {
     >
       <Box sx={{ overflow: "auto" }}>
         <List>
-          <ListItem
-            component="div"
-            onClick={() => navigate("/sales-rfq")}
-            sx={{
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.05)"
-                    : "rgba(255, 255, 255, 0.08)",
-              },
-              backgroundColor: location.pathname.startsWith("/sales-rfq")
-                ? theme.palette.mode === "dark"
-                  ? "rgba(255, 255, 255, 0.08)"
-                  : "rgba(255, 255, 255, 0.2)"
-                : "transparent",
-              cursor: "pointer",
-            }}
-          >
-            <ListItemIcon
+          {mainMenuItems.map((item) => (
+            <ListItem
+              key={item.text}
+              component="div"
+              onClick={() => navigate(item.path)}
               sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.text.primary
-                    : "#fff",
+                "&:hover": {
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "rgba(255, 255, 255, 0.08)",
+                },
+                backgroundColor: location.pathname.startsWith(item.path)
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "rgba(255, 255, 255, 0.2)"
+                  : "transparent",
+                cursor: "pointer",
               }}
             >
-              <LocalShippingIcon />
-            </ListItemIcon>
-            <ListItemText primary="Sales RFQ" />
-          </ListItem>
+              <ListItemIcon
+                sx={{
+                  color:
+                    theme.palette.mode === "dark"
+                      ? theme.palette.text.primary
+                      : "#fff",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
           <ListItem
             component="div"
             onClick={handleMastersClick}

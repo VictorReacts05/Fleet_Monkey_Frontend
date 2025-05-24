@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
+import { Typography, Box, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CompanyModal from './CompanyModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCompanies, deleteCompany } from "./CompanyAPI";
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import axios from 'axios';
+import SearchBar from "../../Common/SearchBar";
+
 
 // Update imports
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
 const CompanyList = () => {
   const [rows, setRows] = useState([]);
@@ -48,7 +50,8 @@ const CompanyList = () => {
       // Fetch currencies first to have them available for mapping
       let currencyMap = {};
       try {
-        const currencyResponse = await axios.get('http://localhost:7000/api/currencies/all');
+        // Change from /all to just the base endpoint
+        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`);
         if (currencyResponse.data && currencyResponse.data.data) {
           // Create a map of currency ID to currency name
           currencyResponse.data.data.forEach(currency => {
@@ -162,10 +165,14 @@ const CompanyList = () => {
     setPage(0);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   // Update the ConfirmDialog component where it's used in the return statement
   return (
     <Box>
-  
       <Box
         sx={{
           display: "flex",
@@ -176,28 +183,24 @@ const CompanyList = () => {
       >
         <Typography variant="h5">Company Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200, mr: 1 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Companies..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Company">
-            <IconButton 
+            <IconButton
               color="primary"
               onClick={handleCreate}
-              sx={{ 
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
-                width: 40
+                width: 40,
               }}
             >
               <Add />
@@ -205,7 +208,7 @@ const CompanyList = () => {
           </Tooltip>
         </Stack>
       </Box>
-  
+
       <DataTable
         rows={rows}
         columns={columns}
@@ -218,14 +221,14 @@ const CompanyList = () => {
         onEdit={handleEdit}
         onDelete={handleDeleteClick}
       />
-  
+
       <CompanyModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         companyId={selectedCompanyId}
         onSave={handleSave}
       />
-  
+
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Company"
@@ -236,10 +239,10 @@ const CompanyList = () => {
         fullWidth
         PaperProps={{
           sx: {
-            width: '400px',
-            minHeight: '200px',
-            padding: '16px'
-          }
+            width: "400px",
+            minHeight: "200px",
+            padding: "16px",
+          },
         }}
       />
     </Box>

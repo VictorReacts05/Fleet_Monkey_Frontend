@@ -8,6 +8,7 @@ import {
   fetchCurrencies,
 } from "./CurrencyAPI";
 import { toast } from 'react-toastify';
+import { showToast } from '../../toastNotification';
 
 const CurrencyForm = ({ currencyId, onSave, onClose }) => {
   // Initialize with empty strings to maintain controlled inputs
@@ -29,11 +30,12 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       try {
         setLoading(true);
         const response = await getCurrencyById(currencyId);
-        
+        console.log('Currency response:', response);
         // Handle potential casing differences
+        const currency = response.data; // get nested data
         setFormData({
-          CurrencyName: response?.CurrencyName || response?.currencyName || '',
-          RowVersionColumn: response?.RowVersionColumn || response?.rowVersionColumn || ''
+        CurrencyName: currency.CurrencyName || '',
+        RowVersionColumn: currency.RowVersionColumn || ''
         });
       } catch (error) {
         toast.error('Failed to load currency details');
@@ -66,8 +68,14 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Fix: Make sure handleSubmit properly receives the event parameter
+  const handleSubmit = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    
+    // Set submitted state to trigger validation on future changes
+    setIsSubmitted(true);
     
     // Validate form
     if (!validateForm()) {
@@ -77,24 +85,33 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
     try {
       setLoading(true);
       
-      // Transform data to match backend expectations
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      
+      // Transform data to match backend expectations - use capital letters for field names
       const transformedData = {
-        currencyName: formData.CurrencyName,
-        createdById: 1, // Use a default value for now
-        rowVersionColumn: formData.RowVersionColumn
+        CurrencyName: formData.CurrencyName,
+        CreatedByID: user.personId || 1, // Use user's personId or default to 1
       };
       
+      if (formData.RowVersionColumn) {
+        transformedData.RowVersionColumn = formData.RowVersionColumn;
+      }
+      
       if (currencyId) {
+        transformedData.CurrencyID = currencyId;
         await updateCurrency(currencyId, transformedData);
         toast.success('Currency updated successfully');
       } else {
         await createCurrency(transformedData);
         toast.success('Currency created successfully');
+
       }
       
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
+      console.error('Error saving currency:', error);
       toast.error(`Error saving currency: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);

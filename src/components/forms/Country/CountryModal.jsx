@@ -8,6 +8,10 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
   const [formData, setFormData] = useState({
     countryName: '',
   });
+  const [errors, setErrors] = useState({
+    countryName: '',
+  });
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const closeButtonRef = useRef(null);
 
@@ -15,23 +19,22 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
     const loadCountry = async () => {
       if (!countryId) {
         setFormData({ countryName: '' });
+        setErrors({ countryName: '' });
         return;
       }
 
       try {
         setLoading(true);
-        
-        // If we already have the data from the list, use it
+
         if (initialData) {
           setFormData({
             countryName: initialData.countryName || '',
           });
         } else {
-          // Use fetchCountries to get all countries and filter for the one we need
           const response = await fetchCountries(1, 100);
           const countries = response.data || [];
           const country = countries.find(c => c.CountryOfOriginID === countryId);
-          
+
           if (country) {
             setFormData({
               countryName: country.CountryOfOrigin || '',
@@ -42,7 +45,7 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
         }
       } catch (error) {
         console.error('Error loading country:', error);
-        toast.error('Failed to load country details');
+        toast.error(error.message || 'Failed to load country details');
       } finally {
         setLoading(false);
       }
@@ -53,51 +56,82 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
     }
   }, [countryId, open, initialData]);
 
+  const getValidationError = (field, value) => {
+    switch (field) {
+      case 'countryName':
+        if (!value.trim()) {
+          return 'Country name is required';
+        } else if (!/^[A-Za-z\s-]{2,}$/.test(value)) {
+          return 'Country name must be at least 2 characters and contain only letters, spaces, and hyphens';
+        }
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      countryName: getValidationError('countryName', formData.countryName),
+    };
+
+    setErrors(newErrors);
+    console.log('[DEBUG] Validation errors:', newErrors);
+    return !newErrors.countryName;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
+
+    if (isSubmitted) {
+      setErrors(prevState => ({
+        ...prevState,
+        [name]: getValidationError(name, value),
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setIsSubmitted(true);
+
+    if (!validateForm()) {
+      console.log('[DEBUG] Form submission blocked due to validation errors');
+      return;
+    }
+
     try {
       setLoading(true);
-      
+
+      const user = JSON.parse(localStorage.getItem('user')) || {};
+      const countryData = {
+        CountryOfOrigin: formData.countryName,
+        CreatedByID: user.personId || 1, // Fallback for testing; adjust as needed
+      };
+
       if (countryId) {
-        // Make sure we're sending the data in the format the API expects
-        const updateData = {
-          CountryOfOriginID: countryId,
-          countryOfOrigin: formData.countryName,
-          createdById: 1  // Adding required createdById field with a default value
-        };
-        
-        await updateCountry(countryId, updateData);
+        countryData.CountryOfOriginID = countryId;
+        await updateCountry(countryId, countryData);
         toast.success('Country updated successfully');
       } else {
-        await createCountry({
-          countryOfOrigin: formData.countryName,  // Changed from CountryOfOrigin to countryOfOrigin
-          createdById: 1  // Adding required createdById field with a default value
-        });
+        await createCountry(countryData);
         toast.success('Country created successfully');
       }
-      
-      // Close modal and refresh list
+
       setLoading(false);
       onClose();
       setTimeout(() => onSave(), 300);
-      
     } catch (error) {
       console.error('Error saving country:', error);
-      toast.error('Failed to save country: ' + (error.response?.data?.message || error.message));
+      toast.error(error.response?.data?.message || error.message || 'Failed to save country');
       setLoading(false);
     }
   };
 
-  // Handle closing with proper focus management
   const handleDialogClose = (event, reason) => {
     if (reason !== 'backdropClick' && reason !== 'escapeKeyDown') {
       onClose();
@@ -105,17 +139,17 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={handleDialogClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={handleDialogClose}
+      maxWidth="sm"
       fullWidth
       aria-labelledby="country-dialog-title"
       disableEscapeKeyDown={loading}
       keepMounted={false}
     >
       <DialogTitle id="country-dialog-title">{countryId ? 'Edit Country' : 'Add Country'}</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
             <FormInput
@@ -123,7 +157,8 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
               name="countryName"
               value={formData.countryName}
               onChange={handleChange}
-              required
+              error={errors.countryName}
+              required={false} // Explicitly disable native validation
               fullWidth
               disabled={loading}
               autoFocus
@@ -131,17 +166,17 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={onClose} 
+          <Button
+            onClick={onClose}
             disabled={loading}
             ref={closeButtonRef}
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
             disabled={loading}
           >
             {countryId ? 'Update' : 'Create'}

@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/certifications";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 export const fetchCertifications = async (
   pageNumber = 1,
@@ -9,7 +8,7 @@ export const fetchCertifications = async (
   toDate
 ) => {
   try {
-    const response = await axios.get(API_BASE_URL, {
+    const response = await axios.get(`${APIBASEURL}/certifications`, {
       params: {
         pageNumber,
         pageSize,
@@ -58,28 +57,53 @@ export const fetchCertifications = async (
 
 export const createCertification = async (certificationData) => {
   try {
-    const response = await axios.post(API_BASE_URL, {
-      certificationName: certificationData.CertificationName,
-      createdById: certificationData.CreatedByID,
-    });
+    // Get user from localStorage
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    
+    // Prepare data with correct field names (capital letters to match backend)
+    const requestData = {
+      CertificationName: certificationData.CertificationName,
+      CreatedByID: certificationData.CreatedByID || user.personId || 1,
+    };
+    
+    console.log("[DEBUG] Certification create request data:", requestData);
+    
+    const response = await axios.post(`${APIBASEURL}/certifications`, requestData);
+    
     // Update cached totalRecords after creating a new certification
     const cachedTotalRecords =
       Number(localStorage.getItem("certificationTotalRecords")) || 0;
     localStorage.setItem("certificationTotalRecords", cachedTotalRecords + 1);
+    
     return response.data;
   } catch (error) {
+    console.error("Error creating certification:", error);
     throw error.response?.data || error.message;
   }
 };
 
 export const updateCertification = async (id, certificationData) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, {
-      certificationName: certificationData.CertificationName,
-      rowVersionColumn: certificationData.rowVersionColumn,
-    });
+    // Get user from localStorage
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    
+    // Prepare data with correct field names (capital letters to match backend)
+    const requestData = {
+      CertificationID: Number(id),
+      CertificationName: certificationData.CertificationName,
+      CreatedByID: user.personId || 1,
+    };
+    
+    if (certificationData.RowVersionColumn) {
+      requestData.RowVersionColumn = certificationData.RowVersionColumn;
+    }
+    
+    console.log("[DEBUG] Certification update request data:", requestData);
+    
+    const response = await axios.put(`${APIBASEURL}/certifications/${id}`, requestData);
     return response.data;
   } catch (error) {
+    console.error("Error updating certification:", error);
     throw error.response?.data || error.message;
   }
 };
@@ -87,7 +111,7 @@ export const updateCertification = async (id, certificationData) => {
 export const deleteCertification = async (id) => {
   try {
     const user = JSON.parse(localStorage.getItem("user")) || {};
-    await axios.delete(`${API_BASE_URL}/${id}`, {
+    await axios.delete(`${APIBASEURL}/certifications/${id}`, {
       data: {
         deletedById: user.personId || 1,
       },
@@ -105,7 +129,7 @@ export const deleteCertification = async (id) => {
 
 export const getCertificationById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    const response = await axios.get(`${APIBASEURL}/certifications/${id}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

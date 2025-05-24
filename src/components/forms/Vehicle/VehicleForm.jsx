@@ -45,7 +45,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
       try {
         // Remove debug logs for fetching data
         const companiesResponse = await fetchCompanies();
-        
+
         let companyData = [];
         if (Array.isArray(companiesResponse)) {
           companyData = companiesResponse;
@@ -54,8 +54,8 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
         }
 
         const companyOptions = companyData.map((company) => ({
-          value: company.CompanyID.toString(),  // Convert to string
-          label: company.CompanyName || 'Unnamed Company',
+          value: company.CompanyID.toString(), // Convert to string
+          label: company.CompanyName || "Unnamed Company",
         }));
 
         setCompanies([
@@ -66,12 +66,15 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
         // In the useEffect hook's vehicle data loading section:
         if (vehicleId) {
           const vehicleResponse = await getVehicleById(vehicleId);
-          const vehicle = vehicleResponse.data?.data || vehicleResponse.data || vehicleResponse;
-          
+          const vehicle =
+            vehicleResponse.data?.data ||
+            vehicleResponse.data ||
+            vehicleResponse;
+
           setFormData({
             truckNumberPlate: vehicle?.TruckNumberPlate || "",
             vin: vehicle?.VIN || "",
-            companyId: vehicle?.CompanyID?.toString() || "",  // Convert to string
+            companyId: vehicle?.CompanyID?.toString() || "", // Convert to string
             maxWeight: vehicle?.MaxWeight ? vehicle.MaxWeight.toString() : "",
             length: vehicle?.Length ? vehicle.Length.toString() : "",
             width: vehicle?.Width ? vehicle.Width.toString() : "",
@@ -80,10 +83,14 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
         }
       } catch (error) {
         console.error("Error loading form data:", error);
-        toast.error("Failed to load dropdown data: " + (error.message || "Unknown error"));
-        
+        toast.error(
+          "Failed to load dropdown data: " + (error.message || "Unknown error")
+        );
+
         if (companies.length === 0) {
-          setCompanies([{ value: "", label: "Select an option", disabled: true }]);
+          setCompanies([
+            { value: "", label: "Select an option", disabled: true },
+          ]);
         }
       } finally {
         setLoading(false);
@@ -266,7 +273,9 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setIsSubmitted(true);
 
     const validationErrors = {};
@@ -315,10 +324,11 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
     try {
       setLoading(true);
 
+      // In the handleSubmit function, update the payload creation:
       const payload = {
         truckNumberPlate: formData.truckNumberPlate,
         vin: formData.vin.toUpperCase(),
-        companyID: formData.companyId,
+        companyID: formData.companyId, // Make sure this matches the field name in the API
         maxWeight: formData.maxWeight ? Number(formData.maxWeight) : null,
         length: formData.length ? Number(formData.length) : null,
         width: formData.width ? Number(formData.width) : null,
@@ -327,10 +337,12 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
 
       if (vehicleId) {
         await updateVehicle(vehicleId, payload);
-        toast.success("Vehicle updated successfully");
+        // toast.success("Vehicle updated successfully");
+        showToast("Vehicle updated successfully", "success");
       } else {
         await createVehicle(payload);
-        toast.success("Vehicle created successfully");
+        // toast.success("Vehicle created successfully");
+        showToast("Vehicle created successfully", "success");
       }
 
       if (onSave) onSave();
@@ -355,41 +367,54 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
       <Typography variant="h6" gutterBottom>
         Vehicle Details
       </Typography>
-
-      <FormInput
-        label="Truck Number Plate *"
-        name="truckNumberPlate"
-        value={formData.truckNumberPlate}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.truckNumberPlate}
-        helperText={errors.truckNumberPlate}
-        placeholder="Enter truck number plate"
-      />
-
-      <FormInput
-        label="VIN *"
-        name="vin"
-        value={formData.vin}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.vin}
-        helperText={errors.vin}
-        placeholder="Enter 17-character VIN"
-      />
-
-      <FormSelect
-        label="Company *"
-        name="companyId"
-        value={formData.companyId}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        options={companies}
-        error={!!errors.companyId}
-        helperText={errors.companyId}
-        placeholder="Select an option"
-      />
-
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Truck Number Plate *"
+            name="truckNumberPlate"
+            value={formData.truckNumberPlate}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.truckNumberPlate}
+            helperText={errors.truckNumberPlate}
+            placeholder="Enter truck number plate"
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="VIN *"
+            name="vin"
+            value={formData.vin}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.vin}
+            helperText={errors.vin}
+            placeholder="Enter 17-character VIN"
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "100%" }}>
+          <FormSelect
+            label="Company *"
+            name="companyId"
+            value={formData.companyId}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            options={companies}
+            error={!!errors.companyId}
+            helperText={errors.companyId}
+            placeholder="Select an option"
+          />
+        </Grid>
+      </Grid>
       {/* <FormSelect
         label="Vehicle Type *"
         name="vehicleTypeId"
@@ -405,50 +430,65 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
       <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
         Dimensions
       </Typography>
-
-      <FormInput
-        label="Max Weight (kg) *"
-        name="maxWeight"
-        value={formData.maxWeight}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.maxWeight}
-        helperText={errors.maxWeight}
-        placeholder="Enter max weight"
-      />
-
-      <FormInput
-        label="Length (m) *"
-        name="length"
-        value={formData.length}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.length}
-        helperText={errors.length}
-        placeholder="Enter length"
-      />
-
-      <FormInput
-        label="Width (m) *"
-        name="width"
-        value={formData.width}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.width}
-        helperText={errors.width}
-        placeholder="Enter width"
-      />
-
-      <FormInput
-        label="Height (m) *"
-        name="height"
-        value={formData.height}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={!!errors.height}
-        helperText={errors.height}
-        placeholder="Enter height"
-      />
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Max Weight (kg) *"
+            name="maxWeight"
+            value={formData.maxWeight}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.maxWeight}
+            helperText={errors.maxWeight}
+            placeholder="Enter max weight"
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Length (m) *"
+            name="length"
+            value={formData.length}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.length}
+            helperText={errors.length}
+            placeholder="Enter length"
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Width (m) *"
+            name="width"
+            value={formData.width}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.width}
+            helperText={errors.width}
+            placeholder="Enter width"
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            label="Height (m) *"
+            name="height"
+            value={formData.height}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.height}
+            helperText={errors.height}
+            placeholder="Enter height"
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };

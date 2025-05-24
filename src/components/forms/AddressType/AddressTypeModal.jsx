@@ -3,74 +3,61 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  TextField,
+  CircularProgress
 } from '@mui/material';
-import { createAddressType, updateAddressType, getAddressTypeById } from './AddressTypeAPI';
-import { toast } from 'react-toastify';
+import AddressTypeForm from './AddressTypeForm';
+import { getAddressTypeById } from './AddressTypeAPI';
 
 const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
-  const [formData, setFormData] = useState({
-    addressType: '',
-  });
+  const [loading, setLoading] = useState(false);
+  const [addressTypeData, setAddressTypeData] = useState(null);
 
   useEffect(() => {
-    if (open) {
+    // Define the loadAddressType function inside the useEffect
+    const loadAddressType = async () => {
       if (addressTypeId) {
-        loadAddressType();
+        try {
+          setLoading(true);
+          const data = await getAddressTypeById(addressTypeId);
+          setAddressTypeData(data);
+        } catch (error) {
+          console.error('Error loading address type:', error);
+        } finally {
+          setLoading(false);
+        }
       } else {
-        // Reset form when opening for create
-        setFormData({ addressType: '' });
+        setAddressTypeData(null);
       }
-    }
-  }, [open, addressTypeId]);
+    };
 
-  const handleClose = () => {
-    // Reset form when closing
-    setFormData({ addressType: '' });
-    onClose();
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (addressTypeId) {
-        await updateAddressType(addressTypeId, formData);
-        toast.success('Address type updated successfully');
-      } else {
-        await createAddressType(formData);
-        toast.success('Address type created successfully');
-      }
-      // Reset form after successful submission
-      setFormData({ addressType: '' });
-      onSave();
-    } catch (error) {
-      toast.error('Failed to save address type: ' + error.message);
-    }
-  };
+    // Call the function
+    loadAddressType();
+  }, [addressTypeId]);
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{addressTypeId ? 'Edit Address Type' : 'Create Address Type'}</DialogTitle>
-      <form onSubmit={handleSubmit}>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Address Type"
-            value={formData.addressType}
-            onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-            margin="normal"
-            required
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+    >
+      <DialogTitle>
+        {addressTypeId ? 'Edit Address Type' : 'Add New Address Type'}
+      </DialogTitle>
+      <DialogContent>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+            <CircularProgress />
+          </div>
+        ) : (
+          <AddressTypeForm 
+            addressTypeId={addressTypeId}
+            initialData={addressTypeData}
+            onSave={onSave}
+            onClose={onClose}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" variant="contained" color="primary">
-            Save
-          </Button>
-        </DialogActions>
-      </form>
+        )}
+      </DialogContent>
     </Dialog>
   );
 };

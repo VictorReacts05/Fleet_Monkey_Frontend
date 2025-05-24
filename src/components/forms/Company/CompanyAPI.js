@@ -1,27 +1,16 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/companies";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    /* console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("user")
-    );
-    console.log("Parsed user object:", user); */
 
     if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
       return { headers: {}, personId: null };
     }
 
-    // Try different possible keys for personId
     const personId = user.personId || user.id || user.userId || null;
-    // console.log("Extracted personId:", personId);
 
     if (!personId) {
       console.warn(
@@ -50,7 +39,8 @@ export const fetchCompanies = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}/all?pageNumber=${page}&pageSize=${limit}`;
+    // Change from /all to just the base endpoint with query parameters
+    let url = `${APIBASEURL}/companies?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -68,46 +58,64 @@ export const createCompany = async (companyData) => {
     const { headers, personId } = getAuthHeader();
 
     if (!personId) {
-      throw new Error("personId is required for createdByID");
+      console.warn("No personId found in localStorage, using default value 1");
     }
 
-    // Prepare data for API
     const apiData = {
-      companyName: companyData.CompanyName,
-      billingCurrencyID: companyData.BillingCurrencyID,
-      vatAccount: companyData.VAT_Account,
-      website: companyData.Website,
-      companyNotes: companyData.CompanyNotes,
-      createdByID: personId,
+      CompanyName: companyData.CompanyName,
+      BillingCurrencyID: companyData.BillingCurrencyID,
+      VAT_Account: companyData.VAT_Account,
+      Website: companyData.Website,
+      CompanyNotes: companyData.CompanyNotes,
+      CreatedByID: personId || companyData.CreatedByID || 1,
     };
 
-    const response = await axios.post(API_BASE_URL, apiData, { headers });
+    const response = await axios.post(`${APIBASEURL}/companies`, apiData, {
+      headers,
+    });
     return response.data;
   } catch (error) {
+    console.error("Error creating company:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     throw error.response?.data || error.message;
   }
 };
 
 // Update an existing company
-export const updateCompany = async (id, companyData) => {
+export const updateCompany = async (companyId, companyData) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers, personId } = getAuthHeader();
 
-    // Prepare data for API
-    const apiData = {
-      companyName: companyData.CompanyName,
-      billingCurrencyID: companyData.BillingCurrencyID,
-      vatAccount: companyData.VAT_Account,
-      website: companyData.Website,
-      companyNotes: companyData.CompanyNotes,
-      rowVersionColumn: companyData.RowVersionColumn,
+    const requestBody = {
+      CompanyID: Number(companyId),
+      CompanyName: companyData.CompanyName,
+      BillingCurrencyID: Number(companyData.BillingCurrencyID),
+      VAT_Account: companyData.VAT_Account,
+      Website: companyData.Website,
+      CompanyNotes: companyData.CompanyNotes,
+      CreatedByID: personId || companyData.CreatedByID || 1,
     };
 
-    const response = await axios.put(`${API_BASE_URL}/${id}`, apiData, {
-      headers,
-    });
+    // Add RowVersionColumn if it exists
+    if (companyData.RowVersionColumn) {
+      requestBody.RowVersionColumn = companyData.RowVersionColumn;
+    }
+
+    const response = await axios.put(
+      `${APIBASEURL}/companies/${companyId}`,
+      requestBody,
+      { headers }
+    );
     return response.data;
   } catch (error) {
+    console.error("Error updating company:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     throw error.response?.data || error.message;
   }
 };
@@ -117,9 +125,7 @@ export const deleteCompany = async (id, personId = null) => {
   try {
     const { headers, personId: storedPersonId } = getAuthHeader();
 
-    // Use provided personId or fallback to storedPersonId
     const deletedByID = personId || storedPersonId;
-    // console.log("deleteCompany - Using deletedByID:", deletedByID);
 
     if (!deletedByID) {
       throw new Error(
@@ -127,21 +133,11 @@ export const deleteCompany = async (id, personId = null) => {
       );
     }
 
-    /* console.log("Sending DELETE request to:", `${API_BASE_URL}/${id}`);
-    console.log("Request body:", { deletedByID });
-    console.log("Full request config:", {
-      url: `${API_BASE_URL}/${id}`,
-      method: "DELETE",
-      headers,
-      data: { deletedByID },
-    }); */
-
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/companies/${id}`, {
       headers,
       data: { deletedByID },
     });
 
-    // console.log("Delete response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error deleting company:", error);
@@ -163,11 +159,11 @@ export const deleteCompany = async (id, personId = null) => {
 export const getCompanyById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/companies/${id}`, {
+      headers,
+    });
 
-    // Check if the response has data
     if (response.data && response.data.data) {
-      // Handle both array and object responses
       if (Array.isArray(response.data.data)) {
         if (response.data.data.length > 0) {
           return response.data.data[0];
@@ -189,7 +185,6 @@ export const getCompanyById = async (id) => {
       return response.data;
     }
   } catch (error) {
-    console.error("Get company error:", error);
     if (error.response) {
       console.error("API response error details:", {
         status: error.response.status,
@@ -205,10 +200,7 @@ export const getCompanyById = async (id) => {
 export const fetchAllCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(
-      "http://localhost:7000/api/currencies/all",
-      { headers }
-    );
+    const response = await axios.get(`${APIBASEURL}/currencies`, { headers });
 
     // Check the structure of the response and extract the currency data
     if (response.data && response.data.data) {

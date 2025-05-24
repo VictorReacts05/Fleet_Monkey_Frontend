@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
+import { showToast } from "../../toastNotification";
 
 const CertificationList = () => {
   const [rows, setRows] = useState([]);
@@ -111,6 +113,11 @@ const CertificationList = () => {
     loadCertifications();
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -123,17 +130,13 @@ const CertificationList = () => {
       >
         <Typography variant="h5">Certification Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Certifications..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Certification">
             <IconButton

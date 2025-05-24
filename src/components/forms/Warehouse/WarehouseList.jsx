@@ -9,6 +9,8 @@ import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
+import SearchBar from "../../Common/SearchBar";
+import { showToast } from '../../toastNotification';
 
 const WarehouseList = () => {
   const [rows, setRows] = useState([]);
@@ -115,7 +117,8 @@ const WarehouseList = () => {
   const confirmDelete = async () => {
     try {
       await deleteWarehouse(itemToDelete.id);
-      toast.success('Warehouse deleted successfully');
+      // toast.success('Warehouse deleted successfully');
+      showToast("Warehouse deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadWarehouses();
@@ -134,6 +137,11 @@ const WarehouseList = () => {
     setSelectedWarehouseId(null);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -146,17 +154,13 @@ const WarehouseList = () => {
       >
         <Typography variant="h5">Warehouse Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Warehouses..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Warehouse">
             <IconButton

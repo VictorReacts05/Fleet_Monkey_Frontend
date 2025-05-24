@@ -9,8 +9,10 @@ import {
   createCustomer,
   updateCustomer,
   fetchCurrencies,
-  fetchCompanies
+  fetchCompanies,
 } from "./CustomerAPI";
+import { Grid } from "@mui/material";
+import { showToast } from "../../toastNotification";
 
 const CustomerForm = ({ customerId, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
@@ -19,44 +21,62 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
-    CustomerName: '',
-    CompanyID: '',
-    ImportCode: '',
-    BillingCurrencyID: '',
-    Website: '',
-    CustomerNotes: ''
+    CustomerName: "",
+    CompanyID: "",
+    ImportCode: "",
+    BillingCurrencyID: "",
+    Website: "",
+    CustomerNotes: "",
   });
+
+  // Update the useEffect hook that fetches the data
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch currencies from the currency table
         const currenciesResponse = await fetchCurrencies();
-        setCurrencies(currenciesResponse.data || []);
-        
+        console.log("Currencies response:", currenciesResponse);
+
+        if (currenciesResponse.success && currenciesResponse.data) {
+          setCurrencies(currenciesResponse.data);
+        } else {
+          console.error("Failed to load currencies:", currenciesResponse.error);
+          toast.error("Failed to load currencies");
+        }
+
         // Fetch companies from the company table
         const companiesResponse = await fetchCompanies();
-        setCompanies(companiesResponse.data || []);
-        
+        console.log("Companies response:", companiesResponse);
+
+        if (companiesResponse.success && companiesResponse.data) {
+          setCompanies(companiesResponse.data);
+        } else {
+          console.error("Failed to load companies:", companiesResponse.error);
+          toast.error("Failed to load companies");
+        }
+
         // If editing, fetch customer data
+        // In the useEffect hook where customer data is loaded
         if (customerId) {
           const customerData = await getCustomerById(customerId);
           if (customerData) {
             setFormData({
-              CustomerName: customerData.CustomerName || '',
-              CompanyID: customerData.CompanyID || '',
-              ImportCode: customerData.ImportCode || '',
-              BillingCurrencyID: customerData.BillingCurrencyID || '',
-              Website: customerData.Website || '',
-              CustomerNotes: customerData.CustomerNotes || ''
+              CustomerName: customerData.CustomerName || "",
+              CompanyID: customerData.CompanyID || "",
+              ImportCode: customerData.ImportCode || "",
+              BillingCurrencyID: customerData.BillingCurrencyID || "",
+              Website: customerData.Website || "",
+              CustomerNotes: customerData.CustomerNotes || "",
+              RowVersionColumn: customerData.RowVersionColumn || null, // Add this line
             });
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load required data');
+        console.error("Error loading form data:", error);
+        toast.error("Failed to load form data");
       } finally {
         setLoading(false);
       }
@@ -162,7 +182,11 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Add null check for the event parameter
+    if (e) {
+      e.preventDefault();
+    }
+
     setIsSubmitted(true);
 
     const validationErrors = {};
@@ -213,9 +237,14 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
       if (customerId) {
         await updateCustomer(customerId, formData);
         toast.success("Customer updated successfully");
+        
       } else {
         await createCustomer(formData);
         toast.success("Customer created successfully");
+        
+
+
+
       }
       if (onSave) onSave();
       if (onClose) onClose();
@@ -233,79 +262,98 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
 
   return (
     <FormPage
-      title={customerId ? "Edit Customer" : "Add New Customer"}
+      title={""}
       loading={loading}
       onSubmit={handleSubmit}
       onCancel={onClose}
     >
-      <FormInput
-        required
-        label="Customer Name"
-        name="CustomerName"
-        value={formData.CustomerName}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.CustomerName}
-      />
-
-      <FormSelect
-        required
-        label="Select Company"
-        name="CompanyID"
-        value={formData.CompanyID}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.CompanyID}
-        options={companies.map(company => ({
-          value: company.CompanyID,
-          label: company.CompanyName
-        }))}
-      />
-
-      <FormInput
-        required
-        label="Import Code"
-        name="ImportCode"
-        value={formData.ImportCode}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.ImportCode}
-      />
-
-      <FormSelect
-        required
-        label="Select Currency"
-        name="BillingCurrencyID"
-        value={formData.BillingCurrencyID}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.BillingCurrencyID}
-        options={currencies.map(currency => ({
-          value: currency.CurrencyID,
-          label: currency.CurrencyName
-        }))}
-      />
-
-      <FormInput
-        required
-        label="Website URL"
-        name="Website"
-        value={formData.Website}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.Website}
-      />
-
-      <FormTextArea
-        required
-        label="Customer Notes"
-        name="CustomerNotes"
-        value={formData.CustomerNotes}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors.CustomerNotes}
-        rows={4}
-      />
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Customer Name"
+            name="CustomerName"
+            value={formData.CustomerName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.CustomerName}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormSelect
+            label="Company *"
+            name="CompanyID"
+            value={formData.CompanyID}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.CompanyID}
+            helperText={errors.CompanyID}
+            options={companies.map((company) => ({
+              value: company.CompanyID,
+              label: company.CompanyName,
+            }))}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Import Code"
+            name="ImportCode"
+            value={formData.ImportCode}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.ImportCode}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormSelect
+            required
+            label="Billing Currency"
+            name="BillingCurrencyID"
+            value={formData.BillingCurrencyID}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.BillingCurrencyID}
+            helperText={errors.BillingCurrencyID}
+            options={currencies.map((currency) => ({
+              value: currency.CurrencyID,
+              label: currency.CurrencyName,
+            }))}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Website URL"
+            name="Website"
+            value={formData.Website}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.Website}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormTextArea
+            required
+            label="Customer Notes"
+            name="CustomerNotes"
+            value={formData.CustomerNotes}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.CustomerNotes}
+            rows={4}
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };

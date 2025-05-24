@@ -3,11 +3,13 @@ import { Typography, Box, Button } from "@mui/material";
 import DataTable from "../../Common/DataTable";
 import PersonModal from "./PersonModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import { getPersons, deletePerson } from "./personStorage";
-import { getCompanies } from "../Company/companyStorage";
+// import { getPersons, deletePerson } from "./personStorage";
+// import { getCompanies } from "../Company/companyStorage";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton, Stack } from '@mui/material';
 import FormDatePicker from "../../Common/FormDatePicker";
+import SearchBar from "../../Common/SearchBar";
+
 
 const PersonList = () => {
   const [rows, setRows] = useState([]);
@@ -107,6 +109,11 @@ const PersonList = () => {
     setModalOpen(false);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   return (
     <Box>
       <Box
@@ -119,17 +126,13 @@ const PersonList = () => {
       >
         <Typography variant="h5">Person Management</Typography>
         <Stack direction="row" spacing={1}>
-          <FormDatePicker
-            label="From Date"
-            value={fromDate}
-            onChange={(newValue) => setFromDate(newValue)}
-            sx={{ width: 200 }}
-          />
-          <FormDatePicker
-            label="To Date"
-            value={toDate}
-            onChange={(newValue) => setToDate(newValue)}
-            sx={{ width: 200 }}
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Persons..."
+            sx={{
+              width: "100%",
+              marginLeft: "auto",
+            }}
           />
           <Tooltip title="Add Person">
             <IconButton

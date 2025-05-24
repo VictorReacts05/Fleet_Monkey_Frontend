@@ -8,30 +8,31 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
   const [formData, setFormData] = useState({
     warehouseName: '',
   });
+  const [errors, setErrors] = useState({
+    warehouseName: '',
+  });
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     const loadWarehouse = async () => {
       if (!warehouseId) {
         setFormData({ warehouseName: '' });
+        setErrors({ warehouseName: '' });
         return;
       }
 
       try {
         setLoading(true);
-        
-        // If we already have the data from the list, use it
         if (initialData) {
           setFormData({
             warehouseName: initialData.warehouseName || '',
           });
         } else {
-          // Since fetchWarehouseById is not available, use fetchWarehouses to get all warehouses
-          // and filter for the one we need
           const response = await fetchWarehouses(1, 100);
           const warehouses = response.data || [];
           const warehouse = warehouses.find(w => w.WarehouseID === warehouseId);
-          
+
           if (warehouse) {
             setFormData({
               warehouseName: warehouse.WarehouseName || '',
@@ -53,46 +54,83 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
     }
   }, [warehouseId, open, initialData]);
 
-  // Debugging to check if handleChange is being called
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => {
-      const newState = { ...prevState, [name]: value };
-      return newState;
-    });
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors(prevState => ({
+        ...prevState,
+        [name]: '',
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.warehouseName.trim()) {
+      newErrors.warehouseName = 'Warehouse Name is required';
+    } else if (formData.warehouseName.length < 3) {
+      newErrors.warehouseName = 'Warehouse Name must be at least 3 characters long';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setIsSubmitted(true);
+
+    console.log('Form data on submit:', formData);
+
+    if (!validateForm()) {
+      console.log('Validation failed, errors:', errors);
+      toast.error('Please fix the form errors');
+      return;
+    }
+
+    const { headers, personId } = getAuthHeader();
+    if (!headers.Authorization || !personId) {
+      toast.error('You must be logged in to save a warehouse');
+      return;
+    }
+
+    console.log('Validation passed, proceeding with API call');
+
     try {
       setLoading(true);
-      
       if (warehouseId) {
-        // Make sure we're sending the data in the format the API expects
         const updateData = {
           WarehouseID: warehouseId,
-          WarehouseName: formData.warehouseName // This matches the backend expectation
+          WarehouseName: formData.warehouseName,
         };
-        
+        console.log('Updating warehouse with data:', updateData);
         await updateWarehouse(warehouseId, updateData);
         toast.success('Warehouse updated successfully');
       } else {
-        // For creation
+        console.log('Creating warehouse with data:', { WarehouseName: formData.warehouseName });
         await createWarehouse({
-          WarehouseName: formData.warehouseName // This matches the backend expectation
+          WarehouseName: formData.warehouseName,
         });
         toast.success('Warehouse created successfully');
       }
-      
-      // Close modal and refresh list - moved outside the if/else for both cases
-      setLoading(false); // Ensure loading is set to false before closing
-      onClose(); // First close the modal
-      setTimeout(() => onSave(), 300); // Then refresh with a delay
-      
+
+      setLoading(false);
+      onClose();
+      setTimeout(() => onSave(), 300);
     } catch (error) {
       console.error('Error saving warehouse:', error);
-      toast.error('Failed to save warehouse: ' + (error.response?.data?.message || error.message));
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      if (errorMessage.toLowerCase().includes('warehouse name')) {
+        setErrors({ warehouseName: errorMessage });
+      } else {
+        toast.error('Failed to save warehouse: ' + errorMessage);
+      }
       setLoading(false);
     }
   };
@@ -108,9 +146,10 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
               name="warehouseName"
               value={formData.warehouseName}
               onChange={handleChange}
-              required
               fullWidth
               disabled={loading}
+              error={isSubmitted && !!errors.warehouseName}
+              helperText={isSubmitted && errors.warehouseName}
             />
           </Box>
         </DialogContent>

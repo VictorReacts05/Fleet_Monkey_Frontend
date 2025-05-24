@@ -3,6 +3,7 @@ import FormInput from "../../Common/FormInput";
 import FormPage from "../../Common/FormPage";
 import { createCountry, updateCountry, fetchCountries } from "./CountryAPI";
 import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification";
 
 const CountryForm = ({ countryId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -38,6 +39,7 @@ const CountryForm = ({ countryId, onSave, onClose }) => {
     } catch (error) {
       console.error('Error loading country:', error);
       toast.error('Failed to load country details');
+      
     } finally {
       setLoading(false);
     }
@@ -73,13 +75,15 @@ const CountryForm = ({ countryId, onSave, onClose }) => {
           await updateCountry(countryId, { 
             CountryOfOrigin: formData.countryName 
           });
-          toast.success("Country updated successfully");
+          // toast.success("Country updated successfully");
+          showToast("Country updated successfully", "success");
         } else {
           // Create new country
           await createCountry({ 
             CountryOfOrigin: formData.countryName 
           });
-          toast.success("Country created successfully");
+          // toast.success("Country created successfully");
+          showToast("Country created successfully", "success");
         }
         
         if (onSave) onSave();
@@ -115,7 +119,6 @@ const CountryForm = ({ countryId, onSave, onClose }) => {
         value={formData.countryName}
         onChange={handleChange}
         error={errors.countryName}
-        required
       />
     </FormPage>
   );

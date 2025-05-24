@@ -1,14 +1,9 @@
 import axios from 'axios';
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
-const API_BASE_URL = 'http://localhost:7000/api/suppliers';
-
-export const fetchSuppliers = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
+export const fetchSuppliers = async (page = 1, limit = 10) => {
   try {
-    let url = `${API_BASE_URL}?page=${page}&limit=${limit}`;
-    
-    // Only add date parameters if they are not null
-    if (fromDate) url += `&fromDate=${fromDate}`;
-    if (toDate) url += `&toDate=${toDate}`;
+    let url = `${APIBASEURL}/suppliers?pageNumber=${page}&pageSize=${limit}`;
     
     const response = await axios.get(url);
     return response.data;
@@ -19,7 +14,7 @@ export const fetchSuppliers = async (page = 1, limit = 10, fromDate = null, toDa
 
 export const createSupplier = async (supplierData) => {
   try {
-    const response = await axios.post(API_BASE_URL, supplierData);
+    const response = await axios.post(`${APIBASEURL}/suppliers`, supplierData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -28,7 +23,7 @@ export const createSupplier = async (supplierData) => {
 
 export const updateSupplier = async (id, supplierData) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/${id}`, supplierData);
+    const response = await axios.put(`${APIBASEURL}/suppliers/${id}`, supplierData);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -37,7 +32,7 @@ export const updateSupplier = async (id, supplierData) => {
 
 export const deleteSupplier = async (id) => {
   try {
-    const response = await axios.delete(`${API_BASE_URL}/${id}`);
+    const response = await axios.delete(`${APIBASEURL}/suppliers/${id}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -46,7 +41,7 @@ export const deleteSupplier = async (id) => {
 
 export const getSupplierById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    const response = await axios.get(`${APIBASEURL}/suppliers/${id}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
