@@ -53,6 +53,12 @@ import SalesOrderPage from './components/forms/SalesOrder/SalesOrderPage';
 import PurchaseOrderList from './components/forms/PurchaseOrder/PurchaseOrderList';
 import PurchaseOrderForm from './components/forms/PurchaseOrder/PurchaseOrderForm';
 import PurchaseOrderPage from './components/forms/PurchaseOrder/PurchaseOrderPage';
+import PurchaseInvoiceList from './components/forms/PurchaseInvoice/PurchaseInvoiceList';
+import PurchaseInvoiceForm from './components/forms/PurchaseInvoice/PurchaseInvoiceForm';
+import PurchaseInvoicePage from './components/forms/PurchaseInvoice/PurchaseInvoicePage';
+import SalesInvoiceList from './components/forms/SalesInvoice/SalesInvoiceList';
+import SalesInvoiceForm from './components/forms/SalesInvoice/SalesInvoiceForm';
+import SalesInvoicePage from './components/forms/SalesInvoice/SalesInvoicePage';
 
 
 // Create wrapper components that use the hooks properly
@@ -154,6 +160,7 @@ function AppContent() {
           <Route path="/purchase-rfq" element={<PurchaseRFQList />} />
           <Route path="/purchase-rfq/create" element={<PurchaseRFQForm />} />
           <Route path="/purchase-rfq/:id" element={<PurchaseRFQForm />} />
+          {/* Purchase RFQ Routes - Fixed */}
           <Route
             path="/purchase-rfq"
             element={
@@ -166,15 +173,23 @@ function AppContent() {
             path="/purchase-rfq/create"
             element={
               <ProtectedRoute>
-                <PurchaseRFQForm />
+                <PurchaseRFQForm readOnly={false} />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/purchase-rfq/:id"
+            path="/purchase-rfq/view/:id"
             element={
               <ProtectedRoute>
-                <PurchaseRFQForm />
+                <PurchaseRFQForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-rfq/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseRFQForm readOnly={false} />
               </ProtectedRoute>
             }
           />
@@ -478,6 +493,74 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SalesOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Purchase Invoice routes */}
+          <Route
+            path="/purchase-invoice"
+            element={
+              <ProtectedRoute>
+                <PurchaseInvoiceList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-invoice/add"
+            element={
+              <ProtectedRoute>
+                <PurchaseInvoiceForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-invoice/view/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseInvoiceForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-invoice/edit/:id"
+            element={
+              <ProtectedRoute>
+                <PurchaseInvoiceForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Sales Invoice routes */}
+          <Route
+            path="/sales-invoice"
+            element={
+              <ProtectedRoute>
+                <SalesInvoiceList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-invoice/add"
+            element={
+              <ProtectedRoute>
+                <SalesInvoiceForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-invoice/view/:id"
+            element={
+              <ProtectedRoute>
+                <SalesInvoiceForm readOnly={true} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-invoice/edit/:id"
+            element={
+              <ProtectedRoute>
+                <SalesInvoiceForm readOnly={false} />
               </ProtectedRoute>
             }
           />

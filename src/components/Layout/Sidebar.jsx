@@ -37,8 +37,10 @@ import RequestQuote from '@mui/icons-material/RequestQuote';
 import FindInPageSharpIcon from '@mui/icons-material/FindInPageSharp';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
+import ReceiptIcon from '@mui/icons-material/Receipt';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
-const drawerWidth = 240; // Added missing drawerWidth constant
+const drawerWidth = 240;
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
@@ -48,6 +50,8 @@ const menuItems = [
   { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
   { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
   { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
+  { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
+  { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
@@ -56,12 +60,24 @@ const menuItems = [
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
   { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" },
-  { text: "Form Role Approvers", icon: <AdminPanelSettingsIcon />, path: "/form-role-approvers" },
+  {
+    text: "Form Role Approvers",
+    icon: <AdminPanelSettingsIcon />,
+    path: "/form-role-approvers",
+  },
   { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
-  { text: "Project Parameters", icon: <SettingsApplicationsIcon />, path: "/project-parameters" },
+  {
+    text: "Project Parameters",
+    icon: <SettingsApplicationsIcon />,
+    path: "/project-parameters",
+  },
   { text: "Roles", icon: <PersonIcon />, path: "/roles" },
-  { text: "Subscriptions", icon: <SubscriptionsIcon />, path: "/subscriptions" },
+  {
+    text: "Subscriptions",
+    icon: <SubscriptionsIcon />,
+    path: "/subscriptions",
+  },
   { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
@@ -96,7 +112,9 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text === "Supplier Quotation" ||
       item.text === "Sales Quotation" ||
       item.text === "Sales Order" ||
-      item.text === "Purchase Order"
+      item.text === "Purchase Order" ||
+      item.text === "Purchase Invoice" ||
+      item.text === "Sales Invoice"
   );
 
   // Update the mastersItems filter
@@ -108,7 +126,9 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Supplier Quotation" &&
       item.text !== "Sales Quotation" &&
       item.text !== "Sales Order" &&
-      item.text !== "Purchase Order"
+      item.text !== "Purchase Order" &&
+      item.text !== "Purchase Invoice" &&
+      item.text !== "Sales Invoice"
   );
 
   return (

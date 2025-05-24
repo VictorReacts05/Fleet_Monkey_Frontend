@@ -70,6 +70,7 @@ const SupplierQuotationForm = ({
     SupplierName: "-",
     CustomerID: "",
     CustomerName: "-",
+    ExternalRefNo: "-",
     CompanyID: "",
     CompanyName: "-",
     PurchaseRFQID: "",
@@ -587,13 +588,19 @@ const SupplierQuotationForm = ({
             <ReadOnlyField label="Series" value={formData.Series} />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Supplier" value={formData.SupplierName} />
+            <ReadOnlyField label="Company" value={formData.CompanyName} />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField label="Service Type" value={formData.ServiceType} />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Customer" value={formData.CustomerName} />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Company" value={formData.CompanyName} />
+            <ReadOnlyField label="Supplier" value={formData.SupplierName} />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo} />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
@@ -603,16 +610,6 @@ const SupplierQuotationForm = ({
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Sales RFQ" value={formData.SalesRFQSeries} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Posting Date"
-              value={
-                formData.PostingDate
-                  ? formData.PostingDate.toLocaleDateString()
-                  : "-"
-              }
-            />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
@@ -626,10 +623,30 @@ const SupplierQuotationForm = ({
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
+              label="Posting Date"
+              value={
+                formData.PostingDate
+                  ? formData.PostingDate.toLocaleDateString()
+                  : "-"
+              }
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
               label="Required By Date"
               value={
                 formData.RequiredByDate
                   ? formData.RequiredByDate.toLocaleDateString()
+                  : "-"
+              }
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
+              label="Date Received"
+              value={
+                formData.DateReceived
+                  ? formData.DateReceived.toLocaleDateString()
                   : "-"
               }
             />
@@ -658,36 +675,6 @@ const SupplierQuotationForm = ({
               value={formData.Total ? formData.Total.toFixed(2) : "-"}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Currency" value={formData.CurrencyName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Terms" value={formData.Terms} />
-          </Grid>
-
-          {/* Add new fields here */}
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Date Received"
-              value={
-                formData.DateReceived
-                  ? formData.DateReceived.toLocaleDateString()
-                  : "-"
-              }
-            />
-          </Grid>
-
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Service Type" value={formData.ServiceType} />
-          </Grid>
-
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Shipping Priority"
-              value={formData.ShippingPriority}
-            />
-          </Grid>
-
           <Grid item xs={12} md={6} sx={{ width: "48%", maxWidth: "280px" }}>
             <ReadOnlyField
               label="Collection Address"
@@ -701,11 +688,34 @@ const SupplierQuotationForm = ({
               value={formData.DestinationAddress}
             />
           </Grid>
-
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
+              label="Shipping Priority"
+              value={formData.ShippingPriority}
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField label="Terms" value={formData.Terms} />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField label="Currency" value={formData.CurrencyName} />
+          </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
               label="Packaging Required"
               value={formData.PackagingRequiredYN ? "Yes" : "No"}
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
+              label="Collect From Supplier"
+              value={formData.CollectFromSupplierYN ? "Yes" : "No"}
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
+              label="Form Completed"
+              value={formData.FormCompletedYN ? "Yes" : "No"}
             />
           </Grid>
 

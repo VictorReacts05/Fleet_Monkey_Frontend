@@ -41,16 +41,16 @@ const ReadOnlyField = ({ label, value }) => {
   );
 };
 
-const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, readOnly = true }) => {
+const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose, readOnly = true }) => {
   const { id } = useParams();
   const theme = useTheme();
   const navigate = useNavigate();
-  const purchaseOrderId = propPurchaseOrderId || id;
+  const purchaseInvoiceId = propPurchaseInvoiceId || id;
   const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
   // Static form data
   const [formData, setFormData] = useState({
-    Series: "PO2025-001",
+    Series: "PI2025-001",
     CompanyID: DEFAULT_COMPANY.value,
     CompanyName: DEFAULT_COMPANY.label,
     SupplierID: "SUP001",
@@ -68,6 +68,8 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
     CollectionAddress: "123 Main St, Springfield, IL 62701",
     DestinationAddressID: "ADDR002",
     DestinationAddress: "456 Market St, Chicago, IL 60601",
+    BillingAddressID: "ADDR003",
+    BillingAddress: "789 Finance St, New York, NY 10001",
     ShippingPriorityID: "SP001",
     ShippingPriorityName: "Express",
     Terms: "Net 30 days",
@@ -76,8 +78,9 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
     CollectFromSupplierYN: true,
     PackagingRequiredYN: true,
     FormCompletedYN: true,
-    SalesAmount: 12500.0,
-    TaxesAndOtherCharges: 1250.0,
+    IsPaid: false,
+    SubTotal: 12500.0,
+    TaxAmount: 1250.0,
     Total: 13750.0,
   });
 
@@ -134,7 +137,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
       onClose();
     } else {
       // Otherwise navigate back to the list page
-      navigate('/purchase-order');
+      navigate('/purchase-invoice');
     }
   };
 
@@ -150,7 +153,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
           }}
         >
           <Typography variant="h6">
-            View Purchase Order
+            {readOnly ? "View Purchase Invoice" : "Edit Purchase Invoice"}
           </Typography>
           <Fade in={true} timeout={500}>
             <Box
@@ -172,7 +175,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
             >
               <StatusIndicator 
                 status={status} 
-                purchaseOrderId={purchaseOrderId} 
+                purchaseInvoiceId={purchaseInvoiceId} 
                 onStatusChange={handleStatusChange}
                 readOnly={readOnly}
               />
@@ -226,10 +229,10 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
-        <Grid item xs={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={4} sx={{ width: "24%" }}>
           <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
         </Grid>
-        <Grid item xs={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={4} sx={{ width: "24%" }}>
           <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -242,10 +245,13 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
           <ReadOnlyField label="Currency" value={formData.CurrencyName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
+          <ReadOnlyField label="Is Paid" value={formData.IsPaid} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Taxes and Other Charges" value={formData.TaxesAndOtherCharges} />
+          <ReadOnlyField label="Sub Total" value={formData.SubTotal} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Tax Amount" value={formData.TaxAmount} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Total" value={formData.Total} />
@@ -351,4 +357,4 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
   );
 };
 
-export default PurchaseOrderForm;
+export default PurchaseInvoiceForm;

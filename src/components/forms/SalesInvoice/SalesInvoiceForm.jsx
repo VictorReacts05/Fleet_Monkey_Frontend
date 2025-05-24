@@ -41,16 +41,16 @@ const ReadOnlyField = ({ label, value }) => {
   );
 };
 
-const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, readOnly = true }) => {
+const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnly = true }) => {
   const { id } = useParams();
   const theme = useTheme();
   const navigate = useNavigate();
-  const purchaseOrderId = propPurchaseOrderId || id;
+  const salesInvoiceId = propSalesInvoiceId || id;
   const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
   // Static form data
   const [formData, setFormData] = useState({
-    Series: "PO2025-001",
+    Series: "SI2025-001",
     CompanyID: DEFAULT_COMPANY.value,
     CompanyName: DEFAULT_COMPANY.label,
     SupplierID: "SUP001",
@@ -134,7 +134,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
       onClose();
     } else {
       // Otherwise navigate back to the list page
-      navigate('/purchase-order');
+      navigate('/sales-invoice');
     }
   };
 
@@ -150,7 +150,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
           }}
         >
           <Typography variant="h6">
-            View Purchase Order
+            {readOnly ? "View Sales Invoice" : "Edit Sales Invoice"}
           </Typography>
           <Fade in={true} timeout={500}>
             <Box
@@ -172,7 +172,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
             >
               <StatusIndicator 
                 status={status} 
-                purchaseOrderId={purchaseOrderId} 
+                salesInvoiceId={salesInvoiceId} 
                 onStatusChange={handleStatusChange}
                 readOnly={readOnly}
               />
@@ -202,6 +202,7 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
+        
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
         </Grid>
@@ -351,4 +352,4 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
   );
 };
 
-export default PurchaseOrderForm;
+export default SalesInvoiceForm;

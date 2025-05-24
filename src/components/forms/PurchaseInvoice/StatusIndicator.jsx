@@ -11,9 +11,8 @@ import {
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
-import APIBASEURL from '../../../utils/apiBaseUrl'
 
-const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly }) => {
+const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,10 +20,10 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
 
   // Fetch existing approval record when component mounts
   useEffect(() => {
-    if (supplierQuotationId) {
+    if (purchaseInvoiceId) {
       fetchApprovalRecord();
     }
-  }, [supplierQuotationId]);
+  }, [purchaseInvoiceId]);
 
   const fetchApprovalRecord = async () => {
     try {
@@ -53,7 +52,7 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
       
       try {
         const response = await axios.get(
-          `${APIBASEURL}/supplier-quotation-approvals/${supplierQuotationId}/${approverID}`,
+          `http://localhost:7000/api/purchase-invoice-approvals/${purchaseInvoiceId}/${approverID}`,
           { headers }
         );
         console.log("Fetched approval record:", response.data);
@@ -102,20 +101,20 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
       const approverID = 2;
       
       const payload = {
-        SupplierQuotationID: supplierQuotationId,
+        PurchaseInvoiceID: purchaseInvoiceId,
         ApproverID: approverID,
         Status: newStatus,
         Comments: `Status changed to ${newStatus}`,
       };
 
       const response = await axios.post(
-        `${APIBASEURL}/supplier-quotation/approve`,
+        "http://localhost:7000/api/purchase-invoice-approval",
         payload,
         { headers }
       );
 
       if (response.data.success) {
-        toast.success(`Supplier Quotation status updated to ${newStatus}`);
+        toast.success(`Purchase Invoice status updated to ${newStatus}`);
         if (onStatusChange) {
           onStatusChange(newStatus);
         }

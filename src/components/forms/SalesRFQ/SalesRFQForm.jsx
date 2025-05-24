@@ -1139,9 +1139,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} sx={{ width: "100%" }}>
-            <Grid container spacing={1}>
-              <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
                 {isEditing ? (
                   <FormControlLabel
                     control={
@@ -1201,8 +1199,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   />
                 )}
               </Grid>
-            </Grid>
-          </Grid>
         </Grid>
         <ParcelTab
           salesRFQId={salesRFQId}

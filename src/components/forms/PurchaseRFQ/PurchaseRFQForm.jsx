@@ -729,6 +729,12 @@ const PurchaseRFQForm = ({
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
+            label="Service Type"
+            value={formData.ServiceType || "-"}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
             label="Customer Name"
             value={formData.CustomerName || "-"}
           />
@@ -777,12 +783,6 @@ const PurchaseRFQForm = ({
                 ? formData.DateReceived.toLocaleDateString()
                 : "-"
             }
-          />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField
-            label="Service Type"
-            value={formData.ServiceType || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
