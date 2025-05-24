@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:7000/api/customers';
-const API_BASE_URL_GET = 'http://localhost:7000/api/customers';
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
 // Add axios interceptor to include auth token
 axios.interceptors.request.use(config => {
@@ -28,7 +26,7 @@ const getUserData = () => {
 
 export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDate = null) => {
   try {
-    let url = `${API_BASE_URL_GET}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/customers?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     
@@ -64,7 +62,7 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
 
 export const fetchCurrencies = async () => {
   try {
-    const response = await axios.get('http://localhost:7000/api/currencies');
+    const response = await axios.get(`${APIBASEURL}/currencies`);
     
     // Log the response for debugging
     console.log('Currencies API response:', response.data);
@@ -105,7 +103,7 @@ export const fetchCurrencies = async () => {
 
 export const fetchCompanies = async () => {
   try {
-    const response = await axios.get('http://localhost:7000/api/companies');
+    const response = await axios.get(`${APIBASEURL}/companies`);
     
     // Log the response for debugging
     console.log('Companies API response:', response.data);
@@ -164,7 +162,7 @@ export const createCustomer = async (customerData) => {
     
     console.log('Formatted request data:', requestData);
     
-    const response = await axios.post(API_BASE_URL, requestData);
+    const response = await axios.post(`${APIBASEURL}/customers`, requestData);
     return response.data;
   } catch (error) {
     console.error('Error in createCustomer:', error);
@@ -198,7 +196,7 @@ export const updateCustomer = async (id, customerData) => {
     
     console.log('Formatted update request data:', requestData);
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestData);
+    const response = await axios.put(`${APIBASEURL}/customers/${id}`, requestData);
     return response.data;
   } catch (error) {
     console.error('Error in updateCustomer:', error);
@@ -210,7 +208,7 @@ export const deleteCustomer = async (id) => {
   try {
     const user = getUserData();
     
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/customers/${id}`, {
       data: {
         deletedById: user.personId
       }
@@ -225,7 +223,7 @@ export const deleteCustomer = async (id) => {
 export const getCustomerById = async (id) => {
   try {
     console.log(`Fetching customer with ID: ${id}`);
-    const response = await axios.get(`${API_BASE_URL}/${id}`);
+    const response = await axios.get(`${APIBASEURL}/customers/${id}`);
     
     console.log('Customer data response:', response.data);
     

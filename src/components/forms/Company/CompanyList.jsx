@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
+import { Typography, Box, Stack } from '@mui/material';
 import DataTable from '../../Common/DataTable';
 import CompanyModal from './CompanyModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
 import { fetchCompanies, deleteCompany } from "./CompanyAPI";
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
@@ -14,7 +13,7 @@ import SearchBar from "../../Common/SearchBar";
 // Update imports
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
-import { showToast } from '../../toastNotification';
+import APIBASEURL from '../../../utils/apiBaseUrl';
 
 const CompanyList = () => {
   const [rows, setRows] = useState([]);
@@ -52,7 +51,7 @@ const CompanyList = () => {
       let currencyMap = {};
       try {
         // Change from /all to just the base endpoint
-        const currencyResponse = await axios.get('http://localhost:7000/api/currencies');
+        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`);
         if (currencyResponse.data && currencyResponse.data.data) {
           // Create a map of currency ID to currency name
           currencyResponse.data.data.forEach(currency => {

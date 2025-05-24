@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/roles";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -25,7 +24,7 @@ export const fetchRoles = async (
   toDate = null
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/roles?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -54,10 +53,8 @@ export const createRole = async (roleData) => {
       CreatedByID: user.personId || 1,
     };
     
-    console.log("[DEBUG] Role create request data:", requestData);
-    
     const response = await axios.post(
-      API_BASE_URL,
+      `${APIBASEURL}/roles`,
       requestData,
       getAxiosConfig()
     );
@@ -90,10 +87,8 @@ export const updateRole = async (roleId, roleData) => {
       requestData.RowVersionColumn = roleData.RowVersionColumn;
     }
     
-    console.log("[DEBUG] Role update request data:", requestData);
-    
     const response = await axios.put(
-      `${API_BASE_URL}/${roleId}`,
+      `${APIBASEURL}/roles/${roleId}`,
       requestData,
       getAxiosConfig()
     );
@@ -111,7 +106,7 @@ export const updateRole = async (roleId, roleData) => {
 export const deleteRole = async (id) => {
   try {
     const user = JSON.parse(localStorage.getItem("user")) || {};
-    await axios.delete(`${API_BASE_URL}/${id}`, {
+    await axios.delete(`${APIBASEURL}/roles/${id}`, {
       ...getAxiosConfig(),
       data: {
         deletedById: user.personId || 1,
@@ -131,7 +126,7 @@ export const deleteRole = async (id) => {
 
 export const getRoleById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/roles/${id}`, getAxiosConfig());
     
     if (response.data && response.data.data) {
       return Array.isArray(response.data.data) 

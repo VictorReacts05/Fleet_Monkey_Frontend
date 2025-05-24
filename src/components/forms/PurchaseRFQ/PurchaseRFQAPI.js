@@ -1,10 +1,8 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/purchase-rfq";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Simple headers function instead of importing getAuthHeader
 const getHeaders = () => {
-  // Return basic headers without auth
   return {
     headers: {
       'Content-Type': 'application/json'
@@ -12,10 +10,6 @@ const getHeaders = () => {
   };
 };
 
-// Get PurchaseRFQ by ID with its parcels
-// Add this new function to fetch parcels from a SalesRFQ
-// Improve the fetchSalesRFQParcels function to get more detailed parcel information
-// Update the fetchSalesRFQParcels function to correctly fetch parcels by SalesRFQID
 export const fetchSalesRFQParcels = async (salesRFQId) => {
   try {
     if (!salesRFQId) {
@@ -25,40 +19,26 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
     console.log("Fetching parcels for SalesRFQ ID:", salesRFQId);
     // Make sure we're using the correct endpoint with the right parameter
     const response = await axios.get(
-      `http://localhost:7000/api/sales-rfq-parcels?salesRFQID=${salesRFQId}`
+      `${APIBASEURL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
     );
-    console.log("Parcels response:", response.data);
     
     if (response.data && response.data.data) {
-      // For each parcel, fetch the item and UOM details if needed
       const parcels = response.data.data;
       
-      // Fetch all UOMs once to avoid multiple API calls
       let uomMap = {};
       try {
-        const uomResponse = await axios.get(`http://localhost:7000/api/uoms`);
-        console.log("UOM response:", uomResponse.data);
+        const uomResponse = await axios.get(`${APIBASEURL}/uoms`);
         
         if (uomResponse.data && uomResponse.data.data) {
-          // Make sure we're correctly mapping UOM IDs to names
           uomMap = uomResponse.data.data.reduce((acc, uom) => {
-            // Check the structure of each UOM object to find the name property
-            console.log("UOM object structure:", JSON.stringify(uom));
-            
-            // Use the UOM property which contains the name based on the logged structure
             const uomName = uom.UOM || uom.UOMName || uom.Name || uom.Description;
             
-            // Log each UOM to debug
-            console.log(`Mapping UOM: ID=${uom.UOMID}, Name=${uomName}`);
-            
-            // Store with both string and number keys to handle different formats
             if (uom.UOMID && uomName) {
               acc[uom.UOMID] = uomName;
               acc[String(uom.UOMID)] = uomName;
             }
             return acc;
           }, {});
-          console.log("UOM Map:", uomMap);
         }
       } catch (err) {
         console.log("Could not fetch UOMs:", err);
@@ -67,7 +47,7 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
       // Fetch all items once to avoid multiple API calls
       let itemMap = {};
       try {
-        const itemResponse = await axios.get(`http://localhost:7000/api/items`);
+        const itemResponse = await axios.get(`${APIBASEURL}/items`);
         if (itemResponse.data && itemResponse.data.data) {
           itemMap = itemResponse.data.data.reduce((acc, item) => {
             acc[item.ItemID] = item.ItemName || item.Description;
@@ -81,24 +61,18 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
       
       // Enhance parcels with item and UOM names from our maps
       const enhancedParcels = parcels.map(parcel => {
-        console.log("Processing parcel:", parcel);
-        
-        // Add item name from our map
         if (parcel.ItemID && itemMap[parcel.ItemID]) {
           parcel.ItemName = itemMap[parcel.ItemID];
         }
         
         // Add UOM name from our map - REMOVED hardcoded values
         if (parcel.UOMID) {
-          console.log(`Looking for UOM ID: ${parcel.UOMID}, Type: ${typeof parcel.UOMID}`);
-          console.log(`UOM name from map: ${uomMap[parcel.UOMID]}`);
-          
           if (uomMap[parcel.UOMID]) {
             parcel.UOMName = uomMap[parcel.UOMID];
           } else {
             // Try to fetch individual UOM as fallback
             try {
-              const singleUomResponse = axios.get(`http://localhost:7000/api/uoms/${parcel.UOMID}`);
+              const singleUomResponse = axios.get(`${APIBASEURL}/uoms/${parcel.UOMID}`);
               singleUomResponse.then(response => {
                 if (response.data && response.data.data) {
                   // Use the correct property name for UOM
@@ -118,11 +92,8 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
     }
     return [];
   } catch (error) {
-    console.error("Error fetching Sales RFQ parcels:", error);
-    // If the specific endpoint fails, try the fallback with filtering
     try {
-      console.log("Trying fallback method to fetch parcels");
-      const response = await axios.get(`http://localhost:7000/api/sales-rfq-parcels`);
+      const response = await axios.get(`${APIBASEURL}/sales-rfq-parcels`);
       if (response.data && response.data.data) {
         // Filter parcels by SalesRFQID
         const filteredParcels = response.data.data.filter(
@@ -134,7 +105,7 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
         const uomIds = filteredParcels.map(p => p.UOMID).filter(id => id);
         if (uomIds.length > 0) {
           try {
-            const uomResponse = await axios.get(`http://localhost:7000/api/uoms`);
+            const uomResponse = await axios.get(`${APIBASEURL}/uoms`);
             if (uomResponse.data && uomResponse.data.data) {
               const uomMap = uomResponse.data.data.reduce((acc, uom) => {
                 acc[uom.UOMID] = uom.UOMName;
@@ -173,7 +144,7 @@ export const getPurchaseRFQById = async (id) => {
 
     console.log("Fetching Purchase RFQ with ID:", id);
     const { headers } = getHeaders();
-    const response = await axios.get(`${API_BASE_URL}/${id}`, { headers });
+    const response = await axios.get(`${APIBASEURL}/purchase-rfq/${id}`, { headers });
     console.log("API Response:", response.data);
 
     // If the Purchase RFQ has a SalesRFQID, fetch the associated parcels
@@ -184,13 +155,13 @@ export const getPurchaseRFQById = async (id) => {
       // First, fetch the original SalesRFQ to get its details
       try {
         const salesRFQResponse = await axios.get(
-          `http://localhost:7000/api/sales-rfq/${salesRFQId}`
+          `${APIBASEURL}/sales-rfq/${salesRFQId}`
         );
         console.log("Original SalesRFQ data:", salesRFQResponse.data);
 
         // Fetch parcels directly from the sales-rfq-parcels endpoint with proper filtering
         const parcelsResponse = await axios.get(
-          `http://localhost:7000/api/sales-rfq-parcels?salesRFQID=${salesRFQId}`
+          `${APIBASEURL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`
         );
 
         if (parcelsResponse.data && parcelsResponse.data.data) {
@@ -206,8 +177,8 @@ export const getPurchaseRFQById = async (id) => {
 
           // Fetch all items and UOMs in parallel for better performance
           const [itemsResponse, uomsResponse] = await Promise.all([
-            axios.get(`http://localhost:7000/api/items`),
-            axios.get(`http://localhost:7000/api/uoms`),
+            axios.get(`${APIBASEURL}/items`),
+            axios.get(`${APIBASEURL}/uoms`),
           ]);
 
           // Create maps for items and UOMs
@@ -279,7 +250,7 @@ export const getPurchaseRFQById = async (id) => {
 export const createPurchaseRFQ = async (purchaseRFQData) => {
   try {
     const { headers } = getHeaders();
-    const response = await axios.post(API_BASE_URL, purchaseRFQData, { headers });
+    const response = await axios.post(`${APIBASEURL}/purchase-rfq`, purchaseRFQData, { headers });
     return { success: true, data: response.data, purchaseRFQId: response.data.PurchaseRFQID };
   } catch (error) {
     console.error("Error creating Purchase RFQ:", error);
@@ -291,7 +262,7 @@ export const createPurchaseRFQ = async (purchaseRFQData) => {
 export const updatePurchaseRFQ = async (id, purchaseRFQData) => {
   try {
     const { headers } = getHeaders();
-    const response = await axios.put(`${API_BASE_URL}/${id}`, purchaseRFQData, { headers });
+    const response = await axios.put(`${APIBASEURL}/purchase-rfq/${id}`, purchaseRFQData, { headers });
     return { success: true, data: response.data };
   } catch (error) {
     console.error("Error updating Purchase RFQ:", error);
@@ -303,7 +274,7 @@ export const updatePurchaseRFQ = async (id, purchaseRFQData) => {
 export const fetchSalesRFQs = async () => {
   try {
     const { headers } = getHeaders();
-    const response = await axios.get("http://localhost:7000/api/sales-rfq", { headers });
+    const response = await axios.get("${APIBASEURL}/sales-rfq", { headers });
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching Sales RFQs:", error);
@@ -326,7 +297,7 @@ export const fetchSalesRFQs = async () => {
 
     console.log("Approval data to be sent:", approvalData);
     const response = await axios.post(
-      "http://localhost:7000/api/purchase-rfq-approvals",
+      "${APIBASEURL}/purchase-rfq-approvals",
       approvalData,
       { headers }
     );
@@ -351,7 +322,7 @@ export const fetchPurchaseRFQApprovalStatus = async (purchaseRFQId) => {
       
     // Use query parameters instead of path parameters
     const response = await axios.get(
-      `http://localhost:7000/api/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=2`,
+      `${APIBASEURL}/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=2`,
       { headers }
     );
     return response.data;
@@ -372,7 +343,7 @@ export const updatePurchaseRFQApproval = async (purchaseRFQId, isApproved = true
     
     // First update the Purchase RFQ status
     const statusResponse = await axios.put(
-      `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+      `${APIBASEURL}/purchase-rfq/${purchaseRFQId}`,
       {
         PurchaseRFQID: purchaseRFQId,
         Status: isApproved ? "Approved" : "Pending"
@@ -392,7 +363,7 @@ export const updatePurchaseRFQApproval = async (purchaseRFQId, isApproved = true
     // Try to create a new record first
     try {
       const approvalResponse = await axios.post(
-        `http://localhost:7000/api/purchase-rfq-approvals`,
+        `${APIBASEURL}/purchase-rfq-approvals`,
         approvalData,
         { headers }
       );
@@ -401,7 +372,7 @@ export const updatePurchaseRFQApproval = async (purchaseRFQId, isApproved = true
       // If creation fails, try to update existing record
       // Use the base endpoint without ID parameters
       const approvalResponse = await axios.put(
-        `http://localhost:7000/api/purchase-rfq-approvals`,
+        `${APIBASEURL}/purchase-rfq-approvals`,
         approvalData,
         { headers }
       );
@@ -429,7 +400,7 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
     try {
       console.log(`API: Fetching PurchaseRFQ details to get SalesRFQID`);
       const purchaseRFQResponse = await axios.get(
-        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        `${APIBASEURL}/purchase-rfq/${purchaseRFQId}`,
         { headers }
       );
       
@@ -457,7 +428,7 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
       
       // Update the PurchaseRFQ status
       const statusResponse = await axios.put(
-        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        `${APIBASEURL}/purchase-rfq/${purchaseRFQId}`,
         updateData,
         { headers }
       );
@@ -489,7 +460,7 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
         console.log(`API: Found existing approval record, updating`);
         // Update existing record
         approvalResponse = await axios.put(
-          `http://localhost:7000/api/purchase-rfq-approvals`,
+          `${APIBASEURL}/purchase-rfq-approvals`,
           approvalData,
           { headers }
         );
@@ -498,7 +469,7 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
         console.log(`API: No existing approval record, creating new one`);
         // Create new record
         approvalResponse = await axios.post(
-          `http://localhost:7000/api/purchase-rfq-approvals`,
+          `${APIBASEURL}/purchase-rfq-approvals`,
           approvalData,
           { headers }
         );
@@ -527,7 +498,7 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
 /* export const updatePurchaseRFQApproval = async (purchaseRFQId, approvalData) => {
   try {
     const response = await axios.put(
-      `http://localhost:7000/api/purchase-rfq-approvals/${purchaseRFQId}/2`,
+      `${APIBASEURL}/purchase-rfq-approvals/${purchaseRFQId}/2`,
       approvalData
     );
     return response.data;
@@ -540,11 +511,10 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
 // Create a Purchase RFQ from a Sales RFQ
 export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
   try {
-    console.log(`Creating Purchase RFQ from Sales RFQ ID: ${salesRFQId}`);
     
     // Use the correct endpoint with the proper payload structure
     const response = await axios.post(
-      `http://localhost:7000/api/purchase-rfq`,
+      `${APIBASEURL}/purchase-rfq`,
       { 
         SalesRFQID: salesRFQId,
         // Add any other required fields for creating a Purchase RFQ
@@ -576,7 +546,7 @@ export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
 
 export const fetchServiceTypes = async () => {
   try {
-    const response = await axios.get("http://localhost:7000/api/service-types");
+    const response = await axios.get("${APIBASEURL}/service-types");
     return response.data;
   } catch (error) {
     console.error("Error fetching service types:", error);
@@ -587,7 +557,7 @@ export const fetchServiceTypes = async () => {
 export const fetchShippingPriorities = async () => {
   try {
     const response = await axios.get(
-      "http://localhost:7000/api/mailing-priorities"
+      "${APIBASEURL}/mailing-priorities"
     );
     return response.data;
   } catch (error) {
@@ -598,7 +568,7 @@ export const fetchShippingPriorities = async () => {
 
 export const fetchCurrencies = async () => {
   try {
-    const response = await axios.get("http://localhost:7000/api/currencies");
+    const response = await axios.get("${APIBASEURL}/currencies");
     return response.data;
   } catch (error) {
     console.error("Error fetching currencies:", error);

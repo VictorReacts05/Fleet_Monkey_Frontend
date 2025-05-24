@@ -11,6 +11,7 @@ import {
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const StatusIndicator = ({ status, salesOrderId, onStatusChange, readOnly }) => {
   const theme = useTheme();
@@ -52,7 +53,7 @@ const StatusIndicator = ({ status, salesOrderId, onStatusChange, readOnly }) => 
       
       try {
         const response = await axios.get(
-          `http://localhost:7000/api/sales-order-approvals/${salesOrderId}/${approverID}`,
+          `${APIBASEURL}/sales-order-approvals/${salesOrderId}/${approverID}`,
           { headers }
         );
         console.log("Fetched approval record:", response.data);
@@ -108,7 +109,7 @@ const StatusIndicator = ({ status, salesOrderId, onStatusChange, readOnly }) => 
       };
 
       const response = await axios.post(
-        "http://localhost:7000/api/sales-order-approval",
+        `${APIBASEURL}/sales-order-approval`,
         payload,
         { headers }
       );

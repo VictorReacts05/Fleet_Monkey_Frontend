@@ -594,17 +594,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         ? { Authorization: `Bearer ${user.token}` }
         : {};
 
-      const response = await axios.get("http://localhost:7000/api/sales-rfq", {
+      const response = await axios.get(`${APIBASEURL}/sales-rfq`, {
         headers,
       });
 
       if (response.data && response.data.data) {
         const hasPurchaseRFQ = response.data.data.some(
           (rfq) => rfq.SourceSalesRFQID === parseInt(salesRFQId, 10)
-        );
-
-        console.log(
-          `Purchase RFQ exists for Sales RFQ ${salesRFQId}: ${hasPurchaseRFQ}`
         );
         setPurchaseRFQExists(hasPurchaseRFQ);
       }

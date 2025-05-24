@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:7000/api/formRoleApproval";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -38,7 +37,7 @@ export const fetchFormRoleApprovers = async (
   searchTerm = ""
 ) => {
   try {
-    let url = `${API_BASE_URL}?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/formRoleApproval?pageNumber=${page}&pageSize=${limit}`;
     if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     const response = await axios.get(url, getAxiosConfig());
@@ -55,7 +54,7 @@ export const fetchFormRoleApprovers = async (
 
 export const fetchFormRoles = async () => {
   try {
-    const response = await axios.get("http://localhost:7000/api/formRole", getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/formRole`, getAxiosConfig());
     return response.data.data || [];
   } catch (error) {
     console.error("[ERROR] Failed to fetch form roles:", error);
@@ -65,7 +64,7 @@ export const fetchFormRoles = async () => {
 
 export const fetchPersons = async () => {
   try {
-    const response = await axios.get("http://localhost:7000/api/persons", getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/persons`, getAxiosConfig());
     return response.data.data || [];
   } catch (error) {
     console.error("[ERROR] Failed to fetch persons:", error);
@@ -86,7 +85,7 @@ export const createFormRoleApprover = async (formRoleApproverData) => {
 
     console.log("[DEBUG] Creating form role approver:", requestData);
     
-    const response = await axios.post(API_BASE_URL, requestData, getAxiosConfig());
+    const response = await axios.post(`${APIBASEURL}/formRoleApproval`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to create form role approver:", {
@@ -117,7 +116,7 @@ export const updateFormRoleApprover = async (id, formRoleApproverData) => {
 
     console.log("[DEBUG] Updating form role approver:", requestData);
     
-    const response = await axios.put(`${API_BASE_URL}/${id}`, requestData, getAxiosConfig());
+    const response = await axios.put(`${APIBASEURL}/formRoleApproval/${id}`, requestData, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to update form role approver:", {
@@ -133,7 +132,7 @@ export const deleteFormRoleApprover = async (id) => {
   try {
     const user = getUserData();
     
-    const response = await axios.delete(`${API_BASE_URL}/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/formRoleApproval/${id}`, {
       ...getAxiosConfig(),
       data: {
         deletedById: user.personId || 1
@@ -153,7 +152,7 @@ export const deleteFormRoleApprover = async (id) => {
 
 export const getFormRoleApproverById = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/formRoleApproval/${id}`, getAxiosConfig());
     
     if (response.data && response.data.data) {
       return Array.isArray(response.data.data) 

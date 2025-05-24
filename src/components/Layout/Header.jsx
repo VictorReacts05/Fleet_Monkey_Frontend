@@ -36,6 +36,7 @@ import { connect } from "react-redux";
 import axios from "axios";
 import FormInput from "../../components/Common/FormInput";
 import FormSelect from "../../components/Common/FormSelect";
+import APIBASEURL from "../../utils/apiBaseUrl";
 
 const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const { logout, isAuthenticated } = useAuth();
@@ -81,7 +82,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get("http://localhost:7000/api/roles/all", {
+      const response = await axios.get(`${APIBASEURL}/roles/all`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -110,7 +111,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:7000/api/persons", {
+      const response = await axios.get(`${APIBASEURL}/persons`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -217,13 +218,13 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         LastName: newUser.lastName,
         EmailID: newUser.emailId,
         LoginID: newUser.loginId,
-        Password: newUser.password, // Backend should hash this
+        Password: newUser.password,
         RoleID: newUser.role,
         CompanyID: newUser.companyId,
       };
 
       const response = await axios.post(
-        "http://localhost:7000/api/auth/create-person",
+        `${APIBASEURL}/auth/create-person`,
         userData,
         {
           headers: {

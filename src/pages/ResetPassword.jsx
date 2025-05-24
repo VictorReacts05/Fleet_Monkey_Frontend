@@ -18,6 +18,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import APIBASEURL from "../utils/apiBaseUrl";
 
 const ResetPasswordContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -134,7 +135,7 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:7000/api/auth/reset-password", {
+      const response = await axios.post(`${APIBASEURL}/auth/reset-password`, {
         EmailID: email,
         resetToken: resetToken,
         newPassword: newPassword,
@@ -144,7 +145,6 @@ const ResetPassword = () => {
         type: "success",
       });
 
-      // Redirect to login page after 3 seconds
       setTimeout(() => {
         navigate("/");
       }, 3000);

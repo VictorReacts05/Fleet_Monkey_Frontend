@@ -11,6 +11,7 @@ import {
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) => {
   const theme = useTheme();
@@ -49,7 +50,7 @@ const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) =>
 
       const approverID = 2;
       const response = await axios.get(
-        `http://localhost:7000/api/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=${approverID}`,
+        `${APIBASEURL}/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=${approverID}`,
         { headers }
       );
       console.log("Fetched approval record:", response.data);
@@ -102,7 +103,7 @@ const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) =>
         ? { Authorization: `Bearer ${user.token}` }
         : {};
 
-      const approveEndpoint = `http://localhost:7000/api/purchase-rfq/approve/`;
+      const approveEndpoint = `${APIBASEURL}/purchase-rfq/approve/`;
       const approveData = {
         purchaseRFQID: parseInt(purchaseRFQId, 10),
       };
