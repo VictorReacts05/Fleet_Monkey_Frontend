@@ -194,13 +194,10 @@ export const getCityById = async (id) => {
     throw error.response?.data || error.message;
   }
 };
-
 export const fetchCountries = async () => {
   try {
     const user = getUserFromLocalStorage();
-
     const url = `${APIBASEURL}/country-Of-Origin?pageSize=100`;
-
     const response = await axios.get(url, getAxiosConfig());
     return response.data;
   } catch (error) {

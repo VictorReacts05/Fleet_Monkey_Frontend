@@ -20,7 +20,6 @@ import { showToast } from "../../toastNotification";
 import axios from "axios";
 import SalesQuotationForm from "./SalesQuotationForm";
 import { Chip } from "@mui/material";
-import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -71,8 +70,7 @@ const SalesQuotationList = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  // Remove or comment out the viewDialogOpen state since we won't need it
-  // const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -110,7 +108,7 @@ const SalesQuotationList = () => {
     //   setLoading(true);
     //   const { headers } = getHeaders();
     // //   const response = await axios.get(
-    // //     `${APIBASEURL}/sales-quotation`,
+    // //     "http://localhost:7000/api/sales-quotation",
     // //     { headers }
     // //   );
   
@@ -161,8 +159,8 @@ const SalesQuotationList = () => {
     if (id && id !== "undefined") {
       const quotation = salesQuotations.find(q => q.SalesQuotationID === id);
       if (quotation) {
-        // Instead of opening a dialog, navigate to a view page
-        navigate(`/sales-quotation/view/${id}`);
+        setSelectedQuotation(id);
+        setViewDialogOpen(true);
       } else {
         toast.error("Sales Quotation not found");
       }
@@ -194,7 +192,7 @@ const SalesQuotationList = () => {
       setLoading(true);
       const { headers } = getHeaders();
       await axios.delete(
-        `${APIBASEURL}/sales-quotation/${selectedQuotation}`,
+        `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
         { headers }
       );
       showToast("Sales Quotation deleted successfully", "success");
@@ -258,8 +256,6 @@ const SalesQuotationList = () => {
         onDelete={handleDeleteClick}
       />
 
-      {/* Remove or comment out the view dialog */}
-      {/* 
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -276,10 +272,13 @@ const SalesQuotationList = () => {
             />
           )}
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
-      */}
 
-      {/* Keep the delete dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

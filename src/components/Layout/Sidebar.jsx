@@ -52,6 +52,7 @@ const menuItems = [
   { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
   { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
   { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
+  {text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
