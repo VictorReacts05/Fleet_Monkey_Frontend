@@ -157,13 +157,7 @@ const SalesQuotationList = () => {
   const handleView = (id) => {
     console.log("View clicked for Sales Quotation ID:", id);
     if (id && id !== "undefined") {
-      const quotation = salesQuotations.find(q => q.SalesQuotationID === id);
-      if (quotation) {
-        setSelectedQuotation(id);
-        setViewDialogOpen(true);
-      } else {
-        toast.error("Sales Quotation not found");
-      }
+      navigate(`/sales-quotation/view/${id}`);
     } else {
       console.error("Invalid Sales Quotation ID:", id);
       toast.error("Cannot view Sales Quotation: Invalid ID");

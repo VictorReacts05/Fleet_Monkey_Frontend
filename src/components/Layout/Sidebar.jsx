@@ -105,20 +105,38 @@ const Sidebar = ({ open, variant, onClose }) => {
   };
 
   // Update the mainMenuItems filter
-  const mainMenuItems = menuItems.filter(
-    (item) =>
-      item.text === "Dashboard" ||
-      item.text === "Sales RFQ" ||
-      item.text === "Purchase RFQ" ||
-      item.text === "Supplier Quotation" ||
-      item.text === "Sales Quotation" ||
-      item.text === "Sales Order" ||
-      item.text === "Purchase Order" ||
-      item.text === "Purchase Invoice" ||
-      item.text === "Sales Invoice"
-  );
+  // Remove the old mainMenuItems filter
+  // const mainMenuItems = menuItems.filter(
+  //   (item) =>
+  //     item.text === "Dashboard" ||
+  //     item.text === "Sales RFQ" ||
+  //     item.text === "Purchase RFQ" ||
+  //     item.text === "Supplier Quotation" ||
+  //     item.text === "Sales Quotation" ||
+  //     item.text === "Sales Order" ||
+  //     item.text === "Purchase Order" ||
+  //     item.text === "Purchase Invoice" ||
+  //     item.text === "Sales Invoice"
+  // );
+  
+  // Use this as the main menu items
+  const mainMenuItems = [
+    menuItems.find(item => item.text === "Dashboard"),
+    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
+    ...menuItems.filter(
+      item =>
+        item.text === "Sales RFQ" ||
+        item.text === "Purchase RFQ" ||
+        item.text === "Supplier Quotation" ||
+        item.text === "Sales Quotation" ||
+        item.text === "Sales Order" ||
+        item.text === "Purchase Order" ||
+        item.text === "Purchase Invoice" ||
+        item.text === "Sales Invoice"
+    )
+  ];
 
-  // Update the mastersItems filter
+  // Remove mainMenuItemstemp as it's no longer needed
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
@@ -132,144 +150,104 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Sales Invoice"
   );
 
+  // Update the mainMenuItems to include Masters as second item
+  // Update the mainMenuItems to keep Dashboard first
+  const mainMenuItemstemp = [
+    menuItems.find(item => item.text === "Dashboard"),
+    ...menuItems.filter(
+      item =>
+        item.text === "Sales RFQ" ||
+        item.text === "Purchase RFQ" ||
+        item.text === "Supplier Quotation" ||
+        item.text === "Sales Quotation" ||
+        item.text === "Sales Order" ||
+        item.text === "Purchase Order" ||
+        item.text === "Purchase Invoice" ||
+        item.text === "Sales Invoice"
+    ),
+    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true }
+  ];
+
+  // Paginate masters items to show 5 at a time
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(mastersItems.length / itemsPerPage);
+  
+  const getCurrentMastersItems = () => {
+    const start = currentPage * itemsPerPage;
+    return mastersItems.slice(start, start + itemsPerPage);
+  };
+
   return (
-    <Drawer
-      variant={variant}
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      sx={{
+    <Drawer  variant={variant}
+    anchor="left"
+    open={open}
+    onClose={onClose}
+    sx={{
+      width: drawerWidth,
+      flexShrink: 0,
+      "& .MuiDrawer-paper": {
         width: drawerWidth,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          backgroundColor:
-            theme.palette.mode === "dark"
-              ? theme.palette.background.paper
-              : "#1976d2",
-          color:
-            theme.palette.mode === "dark" ? theme.palette.text.primary : "#fff",
-          top: variant === "temporary" ? 0 : 64,
-          height: variant === "temporary" ? "100%" : "calc(100% - 64px)",
-          borderRight:
-            theme.palette.mode === "dark"
-              ? `1px solid ${theme.palette.divider}`
-              : "none",
-        },
-      }}
-    >
-      <Box sx={{ overflow: "auto" }}>
-        <List>
-          {mainMenuItems.map((item) => (
-            <ListItem
-              key={item.text}
-              component="div"
-              onClick={() => navigate(item.path)}
-              sx={{
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255, 255, 255, 0.05)"
-                      : "rgba(255, 255, 255, 0.08)",
-                },
-                backgroundColor: location.pathname.startsWith(item.path)
-                  ? theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.08)"
-                    : "rgba(255, 255, 255, 0.2)"
-                  : "transparent",
-                cursor: "pointer",
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  color:
-                    theme.palette.mode === "dark"
-                      ? theme.palette.text.primary
-                      : "#fff",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItem>
-          ))}
+        boxSizing: "border-box",
+        backgroundColor:
+          theme.palette.mode === "dark"
+            ? theme.palette.background.paper
+            : "#1976d2",
+        color:
+          theme.palette.mode === "dark" ? theme.palette.text.primary : "#fff",
+        top: variant === "temporary" ? 0 : 64,
+        height: variant === "temporary" ? "100%" : "calc(100% - 64px)",
+        borderRight:
+          theme.palette.mode === "dark"
+            ? `1px solid ${theme.palette.divider}`
+            : "none",
+      },
+    }}
+      >
+      <List>
+        {mainMenuItems.map((item) => (
           <ListItem
-            component="div"
-            onClick={handleMastersClick}
-            sx={{
-              "&:hover": {
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.05)"
-                    : "rgba(255, 255, 255, 0.08)",
-              },
-              cursor: "pointer",
-            }}
+            button
+            key={item.text}
+            onClick={item.isDropdown ? handleMastersClick : () => handleMenuItemClick(item.path)}
+            selected={location.pathname === item.path}
           >
-            <ListItemIcon
-              sx={{
-                color:
-                  theme.palette.mode === "dark"
-                    ? theme.palette.text.primary
-                    : "#fff",
-              }}
-            >
-              <ArrowDropDownIcon />
-            </ListItemIcon>
-            <ListItemText primary="Masters" />
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+            {item.isDropdown && <ArrowDropDownIcon />}
           </ListItem>
-        </List>
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMastersClose}
-          PaperProps={{
-            sx: {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? theme.palette.background.paper
-                  : "#1976d2",
-              color:
-                theme.palette.mode === "dark"
-                  ? theme.palette.text.primary
-                  : "#fff",
+        ))}
+      </List>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMastersClose}
+        sx={{
+          '& .MuiPaper-root': {
+            width: 240,
+            '& .MuiMenuItem-root': {
+              height: 48,
+              minHeight: 48,
             },
-          }}
-        >
-          {mastersItems.map((item) => (
-            <MenuItem
-              key={item.text}
-              onClick={() => handleMenuItemClick(item.path)}
-              sx={{
-                "&:hover": {
-                  backgroundColor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255, 255, 255, 0.05)"
-                      : "rgba(255, 255, 255, 0.08)",
-                },
-                backgroundColor: location.pathname.startsWith(item.path)
-                  ? theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.08)"
-                    : "rgba(255, 255, 255, 0.2)"
-                  : "transparent",
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  color:
-                    theme.palette.mode === "dark"
-                      ? theme.palette.text.primary
-                      : "#fff",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </MenuItem>
-          ))}
-        </Menu>
-      </Box>
+            maxHeight: 250, // Exactly 5 items (48px * 5)
+            overflowY: 'auto',
+          },
+        }}
+      >
+        {mastersItems.map((item) => (
+          <MenuItem
+            key={item.text}
+            onClick={() => handleMenuItemClick(item.path)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </MenuItem>
+        ))}
+        
+       
+      </Menu>
     </Drawer>
   );
 };
