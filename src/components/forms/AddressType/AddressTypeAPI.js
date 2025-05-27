@@ -4,52 +4,48 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 // Helper function to get auth token and personId from localStorage
 const getAuthHeader = () => {
   try {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+    console.log("User in localStorage:", localStorage.getItem("user"));
 
-    if (!token || !user) {
-      console.warn("User authentication data not found");
-      return { headers: {}, personId: null };
-    }
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    console.log("Parsed user object:", user);
 
-    // Get personId directly from user object since it's not nested
-    const personId = user.personId || null;
+    const personId = user?.personId || user?.id || user?.userId || null;
+    console.log("Found personId:", personId);
+
+    const token = user?.token || localStorage.getItem("token");
+    console.log(
+      "Found token:",
+      token
+        ? `Yes (token exists: ${token.substring(0, 10)}...)`
+        : "No token found"
+    );
 
     if (!personId) {
       console.warn("No personId found in user object");
-      return { headers: {}, personId: null };
     }
 
     return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          }
+        : {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
       personId,
     };
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
-    return { headers: {}, personId: null };
-  }
-};
-
-// Fetch all address types
-export const fetchAddressTypes = async (
-  page = 1,
-  limit = 10,
-  fromDate = null,
-  toDate = null
-) => {
-  try {
-    let url = `${APIBASEURL}/address-types?pageNumber=${page}&pageSize=${limit}`;
-    if (fromDate) url += `&fromDate=${fromDate}`;
-    if (toDate) url += `&toDate=${toDate}`;
-
-    const { headers } = getAuthHeader();
-    const response = await axios.get(url, { headers });
-    // console.log(response.headers)
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error.message;
+    return {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      personId: null,
+    };
   }
 };
 
@@ -58,29 +54,57 @@ export const createAddressType = async (addressTypeData) => {
   try {
     const { headers, personId } = getAuthHeader();
 
-    if (!personId) {
-      throw new Error("personId is required for createdByID");
+    const createdById =
+      addressTypeData.CreatedByID || addressTypeData.createdById || personId;
+    if (!createdById) {
+      throw new Error("personId is required for CreatedByID");
     }
 
-    // Prepare data with proper field names to match backend expectations
     const apiData = {
-      AddressType: addressTypeData.addressType || addressTypeData.AddressType,
-      CreatedByID: Number(personId),
+      AddressType: String(
+        addressTypeData.AddressType || addressTypeData.addressType || ""
+      ).trim(),
+      addressType: String(
+        addressTypeData.AddressType || addressTypeData.addressType || ""
+      ).trim(),
+      CreatedByID: Number(createdById),
+      createdById: Number(createdById),
     };
 
-    console.log("Creating address type with formatted data:", apiData);
+    if (!apiData.AddressType && !apiData.addressType) {
+      throw new Error("AddressType is required in the payload");
+    }
+    if (!apiData.CreatedByID && !apiData.createdById) {
+      throw new Error("CreatedByID is required in the payload");
+    }
+
+    console.log(
+      "Creating address type with formatted data:",
+      JSON.stringify(apiData)
+    );
 
     const response = await axios.post(`${APIBASEURL}/address-types`, apiData, {
       headers,
     });
+
+    console.log("Create response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error creating address type:", error);
     if (error.response) {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
+      console.error("Request URL:", error.config?.url);
+      throw new Error(
+        error.response.data?.message || "Failed to create address type"
+      );
+    } else if (error.request) {
+      console.error("No response received, request:", error.request);
+      throw new Error("No response received from server");
+    } else {
+      console.error("Error message:", error.message);
+      throw error;
     }
-    throw error.response?.data || error.message;
   }
 };
 
@@ -93,19 +117,26 @@ export const updateAddressType = async (id, addressTypeData) => {
       throw new Error("personId is required for ModifiedByID");
     }
 
-    // Prepare data with proper field names to match backend expectations
     const apiData = {
       AddressTypeID: Number(id),
-      AddressType: addressTypeData.addressType || addressTypeData.AddressType,
-      CreatedByID: Number(personId), // Changed from CreatedByID to ModifiedByID for updates
+      AddressType: String(
+        addressTypeData.AddressType || addressTypeData.addressType || ""
+      ).trim(),
+      addressType: String(
+        addressTypeData.AddressType || addressTypeData.addressType || ""
+      ).trim(),
+      CreatedByID: Number(personId),
+      createdById: Number(personId),
     };
 
-    // Include RowVersionColumn if available
     if (addressTypeData.RowVersionColumn) {
       apiData.RowVersionColumn = addressTypeData.RowVersionColumn;
     }
 
-    console.log("Updating address type with formatted data:", apiData);
+    console.log(
+      "Updating address type with formatted data:",
+      JSON.stringify(apiData)
+    );
 
     const response = await axios.put(
       `${APIBASEURL}/address-types/${id}`,
@@ -114,19 +145,25 @@ export const updateAddressType = async (id, addressTypeData) => {
         headers,
       }
     );
+
+    console.log("Update response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error updating address type:", error);
     if (error.response) {
       console.error("Response data:", error.response.data);
       console.error("Response status:", error.response.status);
-      console.error("Request URL:", error.config.url);
+      console.error("Request URL:", error.config?.url);
+      throw new Error(
+        error.response.data?.message || "Failed to update address type"
+      );
     } else if (error.request) {
       console.error("No response received, request:", error.request);
+      throw new Error("No response received from server");
     } else {
       console.error("Error message:", error.message);
+      throw error;
     }
-    throw error.response?.data || error.message;
   }
 };
 
@@ -136,18 +173,47 @@ export const deleteAddressType = async (id) => {
     const { headers, personId } = getAuthHeader();
 
     if (!personId) {
-      throw new Error("personId is required for deletedByID");
+      throw new Error("personId is required for deletion");
     }
+
+    // Include both DeletedByID and CreatedByID to handle backend expectations
+    const deleteData = {
+      DeletedByID: Number(personId),
+      deletedById: Number(personId),
+      CreatedByID: Number(personId),
+      createdById: Number(personId),
+    };
+
+    console.log(
+      "Deleting address type with ID:",
+      id,
+      "and data:",
+      JSON.stringify(deleteData)
+    );
 
     const response = await axios.delete(`${APIBASEURL}/address-types/${id}`, {
       headers,
-      data: { DeletedByID: Number(personId) },
+      data: deleteData,
     });
 
+    console.log("Delete response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error deleting address type:", error);
-    throw error.response?.data || error.message;
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Request URL:", error.config?.url);
+      throw new Error(
+        error.response.data?.message || "Failed to delete address type"
+      );
+    } else if (error.request) {
+      console.error("No response received, request:", error.request);
+      throw new Error("No response received from server");
+    } else {
+      console.error("Error message:", error.message);
+      throw error;
+    }
   }
 };
 
@@ -155,29 +221,24 @@ export const deleteAddressType = async (id) => {
 export const getAddressTypeById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    // console.log(Fetching address type with ID: ${id});
 
     const response = await axios.get(`${APIBASEURL}/address-types/${id}`, {
       headers,
     });
+
     console.log("Address type data response:", response.data);
 
-    // Handle different response structures
     let addressTypeData = null;
-
     if (response.data.data) {
-      // If data is in response.data.data
       addressTypeData = Array.isArray(response.data.data)
         ? response.data.data[0]
         : response.data.data;
     } else if (response.data.AddressTypeID) {
-      // If direct object
       addressTypeData = response.data;
     }
 
     if (!addressTypeData) {
       console.warn("Address type data not found in response:", response.data);
-      // Return the raw response data as fallback
       return response.data;
     }
 
@@ -185,6 +246,66 @@ export const getAddressTypeById = async (id) => {
     return addressTypeData;
   } catch (error) {
     console.error("Error fetching address type:", error);
-    throw error.response?.data || error.message;
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Request URL:", error.config?.url);
+      throw new Error(
+        error.response.data?.message || "Failed to fetch address type"
+      );
+    } else if (error.request) {
+      console.error("No response received, request:", error.request);
+      throw new Error("No response received from server");
+    } else {
+      console.error("Error message:", error.message);
+      throw error;
+    }
+  }
+};
+
+// Fetch address types with pagination and filtering
+export const fetchAddressTypes = async (
+  page,
+  pageSize,
+  fromDate,
+  toDate,
+  searchTerm
+) => {
+  try {
+    const { headers } = getAuthHeader();
+
+    const params = {
+      page,
+      pageSize,
+      ...(fromDate && { fromDate }),
+      ...(toDate && { toDate }),
+      ...(searchTerm && { search: searchTerm }),
+    };
+
+    console.log("Fetching address types with params:", params);
+
+    const response = await axios.get(`${APIBASEURL}/address-types`, {
+      headers,
+      params,
+    });
+
+    console.log("Fetch address types response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching address types:", error);
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+      console.error("Request URL:", error.config?.url);
+      throw new Error(
+        error.response.data?.message || "Failed to fetch address types"
+      );
+    } else if (error.request) {
+      console.error("No response received, request:", error.request);
+      throw new Error("No response received from server");
+    } else {
+      console.error("Error message:", error.message);
+      throw error;
+    }
   }
 };

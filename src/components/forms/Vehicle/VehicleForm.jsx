@@ -11,6 +11,7 @@ import {
   updateVehicle,
 } from "./VehicleAPI";
 import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification"; // Add this import
 
 const VehicleForm = ({ vehicleId, onSave, onClose }) => {
   const [companies, setCompanies] = useState([]);
@@ -292,12 +293,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
     validationErrors.companyId = validateField("companyId", formData.companyId)
       ? ""
       : errors.companyId || "Company is required";
-    validationErrors.vehicleTypeId = validateField(
-      "vehicleTypeId",
-      formData.vehicleTypeId
-    )
-      ? ""
-      : errors.vehicleTypeId || "Vehicle Type is required";
+    // Remove vehicleTypeId validation since it's been removed from the form
     validationErrors.maxWeight = validateField("maxWeight", formData.maxWeight)
       ? ""
       : errors.maxWeight || "Max Weight is required";
@@ -324,6 +320,14 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
     try {
       setLoading(true);
 
+      // Get user data from localStorage to retrieve personId
+      const user = JSON.parse(localStorage.getItem("user"));
+      const personId = user?.personId || user?.id || user?.userId;
+      
+      if (!personId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
       // In the handleSubmit function, update the payload creation:
       const payload = {
         truckNumberPlate: formData.truckNumberPlate,
@@ -337,11 +341,9 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
 
       if (vehicleId) {
         await updateVehicle(vehicleId, payload);
-        // toast.success("Vehicle updated successfully");
         showToast("Vehicle updated successfully", "success");
       } else {
         await createVehicle(payload);
-        // toast.success("Vehicle created successfully");
         showToast("Vehicle created successfully", "success");
       }
 
@@ -377,7 +379,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
           overflow: "hidden",
         }}
       >
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="Truck Number Plate *"
             name="truckNumberPlate"
@@ -389,7 +391,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
             placeholder="Enter truck number plate"
           />
         </Grid>
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="VIN *"
             name="vin"
@@ -440,7 +442,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
           overflow: "hidden",
         }}
       >
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="Max Weight (kg) *"
             name="maxWeight"
@@ -452,7 +454,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
             placeholder="Enter max weight"
           />
         </Grid>
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="Length (m) *"
             name="length"
@@ -464,7 +466,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
             placeholder="Enter length"
           />
         </Grid>
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="Width (m) *"
             name="width"
@@ -476,7 +478,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
             placeholder="Enter width"
           />
         </Grid>
-        <Grid item xs={12} sx={{ width: "47%" }}>
+        <Grid item xs={12} sx={{ width: "48.3%" }}>
           <FormInput
             label="Height (m) *"
             name="height"
