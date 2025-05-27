@@ -129,7 +129,7 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
                 alignItems: "center",
                 background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                 borderRadius: "4px",
-                padding: "0px 10px",
+                paddingRight: "10px",
                 height: "37px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 transition: "all 0.3s ease-in-out",
@@ -141,18 +141,6 @@ const SalesQuotationForm = ({ salesQuotationId: propSalesQuotationId, onClose })
               }}
             >
               <Chip
-                icon={
-                  status === "Approved" ? (
-                    <CheckCircleIcon
-                      sx={{
-                        color: theme.palette.mode === "light" ? "white !important" : "black !important",
-                        fontSize: "20px",
-                      }}
-                    />
-                  ) : (
-                    <CancelIcon sx={{ color: "#D81B60 !important", fontSize: "20px" }} />
-                  )
-                }
                 label={
                   <Typography
                     variant="body2"

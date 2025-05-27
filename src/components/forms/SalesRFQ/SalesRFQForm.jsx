@@ -732,6 +732,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
+              
+
             }}
           >
             <Typography variant="h6">
@@ -749,7 +751,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                     alignItems: "center",
                     background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
-                    padding: "0px 10px",
+                    paddingRight: "10px",
                     height: "37px",
                    
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
@@ -762,15 +764,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   }}
 >
   <Chip
-  
-    icon={
-      status === "Approved" ? (
-        <CheckCircleIcon sx={{ 
-          color: useTheme().palette.mode === "light" ? "white !important" : "black !important", fontSize: "20px" }} />
-      ) : (
-        <CancelIcon sx={{ color: "#D81B60 !important", fontSize: "20px" }} />
-      )
-    }
+
     label={
       <Typography
         variant="body2"

@@ -63,11 +63,11 @@ export const createCompany = async (companyData) => {
 
     const apiData = {
       companyName: companyData.companyName,
-      BillingCurrencyID: companyData.BillingCurrencyID,
+      BillingCurrencyId: companyData.BillingCurrencyId,
       VAT_Account: companyData.VAT_Account,
       Website: companyData.Website,
       CompanyNotes: companyData.CompanyNotes,
-      createdByID: personId || companyData.createdByID || 1,
+      createdById: personId || companyData.createdById || 1,
     };
 
     const response = await axios.post(`${APIBASEURL}/companies`, apiData, {
@@ -90,13 +90,13 @@ export const updateCompany = async (companyId, companyData) => {
     const { headers, personId } = getAuthHeader();
 
     const requestBody = {
-      companyID: Number(companyId),
+      companyId: Number(companyId),
       companyName: companyData.companyName,
       BillingCurrencyID: Number(companyData.BillingCurrencyID),
       VAT_Account: companyData.VAT_Account,
       Website: companyData.Website,
       CompanyNotes: companyData.CompanyNotes,
-      createdByID: personId || companyData.createdByID || 1,
+      createdById: personId || companyData.createdById || 1,
     };
 
     // Add RowVersionColumn if it exists

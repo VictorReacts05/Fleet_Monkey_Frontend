@@ -77,9 +77,9 @@ export const createCity = async (cityData) => {
     // Prepare request data with correct field names (capital letters to match backend)
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      CityName: cityData.cityName,         // Changed from cityName to CityName
-      CountryID: Number(cityData.countryId), // Changed from countryId to CountryID
-      CreatedByID: user.personId,          // Changed from createdById to CreatedByID
+      cityName: cityData.cityName,         // Changed from cityName to CityName
+      countryId: Number(cityData.countryId), // Changed from countryId to CountryID
+      createdById: user.personId,          // Changed from createdById to CreatedByID
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };
@@ -114,10 +114,10 @@ export const updateCity = async (cityId, data) => {
 
     // Prepare data with correct field names (capital letters to match backend)
     const dataWithUpdater = {
-      CityID: Number(cityId),                // Added CityID with proper capitalization
-      CityName: data.cityName,               // Changed from cityName to CityName
-      CountryID: Number(data.countryId),     // Changed from countryId to CountryID
-      CreatedByID: user.personId,            // Changed from createdById to CreatedByID
+      cityId: Number(cityId),                // Added CityID with proper capitalization
+      cityName: data.cityName,               // Changed from cityName to CityName
+      countryId: Number(data.countryId),     // Changed from countryId to CountryID
+      createdById: user.personId,            // Changed from createdById to CreatedByID
       updatedDateTime: new Date().toISOString(),
     };
 
