@@ -12,7 +12,7 @@ import { Tooltip, IconButton } from '@mui/material';
 import SearchBar from "../../Common/SearchBar";
 import { showToast } from "../../toastNotification";
 
-const VehicleList = () => {
+const VehicleList = (props) => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -75,6 +75,19 @@ const VehicleList = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Fetch all vehicles (first page, large limit) and log the full data for debugging
+    const fetchAndLogAllVehicles = async () => {
+      try {
+        const response = await fetchVehicles(1, 1000); // Adjust limit as needed
+        console.log("All vehicles fetched on mount:", response);
+      } catch (error) {
+        console.error("Error fetching all vehicles on mount:", error);
+      }
+    };
+    fetchAndLogAllVehicles();
+  }, []);
 
   useEffect(() => {
     loadVehicles();

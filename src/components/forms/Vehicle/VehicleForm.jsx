@@ -65,21 +65,27 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
         ]);
 
         // In the useEffect hook's vehicle data loading section:
+        console.log("vehicleId prop:", vehicleId); // Debug vehicleId
         if (vehicleId) {
+          console.log("Fetching vehicle by ID...");
           const vehicleResponse = await getVehicleById(vehicleId);
+          console.log("Raw vehicleResponse:", vehicleResponse);
+
           const vehicle =
             vehicleResponse.data?.data ||
             vehicleResponse.data ||
             vehicleResponse;
 
+          console.log("Parsed vehicle object:", vehicle); // <-- Debug log
+
           setFormData({
             truckNumberPlate: vehicle?.TruckNumberPlate || "",
             vin: vehicle?.VIN || "",
-            companyId: vehicle?.CompanyID?.toString() || "", // Convert to string
-            maxWeight: vehicle?.MaxWeight ? vehicle.MaxWeight.toString() : "",
-            length: vehicle?.Length ? vehicle.Length.toString() : "",
-            width: vehicle?.Width ? vehicle.Width.toString() : "",
-            height: vehicle?.Height ? vehicle.Height.toString() : "",
+            companyId: vehicle?.CompanyID?.toString() || "",
+            maxWeight: vehicle?.MaxWeight !== null && vehicle?.MaxWeight !== undefined ? vehicle.MaxWeight.toString() : "",
+            length: vehicle?.Length !== null && vehicle?.Length !== undefined ? vehicle.Length.toString() : "",
+            width: vehicle?.Width !== null && vehicle?.Width !== undefined ? vehicle.Width.toString() : "",
+            height: vehicle?.Height !== null && vehicle?.Height !== undefined ? vehicle.Height.toString() : "",
           });
         }
       } catch (error) {
@@ -274,88 +280,39 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    if (e) {
-      e.preventDefault();
-    }
+    if (e?.preventDefault) e.preventDefault();
+    
     setIsSubmitted(true);
 
-    const validationErrors = {};
-
-    validationErrors.truckNumberPlate = validateField(
-      "truckNumberPlate",
-      formData.truckNumberPlate
-    )
-      ? ""
-      : errors.truckNumberPlate || "Truck Number Plate is required";
-    validationErrors.vin = validateField("vin", formData.vin)
-      ? ""
-      : errors.vin || "VIN is required";
-    validationErrors.companyId = validateField("companyId", formData.companyId)
-      ? ""
-      : errors.companyId || "Company is required";
-    // Remove vehicleTypeId validation since it's been removed from the form
-    validationErrors.maxWeight = validateField("maxWeight", formData.maxWeight)
-      ? ""
-      : errors.maxWeight || "Max Weight is required";
-    validationErrors.length = validateField("length", formData.length)
-      ? ""
-      : errors.length || "Length is required";
-    validationErrors.width = validateField("width", formData.width)
-      ? ""
-      : errors.width || "Width is required";
-    validationErrors.height = validateField("height", formData.height)
-      ? ""
-      : errors.height || "Height is required";
-
-    const hasErrors = Object.values(validationErrors).some(
-      (error) => error !== ""
-    );
-
-    if (hasErrors) {
-      setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
-      return;
-    }
-
     try {
-      setLoading(true);
-
-      // Get user data from localStorage to retrieve personId
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       const personId = user?.personId || user?.id || user?.userId;
       
       if (!personId) {
-        throw new Error("User ID not found. Please log in again.");
+        throw new Error("You must be logged in to save a vehicle");
       }
 
-      // In the handleSubmit function, update the payload creation:
       const payload = {
-        truckNumberPlate: formData.truckNumberPlate,
-        vin: formData.vin.toUpperCase(),
-        companyID: formData.companyId, // Make sure this matches the field name in the API
-        maxWeight: formData.maxWeight ? Number(formData.maxWeight) : null,
-        length: formData.length ? Number(formData.length) : null,
-        width: formData.width ? Number(formData.width) : null,
-        height: formData.height ? Number(formData.height) : null,
+        ...formData,
+        companyId: Number(formData.companyId),
+        maxWeight: Number(formData.maxWeight),
+        length: Number(formData.length),
+        width: Number(formData.width),
+        height: Number(formData.height),
+        createdById: Number(personId)
       };
 
       if (vehicleId) {
         await updateVehicle(vehicleId, payload);
-        showToast("Vehicle updated successfully", "success");
       } else {
         await createVehicle(payload);
-        showToast("Vehicle created successfully", "success");
       }
 
-      if (onSave) onSave();
-      if (onClose) onClose();
+      showToast("Vehicle saved successfully", "success");
+      onSave?.();
     } catch (error) {
-      console.error("Error saving vehicle:", error);
-      toast.error(
-        `Failed to ${vehicleId ? "update" : "create"} vehicle: ${error.message}`
-      );
-    } finally {
-      setLoading(false);
+      console.error('Error saving vehicle:', error);
+      toast.error(error.message || 'Failed to save vehicle');
     }
   };
 
