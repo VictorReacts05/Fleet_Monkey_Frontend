@@ -36,7 +36,7 @@ import {
   fetchServiceTypes,
   fetchShippingPriorities,
   fetchCurrencies,
-} from "./purchaserfqapi";
+} from "./PurchaseRFQAPI";
 import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
 import { useParams, useNavigate, useLocation } from "react-router-dom";

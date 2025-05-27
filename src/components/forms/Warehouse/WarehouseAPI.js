@@ -51,34 +51,29 @@ export const fetchWarehouses = async (
 
 export const createWarehouse = async (warehouseData) => {
   try {
-    const { headers, personId } = getAuthHeader();
+    // Remove this:
+    // const { headers, personId } = getAuthHeader();
+    // if (!personId) {
+    //   throw new Error(
+    //     "User authentication required: personId is missing for createdByID"
+    //   );
+    // }
 
-    if (!personId) {
-      throw new Error(
-        "User authentication required: personId is missing for createdByID"
-      );
+    // Instead, just get headers (if needed) and use warehouseData as is:
+    const { headers } = getAuthHeader ? getAuthHeader() : { headers: {} };
+
+    // Make sure warehouseData.createdById is present
+    if (!warehouseData.createdById) {
+      throw new Error("createdById is required in the payload");
     }
 
-    const apiData = {
-      ...warehouseData,
-      createdByID: personId,
-      createdById: personId,
-    };
-
-    const response = await axios.post(`${APIBASEURL}/warehouses`, apiData, {
+    const response = await axios.post(`${APIBASEURL}/warehouses`, warehouseData, {
       headers,
     });
     return response.data;
   } catch (error) {
     console.error("Error creating warehouse:", error);
-    if (error.response) {
-      const errorMessage =
-        error.response.data.message ||
-        error.response.data.error ||
-        "Failed to create warehouse";
-      throw new Error(errorMessage);
-    }
-    throw new Error(error.message || "An unexpected error occurred");
+    throw error.response?.data || error.message;
   }
 };
 
@@ -103,21 +98,16 @@ export const deleteWarehouse = async (id, personId = null) => {
   try {
     const { headers, personId: storedPersonId } = getAuthHeader();
 
-    const deletedByID = personId || storedPersonId;
-    if (!deletedByID) {
+    const createdById = personId || storedPersonId;
+    if (!createdById) {
       throw new Error(
-        "personId is required for deletedByID. Check localStorage or pass personId explicitly."
+        "personId is required for createdById. Check localStorage or pass personId explicitly."
       );
     }
 
-    const requestBody = {
-      deletedByID,
-      deletedById: deletedByID,
-    };
-
     const response = await axios.delete(`${APIBASEURL}/warehouses/${id}`, {
       headers,
-      data: requestBody,
+      data: { createdById }  // Send in request body
     });
 
     return response.data;

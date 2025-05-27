@@ -3,88 +3,95 @@ import { Typography, Box, Stack, Tooltip, IconButton } from "@mui/material";
 import DataTable from "../../Common/DataTable";
 import SubscriptionModal from "./SubscriptionModal";
 import ConfirmDialog from "../../Common/ConfirmDialog";
-import { getSubscriptions, deleteSubscription } from "./subscriptionStorage";
+import { fetchSubscriptionPlans, deleteSubscriptionPlan } from "./SubscriptionAPI";
 import SearchBar from "../../Common/SearchBar";
 import { Add } from "@mui/icons-material";
 import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification";
+import FormDatePicker from "../../Common/FormDatePicker";
+import dayjs from "dayjs";
 
 const SubscriptionList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
-  const updateRows = () => {
-    const subscriptions = getSubscriptions();
-    const filteredRows = subscriptions
-      .filter(sub =>
-        (sub.planName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (sub.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .map(sub => ({
-        id: Number(sub.id),
-        planName: sub.planName || '',
-        description: sub.description || '',
-        fees: sub.fees || '',
-        billingType: sub.billingType || ''
+  const loadSubscriptions = async () => {
+    try {
+      setLoading(true);
+      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
+      
+      const response = await fetchSubscriptionPlans(
+        page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate
+      );
+      
+      const subscriptions = response.data || [];
+      const totalCount = response.pagination?.totalRecords || subscriptions.length;
+      
+      const formattedRows = subscriptions.map((subscription) => ({
+        id: subscription.SubscriptionPlanID,
+        planName: subscription.SubscriptionPlanName || "N/A",
+        description: subscription.Description || "N/A",
+        fees: subscription.Fees ? parseFloat(subscription.Fees).toFixed(2) : "N/A",
+        billingType: subscription.BillingFrequencyName || "N/A",
+        billingFrequencyId: subscription.BillingFrequencyID,
+        daysInFrequency: subscription.DaysInFrequency
       }));
-    console.log('Subscriptions after update:', subscriptions);
-    console.log('Filtered rows after update:', filteredRows);
-    setRows(filteredRows);
+
+      setRows(formattedRows);
+      setTotalRows(totalCount);
+    } catch (error) {
+      console.error('Error loading subscriptions:', error);
+      toast.error('Failed to load subscriptions: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    updateRows();
-  }, [searchTerm]);
+    loadSubscriptions();
+  }, [page, rowsPerPage, fromDate, toDate]);
 
   const handleDelete = (id) => {
-    console.log('Deleting subscription with id:', id);
-    const row = rows.find(r => r.id === Number(id));
-    if (!row) {
-      console.error('Row not found for id:', id);
-      return;
-    }
-    setItemToDelete(row);
+    const subscription = rows.find(row => row.id === id);
+    setItemToDelete(subscription);
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
-    if (!itemToDelete || !itemToDelete.id) {
-      console.error('Invalid itemToDelete:', itemToDelete);
-      return;
+  const confirmDelete = async () => {
+    try {
+      await deleteSubscriptionPlan(itemToDelete.id);
+      showToast("Subscription plan deleted successfully", "success");
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      loadSubscriptions();
+    } catch (error) {
+      toast.error('Failed to delete subscription plan: ' + error.message);
     }
-    const idToDelete = Number(itemToDelete.id);
-    deleteSubscription(idToDelete);
-    toast.success("Subscription plan deleted successfully");
-    updateRows();
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
-  };
-
-  const cancelDelete = () => {
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
   };
 
   const columns = [
-    { id: "planName", label: "Plan Name", align: "center" },
-    { id: "description", label: "Description", align: "center" },
-    { id: "fees", label: "Fees", align: "center" },
-    { id: "billingType", label: "Billing Type", align: "center" },
+    { field: "planName", headerName: "Plan Name", flex: 1 },
+    { field: "description", headerName: "Description", flex: 1 },
+    { field: "fees", headerName: "Fees", flex: 1 },
+    { field: "billingType", headerName: "Billing Type", flex: 1 },
   ];
 
   const handleEdit = (id) => {
-    console.log('Editing subscription with id:', id);
-    const row = rows.find(r => r.id === Number(id));
-    if (!row) {
-      console.error('Row not found for id:', id);
-      return;
-    }
-    setSelectedSubscriptionId(Number(row.id));
+    setSelectedSubscriptionId(id);
     setModalOpen(true);
   };
 
@@ -99,7 +106,7 @@ const SubscriptionList = () => {
   };
 
   const handleSave = () => {
-    updateRows();
+    loadSubscriptions();
     setModalOpen(false);
   };
 
@@ -121,7 +128,7 @@ const SubscriptionList = () => {
               marginLeft: "auto",
             }}
           />
-          <Tooltip title="Add Subscriptions">
+          <Tooltip title="Add Subscription">
             <IconButton
               onClick={handleCreate}
               sx={{
@@ -150,7 +157,8 @@ const SubscriptionList = () => {
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        totalRows={rows.length}
+        totalRows={totalRows}
+        loading={loading}
       />
 
       <SubscriptionModal
@@ -164,7 +172,7 @@ const SubscriptionList = () => {
         title="Confirm Delete"
         message={`Are you sure you want to delete subscription plan ${itemToDelete?.planName}?`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </Box>
   );

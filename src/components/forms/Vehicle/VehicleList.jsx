@@ -12,7 +12,7 @@ import { Tooltip, IconButton } from '@mui/material';
 import SearchBar from "../../Common/SearchBar";
 import { showToast } from "../../toastNotification";
 
-const VehicleList = () => {
+const VehicleList = (props) => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -58,10 +58,10 @@ const VehicleList = () => {
         vin: vehicle.VIN || "N/A",
         companyName: vehicle.CompanyName || "N/A",
         companyId: vehicle.CompanyID,
-        maxWeight: vehicle.MaxWeight?.toFixed(2) || "N/A",
-        length: vehicle.Length?.toFixed(2) || "N/A",
-        width: vehicle.Width?.toFixed(2) || "N/A",
-        height: vehicle.Height?.toFixed(2) || "N/A",
+        maxWeight: vehicle.MaxWeight ? parseFloat(vehicle.MaxWeight).toFixed(2) : "N/A",
+        length: vehicle.Length ? parseFloat(vehicle.Length).toFixed(2) : "N/A",
+        width: vehicle.Width ? parseFloat(vehicle.Width).toFixed(2) : "N/A",
+        height: vehicle.Height ? parseFloat(vehicle.Height).toFixed(2) : "N/A",
         // vehicleTypeName: vehicle.VehicleTypeName || "N/A",
         // vehicleTypeId: vehicle.VehicleTypeID,
       }));
@@ -75,6 +75,19 @@ const VehicleList = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Fetch all vehicles (first page, large limit) and log the full data for debugging
+    const fetchAndLogAllVehicles = async () => {
+      try {
+        const response = await fetchVehicles(1, 1000); // Adjust limit as needed
+        console.log("All vehicles fetched on mount:", response);
+      } catch (error) {
+        console.error("Error fetching all vehicles on mount:", error);
+      }
+    };
+    fetchAndLogAllVehicles();
+  }, []);
 
   useEffect(() => {
     loadVehicles();

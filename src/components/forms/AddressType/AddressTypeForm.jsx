@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FormInput from "../../Common/FormInput";
 import FormPage from "../../Common/FormPage";
+import axios from "axios";
 import {
   createAddressType,
   updateAddressType,
@@ -33,7 +34,6 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
       const response = await getAddressTypeById(addressTypeId);
       console.log("Loaded address type response:", response);
 
-      // Handle different response structures
       const addressTypeData = response.AddressTypeID
         ? response
         : response.data
@@ -43,12 +43,14 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
         : response;
 
       setFormData({
-        addressType: addressTypeData.AddressType || "",
+        addressType:
+          addressTypeData.AddressType || addressTypeData.addressType || "",
       });
     } catch (error) {
       console.error("Error loading address type:", error);
       toast.error(
-        error.message || "Failed to load address type details. Please try again."
+        error.message ||
+          "Failed to load address type details. Please try again."
       );
     } finally {
       setLoading(false);
@@ -81,31 +83,90 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   };
 
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setIsSubmitted(true);
 
     if (validateForm()) {
       try {
         setLoading(true);
 
-        const addressTypeData = {
-          AddressType: formData.addressType, // Changed to match API expectation
-        };
+        const user = JSON.parse(localStorage.getItem("user")) || {};
+        const personId = user?.personId || user?.id || user?.userId;
+        const token = user?.token || localStorage.getItem("token");
 
-        if (addressTypeId) {
-          await updateAddressType(addressTypeId, addressTypeData);
-          toast.success("Address type updated successfully");
-        } else {
-          await createAddressType(addressTypeData);
-          toast.success("Address type created successfully");
+        if (!personId) {
+          throw new Error("User ID not found. Please log in again.");
         }
 
+        // Prepare payload with both possible field names to handle backend variations
+        const payload = {
+          AddressType: formData.addressType.trim(),
+          addressType: formData.addressType.trim(), // Include for case sensitivity
+          CreatedByID: Number(personId),
+          createdById: Number(personId), // Include for case sensitivity
+        };
+
+        console.log("Submitting payload:", payload);
+        console.log("Token exists:", !!token);
+        if (token) {
+          console.log("Token preview:", token.substring(0, 10) + "...");
+        } else {
+          console.log("Token not found, using API functions instead");
+        }
+
+        if (!token) {
+          if (addressTypeId) {
+            await updateAddressType(addressTypeId, payload);
+          } else {
+            await createAddressType(payload);
+          }
+        } else {
+          const APIBASEURL = "http://localhost:7000/api";
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          };
+
+          console.log("Sending request to:", `${APIBASEURL}/address-types`);
+          if (addressTypeId) {
+            const response = await axios.put(
+              `${APIBASEURL}/address-types/${addressTypeId}`,
+              payload,
+              { headers }
+            );
+            console.log("Update response:", response.data);
+          } else {
+            const response = await axios.post(
+              `${APIBASEURL}/address-types`,
+              payload,
+              { headers }
+            );
+            console.log("Create response:", response.data);
+          }
+        }
+
+        toast.success(
+          `Address type ${addressTypeId ? "updated" : "created"} successfully`
+        );
         if (onSave) onSave();
         if (onClose) onClose();
       } catch (error) {
         console.error("Error saving address type:", error);
+        // Enhanced error logging
+        const errorMessage =
+          error.response?.data?.message || error.message || "Unknown error";
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          url: error.config?.url,
+        });
         toast.error(
-          error.response?.data?.message || error.message || "Failed to save address type. Please try again."
+          `Failed to ${
+            addressTypeId ? "update" : "create"
+          } address type: ${errorMessage}`
         );
       } finally {
         setLoading(false);
@@ -127,12 +188,7 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   };
 
   return (
-    <FormPage
-      title={addressTypeId ? "Edit Address Type" : "Create Address Type"}
-      onSubmit={handleSubmit}
-      onCancel={onClose}
-      loading={loading}
-    >
+    <FormPage onSubmit={handleSubmit} onCancel={onClose} loading={loading}>
       <FormInput
         label="Address Type Name"
         name="addressType"

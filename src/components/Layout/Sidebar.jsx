@@ -83,6 +83,14 @@ const menuItems = [
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
+  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
+  { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
+  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
+  { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
+  { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
+  { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
+  { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
+  { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
 ];
 
 const Sidebar = ({ open, variant, onClose }) => {

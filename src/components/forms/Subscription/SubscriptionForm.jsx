@@ -1,194 +1,351 @@
-import React, { useState, useEffect } from 'react';
-import FormInput from '../../Common/FormInput';
-import FormSelect from '../../Common/FormSelect';
-import FormPage from '../../Common/FormPage';
-import { getSubscriptionById, saveSubscription } from './subscriptionStorage';
-import { showToast } from '../../toastNotification';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { Grid, Typography } from "@mui/material";
+import FormInput from "../../Common/FormInput";
+import FormSelect from "../../Common/FormSelect";
+import FormPage from "../../Common/FormPage";
+import FormTextArea from "../../Common/FormTextArea";
+import {
+  fetchBillingFrequencies,
+  getSubscriptionPlanById,
+  createSubscriptionPlan,
+  updateSubscriptionPlan,
+} from "./SubscriptionAPI";
+import { toast } from "react-toastify";
+import { showToast } from "../../toastNotification";
 
 const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
+  const [billingFrequencies, setBillingFrequencies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
-    planName: '',
-    description: '',
-    fees: '',
-    billingType: '',
+    SubscriptionPlanName: "",
+    Description: "",
+    Fees: "",
+    BillingFrequencyID: "",
+    DaysInFrequency: "",
   });
 
   const [errors, setErrors] = useState({
-    planName: '',
-    description: '',
-    fees: '',
-    billingType: '',
+    SubscriptionPlanName: "",
+    Description: "",
+    Fees: "",
+    BillingFrequencyID: "",
+    DaysInFrequency: "",
   });
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const billingTypes = [
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
-    { value: 'yearly', label: 'Yearly' },
-  ];
-
   useEffect(() => {
-    console.log('Subscription ID:', subscriptionId);
-    if (subscriptionId) {
-      const subscription = getSubscriptionById(subscriptionId);
-      console.log('Fetched subscription:', subscription);
-      if (subscription) {
-        setFormData({
-          planName: subscription.planName || '',
-          description: subscription.description || '',
-          fees: subscription.fees.toString() || '',
-          billingType: subscription.billingType || '',
-        });
-      } else {
-        console.error('Subscription not found for ID:', subscriptionId);
-        setFormData({
-          planName: '',
-          description: '',
-          fees: '',
-          billingType: '',
-        });
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const frequenciesResponse = await fetchBillingFrequencies();
+        console.log("Billing frequencies raw response:", frequenciesResponse);
+
+        let frequencyData = [];
+        if (Array.isArray(frequenciesResponse)) {
+          frequencyData = frequenciesResponse;
+        } else if (frequenciesResponse.data) {
+          frequencyData = frequenciesResponse.data;
+        }
+
+        console.log("Processed frequency data:", frequencyData);
+
+        // If we still don't have data, use fallback options
+        if (!frequencyData || frequencyData.length === 0) {
+          frequencyData = [
+            { BillingFrequencyID: 1, BillingFrequencyName: "Weekly" },
+            { BillingFrequencyID: 2, BillingFrequencyName: "Biweekly" },
+            { BillingFrequencyID: 3, BillingFrequencyName: "Monthly" },
+            { BillingFrequencyID: 4, BillingFrequencyName: "Quarterly" },
+            { BillingFrequencyID: 5, BillingFrequencyName: "Annually" }
+          ];
+        }
+
+        const frequencyOptions = frequencyData.map((frequency) => ({
+          value: frequency.BillingFrequencyID.toString(),
+          label: frequency.BillingFrequencyName || "Unnamed Frequency",
+        }));
+
+        console.log("Final frequency options:", frequencyOptions);
+
+        setBillingFrequencies([
+          { value: "", label: "Select an option", disabled: true },
+          ...frequencyOptions,
+        ]);
+
+        if (subscriptionId) {
+          const subscriptionResponse = await getSubscriptionPlanById(subscriptionId);
+          const subscription =
+            subscriptionResponse.data?.data ||
+            subscriptionResponse.data ||
+            subscriptionResponse;
+
+          setFormData({
+            SubscriptionPlanName: subscription?.SubscriptionPlanName || "",
+            Description: subscription?.Description || "",
+            Fees: subscription?.Fees ? subscription.Fees.toString() : "",
+            BillingFrequencyID: subscription?.BillingFrequencyID?.toString() || "",
+            DaysInFrequency: subscription?.DaysInFrequency?.toString() || "",
+            RowVersionColumn: subscription?.RowVersionColumn || null,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading form data:", error);
+        toast.error(
+          "Failed to load dropdown data: " + (error.message || "Unknown error")
+        );
+
+        // Set fallback options if we have no billing frequencies
+        if (billingFrequencies.length === 0) {
+          setBillingFrequencies([
+            { value: "", label: "Select an option", disabled: true },
+            { value: "1", label: "Weekly" },
+            { value: "2", label: "Biweekly" },
+            { value: "3", label: "Monthly" },
+            { value: "4", label: "Quarterly" },
+            { value: "5", label: "Annually" }
+          ]);
+        }
+      } finally {
+        setLoading(false);
       }
-    } else {
-      setFormData({
-        planName: '',
-        description: '',
-        fees: '',
-        billingType: '',
-      });
-    }
+    };
+    loadData();
   }, [subscriptionId]);
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = { ...errors };
+  const validateField = (name, value) => {
+    let error = "";
 
-    if (!formData.planName.trim()) {
-      newErrors.planName = 'Plan name is required';
-      isValid = false;
-    } else if (!/^[A-Za-z0-9\s-]{2,}$/.test(formData.planName)) {
-      newErrors.planName = 'Plan name must be at least 2 characters (alphanumeric)';
-      isValid = false;
-    } else if (formData.planName.length > 50) {
-      newErrors.planName = 'Plan name cannot exceed 50 characters';
-      isValid = false;
+    switch (name) {
+      case "SubscriptionPlanName":
+        if (!value.trim()) {
+          error = "Plan Name is required";
+        } else if (value.length > 50) {
+          error = "Plan Name must be 50 characters or less";
+        } else if (value.length < 3) {
+          error = "Plan Name must be at least 3 characters";
+        }
+        break;
+
+      case "Description":
+        if (!value.trim()) {
+          error = "Description is required";
+        } else if (value.length > 200) {
+          error = "Description must be 200 characters or less";
+        } else if (value.length < 3) {
+          error = "Description must be at least 3 characters";
+        }
+        break;
+
+      case "Fees":
+        if (!value.trim()) {
+          error = "Fees is required";
+        } else if (isNaN(value) || Number(value) < 0) {
+          error = "Fees must be a positive number";
+        }
+        break;
+
+      case "BillingFrequencyID":
+        if (!value) {
+          error = "Billing Frequency is required";
+        } else if (
+          !billingFrequencies.some(
+            (frequency) => frequency.value === value && !frequency.disabled
+          )
+        ) {
+          error = "Invalid billing frequency selected";
+        }
+        break;
+
+      case "DaysInFrequency":
+        if (!value.trim()) {
+          error = "Days in Frequency is required";
+        } else if (isNaN(value) || Number(value) <= 0 || !Number.isInteger(Number(value))) {
+          error = "Days in Frequency must be a positive integer";
+        }
+        break;
+
+      default:
+        break;
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-      isValid = false;
-    } else if (formData.description.length < 5) {
-      newErrors.description = 'Description must be at least 5 characters';
-      isValid = false;
-    } else if (formData.description.length > 200) {
-      newErrors.description = 'Description cannot exceed 200 characters';
-      isValid = false;
-    }
-
-    if (!formData.fees) {
-      newErrors.fees = 'Fees are required';
-      isValid = false;
-    } else {
-      const feesNum = parseFloat(formData.fees);
-      if (isNaN(feesNum)) {
-        newErrors.fees = 'Fees must be a valid number';
-        isValid = false;
-      } else if (feesNum <= 0) {
-        newErrors.fees = 'Fees must be greater than 0';
-        isValid = false;
-      } else if (feesNum > 1000000) {
-        newErrors.fees = 'Fees cannot exceed 1,000,000';
-        isValid = false;
-      }
-    }
-
-    if (!formData.billingType) {
-      newErrors.billingType = 'Billing type is required';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === "";
   };
 
-  const handleSubmit = (e) => {
-    e?.preventDefault();
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (isSubmitted) {
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
+
+  const handleSubmit = async (e) => {
+    if (e) {
+      e.preventDefault();
+    }
     setIsSubmitted(true);
 
-    if (!validateForm()) {
+    const validationErrors = {};
+
+    validationErrors.SubscriptionPlanName = validateField(
+      "SubscriptionPlanName",
+      formData.SubscriptionPlanName
+    )
+      ? ""
+      : errors.SubscriptionPlanName || "Plan Name is required";
+    validationErrors.Description = validateField("Description", formData.Description)
+      ? ""
+      : errors.Description || "Description is required";
+    validationErrors.Fees = validateField("Fees", formData.Fees)
+      ? ""
+      : errors.Fees || "Fees is required";
+    validationErrors.BillingFrequencyID = validateField("BillingFrequencyID", formData.BillingFrequencyID)
+      ? ""
+      : errors.BillingFrequencyID || "Billing Frequency is required";
+    validationErrors.DaysInFrequency = validateField("DaysInFrequency", formData.DaysInFrequency)
+      ? ""
+      : errors.DaysInFrequency || "Days in Frequency is required";
+
+    const hasErrors = Object.values(validationErrors).some(
+      (error) => error !== ""
+    );
+
+    if (hasErrors) {
+      setErrors(validationErrors);
+      toast.error("Please fix the validation errors");
       return;
     }
 
     try {
-      const subscriptionToSave = {
-        ...formData,
-        id: subscriptionId,
-        fees: parseFloat(formData.fees),
-      };
-      saveSubscription(subscriptionToSave);
-      toast.success('Subscription saved successfully');
-      onSave();
-    } catch (error) {
-      toast.error('Error saving subscription: ' + error.message);
-    }
-  };
+      setLoading(true);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+      // Get user data from localStorage to retrieve personId
+      const user = JSON.parse(localStorage.getItem("user"));
+      const personId = user?.personId || user?.id || user?.userId;
+      
+      if (!personId) {
+        throw new Error("User ID not found. Please log in again.");
+      }
+
+      const payload = {
+        SubscriptionPlanName: formData.SubscriptionPlanName,
+        Description: formData.Description,
+        Fees: formData.Fees ? Number(formData.Fees) : 0,
+        BillingFrequencyID: formData.BillingFrequencyID,
+        DaysInFrequency: formData.DaysInFrequency ? Number(formData.DaysInFrequency) : 0,
+      };
+
+      if (formData.RowVersionColumn) {
+        payload.RowVersionColumn = formData.RowVersionColumn;
+      }
+
+      if (subscriptionId) {
+        await updateSubscriptionPlan(subscriptionId, payload);
+        toast.success("Subscription plan updated successfully");
+      } else {
+        await createSubscriptionPlan(payload);
+        toast.success("Subscription plan created successfully");
+      }
+
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error saving subscription plan:", error);
+      toast.error(
+        `Failed to ${subscriptionId ? "update" : "create"} subscription plan: ${error.message}`
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <FormPage
-      title={subscriptionId ? 'Edit Subscription' : 'Add Subscription'}
+      title={""}
       onSubmit={handleSubmit}
       onCancel={onClose}
+      loading={loading}
     >
-      <div style={{ marginBottom: '16px' }}>
-        <FormInput
-          label="Subscription Plan Name"
-          name="planName"
-          value={formData.planName}
-          onChange={handleChange}
-          error={isSubmitted && errors.planName}
-          helperText={isSubmitted && errors.planName}
-        />
-      </div>
-      <div style={{ marginBottom: '16px' }}>
-        <FormInput
-          label="Description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          error={isSubmitted && errors.description}
-          helperText={isSubmitted && errors.description}
-        />
-      </div>
-      <div style={{ marginBottom: '14px' }}>
-        <FormInput
-          label="Fees"
-          name="fees"
-          type="number"
-          value={formData.fees}
-          onChange={handleChange}
-          error={isSubmitted && errors.fees}
-          helperText={isSubmitted && errors.fees}
-        />
-      </div>
-      <div style={{ marginBottom: '16px' }}>
-        <FormSelect
-          label="Select Billing"
-          name="billingType"
-          value={formData.billingType}
-          onChange={handleChange}
-          options={billingTypes}
-          error={isSubmitted && errors.billingType}
-          helperText={isSubmitted && errors.billingType}
-        />
-      </div>
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          maxHeight: "calc(100vh - 200px)",
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Plan Name"
+            name="SubscriptionPlanName"
+            value={formData.SubscriptionPlanName}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.SubscriptionPlanName}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormTextArea
+            required
+            label="Description"
+            name="Description"
+            value={formData.Description}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.Description}
+            rows={4}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Fees"
+            name="Fees"
+            value={formData.Fees}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.Fees}
+            type="number"
+            InputProps={{
+              startAdornment: "$",
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormSelect
+            required
+            label="Billing Frequency"
+            name="BillingFrequencyID"
+            value={formData.BillingFrequencyID}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={!!errors.BillingFrequencyID}
+            helperText={errors.BillingFrequencyID}
+            options={billingFrequencies}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Days in Frequency"
+            name="DaysInFrequency"
+            value={formData.DaysInFrequency}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.DaysInFrequency}
+            type="number"
+          />
+        </Grid>
+      </Grid>
     </FormPage>
   );
 };
