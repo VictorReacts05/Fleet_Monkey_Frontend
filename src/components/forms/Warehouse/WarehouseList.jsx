@@ -116,8 +116,10 @@ const WarehouseList = () => {
 
   const confirmDelete = async () => {
     try {
-      await deleteWarehouse(itemToDelete.id);
-      // toast.success('Warehouse deleted successfully');
+      // Get personId from localStorage
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const personId = user?.personId || user?.id || user?.userId;
+      await deleteWarehouse(itemToDelete.id, personId);
       showToast("Warehouse deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
