@@ -59,6 +59,7 @@ export const fetchCustomers = async (page = 1, limit = 10, fromDate = null, toDa
         BillingCurrencyID: customer.BillingCurrencyID || customer.billingCurrencyId,
         CurrencyName: customer.BillingCurrencyName || customer.billingCurrencyName || '',
         Website: customer.Website || customer.website || '',
+        CustomerNotes: customer.CustomerNotes || customer.customerNotes || '', // Add this line
         createdDateTime: customer.CreatedDateTime || customer.createdDateTime || ''
       }));
     }
@@ -156,40 +157,55 @@ export const createCustomer = async (customerData) => {
   }
 };
 
+
 export const updateCustomer = async (id, customerData) => {
   try {
-    console.log('Updating customer with ID:', id, 'Data:', customerData);
+    console.log('Input customerData:', customerData);
+    console.log('Updating customer with ID:', id);
 
     // Validate input
     const validationErrors = validateCustomerData(customerData, 'update');
     if (validationErrors.length > 0) {
+      console.error('Validation errors:', validationErrors);
       throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
     }
 
     const user = getUserData();
+    console.log('User data:', user);
 
-    // Format request data
     const requestData = {
-      CustomerID: Number(id),
-      CustomerName: customerData.CustomerName.trim(),
-      CompanyID: Number(customerData.CompanyID),
-      ImportCode: customerData.ImportCode || '',
-      BillingCurrencyID: customerData.BillingCurrencyID ? Number(customerData.BillingCurrencyID) : null,
-      Website: customerData.Website || '',
-      CustomerNotes: customerData.CustomerNotes || '',
-      ModifiedByID: user.personId || 1
+      customerId: Number(id),
+      customerName: customerData.CustomerName, // Map to camelCase
+      companyId: Number(customerData.CompanyID),
+      importCode: customerData.ImportCode || '',
+      billingCurrencyId: customerData.BillingCurrencyID ? Number(customerData.BillingCurrencyID) : null,
+      website: customerData.Website || '',
+      customerNotes: customerData.CustomerNotes || '',
+      createdById: Number(customerData.CreatedByID) || user.personId ,
+     
     };
 
     if (customerData.RowVersionColumn) {
-      requestData.RowVersionColumn = customerData.RowVersionColumn;
+      requestData.rowVersionColumn = customerData.RowVersionColumn;
     }
 
-    console.log('Formatted update request data:', requestData);
+    console.log('Formatted request data:', requestData);
+    console.log('Request URL:', `${APIBASEURL}/customers/${id}`);
+    console.log('Request headers:', {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json'
+    });
 
-    const response = await axios.put(`${APIBASEURL}/customers/${id}`, requestData);
+    const response = await axios.put(`${APIBASEURL}/customers/${id}`, requestData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('API response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error in updateCustomer:', error);
+    console.error('Error response:', error.response?.data);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
@@ -250,6 +266,7 @@ export const getCustomerById = async (id) => {
       BillingCurrencyID: customerData.BillingCurrencyID || customerData.billingCurrencyId,
       CurrencyName: customerData.BillingCurrencyName || customerData.billingCurrencyName || '',
       Website: customerData.Website || customerData.website || '',
+      CustomerNotes: customerData.CustomerNotes || customerData.customerNotes || '', // Ensure correct mapping
       createdDateTime: customerData.CreatedDateTime || customerData.createdDateTime || ''
     };
 

@@ -104,49 +104,77 @@ const SalesQuotationList = () => {
   const navigate = useNavigate();
 
   const fetchSalesQuotations = async () => {
-    // try {
-    //   setLoading(true);
-    //   const { headers } = getHeaders();
-    // //   const response = await axios.get(
-    // //     "http://localhost:7000/api/sales-quotation",
-    // //     { headers }
-    // //   );
-  
-    //   console.log("Sales Quotations API response:", response);
-  
-    //   let quotationData = [];
-      
-    //   if (Array.isArray(response.data)) {
-    //     quotationData = response.data;
-    //   } else if (response.data && Array.isArray(response.data.data)) {
-    //     quotationData = response.data.data;
-    //   } else {
-    //     console.error("Unexpected API response format:", response.data);
-    //     quotationData = [];
-    //   }
-      
-    //   const mappedData = quotationData.map(quotation => ({
-    //     ...quotation,
-    //     id: quotation.SalesQuotationID,
-    //     Status: quotation.Status || 'Pending'
-    //   }));
-      
-    //   setSalesQuotations(mappedData);
-    // } catch (error) {
-    //   console.error("Error fetching Sales Quotations:", error);
-    //   toast.error("Failed to load Sales Quotations");
-    //   setSalesQuotations([]);
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      setLoading(true);
+      const { headers } = getHeaders();
+      const response = await axios.get(
+        "http://localhost:7000/api/sales-quotation",
+        { headers }
+      );
+      console.log("Sales Quotations API response:", response);
+      let quotationData = [];
+      if (Array.isArray(response.data)) {
+        quotationData = response.data;
+      } 
+      else if (response.data && Array.isArray(response.data.data)) {
+        quotationData = response.data.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        quotationData = [];
+      }
+      const mappedData = quotationData.map(quotation => ({
+        ...quotation,
+        id: quotation.SalesQuotationID,
+        Status: quotation.Status || 'Pending',
+        CreatedDate: dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
+      }));
+      setSalesQuotations(mappedData);
+      setTotalRows(mappedData.length);
+    } catch (error) {
+      console.error("Error fetching Sales Quotations:", error);
+      toast.error("Failed to fetch Sales Quotations");
+    }
   };
 
   useEffect(() => {
     fetchSalesQuotations();
   }, []);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = async (newPage) => {
     setPage(newPage);
+    try {
+      setLoading(true);
+      const { headers } = getHeaders();
+      const response = await axios.get(
+        "http://localhost:7000/api/sales-quotation",
+        { headers }
+      );
+
+      console.log("Sales Quotations API response:", response);
+
+      let quotationData = [];
+
+      if (Array.isArray(response.data)) {
+        quotationData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        quotationData = response.data.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        quotationData = [];
+      }
+
+      const mappedData = quotationData.map(quotation => ({
+        ...quotation,
+        id: quotation.SalesQuotationID,
+        Status: quotation.Status || 'Pending'
+      }));
+
+      setSalesQuotations(mappedData);
+    } catch (error) {
+      console.error("Error fetching", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
