@@ -27,7 +27,12 @@ const getAuthHeader = () => {
 };
 
 // Fetch all SalesRFQs
-export const fetchSalesRFQs = async (page = 1, pageSize = 10, fromDate = null, toDate = null) => {
+export const fetchSalesRFQs = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null
+) => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
     const headers = user?.token
@@ -35,32 +40,31 @@ export const fetchSalesRFQs = async (page = 1, pageSize = 10, fromDate = null, t
       : {};
 
     let url = `${APIBASEURL}/sales-rfq?page=${page}&pageSize=${pageSize}`;
-    
+
     if (fromDate) {
       url += `&fromDate=${fromDate}`;
     }
-    
+
     if (toDate) {
       url += `&toDate=${toDate}`;
     }
 
     const response = await axios.get(url, { headers });
     console.log("Raw API response for SalesRFQs:", response.data);
-    
+
     if (response.data && response.data.data) {
       // Make sure each item has a Status field
-      const processedData = response.data.data.map(item => ({
+      const processedData = response.data.data.map((item) => ({
         ...item,
-        // Ensure Status is capitalized correctly if it exists in the API response
-        Status: item.Status || item.status || "Pending"
+        Status: item.Status || item.status || "Pending",
       }));
-      
+
       return {
         data: processedData,
-        totalRecords: response.data.totalRecords || processedData.length
+        totalRecords: response.data.totalRecords || processedData.length,
       };
     }
-    
+
     return { data: [], totalRecords: 0 };
   } catch (error) {
     console.error("Error fetching SalesRFQs:", error);
@@ -108,7 +112,9 @@ export const createSalesRFQ = async (salesRFQData) => {
     };
 
     console.log("Creating SalesRFQ with data:", apiData);
-    const response = await axios.post(`${APIBASEURL}/sales-rfq`, apiData, { headers });
+    const response = await axios.post(`${APIBASEURL}/sales-rfq`, apiData, {
+      headers,
+    });
 
     console.log("SalesRFQ creation response:", response.data);
 
@@ -167,7 +173,6 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
     const { headers } = getAuthHeader();
     let response;
 
-    // Use the confirmed endpoint
     response = await axios.get(
       `${APIBASEURL}/sales-rfq-parcels?salesRFQID=${salesRFQId}`,
       { headers }
@@ -190,7 +195,6 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
       }
     }
 
-    // Filter parcels for the specific SalesRFQId
     parcels = parcels.filter((parcel) => {
       const parcelSalesRFQId =
         parcel.SalesRFQID ||
@@ -245,13 +249,10 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
 
     console.log("SalesRFQ update response:", response.data);
 
-    // Handle parcels: Delete removed parcels and create/update others
     try {
-      // Fetch existing parcels
       const existingParcels = await fetchSalesRFQParcels(id);
       console.log("Raw existing parcels for SalesRFQID:", id, existingParcels);
 
-      // Determine parcels to delete (not present in updated parcels or all if parcels is empty)
       const updatedParcelIds = parcels
         .filter(
           (parcel) =>
@@ -269,7 +270,6 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
           )
         );
 
-      // Include all existing parcels if parcels is empty, otherwise only those not in updated parcels
       const parcelsToDelete =
         parcels.length === 0
           ? existingParcels
@@ -285,9 +285,8 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
                 )
             );
 
-      // Delete parcels
       if (parcelsToDelete.length > 0) {
-        const deletedParcelIds = new Set(); // Track deleted IDs to prevent duplicates
+        const deletedParcelIds = new Set();
         const deletePromises = parcelsToDelete
           .filter((parcel) => {
             const parcelId =
@@ -323,13 +322,10 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
               parcelId
             );
             return axios
-              .delete(
-                `${APIBASEURL}/sales-rfq-parcels/${parcelId}`,
-                {
-                  headers,
-                  data: personId ? { DeletedByID: Number(personId) } : {},
-                }
-              )
+              .delete(`${APIBASEURL}/sales-rfq-parcels/${parcelId}`, {
+                headers,
+                data: personId ? { DeletedByID: Number(personId) } : {},
+              })
               .catch((error) => {
                 if (
                   error.response &&
@@ -341,7 +337,7 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
                   console.log(
                     `Parcel with SalesRFQParcelID ${parcelId} already deleted or does not exist, proceeding.`
                   );
-                  return { success: true, parcelId }; // Treat as success
+                  return { success: true, parcelId };
                 }
                 throw error;
               });
@@ -371,7 +367,6 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
         console.log("No parcels to delete for SalesRFQID:", id);
       }
 
-      // Create new parcels (those without SalesRFQParcelID)
       if (parcels && parcels.length > 0) {
         console.log("Processing parcels for SalesRFQID:", id);
         const formattedParcels = parcels
@@ -434,7 +429,9 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
 export const deleteSalesRFQ = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.delete(`${APIBASEURL}/sales-rfq/${id}`, { headers });
+    const response = await axios.delete(`${APIBASEURL}/sales-rfq/${id}`, {
+      headers,
+    });
     return response.data;
   } catch (error) {
     console.error("Error deleting SalesRFQ:", error);
@@ -446,9 +443,14 @@ export const deleteSalesRFQ = async (id) => {
 export const getSalesRFQById = async (id) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/sales-rfq/${id}`, { headers });
-    return response.data;
+    const response = await axios.get(`${APIBASEURL}/sales-rfq/${id}`, {
+      headers,
+    });
+    const data = response.data.data || response.data;
+    console.log("Fetched SalesRFQ by ID:", id, data);
+    return { data };
   } catch (error) {
+    console.error("Error fetching SalesRFQ by ID:", id, error);
     throw error.response?.data || error.message;
   }
 };
@@ -457,12 +459,16 @@ export const getSalesRFQById = async (id) => {
 export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/companies`, {
-      headers,
-    });
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/companies`, { headers });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched companies:", data);
+    return data.map((company) => ({
+      CompanyID: company.CompanyID || company.id,
+      CompanyName: company.CompanyName || "Unknown",
+    }));
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error fetching companies:", error);
+    return [];
   }
 };
 
@@ -470,12 +476,16 @@ export const fetchCompanies = async () => {
 export const fetchCustomers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/customers`, {
-      headers,
-    });
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/customers`, { headers });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched customers:", data);
+    return data.map((customer) => ({
+      CustomerID: customer.CustomerID || customer.id,
+      CustomerName: customer.CustomerName || "Unknown",
+    }));
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error fetching customers:", error);
+    return [];
   }
 };
 
@@ -483,12 +493,16 @@ export const fetchCustomers = async () => {
 export const fetchSuppliers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/suppliers`, {
-      headers,
-    });
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/suppliers`, { headers });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched suppliers:", data);
+    return data.map((supplier) => ({
+      SupplierID: supplier.SupplierID || supplier.id,
+      SupplierName: supplier.SupplierName || "Unknown",
+    }));
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error fetching suppliers:", error);
+    return [];
   }
 };
 
@@ -496,11 +510,15 @@ export const fetchSuppliers = async () => {
 export const fetchServiceTypes = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(
-      `${APIBASEURL}/service-types`,
-      { headers }
-    );
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/service-types`, {
+      headers,
+    });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched service types:", data);
+    return data.map((type) => ({
+      ServiceTypeID: type.ServiceTypeID || type.id,
+      ServiceType: type.ServiceType || type.ServiceTypeName || "Unknown",
+    }));
   } catch (error) {
     console.error("Error fetching service types:", error);
     return [];
@@ -511,12 +529,19 @@ export const fetchServiceTypes = async () => {
 export const fetchAddresses = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/addresses`, {
-      headers,
-    });
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/addresses`, { headers });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched addresses:", data);
+    return data.map((address) => ({
+      AddressID: address.AddressID || address.id,
+      AddressLine1: address.AddressLine1 || "",
+      City: address.City || "",
+      PostCode: address.PostCode || "",
+      AddressTitle: address.AddressTitle || address.Title || "",
+    }));
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error fetching addresses:", error);
+    return [];
   }
 };
 
@@ -524,13 +549,19 @@ export const fetchAddresses = async () => {
 export const fetchMailingPriorities = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(
-      `${APIBASEURL}/mailing-priorities`,
-      { headers }
-    );
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/mailing-priorities`, {
+      headers,
+    });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched mailing priorities:", data);
+    return data.map((priority) => ({
+      MailingPriorityID: priority.MailingPriorityID || priority.id,
+      PriorityName:
+        priority.PriorityName || priority.MailingPriorityName || "Unknown",
+    }));
   } catch (error) {
     console.error("Error fetching mailing priorities:", error);
+    return [];
   }
 };
 
@@ -538,131 +569,59 @@ export const fetchMailingPriorities = async () => {
 export const fetchCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/currencies`, {
-      headers,
-    });
-    return response.data.data || [];
+    const response = await axios.get(`${APIBASEURL}/currencies`, { headers });
+    const data = response.data.data || response.data || [];
+    console.log("Fetched currencies:", data);
+    return data.map((currency) => ({
+      CurrencyID: currency.CurrencyID || currency.id,
+      CurrencyName: currency.CurrencyName || "Unknown",
+    }));
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error("Error fetching currencies:", error);
+    return [];
   }
 };
 
 // Approve or disapprove SalesRFQ
-// export const approveSalesRFQ = async (salesRFQId, isApproved) => {
-//   try {
-//     const { headers } = getAuthHeader();
+export const approveSalesRFQ = async (salesRFQId, approve = true) => {
+  try {
+    const { headers } = getAuthHeader();
 
-//     let existingApproval = null;
-//     try {
-//       existingApproval = await fetchSalesRFQApprovalStatus(salesRFQId);
-//       console.log("Existing approval:", existingApproval);
-//     } catch (error) {
-//       console.warn(
-//         "No existing approval found or error fetching status:",
-//         error
-//       );
-//     }
+    console.log(
+      `Updating SalesRFQ status to ${
+        approve ? "Approved" : "Pending"
+      } for ID: ${salesRFQId}`
+    );
 
-//     const approvalData = {
-//       SalesRFQID: Number(salesRFQId), // Convert to number
-//       ApproverID: 2,
-//       ApprovedYN: isApproved ? 1 : 0,
-//       FormName: "Sales RFQ",
-//       RoleName: "Sales RFQ Approver",
-//       UserID: 2,
-//     };
+    const response = await axios.put(
+      `${APIBASEURL}/sales-rfq/${salesRFQId}`,
+      { Status: approve ? "Approved" : "Pending" },
+      { headers }
+    );
 
-//     console.log("Approval data to be sent:", approvalData);
+    console.log("Status update response:", response.data);
 
-//     let response;
-//     if (existingApproval) {
-//       response = await axios.put(
-//         `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
-//         approvalData,
-//         { headers }
-//       );
-//       console.log("Updated existing approval:", response.data);
-//     } else {
-//       try {
-//         // Attempt to create new approval
-//         response = await axios.post(
-//           `${APIBASEURL}/sales-rfq-approvals`,
-//           approvalData,
-//           { headers }
-//         );
-//         console.log("Created new approval:", response.data);
-//       } catch (postError) {
-//         if (
-//           postError.response?.status === 400 &&
-//           postError.response?.data?.message ===
-//             "Approval record already exists."
-//         ) {
-//           console.log(
-//             "Approval record already exists, attempting to update instead."
-//           );
-//           // Fallback to updating the existing approval
-//           response = await axios.put(
-//             `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
-//             approvalData,
-//             { headers }
-//           );
-//           console.log("Updated existing approval:", response.data);
-//         } else {
-//           throw postError; // Rethrow other errors
-//         }
-//       }
-//     }
-
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error approving SalesRFQ:", error);
-//     if (error.response) {
-//       console.error("Server response:", error.response.data);
-//     }
-//     throw error;
-//   }
-// };
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data,
+      salesRFQId,
+    };
+  } catch (error) {
+    console.error("Error updating SalesRFQ status:", error);
+    throw error;
+  }
+};
 
 // Fetch approval status for a SalesRFQ
-// export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
-//   try {
-//     const { headers } = getAuthHeader();
-//     const response = await axios.get(
-//       `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/2`,
-//       { headers }
-//     );
-//     console.log("GET approval response:", response.data);
-
-//     if (response.data && response.data.data && response.data.data.length > 0) {
-//       return response.data.data[0];
-//     } else {
-//       console.log("No approval data found in response:", response.data);
-//       return null;
-//     }
-//   } catch (error) {
-//     console.error("Error fetching SalesRFQ approval status:", error);
-//     if (error.response) {
-//       console.error("Server response:", error.response.data);
-//     }
-//     if (error.response?.status === 404) {
-//       return null;
-//     }
-//     throw error.response?.data || error;
-//   }
-// };
-
 export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
   try {
     const { headers } = getAuthHeader();
 
-    // Instead of fetching from approvals endpoint, get the SalesRFQ status directly
     const response = await axios.get(`${APIBASEURL}/sales-rfq/${salesRFQId}`, {
       headers,
     });
-    // console.log("GET SalesRFQ response
-    // console.log("GET SalesRFQ status response:", response.data);
 
-    // Convert the Status field to an approval record format for backward compatibility
     if (response.data && response.data.data) {
       const status = response.data.data.Status;
       return {
@@ -675,34 +634,6 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
     return null;
   } catch (error) {
     console.error("Error fetching SalesRFQ status:", error);
-    throw error;
-  }
-};
-
-// Replace the existing approveSalesRFQ function with this one
-export const approveSalesRFQ = async (salesRFQId, approve = true) => {
-  try {
-    const { headers } = getAuthHeader();
-    
-    // Instead of creating an approval record, update the Status field directly
-    console.log(`Updating SalesRFQ status to ${approve ? 'Approved' : 'Pending'} for ID: ${salesRFQId}`);
-    
-    const response = await axios.put(
-      `${APIBASEURL}/sales-rfq/${salesRFQId}`,
-      { Status: approve ? 'Approved' : 'Pending' },
-      { headers }
-    );
-    
-    console.log('Status update response:', response.data);
-    
-    return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data,
-      salesRFQId
-    };
-  } catch (error) {
-    console.error("Error updating SalesRFQ status:", error);
     throw error;
   }
 };
