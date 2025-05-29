@@ -52,8 +52,8 @@ export const createCountry = async (countryData) => {
 
     const currentDateTime = new Date().toISOString();
     const dataWithCreator = {
-      CountryOfOrigin: countryName,
-      CreatedByID: user.personId || 1,
+      countryOfOrigin: countryName,
+      createdById: user.personId || 1,
       createdDateTime: currentDateTime,
       isDeleted: 0,
     };
@@ -70,7 +70,7 @@ export const createCountry = async (countryData) => {
     });
 
     const response = await axios.post(
-      `${APIBASEURL}/country-Of-Origin`,
+      `${APIBASEURL}/country-of-origin`,
       dataWithCreator,
       getAxiosConfig()
     );
@@ -90,10 +90,18 @@ export const createCountry = async (countryData) => {
 
 export const updateCountry = async (countryId, data) => {
   try {
-    console.log("[DEBUG] Update request data:", JSON.stringify(data, null, 2));
+    const user = JSON.parse(localStorage.getItem("user")) || {};
+    const payload = {
+      countryOfOrigin: data.CountryOfOrigin || data.countryOfOrigin,
+      createdById: user.personId || data.CreatedByID || 1,
+    };
+    console.log(
+      "[DEBUG] Update request data:",
+      JSON.stringify(payload, null, 2)
+    );
     const response = await axios.put(
-      `${APIBASEURL}/country-Of-Origin/${countryId}`,
-      data,
+      `${APIBASEURL}/country-of-origin/${countryId}`,
+      payload,
       getAxiosConfig()
     );
     console.log("[DEBUG] Successful update response:", response.data);
@@ -108,29 +116,33 @@ export const updateCountry = async (countryId, data) => {
   }
 };
 
-export const deleteCountry = async (id, deletedById) => {
+export const deleteCountry = async (id, createdById) => {
   try {
-    if (!deletedById) {
+    if (!createdById) {
       const user = JSON.parse(localStorage.getItem("user")) || {};
-      deletedById = user.personId || 1;
+      // deletedById = user.personId || 1;
+      createdById = user.personId || 1;
     }
 
-    const requestData = { deletedById };
+    const requestData = { createdById };
     console.log(
       "[DEBUG] Delete request data:",
       JSON.stringify(requestData, null, 2)
     );
     console.log("[DEBUG] Full request config:", {
-      url: `${APIBASEURL}/country-Of-Origin/${id}`,
+      url: `${APIBASEURL}/country-of-origin/${id}`,
       method: "DELETE",
       data: requestData,
       headers: getAxiosConfig().headers,
     });
 
-    const response = await axios.delete(`${APIBASEURL}/country-Of-Origin/${id}`, {
-      ...getAxiosConfig(),
-      data: requestData,
-    });
+    const response = await axios.delete(
+      `${APIBASEURL}/country-of-origin/${id}`,
+      {
+        ...getAxiosConfig(),
+        data: requestData,
+      }
+    );
 
     console.log("[DEBUG] Successful delete response:", response.data);
     return response.data;

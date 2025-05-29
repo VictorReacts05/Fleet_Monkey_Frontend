@@ -566,7 +566,27 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           }}
         >
           <Typography variant="h6" component="div">
-            Parcels
+            Items
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            py: 1.5,
+            px: 3,
+            fontWeight: "bold",
+            borderTop: "1px solid #e0e0e0",
+            borderRight: "1px solid #e0e0e0",
+            borderLeft: "1px solid #e0e0e0",
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+            color: theme.palette.text.primary,
+            cursor: "pointer",
+          }}
+        >
+          <Typography variant="h6" component="div">
+            Approvals
           </Typography>
         </Box>
       </Box>

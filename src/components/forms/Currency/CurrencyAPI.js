@@ -69,8 +69,8 @@ export const createCurrency = async (currencyData, personId = null) => {
     // Ensure we're using the correct field names with proper capitalization
     // to match what the backend expects
     const requestBody = {
-      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
-      CreatedByID: currencyData.CreatedByID || createdById || 1,
+      currencyName: currencyData.CurrencyName || currencyData.currencyName,
+      createdById: currencyData.CreatedByID || createdById || 1,
     };
 
     console.log("[DEBUG] Currency create request data:", requestBody);
@@ -106,9 +106,9 @@ export const updateCurrency = async (id, currencyData) => {
     
     // Ensure we're using the correct field names with proper capitalization
     const requestBody = {
-      CurrencyID: Number(id),
-      CurrencyName: currencyData.CurrencyName || currencyData.currencyName,
-      CreatedByID: currencyData.CreatedByID || currencyData.createdById || 1,
+      currencyId: Number(id),
+      currencyName: currencyData.CurrencyName || currencyData.currencyName,
+      createdById: currencyData.CreatedByID || currencyData.createdById || 1,
     };
     
     if (currencyData.RowVersionColumn || currencyData.rowVersionColumn) {

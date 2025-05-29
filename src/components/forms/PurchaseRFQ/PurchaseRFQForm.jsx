@@ -834,7 +834,7 @@ const PurchaseRFQForm = ({
       {parcels.length > 0 ? (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Parcels
+            Items
           </Typography>
           <TableContainer
             component={Paper}
@@ -921,7 +921,7 @@ const PurchaseRFQForm = ({
       ) : (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Parcels
+            Items
           </Typography>
           <Paper
             sx={{
