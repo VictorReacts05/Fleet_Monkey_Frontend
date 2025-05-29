@@ -1,9 +1,10 @@
 import axios from 'axios';
-import APIBASEURL from "../../../utils/apiBaseUrl";
+
+const API_URL = 'http://localhost:7000/api/uoms';
 
 export const fetchUOMs = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/uoms`);
+    const response = await axios.get(API_URL);
     // Make sure we're returning the data array
     return response.data;
   } catch (error) {
@@ -14,7 +15,7 @@ export const fetchUOMs = async () => {
 
 export const getUOMById = async (id) => {
   try {
-    const response = await axios.get(`${APIBASEURL}/uoms/${id}`);
+    const response = await axios.get(`${API_URL}/${id}`);
     
     // Extract the UOM data from the response
     // The API returns {success: true, message: '...', data: Array(1)}
@@ -40,13 +41,13 @@ export const createUOM = async (uomData) => {
     // Fix: Use UOM (uppercase) instead of uom (lowercase)
     const payload = JSON.stringify({
       uom: uomData.UOM.trim(),
-      createdById: 1015
+      createdByID: 1015
     });
 
     console.log("Sending stringified JSON:", payload);
     console.log("Content-Type:", "application/json");
 
-    const response = await axios.post(`${APIBASEURL}/uoms`, payload, {
+    const response = await axios.post(API_URL, payload, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -80,10 +81,10 @@ export const updateUOM = async (id, uomData) => {
     });
 
     console.log("Sending JSON payload for update:", payload);
-    console.log("Update URL:", `${APIBASEURL}/${id}`);
+    console.log("Update URL:", `${API_URL}/${id}`);
     console.log("Content-Type:", "application/json");
 
-    const response = await axios.put(`${APIBASEURL}/uoms/${id}`, payload, {
+    const response = await axios.put(`${API_URL}/${id}`, payload, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -117,7 +118,7 @@ export const deleteUOM = async (id) => {
     
     
     // Send the stringified JSON payload
-    const response = await axios.delete(`${APIBASEURL}/uoms/${id}`, {
+    const response = await axios.delete(`${API_URL}/${id}`, {
       data: payload,
       headers: {
         'Content-Type': 'application/json'
