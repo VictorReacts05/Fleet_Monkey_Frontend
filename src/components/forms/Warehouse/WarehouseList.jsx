@@ -120,7 +120,7 @@ const WarehouseList = () => {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const personId = user?.personId || user?.id || user?.userId;
       await deleteWarehouse(itemToDelete.id, personId);
-      showToast("Warehouse deleted successfully", "success");
+      toast.success("Warehouse deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadWarehouses();

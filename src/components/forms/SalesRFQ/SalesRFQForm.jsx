@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
@@ -44,6 +44,7 @@ import StatusIndicator from "./StatusIndicator";
 import axios from "axios";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -60,6 +61,7 @@ const ReadOnlyField = ({ label, value }) => {
 
 const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const DEFAULT_COMPANY = { value: 48, label: "Dung Beetle Logistics" };
 
@@ -67,6 +69,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     Series: "",
     CompanyID: DEFAULT_COMPANY.value,
     CustomerID: "",
+    CustomerName: "",
     SupplierID: "",
     ExternalRefNo: "",
     DeliveryDate: null,
@@ -74,11 +77,16 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     RequiredByDate: null,
     DateReceived: null,
     ServiceTypeID: "",
+    ServiceType: "",
     CollectionAddressID: "",
+    CollectionAddressTitle: "",
     DestinationAddressID: "",
+    DestinationAddressTitle: "",
     ShippingPriorityID: "",
+    ShippingPriority: "",
     Terms: "",
     CurrencyID: "",
+    CurrencyName: "",
     CollectFromSupplierYN: false,
     PackagingRequiredYN: false,
     FormCompletedYN: false,
@@ -212,6 +220,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           ...addressesData.map((address) => ({
             value: String(address.AddressID),
             label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+            title: address.AddressTitle || address.Title || "",
           })),
         ];
         const prioritiesOptions = [
@@ -232,6 +241,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           })),
         ];
 
+        console.log("Currencies options:", currenciesOptions);
         setCompanies(companiesOptions);
         setCustomers(customersOptions);
         setSuppliers(suppliersOptions);
@@ -243,7 +253,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Error in loadDropdownData:", error);
-        toast.error("Failed to load form data: " + error.message);
+        toast.error("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -253,10 +263,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   }, []);
 
   const loadSalesRFQ = useCallback(async () => {
+    if (!salesRFQId) return;
+
     try {
       const response = await getSalesRFQById(salesRFQId);
-      const data = response.data;
-      console.log("SalesRFQ data for ID", salesRFQId, ":", data);
+      const data = response.data || response;
+      console.log("Raw SalesRFQ data for ID", salesRFQId, ":", data);
 
       const displayValue = (value) =>
         value === null || value === undefined ? "-" : value;
@@ -269,56 +281,67 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         )
           ? String(data.CustomerID)
           : "",
+        CustomerName: displayValue(data.CustomerName),
         SupplierID: suppliers.find(
           (s) => String(s.value) === String(data.SupplierID)
         )
           ? String(data.SupplierID)
           : "",
         ExternalRefNo: displayValue(data.ExternalRefNo),
-        DeliveryDate: data.DeliveryDate ? new Date(data.DeliveryDate) : null,
-        PostingDate: data.PostingDate ? new Date(data.PostingDate) : null,
-        RequiredByDate: data.RequiredByDate
-          ? new Date(data.RequiredByDate)
-          : null,
-        DateReceived: data.DateReceived ? new Date(data.DateReceived) : null,
+        DeliveryDate: data.DeliveryDate ? dayjs(data.DeliveryDate) : null,
+        PostingDate: data.PostingDate ? dayjs(data.PostingDate) : null,
+        RequiredByDate: data.RequiredByDate ? dayjs(data.RequiredByDate) : null,
+        DateReceived: data.DateReceived ? dayjs(data.DateReceived) : null,
         ServiceTypeID: serviceTypes.find(
           (st) => String(st.value) === String(data.ServiceTypeID)
         )
           ? String(data.ServiceTypeID)
           : "",
+        ServiceType: displayValue(data.ServiceType),
         CollectionAddressID: addresses.find(
           (a) => String(a.value) === String(data.CollectionAddressID)
         )
           ? String(data.CollectionAddressID)
           : "",
+        CollectionAddressTitle: displayValue(data.CollectionAddressTitle),
         DestinationAddressID: addresses.find(
           (a) => String(a.value) === String(data.DestinationAddressID)
         )
           ? String(data.DestinationAddressID)
           : "",
+        DestinationAddressTitle: displayValue(data.DestinationAddressTitle),
         ShippingPriorityID: mailingPriorities.find(
           (p) => String(p.value) === String(data.ShippingPriorityID)
         )
           ? String(data.ShippingPriorityID)
           : "",
+        ShippingPriority: displayValue(data.ShippingPriority),
         Terms: displayValue(data.Terms),
-        CurrencyID: String(data.CurrencyID) || "",
+        CurrencyID: currencies.find(
+          (c) => String(c.value) === String(data.CurrencyID || data.currencyId)
+        )
+          ? String(data.CurrencyID || data.currencyId)
+          : "",
+        CurrencyName: displayValue(
+          data.CurrencyName || data.currencyName || data.Currency?.CurrencyName
+        ),
         CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
         PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
         FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
-          ? new Date(data.CreatedDateTime)
+          ? dayjs(data.CreatedDateTime)
           : null,
         IsDeleted: data.IsDeleted || false,
         DeletedDateTime: data.DeletedDateTime
-          ? new Date(data.DeletedDateTime)
+          ? dayjs(data.DeletedDateTime)
           : null,
         DeletedByID: displayValue(data.DeletedByID),
         RowVersionColumn: displayValue(data.RowVersionColumn),
       };
 
       setFormData(formattedData);
+      console.log("Formatted formData:", formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
       toast.error("Failed to load SalesRFQ: " + error.message);
@@ -330,6 +353,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     serviceTypes,
     addresses,
     mailingPriorities,
+    currencies,
     DEFAULT_COMPANY.value,
   ]);
 
@@ -466,15 +490,18 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      if (name === "CurrencyID") {
+        newData.CurrencyName =
+          currencies.find((c) => c.value === value)?.label || "";
+      }
+      return newData;
+    });
 
     if (name === "ServiceTypeID") {
-      const serviceTypeLabel = serviceTypes.find(
-        (st) => st.value === value
-      )?.label;
+      const serviceTypeLabel =
+        serviceTypes.find((st) => st.value === value)?.label || "";
 
       if (
         ["International Procurement", "Local Procurement"].includes(
@@ -526,6 +553,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         });
       } else {
         setFieldDisabled({
+          ...fieldDisabled,
           Series: true,
           CompanyID: true,
           CustomerID: true,
@@ -558,32 +586,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   const handleDateChange = (field, date) => {
     const dayjsDate = date ? dayjs(date) : null;
-
     setFormData((prevData) => ({
       ...prevData,
       [field]: dayjsDate,
     }));
   };
-
-  useEffect(() => {
-    if (formData) {
-      const formattedData = {
-        ...formData,
-        DateReceived: formData.DateReceived
-          ? dayjs(formData.DateReceived)
-          : null,
-        DeliveryDate: formData.DeliveryDate
-          ? dayjs(formData.DeliveryDate)
-          : null,
-        PostingDate: formData.PostingDate ? dayjs(formData.PostingDate) : null,
-        RequiredByDate: formData.RequiredByDate
-          ? dayjs(formData.RequiredByDate)
-          : null,
-      };
-
-      setFormData(formattedData);
-    }
-  }, []);
 
   const checkPurchaseRFQExists = useCallback(async () => {
     if (!salesRFQId) return;
@@ -629,41 +636,34 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     setParcels(newParcels);
   };
 
-  const handleCreatePurchaseRFQ = async () => {
+  const handleCreatePurchaseRFQ = () => {
+    setPurchaseRFQDialogOpen(true);
+  };
+
+  const handleConfirmCreatePurchaseRFQ = async () => {
     try {
       setCreatingPurchaseRFQ(true);
-      const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
-      console.log("Purchase RFQ creation response:", response);
 
-      let purchaseRFQId = null;
-
-      if (response && response.data && response.data.data) {
-        purchaseRFQId =
-          response.data.data.PurchaseRFQID || response.data.data.id;
-      } else if (response && response.data && response.data.purchaseRFQId) {
-        purchaseRFQId = response.data.purchaseRFQId;
-      } else if (response && response.purchaseRFQId) {
-        purchaseRFQId = response.purchaseRFQId;
-      } else if (
-        response &&
-        response.data &&
-        typeof response.data === "object"
-      ) {
-        const possibleIdProps = ["PurchaseRFQID", "id", "purchaseRFQId"];
-        for (const prop of possibleIdProps) {
-          if (response.data[prop]) {
-            purchaseRFQId = response.data[prop];
-            break;
-          }
-        }
+      if (!salesRFQId || isNaN(parseInt(salesRFQId, 10))) {
+        throw new Error("Invalid Sales RFQ ID");
       }
 
-      console.log("Extracted Purchase RFQ ID:", purchaseRFQId);
+      const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
+
+      let purchaseRFQId = null;
+      if (response?.data?.data) {
+        purchaseRFQId =
+          response.data.data.PurchaseRFQID || response.data.data.id;
+      } else if (response?.data?.newPurchaseRFQId) {
+        purchaseRFQId = response.data.newPurchaseRFQId;
+      } else if (response?.purchaseRFQId) {
+        purchaseRFQId = response.purchaseRFQId;
+      }
 
       if (purchaseRFQId) {
         toast.info(
           <div>
-            Purchase RFQ has been created successfully and you can view Purchase RFQ details{" "}
+            Purchase RFQ created successfully. View details{" "}
             <a
               href={`/purchase-rfq/view/${purchaseRFQId}`}
               style={{
@@ -673,7 +673,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               }}
               onClick={(e) => {
                 e.preventDefault();
-                console.log("Navigating to Purchase RFQ:", purchaseRFQId);
                 navigate(`/purchase-rfq/view/${purchaseRFQId}`);
               }}
             >
@@ -682,39 +681,23 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </div>,
           { autoClose: 8000 }
         );
-
         setPurchaseRFQDialogOpen(false);
       } else {
-        toast.error("Purchase RFQ was created but the ID is unavailable");
+        console.warn(
+          "Purchase RFQ created, but ID is unavailable in response:",
+          response.data
+        );
+        toast.error("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
-      console.error("Error creating Purchase RFQ:", error);
+      console.error("Error creating Purchase RFQ:", {
+        message: error.message,
+        stack: error.stack,
+      });
       toast.error(
-        `Failed to create Purchase RFQ: ${error.message || "Unknown error"}`
-      );
-    } finally {
-      setCreatingPurchaseRFQ(false);
-    }
-  };
-
-  const handleConfirmCreatePurchaseRFQ = async () => {
-    try {
-      setCreatingPurchaseRFQ(true);
-
-      const result = await createPurchaseRFQFromSalesRFQ(salesRFQId);
-
-      if (result.success) {
-        showToast("Purchase RFQ created successfully", "success");
-        setPurchaseRFQDialogOpen(false);
-
-        navigate("/purchase-rfq");
-      } else {
-        toast.error(result.message || "Failed to create Purchase RFQ");
-      }
-    } catch (error) {
-      console.error("Error creating Purchase RFQ:", error);
-      toast.error(
-        typeof error === "string" ? error : "Failed to create Purchase RFQ"
+        `Failed to create Purchase RFQ: ${
+          error.message || "Unknown server error"
+        }`
       );
     } finally {
       setCreatingPurchaseRFQ(false);
@@ -746,20 +729,20 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             {!isEditing && salesRFQId && (
               <Fade in={true} timeout={500}>
                 <Box
-                   sx={{
+                  sx={{
                     display: "flex",
                     alignItems: "center",
-                    background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                    background:
+                      theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
                     paddingRight: "10px",
                     height: "37px",
-                   
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
-                    marginLeft: "16px", // Added left margin for spacing
+                    marginLeft: "16px",
                     "&:hover": {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                      transform: "scale(1.02)", // Slight scale on hover
+                      transform: "scale(1.02)",
                     },
   }}
 >
@@ -869,10 +852,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Service Type"
-                value={
-                  serviceTypes.find((st) => st.value === formData.ServiceTypeID)
-                    ?.label || "-"
-                }
+                value={formData.ServiceType || "-"}
               />
             )}
           </Grid>
@@ -891,10 +871,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Customer"
-                value={
-                  customers.find((c) => c.value === formData.CustomerID)
-                    ?.label || "-"
-                }
+                value={formData.CustomerName || "-"}
               />
             )}
           </Grid>
@@ -954,7 +931,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 label="Delivery Date"
                 value={
                   formData.DeliveryDate
-                    ? formData.DeliveryDate.toLocaleDateString()
+                    ? formData.DeliveryDate.format("MM/DD/YYYY")
                     : "-"
                 }
               />
@@ -976,7 +953,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 label="Posting Date"
                 value={
                   formData.PostingDate
-                    ? formData.PostingDate.toLocaleDateString()
+                    ? formData.PostingDate.format("MM/DD/YYYY")
                     : "-"
                 }
               />
@@ -998,7 +975,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 label="Required By Date"
                 value={
                   formData.RequiredByDate
-                    ? formData.RequiredByDate.toLocaleDateString()
+                    ? formData.RequiredByDate.format("MM/DD/YYYY")
                     : "-"
                 }
               />
@@ -1020,7 +997,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 label="Date Received"
                 value={
                   formData.DateReceived
-                    ? formData.DateReceived.toLocaleDateString()
+                    ? formData.DateReceived.format("MM/DD/YYYY")
                     : "-"
                 }
               />
@@ -1041,11 +1018,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Collection Address"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.CollectionAddressID
-                  )?.label || "-"
-                }
+                value={formData.CollectionAddressTitle || "-"}
               />
             )}
           </Grid>
@@ -1064,11 +1037,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Destination Address"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.DestinationAddressID
-                  )?.label || "-"
-                }
+                value={formData.DestinationAddressTitle || "-"}
               />
             )}
           </Grid>
@@ -1087,11 +1056,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Shipping Priority"
-                value={
-                  mailingPriorities.find(
-                    (p) => p.value === formData.ShippingPriorityID
-                  )?.label || "-"
-                }
+                value={formData.ShippingPriority || "-"}
               />
             )}
           </Grid>
@@ -1126,73 +1091,74 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               <ReadOnlyField
                 label="Currency"
                 value={
-                  currencies.find(
-                    (c) => String(c.value) === String(formData.CurrencyID)
-                  )?.label || "-"
+                  formData.CurrencyID
+                    ? currencies.find((c) => c.value === formData.CurrencyID)
+                        ?.label || "-"
+                    : formData.CurrencyName || "-"
                 }
               />
             )}
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-                {isEditing ? (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="CollectFromSupplierYN"
-                        checked={formData.CollectFromSupplierYN}
-                        onChange={handleCheckboxChange("CollectFromSupplierYN")}
-                        disabled={fieldDisabled.CollectFromSupplierYN}
-                      />
-                    }
-                    label="Collect From Supplier"
+            {isEditing ? (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="CollectFromSupplierYN"
+                    checked={formData.CollectFromSupplierYN}
+                    onChange={handleCheckboxChange("CollectFromSupplierYN")}
+                    disabled={fieldDisabled.CollectFromSupplierYN}
                   />
-                ) : (
-                  <ReadOnlyField
-                    label="Collect From Supplier"
-                    value={formData.CollectFromSupplierYN ? "Yes" : "No"}
+                }
+                label="Collect From Supplier"
+              />
+            ) : (
+              <ReadOnlyField
+                label="Collect From Supplier"
+                value={formData.CollectFromSupplierYN ? "Yes" : "No"}
+              />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="PackagingRequiredYN"
+                    checked={formData.PackagingRequiredYN}
+                    onChange={handleCheckboxChange("PackagingRequiredYN")}
+                    disabled={fieldDisabled.PackagingRequiredYN}
                   />
-                )}
-              </Grid>
-              <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-                {isEditing ? (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="PackagingRequiredYN"
-                        checked={formData.PackagingRequiredYN}
-                        onChange={handleCheckboxChange("PackagingRequiredYN")}
-                        disabled={fieldDisabled.PackagingRequiredYN}
-                      />
-                    }
-                    label="Packaging Required"
+                }
+                label="Packaging Required"
+              />
+            ) : (
+              <ReadOnlyField
+                label="Packaging Required"
+                value={formData.PackagingRequiredYN ? "Yes" : "No"}
+              />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="FormCompletedYN"
+                    checked={formData.FormCompletedYN}
+                    onChange={handleCheckboxChange("FormCompletedYN")}
+                    disabled={fieldDisabled.FormCompletedYN}
                   />
-                ) : (
-                  <ReadOnlyField
-                    label="Packaging Required"
-                    value={formData.PackagingRequiredYN ? "Yes" : "No"}
-                  />
-                )}
-              </Grid>
-              <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-                {isEditing ? (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="FormCompletedYN"
-                        checked={formData.FormCompletedYN}
-                        onChange={handleCheckboxChange("FormCompletedYN")}
-                        disabled={fieldDisabled.FormCompletedYN}
-                      />
-                    }
-                    label="Form Completed"
-                  />
-                ) : (
-                  <ReadOnlyField
-                    label="Form Completed"
-                    value={formData.FormCompletedYN ? "Yes" : "No"}
-                  />
-                )}
-              </Grid>
+                }
+                label="Form Completed"
+              />
+            ) : (
+              <ReadOnlyField
+                label="Form Completed"
+                value={formData.FormCompletedYN ? "Yes" : "No"}
+              />
+            )}
+          </Grid>
         </Grid>
         <ParcelTab
           salesRFQId={salesRFQId}

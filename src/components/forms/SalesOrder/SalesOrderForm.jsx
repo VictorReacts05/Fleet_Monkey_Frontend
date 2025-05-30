@@ -284,10 +284,10 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
         </Grid>
       </Grid>
 
-      {/* Parcels Table */}
+      {/* Items Table */}
       <Box sx={{ mt: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
-          Parcels
+          Items
         </Typography>
         <TableContainer
           component={Paper}

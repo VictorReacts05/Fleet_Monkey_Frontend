@@ -53,7 +53,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [openUserModal, setOpenUserModal] = useState(false);
   const [roles, setRoles] = useState([]);
-  const [users, setUsers] = useState([]); // To store fetched users
+  const [users, setUsers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -72,7 +72,6 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
     companyId: 48,
   });
 
-  // Fetch roles and users when modal opens
   useEffect(() => {
     if (openUserModal) {
       fetchRoles();
@@ -82,7 +81,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${APIBASEURL}/roles/all`, {
+      const response = await axios.get(`${APIBASEURL}/roles?pageNumber=1&pageSize=50`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -140,7 +139,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const handleOpenUserModal = () => {
     setOpenUserModal(true);
-    setFormSubmitted(false); // Reset form submission state when opening modal
+    setFormSubmitted(false);
   };
 
   const handleCloseUserModal = () => {
@@ -182,10 +181,8 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   };
 
   const handleCreateUser = async () => {
-    // Set formSubmitted to true to trigger validation display
     setFormSubmitted(true);
-    
-    // Client-side validation
+
     if (
       !newUser.firstName ||
       !newUser.lastName ||
@@ -239,10 +236,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         "success"
       );
 
-      // Refresh user list
       await fetchUsers();
-
-      // Close modal and reset form
       handleCloseUserModal();
     } catch (error) {
       console.error("Error creating user:", error);
@@ -510,7 +504,11 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.firstName}
               onChange={handleInputChange}
               required
-              error={formSubmitted && newUser.firstName === "" && "First Name is required"}
+              error={
+                formSubmitted &&
+                newUser.firstName === "" &&
+                "First Name is required"
+              }
             />
             <FormInput
               name="lastName"
@@ -518,7 +516,11 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.lastName}
               onChange={handleInputChange}
               required
-              error={formSubmitted && newUser.lastName === "" && "Last Name is required"}
+              error={
+                formSubmitted &&
+                newUser.lastName === "" &&
+                "Last Name is required"
+              }
             />
             <FormInput
               name="middleName"
@@ -545,7 +547,11 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               value={newUser.loginId}
               onChange={handleInputChange}
               required
-              error={formSubmitted && newUser.loginId === "" && "Login ID is required"}
+              error={
+                formSubmitted &&
+                newUser.loginId === "" &&
+                "Login ID is required"
+              }
             />
             <FormInput
               name="password"
@@ -555,7 +561,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               onChange={handleInputChange}
               required
               error={
-                formSubmitted && 
+                formSubmitted &&
                 newUser.password &&
                 newUser.password.length < 8 &&
                 "Password must be at least 8 characters"
@@ -576,6 +582,15 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               }
               required
               error={formSubmitted && newUser.role === "" && "Role is required"}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    maxHeight: 200, // Set maximum height for dropdown menu
+                    overflowY: "auto", // Enable vertical scrolling
+                    overflowX: "hidden", // Prevent horizontal scrolling
+                  },
+                },
+              }}
             />
             <FormSelect
               name="companyName"
@@ -622,14 +637,14 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 const mapStateToProps = (state) => {
   const loginDetails = state.loginReducer?.loginDetails || {};
   const userData = loginDetails.user || {};
-  
+
   console.log("Redux state loginDetails:", loginDetails);
 
   return {
     userInfo: {
       firstName: userData.firstName || "",
       lastName: userData.lastName || "",
-      loginId: userData.loginID || "User", // Note: it's loginID not LoginID
+      loginId: userData.loginID || "User",
       role: userData.role || "Administrator",
     },
   };

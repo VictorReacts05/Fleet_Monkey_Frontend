@@ -725,7 +725,7 @@ const SupplierQuotationForm = ({
         {parcels.length > 0 ? (
           <Box sx={{ mt: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Parcels
+              Items
             </Typography>
             <TableContainer
               component={Paper}
@@ -867,7 +867,7 @@ const SupplierQuotationForm = ({
         ) : (
           <Box sx={{ mt: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Parcels
+              Items
             </Typography>
             <Paper
               sx={{

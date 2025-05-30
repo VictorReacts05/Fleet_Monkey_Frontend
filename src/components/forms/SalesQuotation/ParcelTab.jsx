@@ -66,7 +66,7 @@ const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
           }}
         >
           <Typography variant="h6" component="div">
-            Parcels
+            Items
           </Typography>
         </Box>
       </Box>
