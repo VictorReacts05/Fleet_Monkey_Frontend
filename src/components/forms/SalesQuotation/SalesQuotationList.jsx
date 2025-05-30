@@ -20,7 +20,6 @@ import { showToast } from "../../toastNotification";
 import axios from "axios";
 import SalesQuotationForm from "./SalesQuotationForm";
 import { Chip } from "@mui/material";
-import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -71,8 +70,7 @@ const SalesQuotationList = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  // Remove or comment out the viewDialogOpen state since we won't need it
-  // const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -106,49 +104,77 @@ const SalesQuotationList = () => {
   const navigate = useNavigate();
 
   const fetchSalesQuotations = async () => {
-    // try {
-    //   setLoading(true);
-    //   const { headers } = getHeaders();
-    // //   const response = await axios.get(
-    // //     `${APIBASEURL}/sales-quotation`,
-    // //     { headers }
-    // //   );
-  
-    //   console.log("Sales Quotations API response:", response);
-  
-    //   let quotationData = [];
-      
-    //   if (Array.isArray(response.data)) {
-    //     quotationData = response.data;
-    //   } else if (response.data && Array.isArray(response.data.data)) {
-    //     quotationData = response.data.data;
-    //   } else {
-    //     console.error("Unexpected API response format:", response.data);
-    //     quotationData = [];
-    //   }
-      
-    //   const mappedData = quotationData.map(quotation => ({
-    //     ...quotation,
-    //     id: quotation.SalesQuotationID,
-    //     Status: quotation.Status || 'Pending'
-    //   }));
-      
-    //   setSalesQuotations(mappedData);
-    // } catch (error) {
-    //   console.error("Error fetching Sales Quotations:", error);
-    //   toast.error("Failed to load Sales Quotations");
-    //   setSalesQuotations([]);
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      setLoading(true);
+      const { headers } = getHeaders();
+      const response = await axios.get(
+        "http://localhost:7000/api/sales-quotation",
+        { headers }
+      );
+      console.log("Sales Quotations API response:", response);
+      let quotationData = [];
+      if (Array.isArray(response.data)) {
+        quotationData = response.data;
+      } 
+      else if (response.data && Array.isArray(response.data.data)) {
+        quotationData = response.data.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        quotationData = [];
+      }
+      const mappedData = quotationData.map(quotation => ({
+        ...quotation,
+        id: quotation.SalesQuotationID,
+        Status: quotation.Status || 'Pending',
+        CreatedDate: dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
+      }));
+      setSalesQuotations(mappedData);
+      setTotalRows(mappedData.length);
+    } catch (error) {
+      console.error("Error fetching Sales Quotations:", error);
+      toast.error("Failed to fetch Sales Quotations");
+    }
   };
 
   useEffect(() => {
     fetchSalesQuotations();
   }, []);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = async (newPage) => {
     setPage(newPage);
+    try {
+      setLoading(true);
+      const { headers } = getHeaders();
+      const response = await axios.get(
+        "http://localhost:7000/api/sales-quotation",
+        { headers }
+      );
+
+      console.log("Sales Quotations API response:", response);
+
+      let quotationData = [];
+
+      if (Array.isArray(response.data)) {
+        quotationData = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        quotationData = response.data.data;
+      } else {
+        console.error("Unexpected API response format:", response.data);
+        quotationData = [];
+      }
+
+      const mappedData = quotationData.map(quotation => ({
+        ...quotation,
+        id: quotation.SalesQuotationID,
+        Status: quotation.Status || 'Pending'
+      }));
+
+      setSalesQuotations(mappedData);
+    } catch (error) {
+      console.error("Error fetching", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
@@ -159,13 +185,7 @@ const SalesQuotationList = () => {
   const handleView = (id) => {
     console.log("View clicked for Sales Quotation ID:", id);
     if (id && id !== "undefined") {
-      const quotation = salesQuotations.find(q => q.SalesQuotationID === id);
-      if (quotation) {
-        // Instead of opening a dialog, navigate to a view page
-        navigate(`/sales-quotation/view/${id}`);
-      } else {
-        toast.error("Sales Quotation not found");
-      }
+      navigate(`/sales-quotation/view/${id}`);
     } else {
       console.error("Invalid Sales Quotation ID:", id);
       toast.error("Cannot view Sales Quotation: Invalid ID");
@@ -194,7 +214,7 @@ const SalesQuotationList = () => {
       setLoading(true);
       const { headers } = getHeaders();
       await axios.delete(
-        `${APIBASEURL}/sales-quotation/${selectedQuotation}`,
+        `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
         { headers }
       );
       showToast("Sales Quotation deleted successfully", "success");
@@ -258,8 +278,6 @@ const SalesQuotationList = () => {
         onDelete={handleDeleteClick}
       />
 
-      {/* Remove or comment out the view dialog */}
-      {/* 
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -276,10 +294,13 @@ const SalesQuotationList = () => {
             />
           )}
         </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Close
+          </Button>
+        </DialogActions>
       </Dialog>
-      */}
 
-      {/* Keep the delete dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

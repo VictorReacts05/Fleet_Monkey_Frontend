@@ -5,8 +5,8 @@ import { toast } from 'react-toastify';
 
 const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    SupplierName: '',
-    SupplierEmail: ''
+    supplierName: '',  // Changed from SupplierName
+    supplierEmail: ''  // Changed from SupplierEmail
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -22,8 +22,8 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       setLoading(true);
       const data = await getSupplierById(supplierId);
       setFormData({
-        SupplierName: data.data?.SupplierName || '',
-        SupplierEmail: data.data?.SupplierEmail || ''
+        supplierName: data.data?.supplierName || '',  // Changed case
+        supplierEmail: data.data?.supplierEmail || ''  // Changed case
       });
     } catch (error) {
       toast.error('Failed to load supplier: ' + error.message);
@@ -51,14 +51,14 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const validate = () => {
     const newErrors = {};
     
-    if (!formData.SupplierName.trim()) {
-      newErrors.SupplierName = 'Supplier name is required';
+    if (!formData.supplierName?.trim()) {  // Changed case
+      newErrors.supplierName = 'Supplier name is required';
     }
     
-    if (!formData.SupplierEmail.trim()) {
-      newErrors.SupplierEmail = 'Supplier email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.SupplierEmail)) {
-      newErrors.SupplierEmail = 'Email is invalid';
+    if (!formData.supplierEmail?.trim()) {  // Changed case
+      newErrors.supplierEmail = 'Supplier email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.supplierEmail)) {
+      newErrors.supplierEmail = 'Email is invalid';
     }
     
     setErrors(newErrors);
@@ -99,32 +99,27 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       </Typography>
       
       <TextField
-        margin="normal"
-        required
         fullWidth
-        id="SupplierName"
+        margin="normal"
         label="Supplier Name"
-        name="SupplierName"
-        value={formData.SupplierName}
+        name="supplierName"  // Changed case
+        value={formData.supplierName}  // Changed case
         onChange={handleChange}
-        error={!!errors.SupplierName}
-        helperText={errors.SupplierName}
-        disabled={loading}
+        error={!!errors.supplierName}  // Changed case
+        helperText={errors.supplierName}  // Changed case
+        required
       />
       
       <TextField
-        margin="normal"
-        required
         fullWidth
-        id="SupplierEmail"
+        margin="normal"
         label="Supplier Email"
-        name="SupplierEmail"
-        type="email"
-        value={formData.SupplierEmail}
+        name="supplierEmail"  // Changed case
+        value={formData.supplierEmail}  // Changed case
         onChange={handleChange}
-        error={!!errors.SupplierEmail}
-        helperText={errors.SupplierEmail}
-        disabled={loading}
+        error={!!errors.supplierEmail}  // Changed case
+        helperText={errors.supplierEmail}  // Changed case
+        required
       />
       
       <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>

@@ -569,7 +569,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             Items
           </Typography>
         </Box>
-        <Box
+        {/* <Box
           sx={{
             py: 1.5,
             px: 3,
@@ -588,7 +588,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           <Typography variant="h6" component="div">
             Approvals
           </Typography>
-        </Box>
+        </Box> */}
       </Box>
 
       {/* Content area */}

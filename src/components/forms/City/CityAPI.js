@@ -114,7 +114,7 @@ export const updateCity = async (cityId, data) => {
 
     // Prepare data with correct field names (capital letters to match backend)
     const dataWithUpdater = {
-      cityID: Number(cityId),                // Added CityID with proper capitalization
+      cityId: Number(cityId),                // Added CityID with proper capitalization
       cityName: data.cityName,               // Changed from cityName to CityName
       countryId: Number(data.countryId),     // Changed from countryId to CountryID
       createdById: user.personId,            // Changed from createdById to CreatedByID
@@ -194,13 +194,10 @@ export const getCityById = async (id) => {
     throw error.response?.data || error.message;
   }
 };
-
 export const fetchCountries = async () => {
   try {
     const user = getUserFromLocalStorage();
-
-    const url = `${APIBASEURL}/country-Of-Origin?pageSize=100`;
-
+    const url = `${APIBASEURL}/country-of-origin`;
     const response = await axios.get(url, getAxiosConfig());
     return response.data;
   } catch (error) {

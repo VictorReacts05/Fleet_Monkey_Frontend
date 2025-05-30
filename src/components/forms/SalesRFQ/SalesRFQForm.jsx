@@ -715,6 +715,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
+              
+
             }}
           >
             <Typography variant="h6">
@@ -733,7 +735,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                     background:
                       theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
-                    padding: "0px 10px",
+                    paddingRight: "10px",
                     height: "37px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
@@ -742,55 +744,40 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
                       transform: "scale(1.02)",
                     },
-                  }}
-                >
-                  <Chip
-                    icon={
-                      status === "Approved" ? (
-                        <CheckCircleIcon
-                          sx={{
-                            color:
-                              theme.palette.mode === "light"
-                                ? "white !important"
-                                : "black !important",
-                            fontSize: "20px",
-                          }}
-                        />
-                      ) : (
-                        <CancelIcon
-                          sx={{ color: "#D81B60 !important", fontSize: "20px" }}
-                        />
-                      )
-                    }
-                    label={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: "700",
-                          color:
-                            theme.palette.mode === "light" ? "white" : "black",
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        Status:
-                      </Typography>
-                    }
-                    sx={{
-                      backgroundColor: "transparent",
-                    }}
-                  />
-                  <StatusIndicator
-                    status={status}
-                    salesRFQId={salesRFQId}
-                    onStatusChange={(newStatus) => {
-                      console.log("Status changed to:", newStatus);
-                      setStatus(newStatus);
-                    }}
-                    initialStatus={status}
-                    skipFetch={true}
-                    readOnly={status === "Approved"}
-                  />
-                </Box>
+  }}
+>
+  <Chip
+
+    label={
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: "700", // Bolder text
+          color: useTheme().palette.mode === "light" ? "white" : "black",
+          fontSize: "0.9rem",
+        }}
+      >
+        Status:
+      </Typography>
+    }
+    sx={{
+      backgroundColor: "transparent",
+          }}
+  />
+  <StatusIndicator
+    
+    status={status}
+    salesRFQId={salesRFQId}
+    onStatusChange={(newStatus) => {
+      console.log("Status changed to:", newStatus);
+      setStatus(newStatus);
+    }}
+    initialStatus={status}
+    skipFetch={true}
+    readOnly={status === "Approved"}
+    
+  />
+</Box>
               </Fade>
             )}
           </Box>

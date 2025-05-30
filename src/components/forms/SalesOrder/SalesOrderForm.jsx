@@ -156,7 +156,7 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
                 alignItems: "center",
                 background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                 borderRadius: "4px",
-                padding: "0px 10px",
+                paddingRight: "10px",
                 height: "37px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 transition: "all 0.3s ease-in-out",
@@ -167,11 +167,28 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
                 },
               }}
             >
-              <StatusIndicator 
-                status={status} 
-                salesOrderId={salesOrderId} 
-                onStatusChange={handleStatusChange}
-                readOnly={false}
+              <Chip
+                label={ 
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: "700",
+                      color: theme.palette.mode === "light" ? "white" : "black",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Status:
+                  </Typography>
+                }
+                sx={{ backgroundColor: "transparent" }}
+              />
+             <StatusIndicator
+                status={status}
+                salesQuotationId={salesOrderId}
+                onStatusChange={() => {}} // No-op since static
+                initialStatus={status}
+                skipFetch={true}
+                readOnly={true}
               />
             </Box>
           </Fade>
