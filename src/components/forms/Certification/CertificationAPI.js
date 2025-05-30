@@ -5,7 +5,9 @@ export const fetchCertifications = async (
   pageNumber = 1,
   pageSize = 10,
   fromDate,
-  toDate
+  toDate,
+  sortBy = "CreatedDateTime",       // or any relevant field
+  sortOrder = "desc"                // set default to descending
 ) => {
   try {
     const response = await axios.get(`${APIBASEURL}/certifications`, {
@@ -14,27 +16,23 @@ export const fetchCertifications = async (
         pageSize,
         fromDate,
         toDate,
+        sortBy,
+        sortOrder,
       },
     });
 
-    // Log response for debugging
-
-    // Handle different possible response structures
     const data = Array.isArray(response.data)
       ? response.data
       : response.data.data || response.data.results || [];
 
-    // Get cached totalRecords from local storage
     let cachedTotalRecords =
       Number(localStorage.getItem("certificationTotalRecords")) || 0;
 
-    // Update cached totalRecords if the current data.length is larger
     if (data.length > cachedTotalRecords) {
       cachedTotalRecords = data.length;
       localStorage.setItem("certificationTotalRecords", cachedTotalRecords);
     }
 
-    // Use cached totalRecords as the fallback
     const totalRecords = Number(
       response.data.pagination?.totalRecords ||
         response.data.totalRecords ||
@@ -55,6 +53,7 @@ export const fetchCertifications = async (
   }
 };
 
+
 export const createCertification = async (certificationData) => {
   try {
     // Get user from localStorage
@@ -62,8 +61,8 @@ export const createCertification = async (certificationData) => {
     
     // Prepare data with correct field names (capital letters to match backend)
     const requestData = {
-      CertificationName: certificationData.CertificationName,
-      CreatedByID: certificationData.CreatedByID || user.personId || 1,
+      certificationName: certificationData.CertificationName,
+      createdById: certificationData.CreatedByID || user.personId || 1,
     };
     
     console.log("[DEBUG] Certification create request data:", requestData);
@@ -89,9 +88,9 @@ export const updateCertification = async (id, certificationData) => {
     
     // Prepare data with correct field names (capital letters to match backend)
     const requestData = {
-      CertificationID: Number(id),
-      CertificationName: certificationData.CertificationName,
-      CreatedByID: user.personId || 1,
+      certificationId: Number(id),
+      certificationName: certificationData.CertificationName,
+      createdById: user.personId || 1,
     };
     
     if (certificationData.RowVersionColumn) {
@@ -113,7 +112,7 @@ export const deleteCertification = async (id) => {
     const user = JSON.parse(localStorage.getItem("user")) || {};
     await axios.delete(`${APIBASEURL}/certifications/${id}`, {
       data: {
-        deletedById: user.personId || 1,
+        createdById: user.personId,
       },
     });
     // Update cached totalRecords after deleting a certification

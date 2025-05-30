@@ -104,8 +104,8 @@ const CurrencyList = ({ userId }) => {
       setDeleteDialogOpen(false);
 
       await deleteCurrency(deletedItemId, userId);
-
-      showToast("Currency deleted successfully", "success");
+      toast.success("Currency deleted successfully");
+    
 
       setItemToDelete(null);
 
