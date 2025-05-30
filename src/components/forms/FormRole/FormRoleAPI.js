@@ -57,10 +57,10 @@ export const createFormRole = async (formRoleData) => {
     const user = getUserData();
     
     const requestData = {
-      FormID: formRoleData.FormID,
-      RoleID: formRoleData.RoleID,
-      ReadOnly: formRoleData.ReadOnly,
-      Write: formRoleData.Write
+      formId: formRoleData.FormID,
+      roleId: formRoleData.RoleID,
+      readOnly: formRoleData.ReadOnly,
+      writes: formRoleData.Write
     };
 
     console.log("[DEBUG] Creating form role:", requestData);
@@ -83,10 +83,11 @@ export const updateFormRole = async (id, formRoleData) => {
     
     const requestData = {
       FormRoleID: Number(id),
-      FormID: formRoleData.FormID,
-      RoleID: formRoleData.RoleID,
-      ReadOnly: formRoleData.ReadOnly,
-      Write: formRoleData.Write
+      formId: formRoleData.FormID,
+      roleId: formRoleData.RoleID,
+      readOnly: formRoleData.ReadOnly,
+      writes: formRoleData.Write,
+      createdById: Number(id)
     };
 
     console.log("[DEBUG] Updating form role:", requestData);
@@ -110,7 +111,7 @@ export const deleteFormRole = async (id) => {
     const response = await axios.delete(`${APIBASEURL}/formRole/${id}`, {
       ...getAxiosConfig(),
       data: {
-        formRoleId: Number(id)
+        createdById: Number(id)
       }
     });
     
