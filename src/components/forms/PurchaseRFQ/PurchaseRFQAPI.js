@@ -3,11 +3,26 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Simple headers function instead of importing getAuthHeader
 const getHeaders = () => {
-  return {
-    headers: {
-      "Content-Type": "application/json",
-    },
+  const headers = {
+    "Content-Type": "application/json",
   };
+  try {
+    const rawUser = localStorage.getItem("user");
+    if (rawUser) {
+      const user = JSON.parse(rawUser);
+      if (user?.token) {
+        headers.Authorization = `Bearer ${user.token}`;
+        console.log("Added Authorization header:", headers.Authorization);
+      } else {
+        console.warn("No token found in user object");
+      }
+    } else {
+      console.warn("No user found in localStorage");
+    }
+  } catch (error) {
+    console.error("Error parsing user from localStorage:", error);
+  }
+  return { headers };
 };
 
 export const fetchSalesRFQParcels = async (salesRFQId) => {
@@ -457,10 +472,11 @@ export const approvePurchaseRFQ = async (purchaseRFQId, isApproved = true) => {
 export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    const createdById = user?.personId || user?.id || user?.userId || 2036; // Fallback to 2036 if not found
+    const createdById = user?.personId || user?.id || user?.userId || 2036; // Fallback to 2036
+    console.log("User from localStorage:", user);
 
     const payload = {
-      salesRFQId: parseInt(salesRFQId, 10),
+      SalesRFQID: parseInt(salesRFQId, 10), // Match server expectation
       createdById: parseInt(createdById, 10),
     };
 
@@ -490,14 +506,14 @@ export const createPurchaseRFQFromSalesRFQ = async (salesRFQId) => {
     console.error("Error creating Purchase RFQ from Sales RFQ:", {
       message: error.message,
       status: error.response?.status,
-      responseData: error.response?.data,
-      requestPayload: { salesRFQId, createdById },
+      responseData: error.response?.data, // Log full response
+      requestPayload: payload,
     });
-    throw new Error(
+    const errorMessage =
       error.response?.data?.message ||
-        error.message ||
-        "Failed to create Purchase RFQ"
-    );
+      error.message ||
+      "Failed to create Purchase RFQ";
+    throw new Error(errorMessage);
   }
 };
 

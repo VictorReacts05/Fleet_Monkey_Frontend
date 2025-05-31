@@ -330,14 +330,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         CurrencyName: displayValue(
           data.CurrencyName || data.currencyName || data.Currency?.CurrencyName
         ),
-        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
+        CollectFromSupplierID: Boolean(data.CustomerID),
         PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
         FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? dayjs(data.CreatedDateTime)
           : null,
-        IsDeleted: data.IsDeleted || false,
+        IsDeleted: data.Boolean || false,
         DeletedDateTime: data.DeletedDateTime
           ? dayjs(data.DeletedDateTime)
           : null,
@@ -382,7 +382,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       toast.error(
         "Failed to load SalesRFQ status: " + (error.message || "Unknown error")
       );
-      setStatus("Pending"); // Fallback to Pending on error
+      setStatus("Pending"); // Fallback to Pending
     } finally {
       setLoading(false);
     }
@@ -641,13 +641,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const handleConfirmCreatePurchaseRFQ = async () => {
     try {
       setCreatingPurchaseRFQ(true);
-
+  
       if (!salesRFQId || isNaN(parseInt(salesRFQId, 10))) {
         throw new Error("Invalid Sales RFQ ID");
       }
-
+  
       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
-
+      console.log("Create Purchase RFQ response:", response);
+  
       let purchaseRFQId = null;
       if (response?.data?.data) {
         purchaseRFQId =
@@ -657,7 +658,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       } else if (response?.purchaseRFQId) {
         purchaseRFQId = response.purchaseRFQId;
       }
-
+  
       if (purchaseRFQId) {
         toast.info(
           <div>
@@ -679,59 +680,46 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </div>,
           { autoClose: 8000 }
         );
-        setPurchaseRFQExists(true); // Update state to reflect new Purchase RFQ
+        setPurchaseRFQExists(true);
       } else {
-        console.warn(
-          "Purchase RFQ created, but ID is unavailable in response:",
-          response.data
-        );
+        console.warn("Purchase RFQ created, but ID is unavailable:", response.data);
         toast.error("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
         message: error.message,
-        stack: error.stack,
+        responseData: error.response?.data, // Log full response
+        salesRFQId,
       });
-      toast.error(
-        `Failed to create Purchase RFQ: ${
-          error.message || "Unknown server error"
-        }`
-      );
+      toast.error(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
+      setCreatingPurchaseRFQ(false);
+      setPurchaseRFQDialogOpen(false);
       setPurchaseRFQDialogOpen(false);
     }
   };
-
-  /* const handleStatusChange = async (newStatus) => {
-    console.log("Status changed to:", newStatus);
-    setStatus(newStatus);
-    // Refresh status from API to confirm all approvals
-    await loadSalesRFQStatus();
-  }; */
 
   useEffect(() => {
     const loadStatuses = async () => {
       try {
         // Fetch global status
         const globalStatus = await fetchSalesRFQStatus(salesRFQId);
-        console.log("Global status:", globalStatus);
-        setStatus(globalStatus);
+        console.log("Global status for SalesRFQID:", salesRFQId, globalStatus);
+        setStatus(globalStatus || "Pending");
 
-        // Fetch user-specific status
-        const user = JSON.parse(localStorage.getItem("user"));
-        const approverId = user?.personId;
-        if (approverId) {
-          const userApprovalStatus = await fetchUserApprovalStatus(
-            salesRFQId,
-            approverId
-          );
-          // debugger;
-          console.log("User approval status:", userApprovalStatus);
-          setUserStatus(userApprovalStatus);
-        }
+        // Log user for debugging
+        const rawUser = localStorage.getItem("user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        console.log("Current user in loadStatuses:", { rawUser, user });
       } catch (error) {
-        console.error("Error loading statuses:", error);
+        console.error(
+          "Error loading global status for SalesRFQID:",
+          salesRFQId,
+          error
+        );
+        setStatus("Pending");
+        toast.error("Failed to load status information");
       }
     };
 
@@ -742,6 +730,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   const handleStatusChange = async (newStatus) => {
     console.log("User approval status changed to:", newStatus);
+    setUserStatus(newStatus);
     // Refresh SalesRFQ status from API to check if all approvals are complete
     await loadSalesRFQStatus();
   };
@@ -810,13 +799,16 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       backgroundColor: "transparent",
                     }}
                   />
-                  {console.log(status, "___status")}
-                  {console.log(salesRFQId, "___salesRFQId")}
+                  {console.log(
+                    "Global status:",
+                    status,
+                    "SalesRFQId:",
+                    salesRFQId
+                  )}
                   <StatusIndicator
-                    // status={status}
                     salesRFQId={salesRFQId}
                     onStatusChange={handleStatusChange}
-                    readOnly={status === "Approved"}
+                    readOnly={readOnly && status === "Approved"}
                   />
                 </Box>
               </Fade>
