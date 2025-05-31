@@ -626,33 +626,44 @@ export const fetchCurrencies = async () => {
 };
 
 // Approve or disapprove SalesRFQ
-export const approveSalesRFQ = async (salesRFQId, approve = true) => {
+export const approveSalesRFQ = async (salesRFQId) => {
   try {
-    const { headers } = getAuthHeader();
-
+    const { headers, personId } = getAuthHeader();
     console.log(
-      `Updating SalesRFQ status to ${
-        approve ? "Approved" : "Pending"
-      } for ID: ${salesRFQId}`
+      `Approving SalesRFQ with ID: ${salesRFQId}, ApproverID: ${personId}`
     );
 
-    const response = await axios.put(
-      `${APIBASEURL}/sales-rfq/${salesRFQId}`,
-      { Status: approve ? "Approved" : "Pending" },
+    if (!personId) {
+      throw new Error("No personId found for approval");
+    }
+
+    const response = await axios.post(
+      `${APIBASEURL}/sales-rfq/approve`,
+      {
+        salesRFQID: Number(salesRFQId),
+        approverID: Number(personId), // Send approverID
+      },
       { headers }
     );
 
-    console.log("Status update response:", response.data);
+    console.log("Approval response:", {
+      status: response.status,
+      data: response.data,
+    });
 
     return {
-      success: response.data.success,
-      message: response.data.message,
-      data: response.data.data,
+      success: response.data.success || true,
+      message: response.data.message || "Approval successful",
+      data: response.data.data || {},
       salesRFQId,
     };
   } catch (error) {
-    console.error("Error updating SalesRFQ status:", error);
-    throw error;
+    console.error("Error approving SalesRFQ:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error.response?.data || error;
   }
 };
 
@@ -678,5 +689,99 @@ export const fetchSalesRFQApprovalStatus = async (salesRFQId) => {
   } catch (error) {
     console.error("Error fetching SalesRFQ status:", error);
     throw error;
+  }
+};
+
+export const fetchSalesRFQStatus = async (salesRFQId) => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.get(`${APIBASEURL}/sales-rfq/${salesRFQId}`, {
+      headers,
+    });
+
+    console.log("Fetched SalesRFQ status for ID:", salesRFQId, response.data);
+
+    if (response.data && response.data.data) {
+      const status = response.data.data.Status || response.data.data.status;
+      if (status) {
+        console.log("Parsed status:", status);
+        return status;
+      }
+    } else if (
+      response.data &&
+      (response.data.Status || response.data.status)
+    ) {
+      const status = response.data.Status || response.data.status;
+      console.log("Parsed status:", status);
+      return status;
+    }
+
+    console.warn("Status field not found in response:", response.data);
+    return "Pending"; // Default to Pending
+  } catch (error) {
+    console.error("Error fetching SalesRFQ status:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return "Pending"; // Fallback to Pending
+  }
+};
+
+
+export const fetchUserApprovalStatus = async (salesRFQId, approverId) => {
+  try {
+    const { headers } = getAuthHeader();
+    console.log("Fetching approval status with params:", {
+      salesRFQId,
+      approverId,
+    });
+    const response = await axios.get(
+      `${APIBASEURL}/sales-rfq-approvals?salesRFQId=${salesRFQId}&approverId=${approverId}`,
+      { headers }
+    );
+
+    console.log(
+      "Full API response for SalesRFQID:",
+      salesRFQId,
+      "ApproverID:",
+      approverId,
+      { status: response.status, data: response.data }
+    );
+
+    // Handle nested or flat response
+    let approvalData = response.data;
+    if (response.data?.data && Array.isArray(response.data.data)) {
+      approvalData = response.data.data;
+    } else if (!Array.isArray(approvalData)) {
+      console.warn("Unexpected response format:", response.data);
+      approvalData = [];
+    }
+
+    // Log raw approval data
+    console.log("Processed approvalData:", approvalData);
+
+    // Find matching approval record
+    const approval = approvalData.find(
+      (record) =>
+        String(record.ApproverID) === String(approverId) &&
+        String(record.SalesRFQID) === String(salesRFQId)
+    );
+
+    console.log("Matching approval record:", approval);
+
+    if (approval && approval.ApprovedYN === 1) {
+      console.log("Approval found with ApprovedYN: 1, returning Approved");
+      return "Approved";
+    }
+    console.log("No approval or ApprovedYN !== 1, returning Pending");
+    return "Pending"; // No record or not approved
+  } catch (error) {
+    console.error("Error fetching user approval status:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return "Pending"; // Fallback to Pending
   }
 };
