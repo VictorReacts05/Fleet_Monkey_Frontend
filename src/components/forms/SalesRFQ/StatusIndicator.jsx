@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,161 +9,104 @@ import {
   useTheme,
 } from "@mui/material";
 import { CheckCircle, PendingActions } from "@mui/icons-material";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { approveSalesRFQ, fetchUserApprovalStatus } from "./SalesRFQAPI";
 
-const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
+const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [approvalRecord, setApprovalRecord] = useState(null);
+  const [status, setStatus] = useState("Pending");
 
-  // Fetch existing approval record when component mounts
+  // Fetch user-specific approval status
   useEffect(() => {
+    const loadUserApprovalStatus = async () => {
+      try {
+        setLoading(true);
+        const user = JSON.parse(localStorage.getItem("user"));
+        const approverId = user?.personId;
+
+        console.log("Loading approval status:", { salesRFQId, approverId });
+
+        if (!approverId) {
+          console.error("No personId found in localStorage");
+          toast.error("User not authenticated");
+          setStatus("Pending");
+          return;
+        }
+
+        const userStatus = await fetchUserApprovalStatus(
+          salesRFQId,
+          approverId
+        );
+        console.log("Fetched user approval status:", {
+          salesRFQId,
+          approverId,
+          userStatus,
+        });
+        setStatus(userStatus);
+      } catch (error) {
+        console.error("Error loading user approval status:", {
+          error: error.message,
+          stack: error.stack,
+        });
+        toast.error("Failed to load approval status");
+        setStatus("Pending");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (salesRFQId) {
-      fetchApprovalRecord();
+      loadUserApprovalStatus();
     }
   }, [salesRFQId]);
 
-  const fetchApprovalRecord = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-
-      // Use the correct endpoint format
-      // The approverID is hardcoded to 2 as in other parts of the code
-      const approverID = 2;
-      
-      try {
-        const response = await axios.get(
-          `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/${approverID}`,
-          { headers }
-        );
-        console.log("Fetching approval record for SalesRFQID:", salesRFQId);
-
-        console.log("Fetched approval record:", response.data);
-
-        if (
-          response.data.success &&
-          response.data.data &&
-          response.data.data.length > 0
-        ) {
-          setApprovalRecord(response.data.data[0]);
-        } else {
-          setApprovalRecord(null);
-        }
-      } catch (error) {
-        // If we get a 404, it means no record exists yet
-        if (error.response && error.response.status === 404) {
-          console.log("No approval record exists yet for this SalesRFQ");
-          setApprovalRecord(null);
-        } else {
-          console.error("Error fetching approval record:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error in fetchApprovalRecord:", error);
-    }
-  };
-
-  const updateStatus = async (newStatus) => {
+  const handleApprove = async () => {
     try {
       setLoading(true);
+      console.log(`Approving SalesRFQ with ID: ${salesRFQId}`);
 
-      // Get auth token from localStorage
-      const user = JSON.parse(localStorage.getItem("user"));
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-      const userId = user?.personId || user?.id || 2; // Default to 2 if not found
+      const response = await approveSalesRFQ(salesRFQId);
 
-      console.log(`Updating SalesRFQ status to: ${newStatus}`);
+      console.log("Approval response in handleApprove:", response);
 
-      // 1. Update the Status in SalesRFQ table
-      const salesRFQResponse = await axios.put(
-        `${APIBASEURL}/sales-rfq/${salesRFQId}`,
-        {
-          Status: newStatus,
-          SalesRFQID: salesRFQId,
-        },
-        { headers }
-      );
-
-      // console.log("Status update response:", salesRFQResponse.data);
-
-      // 2. Create or update record in SalesRFQApproval table
-      const isApproved = newStatus === "Approved";
-      const approvalData = {
-        SalesRFQID: parseInt(salesRFQId, 10), // Convert to number
-        ApproverID: 2, // Hardcoded to 2
-        ApprovedYN: isApproved ? 1 : 0,
-        FormName: "Sales RFQ",
-        RoleName: "Sales RFQ Approver",
-        UserID: 2, // Hardcode UserID to 2 as well
-        ApproverDateTime: new Date().toISOString(), // Add timestamp
-        CreatedByID: 2 // Add CreatedByID
-      };
-
-      console.log(`Setting ApprovedYN to: ${isApproved ? 1 : 0}`);
-
-      let approvalResponse;
-
-      try {
-        // Always try to create a new record first
-        console.log(`${isApproved ? "Creating" : "Updating"} approval record:`, approvalData);
-        
+      if (response.success) {
+        toast.success("SalesRFQ approved successfully");
+        setStatus("Approved");
+        onStatusChange("Approved");
+        // Refresh status with retry mechanism
+        const user = JSON.parse(localStorage.getItem("user"));
+        let userStatus = "Approved"; // Optimistic default
         try {
-          // Try POST first (create new record)
-          approvalResponse = await axios.post(
-            `${APIBASEURL}/sales-rfq-approvals`,
-            approvalData,
-            { headers }
+          userStatus = await fetchUserApprovalStatus(
+            salesRFQId,
+            user?.personId
           );
-          console.log("POST approval response:", approvalResponse.data);
-        } catch (postError) {
-          // If POST fails with 400 (likely because record exists), try PUT
-          if (postError.response && postError.response.status === 400) {
-            console.log("POST failed, trying PUT instead");
-            approvalResponse = await axios.put(
-              `${APIBASEURL}/sales-rfq-approvals`,
-              approvalData,
-              { headers }
-            );
-            console.log("PUT approval response:", approvalResponse.data);
-          } else {
-            // If it's not a 400 error, rethrow
-            throw postError;
-          }
+          console.log("Refreshed user approval status:", {
+            salesRFQId,
+            userStatus,
+          });
+        } catch (refreshError) {
+          console.warn(
+            "Failed to refresh approval status, retaining Approved:",
+            {
+              error: refreshError.message,
+            }
+          );
         }
-      } catch (error) {
-        console.error("Error with approval record:", error);
-        // Continue with the status update even if approval record fails
-        approvalResponse = { data: { success: true } };
-      }
-
-      // Update local state if both operations were successful
-      if (salesRFQResponse.data.success && approvalResponse.data.success) {
-        toast.success(
-          `SalesRFQ ${isApproved ? "approved" : "disapproved"} successfully`
-        );
-        onStatusChange(newStatus);
-
-        // Update the approval record state and refetch
-        fetchApprovalRecord();
+        setStatus(userStatus);
       } else {
         toast.error(
-          `Failed to ${isApproved ? "approve" : "disapprove"}: ${
-            salesRFQResponse.data.message || approvalResponse.data.message
-          }`
+          `Failed to approve: ${response.message || "Unknown error"}`
         );
       }
     } catch (error) {
-      console.error(`Error updating SalesRFQ status to ${newStatus}:`, error);
+      console.error("Error approving SalesRFQ:", {
+        error: error.message,
+        response: error.response?.data,
+      });
       toast.error(
-        `Error updating status: ${
-          error.response?.data?.message || error.message
-        }`
+        `Error approving: ${error.response?.data?.message || error.message}`
       );
     } finally {
       setLoading(false);
@@ -172,9 +115,11 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
   };
 
   const handleClick = (event) => {
-    // Only allow clicking if not read-only and not already approved
+    console.log("Chip clicked", { status, readOnly, anchorEl });
     if (!readOnly && status !== "Approved") {
       setAnchorEl(event.currentTarget);
+    } else {
+      console.log("Click ignored", { readOnly, status });
     }
   };
 
@@ -182,19 +127,13 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
     setAnchorEl(null);
   };
 
-  const handleApprove = () => {
-    updateStatus("Approved");
-  };
-
-  // Removed handleDisapprove function as it's no longer needed
-
   const getChipProps = () => {
     switch (status) {
       case "Approved":
         return {
           color: "success",
           icon: <CheckCircle />,
-          clickable: false, // Approved status is never clickable
+          clickable: false,
         };
       case "Pending":
         return {
@@ -214,13 +153,13 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
   const chipProps = getChipProps();
 
   return (
-    <Box 
+    <Box
       sx={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"}}
-        
-        >
+        justifyContent: "center",
+      }}
+    >
       <Chip
         label={
           <Typography variant="body2">
@@ -238,10 +177,10 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
         onClick={handleClick}
         clickable={chipProps.clickable}
         sx={{
-          height: 28, // Match button height
-          minWidth: 80, // Consistent width
-          padding: "2px 0px", // Compact padding
-          borderRadius: "12px", // Rounded corners
+          height: 28,
+          minWidth: 80,
+          padding: "2px 0px",
+          borderRadius: "12px",
           position: "relative",
           cursor: chipProps.clickable ? "pointer" : "default",
           "& .MuiChip-label": {
@@ -249,12 +188,18 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
             alignItems: "center",
             justifyContent: "center",
             color: useTheme().palette.mode === "light" ? "white" : "black",
-            
             borderRadius: "12px",
           },
         }}
       />
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        transformOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ zIndex: 1300 }}
+      >
         {status !== "Approved" && (
           <MenuItem onClick={handleApprove} disabled={loading}>
             {loading ? (
@@ -265,7 +210,6 @@ const StatusIndicator = ({ status, salesRFQId, onStatusChange, readOnly }) => {
             Approve
           </MenuItem>
         )}
-        {/* Removed the Disapprove menu item */}
       </Menu>
     </Box>
   );

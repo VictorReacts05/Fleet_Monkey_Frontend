@@ -74,10 +74,69 @@ export const deleteSalesRFQ = async (id) => {
 };
 
 // Keep other existing API endpoints
-export const fetchPurchaseRFQs = () => api.get('/purchase-rfq');
-export const fetchSalesOrders = () => api.get('/sales-order');
-export const fetchPurchaseOrders = () => api.get('/purchase-order');
-export const fetchInventory = () => api.get('/items');
-export const fetchShipments = () => api.get('/shipments');
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Update other API endpoints to match SalesRFQ pattern
+export const fetchPurchaseRFQs = async () => {
+  try {
+    const response = await api.get('/purchase-rfqs');
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { success: false, data: null, error: error.message || 'Failed to fetch Purchase RFQs' };
+  }
+};
+
+export const fetchSalesOrders = async () => {
+  try {
+    const response = await api.get('/sales-orders');
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { success: false, data: null, error: error.message || 'Failed to fetch Sales Orders' };
+  }
+};
+
+export const fetchPurchaseOrders = async () => {
+  try {
+    const response = await api.get('/purchase-orders');
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { success: false, data: null, error: error.message || 'Failed to fetch Purchase Orders' };
+  }
+};
+
+export const fetchInventory = async () => {
+  try {
+    const response = await api.get('/inventory');
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { success: false, data: null, error: error.message || 'Failed to fetch Inventory' };
+  }
+};
+
+export const fetchShipments = async () => {
+  try {
+    const response = await api.get('/shipments');
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { success: false, data: null, error: error.message || 'Failed to fetch Shipments' };
+  }
+};
 
 export default api;

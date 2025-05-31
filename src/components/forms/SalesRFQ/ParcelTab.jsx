@@ -23,8 +23,12 @@ import axios from "axios";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import DialogContentText from "@mui/material/DialogContentText";
+import APIBASEURL from "../../../utils/apiBaseUrl";
+import { getAuthHeader } from "./SalesRFQAPI"; // Adjust the path as needed
+import { useNavigate } from "react-router-dom"; // Added for navigation
+import UOMList from "./../UOM/UOMList";
 
 // Function to fetch items from API
 const fetchItems = async () => {
@@ -56,6 +60,7 @@ const fetchUOMs = async () => {
 };
 
 const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
+  const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
@@ -67,7 +72,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [activeTab] = useState("parcels"); 
+  const [activeTab] = useState("parcels");
 
   const theme = useTheme();
 
@@ -285,7 +290,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
               uomName,
-              srNo: index + 1, 
+              srNo: index + 1,
             };
           });
 
@@ -392,45 +397,35 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
       return;
     }
 
-    // Get item and UOM names for display
+    const { personId } = getAuthHeader();
+    if (!personId) {
+      toast.error("User authentication data missing. Please log in again.");
+      navigate("/login");
+      return;
+    }
+
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
 
-    // Find the original parcel if we're editing
     const originalParcel =
       form.editIndex !== undefined ? parcels[form.editIndex] : null;
 
-    // Create a completely new parcel object with all required fields
     const newParcel = {
-      // Keep original ID and SalesRFQParcelID for database reference
       id: form.originalId || form.id,
       SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
-
-      // Ensure SalesRFQID is included for proper association
       SalesRFQID: salesRFQId,
-
-      // Include all possible field name variations for maximum compatibility
-      ItemID: parseInt(form.itemId, 10), // Convert to number for backend
+      ItemID: parseInt(form.itemId, 10),
       itemId: form.itemId,
-
-      UOMID: parseInt(form.uomId, 10), // Convert to number for backend
+      UOMID: parseInt(form.uomId, 10),
       uomId: form.uomId,
-
-      ItemQuantity: parseInt(form.quantity, 10), // Convert to number for backend
-      Quantity: parseInt(form.quantity, 10), // Convert to number for backend
+      ItemQuantity: parseInt(form.quantity, 10),
+      Quantity: parseInt(form.quantity, 10),
       quantity: form.quantity,
-
-      // Display values for UI
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-
-      // Preserve srNo
       srNo: originalParcel?.srNo || parcels.length + 1,
-
-      // Add a flag to indicate this record has been modified
       isModified: true,
-
-      // Add any other fields that might be required by the backend
+      CreatedByID: personId ? parseInt(personId, 10) : null,
       SalesRFQParcel: {
         SalesRFQParcelID:
           originalParcel?.SalesRFQParcelID || originalParcel?.id,
@@ -438,79 +433,24 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         ItemID: parseInt(form.itemId, 10),
         UOMID: parseInt(form.uomId, 10),
         ItemQuantity: parseInt(form.quantity, 10),
+        CreatedByID: personId ? parseInt(personId, 10) : null,
       },
     };
 
+    let updatedParcels;
     if (form.editIndex !== undefined) {
-      // Update existing parcel - create a completely new array
-      const updatedParcels = [...parcels];
+      updatedParcels = [...parcels];
       updatedParcels[form.editIndex] = newParcel;
-      setParcels(updatedParcels);
-
-      // Force a notification to the parent component
-      if (onParcelsChange) {
-        setTimeout(() => onParcelsChange(updatedParcels), 0);
-
-        // Also try to directly update the database
-        try {
-          updateParcelInDatabase(newParcel);
-        } catch (error) {
-          console.error("Error directly updating parcel:", error);
-        }
-      }
     } else {
-      // Add new parcel
-      const newParcelsArray = [...parcels, newParcel];
-      setParcels(newParcelsArray);
-
-      // Force a notification to the parent component
-      if (onParcelsChange) {
-        setTimeout(() => onParcelsChange(newParcelsArray), 0);
-      }
+      updatedParcels = [...parcels, newParcel];
     }
 
-    // Remove the form
+    setParcels(updatedParcels);
+    if (onParcelsChange) {
+      onParcelsChange(updatedParcels); // Notify SalesRFQForm.jsx
+    }
+
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
-  };
-
-  // Function to directly update a parcel in the database
-  const updateParcelInDatabase = async (parcel) => {
-    if (!salesRFQId || !parcel.SalesRFQParcelID) {
-      console.error("Missing required IDs for direct parcel update");
-      return;
-    }
-
-    try {
-      // Try to update using the SalesRFQParcel endpoint
-      const response = await axios.put(
-        `${APIBASEURL}/sales-rfq-parcels/${parcel.SalesRFQParcelID}`,
-        {
-          SalesRFQID: salesRFQId,
-          ItemID: parseInt(parcel.ItemID, 10),
-          UOMID: parseInt(parcel.UOMID, 10),
-          ItemQuantity: parseInt(parcel.ItemQuantity, 10),
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Parcel updated successfully");
-      }
-    } catch (error) {
-      console.error("Failed to directly update parcel:", error);
-      // Try alternative endpoint
-      try {
-        const altResponse = await axios.put(
-          `${APIBASEURL}/sales-rfq/${salesRFQId}/parcels/${parcel.SalesRFQParcelID}`,
-          {
-            ItemID: parseInt(parcel.ItemID, 10),
-            UOMID: parseInt(parcel.UOMID, 10),
-            ItemQuantity: parseInt(parcel.ItemQuantity, 10),
-          }
-        );
-      } catch (altError) {
-        console.error("Failed alternative direct update:", altError);
-      }
-    }
   };
 
   // Handle deleting a parcel
@@ -520,7 +460,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
   };
 
   const handleConfirmDelete = () => {
-    setParcels((prev) => prev.filter((p) => p.id !== deleteParcelId));
+    const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
+    setParcels(updatedParcels);
+    if (onParcelsChange) {
+      onParcelsChange(updatedParcels); // Notify SalesRFQForm.jsx
+    }
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
   };
@@ -564,7 +508,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           }}
         >
           <Typography variant="h6" component="div">
-            Parcels
+            Items
           </Typography>
         </Box>
       </Box>
@@ -585,7 +529,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           </Box>
         ) : (
           <>
-            {/* Only show Add Parcel button if not in readOnly mode */}
             {!readOnly && (
               <Button
                 variant="contained"
@@ -597,7 +540,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               </Button>
             )}
 
-            {/* Show message when no parcels and not in form mode */}
             {parcels.length === 0 && parcelForms.length === 0 && (
               <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
                 <Typography variant="body1">
@@ -607,7 +549,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
               </Box>
             )}
 
-            {/* Parcel forms */}
             {parcelForms.map((form) => (
               <Box
                 key={form.id}
@@ -690,13 +631,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
                     variant="contained"
                     onClick={() => handleSave(form.id)}
                   >
-                    Save
+                    Save items
                   </Button>
                 </Box>
               </Box>
             ))}
 
-            {/* DataTable for parcels */}
             {parcels.length > 0 && (
               <DataTable
                 rows={parcels}
@@ -720,7 +660,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         )}
       </Box>
 
-      {/* Delete confirmation dialog */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleCancelDelete}

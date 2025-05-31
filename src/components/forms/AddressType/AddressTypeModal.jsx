@@ -42,7 +42,7 @@ const AddressTypeModal = ({ open, onClose, addressTypeId, onSave }) => {
       maxWidth="sm"
     >
       <DialogTitle>
-        {addressTypeId ? 'Edit Address Type' : 'Add New Address Type'}
+        {addressTypeId ? 'Edit Address Type' : 'Add Address Type'}
       </DialogTitle>
       <DialogContent>
         {loading ? (

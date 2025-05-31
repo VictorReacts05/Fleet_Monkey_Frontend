@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Stack } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import CompanyModal from './CompanyModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Stack } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import CompanyModal from "./CompanyModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
 import { fetchCompanies, deleteCompany } from "./CompanyAPI";
-import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
-import axios from 'axios';
+import { toast } from "react-toastify";
+import axios from "axios";
 import SearchBar from "../../Common/SearchBar";
-
-
-// Update imports
-import { Add } from '@mui/icons-material';
-import { Tooltip, IconButton } from '@mui/material';
-import APIBASEURL from '../../../utils/apiBaseUrl';
+import { Add } from "@mui/icons-material";
+import { Tooltip, IconButton } from "@mui/material";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const CompanyList = () => {
   const [rows, setRows] = useState([]);
@@ -25,71 +21,57 @@ const CompanyList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const columns = [
-    { field: 'companyName', headerName: 'Company Name', flex: 1 },
-    { field: 'currencyName', headerName: 'Currency', flex: 1 },
-    { field: 'vatAccount', headerName: 'VAT Account', flex: 1 },
-    { field: 'website', headerName: 'Website', flex: 1 },
-    { field: 'companyNotes', headerName: 'Notes', flex: 1 },
-    // Remove the custom actions column - DataTable will add its own
+    { field: "companyName", headerName: "Company Name", flex: 1 },
+    { field: "currencyName", headerName: "Currency", flex: 1 },
+    { field: "vatAccount", headerName: "VAT Account", flex: 1 },
+    { field: "website", headerName: "Website", flex: 1 },
+    { field: "companyNotes", headerName: "Notes", flex: 1 },
   ];
 
   useEffect(() => {
     loadCompanies();
-  }, [page, rowsPerPage, fromDate, toDate]);
+  }, [page, rowsPerPage, searchTerm]);
 
   const loadCompanies = async () => {
     try {
       setLoading(true);
-      const formattedFromDate = fromDate ? dayjs(fromDate).format('YYYY-MM-DD') : null;
-      const formattedToDate = toDate ? dayjs(toDate).format('YYYY-MM-DD') : null;
-      
-      // Fetch currencies first to have them available for mapping
       let currencyMap = {};
       try {
-        // Change from /all to just the base endpoint
         const currencyResponse = await axios.get(`${APIBASEURL}/currencies`);
         if (currencyResponse.data && currencyResponse.data.data) {
-          // Create a map of currency ID to currency name
-          currencyResponse.data.data.forEach(currency => {
+          currencyResponse.data.data.forEach((currency) => {
             currencyMap[currency.CurrencyID] = currency.CurrencyName;
           });
         }
       } catch (error) {
-        console.error('Error fetching currencies:', error);
+        console.error("Error fetching currencies:", error);
       }
-      
+
       const response = await fetchCompanies(
         page + 1,
         rowsPerPage,
-        formattedFromDate,
-        formattedToDate
+        null,
+        null,
+        searchTerm
       );
-  
-      const companies = response.data || [];
-      
-      const mappedRows = companies.map((company) => {
-        // Look up currency name from the map
-        const currencyName = company.BillingCurrencyID ? 
-          currencyMap[company.BillingCurrencyID] || 'Unknown' : 
-          'N/A';
-        
-        return {
-          id: company.CompanyID,
-          companyName: company.CompanyName,
-          currencyName: currencyName,
-          vatAccount: company.VAT_Account || company.VatAccount || 'N/A',
-          website: company.Website || 'N/A',
-          companyNotes: company.CompanyNotes || 'N/A',
-        };
-      });
-      
+      const companies = Array.isArray(response.data) ? response.data : [];
+
+      const mappedRows = companies.map((company) => ({
+        id: company.CompanyID || company.companyId,
+        companyName: company.CompanyName || company.companyName || "N/A",
+        currencyName: company.BillingCurrencyID
+          ? currencyMap[company.BillingCurrencyID] ||
+            `Unknown (ID: ${company.BillingCurrencyID})`
+          : "N/A",
+        vatAccount: company.VAT_Account || company.vatAccount || "N/A",
+        website: company.Website || company.website || "N/A",
+        companyNotes: company.CompanyNotes || company.companyNotes || "N/A",
+      }));
+
       setRows(mappedRows);
-      
-      // Set total rows for pagination
       setTotalRows(response.totalRecords || companies.length);
     } catch (error) {
       console.error("Error loading companies:", error);
@@ -113,56 +95,51 @@ const CompanyList = () => {
     setModalOpen(true);
   };
 
-  // Make sure these functions are defined correctly
   const handleEdit = (id) => {
     setSelectedCompanyId(id);
     setModalOpen(true);
   };
 
   const handleDeleteClick = (id) => {
-    const item = rows.find(row => row.id === id);
-    if (item) {
-      setItemToDelete(item);
-      setDeleteDialogOpen(true);
-    } else {
-      toast.error("Company not found");
-    }
-  };
+  const user = JSON.parse(localStorage.getItem("user"));
+  const personId = user?.personId || user?.id || user?.userId;
+  if (!personId) {
+    toast.error("You must be logged in to delete a company.");
+    return;
+  }
+  const item = rows.find((row) => row.id === id);
+  if (item) {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  } else {
+    toast.error("Company not found");
+  }
+};
 
-  const handleDeleteConfirm = async () => {
-    try {
-      setLoading(true);
-      await deleteCompany(itemToDelete.id);
-      toast.success("Company deleted successfully");
-      loadCompanies();
-    } catch (error) {
-      console.error("Error deleting company:", error);
-      toast.error("Failed to delete company");
-    } finally {
-      setLoading(false);
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
+const handleDeleteConfirm = async () => {
+  try {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const personId = user?.personId || user?.id || user?.userId;
+    if (!personId) {
+      throw new Error("You must be logged in to delete a company.");
     }
-  };
-
-  const handleSave = () => {
+    await deleteCompany(itemToDelete.id, personId);
+    toast.success("Company deleted successfully");
+    setPage(0);
     loadCompanies();
-  };
-
-  const handleFromDateChange = (date) => {
-    setFromDate(date);
+  } catch (error) {
+    console.error("Error deleting company:", error);
+    toast.error(error.message || "Failed to delete company");
+  } finally {
+    setLoading(false);
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
+  }
+};
+  const handleSave = () => {
     setPage(0);
-  };
-
-  const handleToDateChange = (date) => {
-    setToDate(date);
-    setPage(0);
-  };
-
-  const handleClearDates = () => {
-    setFromDate(null);
-    setToDate(null);
-    setPage(0);
+    loadCompanies();
   };
 
   const handleSearch = (term) => {
@@ -170,7 +147,6 @@ const CompanyList = () => {
     setPage(0);
   };
 
-  // Update the ConfirmDialog component where it's used in the return statement
   return (
     <Box>
       <Box
@@ -186,10 +162,7 @@ const CompanyList = () => {
           <SearchBar
             onSearch={handleSearch}
             placeholder="Search Companies..."
-            sx={{
-              width: "100%",
-              marginLeft: "auto",
-            }}
+            sx={{ width: "100%", marginLeft: "auto" }}
           />
           <Tooltip title="Add Company">
             <IconButton
@@ -238,11 +211,7 @@ const CompanyList = () => {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: {
-            width: "400px",
-            minHeight: "200px",
-            padding: "16px",
-          },
+          sx: { width: "400px", minHeight: "200px", padding: "16px" },
         }}
       />
     </Box>

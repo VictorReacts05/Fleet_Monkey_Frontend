@@ -24,15 +24,17 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
 // Styled Components
 const LoginContainer = styled(Box)(({ theme }) => ({
-  height: "100vh",
-  width: "100vw",
+  minHeight: "100vh", // Allow growth for vertical scrolling
+  width: "100%", // Use 100% to respect parent container (body) width
+  maxWidth: "100vw", // Prevent exceeding viewport width
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  position: "fixed",
-  top: 0,
-  left: 0,
+  flexDirection: "column", // Stack content vertically
+  overflowY: "auto", // Enable vertical scrolling
+  overflowX: "hidden", // Explicitly disable horizontal scrolling
+  boxSizing: "border-box", // Ensure padding/margins are included in width
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
@@ -41,6 +43,8 @@ const LoginPaper = styled(Paper)(({ theme }) => ({
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
   width: "100%",
   maxWidth: 450,
+  margin: theme.spacing(2), // Add margin for spacing
+  boxSizing: "border-box", // Ensure width includes padding
 }));
 
 const LogoBox = styled(Box)(({ theme }) => ({
@@ -64,6 +68,23 @@ const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
   "@keyframes moveTruck": {
     "0%": { transform: "translateX(-190px)" },
     "100%": { transform: "translateX(0)" },
+  },
+}));
+
+// Custom TextField with autofill background fix
+const CustomTextField = styled(TextField)(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    backgroundColor: theme.palette.mode === "dark" ? "#2c2c2c" : "#fff", // Default background
+    "& input:-webkit-autofill": {
+      boxShadow: "none !important", // Remove any autofill background
+      backgroundColor: "transparent !important", // Ensure no background color
+      WebkitTextFillColor: `${
+        theme.palette.mode === "dark"
+          ? theme.palette.common.white
+          : theme.palette.text.primary
+      } !important`, // Maintain text color
+      transition: "background-color 9999s ease-out 0s", // Prevent autofill animation
+    },
   },
 }));
 
@@ -126,14 +147,20 @@ const Login = () => {
           <Typography
             variant="body2"
             align="center"
-            sx={{ color: "#fff", bgcolor: "error.main", borderRadius: 1, p: 1, mb: 2 }}
+            sx={{
+              color: "#fff",
+              bgcolor: "error.main",
+              borderRadius: 1,
+              p: 1,
+              mb: 2,
+            }}
           >
             {error}
           </Typography>
         )}
 
         <form onSubmit={handleSubmit}>
-          <TextField
+          <CustomTextField
             fullWidth
             label="Login ID"
             variant="outlined"
@@ -149,7 +176,7 @@ const Login = () => {
             }}
           />
 
-          <TextField
+          <CustomTextField
             fullWidth
             label="Password"
             variant="outlined"

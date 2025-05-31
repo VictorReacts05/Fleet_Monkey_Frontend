@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     warehouseName: "",
+    warehouseAddressId: 1, // Placeholder, replace with actual address selection if needed
   });
 
   const [errors, setErrors] = useState({
@@ -67,23 +68,32 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
     if (validateForm()) {
       try {
         setLoading(true);
-        
+
+        // Get personId from localStorage
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const personId = user?.personId || user?.id || user?.userId;
+        if (!personId) {
+          toast.error("You must be logged in to save a warehouse");
+          setLoading(false);
+          return;
+        }
+
         const warehouseData = {
-          WarehouseName: formData.warehouseName
+          warehouseName: formData.warehouseName,
+          warehouseAddressId: formData.warehouseAddressId,
+          createdById: Number(personId),
         };
-        
+
         if (warehouseId) {
           // Update existing warehouse
           await updateWarehouse(warehouseId, warehouseData);
-          // toast.success("Warehouse updated successfully");
           showToast("Warehouse updated successfully", "success");
         } else {
           // Create new warehouse
           await createWarehouse(warehouseData);
-          // toast.success("Warehouse created successfully");
           showToast("Warehouse created successfully", "success");
         }
-        
+
         if (onSave) onSave();
         if (onClose) onClose();
       } catch (error) {
@@ -98,7 +108,7 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     if (isSubmitted) {
       validateForm();
     }
@@ -117,8 +127,8 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
         value={formData.warehouseName}
         onChange={handleChange}
         error={errors.warehouseName}
-        
       />
+      {/* If you want to allow address selection, add a FormInput for warehouseAddressId here */}
     </FormPage>
   );
 };

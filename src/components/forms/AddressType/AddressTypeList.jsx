@@ -13,7 +13,7 @@ import { showToast } from "../../toastNotification";
 
 const AddressTypeList = () => {
   const [rows, setRows] = useState([]);
-  const [page, setPage] = useState(0); // 0-based index
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,7 +61,9 @@ const AddressTypeList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading address types:", error);
-      toast.error("Failed to load address types: " + error.message);
+      toast.error(
+        `Failed to load address types: ${error.message || "Unknown error"}`
+      );
     } finally {
       setLoading(false);
     }
@@ -90,12 +92,15 @@ const AddressTypeList = () => {
   const confirmDelete = async () => {
     try {
       await deleteAddressType(itemToDelete.id);
-      toast.success("Address type deleted successfully"); 
+      toast.success("Address type deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadAddressTypes();
     } catch (error) {
-      toast.error("Failed to delete address type: " + error.message);
+      console.error("Error deleting address type:", error);
+      toast.error(
+        `Failed to delete address type: ${error.message || "Unknown error"}`
+      );
     }
   };
 

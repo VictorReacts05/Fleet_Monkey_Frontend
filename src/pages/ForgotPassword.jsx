@@ -17,19 +17,21 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import APIBASEURL from "../utils/apiBaseUrl";
 
+// Styled Components
 const ForgotPasswordContainer = styled(Box)(({ theme }) => ({
-  height: "100vh",
-  width: "100vw",
+  minHeight: "100vh", // Allow growth for vertical scrolling
+  width: "100%", // Use 100% to respect parent container (body) width
+  maxWidth: "100vw", // Prevent exceeding viewport width
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+  flexDirection: "column", // Stack content vertically
+  overflowY: "auto", // Enable vertical scrolling
+  overflowX: "hidden", // Explicitly disable horizontal scrolling
+  boxSizing: "border-box", // Ensure padding/margins are included in width
   margin: 0,
   padding: 0,
-  overflow: "hidden",
-  position: "fixed",
-  top: 0,
-  left: 0,
 }));
 
 const ForgotPasswordPaper = styled(Paper)(({ theme }) => ({
@@ -38,6 +40,8 @@ const ForgotPasswordPaper = styled(Paper)(({ theme }) => ({
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
   width: "100%",
   maxWidth: 450,
+  margin: theme.spacing(2), // Add margin for spacing
+  boxSizing: "border-box", // Ensure width includes padding
 }));
 
 const LogoBox = styled(Box)(({ theme }) => ({
@@ -93,22 +97,20 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      
       const response = await axios.post(`${APIBASEURL}/auth/forgot-password`, {
         EmailID: email,
       });
-      
+
       setMessage({
         text: "Password reset link has been sent to your email",
         type: "success",
       });
     } catch (error) {
-
       if (error.response) {
-        
         setMessage({
-          text: error.response.data?.message || 
-                `Server error (${error.response.status}): Please contact support.`,
+          text:
+            error.response.data?.message ||
+            `Server error (${error.response.status}): Please contact support.`,
           type: "error",
         });
       } else if (error.request) {
@@ -206,7 +208,7 @@ const ForgotPassword = () => {
 
         <Box sx={{ mt: 3, textAlign: "center" }}>
           <Typography variant="body2" color="textSecondary">
-            &copy; {new Date().getFullYear()} Fleet Monkey. All rights reserved.
+            © {new Date().getFullYear()} Fleet Monkey. All rights reserved.
           </Typography>
         </Box>
       </ForgotPasswordPaper>

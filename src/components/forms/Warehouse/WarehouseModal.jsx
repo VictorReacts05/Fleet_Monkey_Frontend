@@ -4,9 +4,13 @@ import FormInput from '../../Common/FormInput';
 import { createWarehouse, updateWarehouse, fetchWarehouses } from './WarehouseAPI';
 import { toast } from 'react-toastify';
 
+// Remove this line
+// import { getAuthHeader } from './WarehouseAPI';
+
 const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => {
   const [formData, setFormData] = useState({
     warehouseName: '',
+    warehouseAddressId: 1, // <-- Add this line (default value for testing)
   });
   const [errors, setErrors] = useState({
     warehouseName: '',
@@ -17,7 +21,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
   useEffect(() => {
     const loadWarehouse = async () => {
       if (!warehouseId) {
-        setFormData({ warehouseName: '' });
+        setFormData({ warehouseName: '', warehouseAddressId: 1 }); // Ensure both fields are set
         setErrors({ warehouseName: '' });
         return;
       }
@@ -27,6 +31,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
         if (initialData) {
           setFormData({
             warehouseName: initialData.warehouseName || '',
+            warehouseAddressId: initialData.warehouseAddressId || 1, // Ensure this is set from initialData if available
           });
         } else {
           const response = await fetchWarehouses(1, 100);
@@ -36,6 +41,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
           if (warehouse) {
             setFormData({
               warehouseName: warehouse.WarehouseName || '',
+              warehouseAddressId: warehouse.WarehouseAddressID || 1, // Ensure this is set from warehouse data
             });
           } else {
             toast.error('Warehouse not found');
@@ -58,7 +64,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
     const { name, value } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value,
+      [name]: name === "warehouseAddressId" ? Number(value) : value, // Always store as number
     }));
 
     if (errors[name]) {
@@ -94,11 +100,17 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
       return;
     }
 
-    const { headers, personId } = getAuthHeader();
-    if (!headers.Authorization || !personId) {
+    // Check for user authentication
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const personId = user?.personId || user?.id || user?.userId;
+    
+    if (!personId) {
       toast.error('You must be logged in to save a warehouse');
       return;
     }
+
+    // TODO: Replace 1 with the actual selected address ID from your form
+    // const warehouseAddressId = 1; // <-- REMOVE this line, use formData.warehouseAddressId instead
 
     console.log('Validation passed, proceeding with API call');
 
@@ -106,17 +118,21 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
       setLoading(true);
       if (warehouseId) {
         const updateData = {
-          WarehouseID: warehouseId,
-          WarehouseName: formData.warehouseName,
+          warehouseName: formData.warehouseName,
+          warehouseAddressId: formData.warehouseAddressId,
+          createdById: Number(personId)
         };
         console.log('Updating warehouse with data:', updateData);
         await updateWarehouse(warehouseId, updateData);
         toast.success('Warehouse updated successfully');
       } else {
-        console.log('Creating warehouse with data:', { WarehouseName: formData.warehouseName });
-        await createWarehouse({
-          WarehouseName: formData.warehouseName,
-        });
+        const createData = {
+          warehouseName: formData.warehouseName,
+          warehouseAddressId: formData.warehouseAddressId,
+          createdById: Number(personId)
+        };
+        console.log('Creating warehouse with data:', createData);
+        await createWarehouse(createData);
         toast.success('Warehouse created successfully');
       }
 
