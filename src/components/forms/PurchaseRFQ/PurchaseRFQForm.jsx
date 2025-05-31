@@ -570,7 +570,8 @@ const PurchaseRFQForm = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                  background:
+                    useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
                   padding: "0px 10px",
                   height: "37px",
@@ -581,14 +582,15 @@ const PurchaseRFQForm = ({
                     boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
                     transform: "scale(1.02)", // Slight scale on hover
                   },
-                  }}
+                }}
               >
                 <Typography
                   variant="body2"
                   sx={{
                     fontWeight: "700", // Bolder text
                     marginRight: "8px",
-                    color: useTheme().palette.mode === "light" ? "white" : "black",
+                    color:
+                      useTheme().palette.mode === "light" ? "white" : "black",
                     fontSize: "0.9rem",
                   }}
                 >
@@ -625,8 +627,7 @@ const PurchaseRFQForm = ({
               color="secondary"
               onClick={handleSendPurchaseRFQ}
               disabled={
-                formData.Status !== "Approved" ||
-                selectedSuppliers.length === 0
+                formData.Status !== "Approved" || selectedSuppliers.length === 0
               }
               sx={{
                 fontWeight: "bold",
@@ -832,7 +833,22 @@ const PurchaseRFQForm = ({
         </Grid>
       </Grid>
       {parcels.length > 0 ? (
-        <Box sx={{ mt: 3 }}>
+        <Box
+          sx={{
+            py: 1.5,
+            px: 3,
+            fontWeight: "bold",
+            borderTop: "1px solid #e0e0e0",
+            borderRight: "1px solid #e0e0e0",
+            borderLeft: "1px solid #e0e0e0",
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+            color: theme.palette.text.primary,
+            cursor: "pointer",
+          }}
+        >
           <Typography variant="h6" sx={{ mb: 2 }}>
             Items
           </Typography>
@@ -920,16 +936,41 @@ const PurchaseRFQForm = ({
         </Box>
       ) : (
         <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+              width: "fit-content",
+            }}
+          >
+            <Typography variant="h6">
+              Items
+            </Typography>
+          </Box>
           <Paper
             sx={{
-              p: 3,
+              // p: 3,
+              // textAlign: "center",
+              // color: "text.secondary",
+              // borderRadius: "8px",
+              // backgroundColor: alpha("#f5f5f5", 0.7),
+              p: 2,
+              border: "1px solid #e0e0e0",
+              borderBottomLeftRadius: 4,
+              borderBottomRightRadius: 4,
+              borderTopRightRadius: 0,
+              borderTopLeftRadius: 0,
               textAlign: "center",
-              color: "text.secondary",
-              borderRadius: "8px",
-              backgroundColor: alpha("#f5f5f5", 0.7),
             }}
           >
             No parcels found for this Purchase RFQ.

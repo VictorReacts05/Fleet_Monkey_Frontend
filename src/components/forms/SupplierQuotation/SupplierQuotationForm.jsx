@@ -508,37 +508,38 @@ const SupplierQuotationForm = ({
           <>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Typography variant="h6" component="span">
-                {isEditMode ? "Edit Supplier Quotation" : "View Supplier Quotation"}
+                {isEditMode
+                  ? "Edit Supplier Quotation"
+                  : "View Supplier Quotation"}
               </Typography>
               {!isEditMode && (
                 <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  backgroundColor:
-                    status === "Approved" ? "#e6f7e6" : "#ffebee",
-                  color: status === "Approved" ? "#2e7d32" : "#d32f2f",
-                  borderRadius: "4px",
-                  padding: "6px 12px",
-                  fontWeight: "medium",
-                }}
-                >
-                <Typography
-                  variant="body2"
                   sx={{
-                    marginRight: "8px",
-                    color:
-                      status === "Approved" ? "#2e7d32" : "#d32f2f",
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor:
+                      status === "Approved" ? "#e6f7e6" : "#ffebee",
+                    color: status === "Approved" ? "#2e7d32" : "#d32f2f",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    fontWeight: "medium",
                   }}
                 >
-                  Status:{" "}
-                </Typography>
-                <StatusIndicator 
-                  status={status} 
-                  supplierQuotationId={supplierQuotationId} 
-                  onStatusChange={handleStatusChange}
-                  readOnly={loading || isEditing}
-                />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      marginRight: "8px",
+                      color: status === "Approved" ? "#2e7d32" : "#d32f2f",
+                    }}
+                  >
+                    Status:{" "}
+                  </Typography>
+                  <StatusIndicator
+                    status={status}
+                    supplierQuotationId={supplierQuotationId}
+                    onStatusChange={handleStatusChange}
+                    readOnly={loading || isEditing}
+                  />
                 </Box>
               )}
             </Box>
@@ -600,7 +601,10 @@ const SupplierQuotationForm = ({
             <ReadOnlyField label="Supplier" value={formData.SupplierName} />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo} />
+            <ReadOnlyField
+              label="External Ref No."
+              value={formData.ExternalRefNo}
+            />
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
@@ -828,16 +832,17 @@ const SupplierQuotationForm = ({
                                 )
                               }
                               size="small"
-                              sx={{ 
-                                width: "100px", 
+                              sx={{
+                                width: "100px",
                                 textAlign: "center",
-                                "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                                  "-webkit-appearance": "none",
-                                  margin: 0
-                                },
+                                "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                                  {
+                                    "-webkit-appearance": "none",
+                                    margin: 0,
+                                  },
                                 "& input[type=number]": {
-                                  "-moz-appearance": "textfield"
-                                }
+                                  "-moz-appearance": "textfield",
+                                },
                               }}
                               inputProps={{ min: 0, step: "0.01" }}
                               placeholder="Enter rate"
@@ -866,9 +871,19 @@ const SupplierQuotationForm = ({
           </Box>
         ) : (
           <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Items
-            </Typography>
+            <Box
+              sx={{
+                p: 2,
+                border: "1px solid #e0e0e0",
+                borderBottomLeftRadius: 4,
+                borderBottomRightRadius: 4,
+                borderTopRightRadius: 0,
+                borderTopLeftRadius: 0,}}
+            >
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Items
+              </Typography>
+            </Box>
             <Paper
               sx={{
                 p: 3,

@@ -2,22 +2,30 @@ import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth header and personId from localStorage
-const getAuthHeader = () => {
+// Helper function to get auth header and personId from localStorage
+export const getAuthHeader = () => {
   try {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
+    console.log("Raw localStorage user:", localStorage.getItem("user"));
+    let user = JSON.parse(localStorage.getItem("user"));
+    console.log("Parsed user object in getAuthHeader:", user);
+
+    if (!user) {
+      console.warn("User not found in localStorage");
       return { headers: {}, personId: null };
     }
 
     const personId = user.personId || user.id || user.userId || null;
+    console.log("Extracted personId:", personId);
+
+    if (!personId) {
+      console.warn("personId is null or undefined for user:", user);
+    }
+
+    const headers = user.token ? { Authorization: `Bearer ${user.token}` } : {};
+    console.log("Headers:", headers);
 
     return {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
+      headers,
       personId,
     };
   } catch (error) {
@@ -73,9 +81,13 @@ export const fetchSalesRFQs = async (
 };
 
 // Create a new SalesRFQ with parcels
+// Create a new SalesRFQ with parcels
 export const createSalesRFQ = async (salesRFQData) => {
   try {
-    const { headers, personId } = getAuthHeader();
+    const { headers, personId: initialPersonId } = getAuthHeader();
+    if (!initialPersonId) {
+      throw new Error("User authentication data missing. Please log in again.");
+    }
 
     const { parcels, ...salesRFQDetails } = salesRFQData;
 
@@ -108,7 +120,7 @@ export const createSalesRFQ = async (salesRFQData) => {
       CompanyID: validCompanyID,
       CustomerID: Number(salesRFQDetails.CustomerID),
       SupplierID: Number(salesRFQDetails.SupplierID),
-      CreatedByID: undefined,
+      CreatedByID: initialPersonId, // Use cached personId
     };
 
     console.log("Creating SalesRFQ with data:", apiData);
@@ -122,24 +134,36 @@ export const createSalesRFQ = async (salesRFQData) => {
       try {
         const salesRFQId = response.data.newSalesRFQId;
         console.log("Submitting parcels for SalesRFQID:", salesRFQId);
+        const { headers, personId } = getAuthHeader();
+        console.log("Using personId for parcels:", initialPersonId);
 
-        const formattedParcels = parcels.map((parcel, index) => ({
-          SalesRFQID: salesRFQId,
-          ItemID: Number(parcel.ItemID || parcel.itemId),
-          UOMID: Number(parcel.UOMID || parcel.uomId),
-          ItemQuantity: Number(
-            parcel.ItemQuantity || parcel.Quantity || parcel.quantity
-          ),
-          LineItemNumber: index + 1,
-          IsDeleted: 0,
-        }));
+        if (!personId || isNaN(Number(personId)) || Number(personId) <= 0) {
+          console.error("Invalid personId:", personId);
+          throw new Error(
+            "Unable to submit parcels: Invalid or missing personId in user data"
+          );
+        }
+
+        const formattedParcels = parcels.map((parcel, index) => {
+          const parcelData = {
+            SalesRFQID: salesRFQId,
+            ItemID: Number(parcel.ItemID || parcel.itemId),
+            UOMID: Number(parcel.UOMID || parcel.uomId),
+            ItemQuantity: Number(
+              parcel.ItemQuantity || parcel.Quantity || parcel.quantity
+            ),
+            LineItemNumber: index + 1,
+            IsDeleted: 0,
+            CreatedByID: Number(personId),
+          };
+          console.log(`Formatted parcel ${index + 1}:`, parcelData);
+          return parcelData;
+        });
 
         console.log("Formatted parcels for API:", formattedParcels);
 
         const parcelPromises = formattedParcels.map((parcel) =>
-          axios.post(`${APIBASEURL}/sales-rfq-parcels`, parcel, {
-            headers,
-          })
+          axios.post(`${APIBASEURL}/sales-rfq-parcels`, parcel, { headers })
         );
 
         const parcelResults = await Promise.all(parcelPromises);
@@ -155,6 +179,7 @@ export const createSalesRFQ = async (salesRFQData) => {
             parcelError.response.data
           );
         }
+        throw parcelError;
       }
     }
 
@@ -369,6 +394,16 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
 
       if (parcels && parcels.length > 0) {
         console.log("Processing parcels for SalesRFQID:", id);
+        const { headers, personId } = getAuthHeader();
+        console.log("personId for parcel update:", personId);
+
+        if (!personId || isNaN(Number(personId)) || Number(personId) <= 0) {
+          console.error("Invalid personId for update:", personId);
+          throw new Error(
+            "Unable to create parcels: Invalid or missing personId in user data"
+          );
+        }
+
         const formattedParcels = parcels
           .filter(
             (parcel) =>
@@ -377,16 +412,24 @@ export const updateSalesRFQ = async (id, salesRFQData) => {
               !parcel.ParcelID &&
               !parcel.ID
           )
-          .map((parcel, index) => ({
-            SalesRFQID: Number(id),
-            ItemID: Number(parcel.ItemID || parcel.itemId),
-            UOMID: Number(parcel.UOMID || parcel.uomId),
-            ItemQuantity: Number(
-              parcel.ItemQuantity || parcel.Quantity || parcel.quantity
-            ),
-            LineItemNumber: index + 1,
-            IsDeleted: 0,
-          }));
+          .map((parcel, index) => {
+            const parcelData = {
+              SalesRFQID: Number(id),
+              ItemID: Number(parcel.ItemID || parcel.itemId),
+              UOMID: Number(parcel.UOMID || parcel.uomId),
+              ItemQuantity: Number(
+                parcel.ItemQuantity || parcel.Quantity || parcel.quantity
+              ),
+              LineItemNumber: index + 1,
+              IsDeleted: 0,
+              CreatedByID: Number(personId),
+            };
+            console.log(
+              `Formatted parcel ${index + 1} for update:`,
+              parcelData
+            );
+            return parcelData;
+          });
 
         if (formattedParcels.length > 0) {
           const parcelPromises = formattedParcels.map((parcel) =>
