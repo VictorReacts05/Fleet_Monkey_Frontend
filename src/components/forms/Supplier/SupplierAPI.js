@@ -57,11 +57,12 @@ export const createSupplier = async (supplierData) => {
     // Format request data
     const requestData = {
       supplierName: supplierData.supplierName.trim(),
-      companyId: supplierData.companyId ? Number(supplierData.companyId) : null,
+      companyId: supplierData.companyId? Number(supplierData.companyId) : 48,
       billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
       website: supplierData.website || '',
       supplierNotes: supplierData.supplierNotes || '',
-      createdById: user.personId || 1
+      userId: user.personId || 1,
+      supplierEmail:supplierData.supplierEmail||''
     };
 
     console.log('Formatted request data:', requestData);
@@ -94,7 +95,8 @@ export const updateSupplier = async (id, supplierData) => {
       billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
       website: supplierData.website || '',
       supplierNotes: supplierData.supplierNotes || '',
-      createdById: user.personId || 1
+      supplierEmail:supplierData.supplierEmail||'',
+      userId: user.personId || 1
     };
 
     console.log('Formatted update request data:', requestData);
@@ -114,7 +116,7 @@ export const deleteSupplier = async (id) => {
 
     const response = await axios.delete(`${APIBASEURL}/suppliers/${id}`, {
       data: {
-        createdById: user.personId || 1
+        userId: user.personId || 1
       }
     });
 
@@ -126,14 +128,34 @@ export const deleteSupplier = async (id) => {
   }
 };
 
+
 export const getSupplierById = async (id) => {
   try {
+    if (!id || isNaN(Number(id))) {
+      throw new Error('Invalid supplier ID');
+    }
     console.log(`Fetching supplier with ID: ${id}`);
-    const response = await axios.get(`${APIBASEURL}/suppliers/${id}`);
+    console.log(`Request URL: ${APIBASEURL}/suppliers/${id}`);
+    const user = getUserData();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(user.token && { Authorization: `Bearer ${user.token}` }),
+    };
+    const response = await axios.get(`${APIBASEURL}/suppliers/${id}`, { headers });
     console.log('Supplier data response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching supplier:', error);
-    throw error.response?.data || { message: error.message, success: false };
+    console.error('Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      responseData: error.response?.data,
+      requestUrl: `${APIBASEURL}/suppliers/${id}`,
+    });
+    throw {
+      message: error.response?.data?.message || error.message || 'Failed to fetch supplier',
+      success: false,
+      status: error.response?.status,
+    };
   }
 };

@@ -36,6 +36,7 @@ import VehicleList from './components/forms/Vehicle/VehicleList';
 import WarehouseList from './components/forms/Warehouse/WarehouseList';
 import AddressTypeList from './components/forms/AddressType/AddressTypeList';
 import UOMList from './components/forms/UOM/UOMList';
+import AddressList from './components/forms/Address/AddressList';
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';
@@ -379,6 +380,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <AddressTypeList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/addresses"
+            element={
+              <ProtectedRoute>
+                <AddressList />
               </ProtectedRoute>
             }
           />

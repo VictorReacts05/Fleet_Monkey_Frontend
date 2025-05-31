@@ -79,6 +79,7 @@ const menuItems = [
     icon: <SubscriptionsIcon />,
     path: "/subscriptions",
   },
+  { text:"Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
