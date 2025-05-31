@@ -47,10 +47,10 @@ export const createRole = async (roleData) => {
     
     // Prepare data with correct field names (capital letters to match backend)
     const requestData = {
-      RoleName: roleData.RoleName,
+      roleName: roleData.RoleName,
       ReadAccess: roleData.ReadAccess || false,
       WriteAccess: roleData.WriteAccess || false,
-      CreatedByID: user.personId || 1,
+      createdById: user.personId || 1,
     };
     
     const response = await axios.post(
@@ -76,11 +76,11 @@ export const updateRole = async (roleId, roleData) => {
     
     // Prepare data with correct field names (capital letters to match backend)
     const requestData = {
-      RoleID: Number(roleId),
-      RoleName: roleData.RoleName,
+      roleID: Number(roleId),
+      roleName: roleData.RoleName,
       ReadAccess: roleData.ReadAccess || false,
       WriteAccess: roleData.WriteAccess || false,
-      CreatedByID: user.personId || 1,
+      createdById: user.personId || 1,
     };
     
     if (roleData.RowVersionColumn) {

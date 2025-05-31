@@ -222,7 +222,7 @@ export const deleteCustomer = async (id) => {
 
     const response = await axios.delete(`${APIBASEURL}/customers/${id}`, {
       data: {
-        createdById: user.personId || user.id || 1
+        deletedById: user.personId || user.id || 1
       }
     });
 

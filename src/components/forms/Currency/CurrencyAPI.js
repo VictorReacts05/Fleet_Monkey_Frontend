@@ -69,8 +69,9 @@ export const createCurrency = async (currencyData, personId = null) => {
     // Ensure we're using the correct field names with proper capitalization
     // to match what the backend expects
     const requestBody = {
-      currencyName: currencyData.CurrencyName || currencyData.currencyName,
-      createdById: currencyData.CreatedByID || createdById || 1,
+      currencyName: currencyData.CurrencyName ,
+      CreatedById: currencyData.createdById || createdById || 1,
+
     };
 
     console.log("[DEBUG] Currency create request data:", requestBody);

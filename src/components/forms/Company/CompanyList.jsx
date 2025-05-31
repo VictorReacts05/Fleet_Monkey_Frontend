@@ -101,32 +101,42 @@ const CompanyList = () => {
   };
 
   const handleDeleteClick = (id) => {
-    const item = rows.find((row) => row.id === id);
-    if (item) {
-      setItemToDelete(item);
-      setDeleteDialogOpen(true);
-    } else {
-      toast.error("Company not found");
-    }
-  };
+  const user = JSON.parse(localStorage.getItem("user"));
+  const personId = user?.personId || user?.id || user?.userId;
+  if (!personId) {
+    toast.error("You must be logged in to delete a company.");
+    return;
+  }
+  const item = rows.find((row) => row.id === id);
+  if (item) {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  } else {
+    toast.error("Company not found");
+  }
+};
 
-  const handleDeleteConfirm = async () => {
-    try {
-      setLoading(true);
-      await deleteCompany(itemToDelete.id);
-      toast.success("Company deleted successfully");
-      setPage(0);
-      loadCompanies();
-    } catch (error) {
-      console.error("Error deleting company:", error);
-      toast.error("Failed to delete company");
-    } finally {
-      setLoading(false);
-      setDeleteDialogOpen(false);
-      setItemToDelete(null);
+const handleDeleteConfirm = async () => {
+  try {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const personId = user?.personId || user?.id || user?.userId;
+    if (!personId) {
+      throw new Error("You must be logged in to delete a company.");
     }
-  };
-
+    await deleteCompany(itemToDelete.id, personId);
+    toast.success("Company deleted successfully");
+    setPage(0);
+    loadCompanies();
+  } catch (error) {
+    console.error("Error deleting company:", error);
+    toast.error(error.message || "Failed to delete company");
+  } finally {
+    setLoading(false);
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
+  }
+};
   const handleSave = () => {
     setPage(0);
     loadCompanies();
