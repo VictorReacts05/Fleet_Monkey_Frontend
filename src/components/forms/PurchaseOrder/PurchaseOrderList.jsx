@@ -14,11 +14,10 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification";
 import PurchaseOrderForm from "./PurchaseOrderForm";
 import { Chip } from "@mui/material";
+import { fetchPurchaseOrders, deletePurchaseOrder } from "./PurchaseOrderAPI";
 
 const getHeaders = () => {
   return {
@@ -36,75 +35,18 @@ const PurchaseOrderList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Static data for the table
-  const purchaseOrders = [
-    {
-      id: 1,
-      Series: "PO2025-001",
-      SupplierName: "ABC Suppliers Inc",
-      CustomerName: "John Smith",
-      PostingDate: "2025-06-10",
-      DeliveryDate: "2025-06-15",
-      ServiceType: "International Shipping",
-      Status: "Approved",
-      Total: 13750.0,
-    },
-    {
-      id: 2,
-      Series: "PO2025-002",
-      SupplierName: "XYZ Logistics",
-      CustomerName: "Jane Doe",
-      PostingDate: "2025-06-12",
-      DeliveryDate: "2025-06-18",
-      ServiceType: "Domestic Shipping",
-      Status: "Pending",
-      Total: 8500.0,
-    },
-    {
-      id: 3,
-      Series: "PO2025-003",
-      SupplierName: "Global Transport Co",
-      CustomerName: "Robert Johnson",
-      PostingDate: "2025-06-14",
-      DeliveryDate: "2025-06-20",
-      ServiceType: "Express Delivery",
-      Status: "Approved",
-      Total: 22000.0,
-    },
-    {
-      id: 4,
-      Series: "PO2025-004",
-      SupplierName: "Fast Freight Ltd",
-      CustomerName: "Emily Williams",
-      PostingDate: "2025-06-15",
-      DeliveryDate: "2025-06-22",
-      ServiceType: "International Shipping",
-      Status: "Rejected",
-      Total: 15300.0,
-    },
-    {
-      id: 5,
-      Series: "PO2025-005",
-      SupplierName: "Reliable Shipping Inc",
-      CustomerName: "Michael Brown",
-      PostingDate: "2025-06-16",
-      DeliveryDate: "2025-06-25",
-      ServiceType: "Domestic Shipping",
-      Status: "Approved",
-      Total: 9800.0,
-    },
-  ];
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [totalRows, setTotalRows] = useState(0);
 
   // Filter purchase orders based on search term
   const filteredPurchaseOrders = purchaseOrders.filter((order) => {
     const searchString = searchTerm.toLowerCase();
     return (
-      order.Series.toLowerCase().includes(searchString) ||
-      order.SupplierName.toLowerCase().includes(searchString) ||
-      order.CustomerName.toLowerCase().includes(searchString) ||
-      order.ServiceType.toLowerCase().includes(searchString) ||
-      order.Status.toLowerCase().includes(searchString)
+      order.Series?.toLowerCase().includes(searchString) ||
+      order.SupplierName?.toLowerCase().includes(searchString) ||
+      order.CustomerName?.toLowerCase().includes(searchString) ||
+      order.ServiceType?.toLowerCase().includes(searchString) ||
+      order.Status?.toLowerCase().includes(searchString)
     );
   });
 
@@ -140,6 +82,25 @@ const PurchaseOrderList = () => {
 
   const navigate = useNavigate();
 
+  // Fetch purchase orders on component mount
+  useEffect(() => {
+    const loadPurchaseOrders = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchPurchaseOrders(page + 1, rowsPerPage);
+        setPurchaseOrders(response.data || []);
+        setTotalRows(response.total || 0);
+      } catch (error) {
+        console.error("Error fetching purchase orders:", error);
+        toast.error("Failed to fetch purchase orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPurchaseOrders();
+  }, [page, rowsPerPage]);
+
   const handlePageChange = (newPage) => {
     setPage(newPage);
   };
@@ -150,7 +111,6 @@ const PurchaseOrderList = () => {
   };
 
   const handleView = (id) => {
-    console.log("View clicked for Purchase Order ID:", id);
     if (id && id !== "undefined") {
       navigate(`/purchase-order/view/${id}`);
     } else {
@@ -173,8 +133,8 @@ const PurchaseOrderList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      // In a real app, you would call an API to delete the purchase order
-      console.log(`Deleting purchase order with ID: ${selectedOrder}`);
+      await deletePurchaseOrder(selectedOrder);
+      setPurchaseOrders(purchaseOrders.filter(order => order.id !== selectedOrder));
       toast.success("Purchase Order deleted successfully");
       setDeleteDialogOpen(false);
     } catch (error) {
@@ -228,7 +188,7 @@ const PurchaseOrderList = () => {
         getRowId={(row) => row.id || "unknown"}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={filteredPurchaseOrders.length}
+        totalRows={totalRows}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onView={handleView}

@@ -9,27 +9,19 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
+import { toast } from "react-toastify";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
-import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification";
 import SalesOrderForm from "./SalesOrderForm";
-import { Chip } from "@mui/material";
-
-const getHeaders = () => {
-  return {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-};
 
 const SalesOrderList = () => {
   const [loading, setLoading] = useState(false);
+  const [salesOrders, setSalesOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -37,78 +29,47 @@ const SalesOrderList = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Static data for the table
-  const salesOrders = [
-    {
-      id: 1,
-      Series: "SO2025-001",
-      CustomerName: "John Smith",
-      SupplierName: "ABC Suppliers Inc",
-      PostingDate: "2025-06-10",
-      DeliveryDate: "2025-06-15",
-      ServiceType: "International Shipping",
-      Status: "Approved",
-      Total: 13750.0,
-    },
-    {
-      id: 2,
-      Series: "SO2025-002",
-      CustomerName: "Jane Doe",
-      SupplierName: "XYZ Logistics",
-      PostingDate: "2025-06-12",
-      DeliveryDate: "2025-06-18",
-      ServiceType: "Domestic Shipping",
-      Status: "Pending",
-      Total: 8500.0,
-    },
-    {
-      id: 3,
-      Series: "SO2025-003",
-      CustomerName: "Robert Johnson",
-      SupplierName: "Global Transport Co",
-      PostingDate: "2025-06-14",
-      DeliveryDate: "2025-06-20",
-      ServiceType: "Express Delivery",
-      Status: "Approved",
-      Total: 22000.0,
-    },
-    {
-      id: 4,
-      Series: "SO2025-004",
-      CustomerName: "Emily Williams",
-      SupplierName: "Fast Freight Ltd",
-      PostingDate: "2025-06-15",
-      DeliveryDate: "2025-06-22",
-      ServiceType: "International Shipping",
-      Status: "Pending",
-      Total: 15300.0,
-    },
-    {
-      id: 5,
-      Series: "SO2025-005",
-      CustomerName: "Michael Brown",
-      SupplierName: "Reliable Shipping Inc",
-      PostingDate: "2025-06-16",
-      DeliveryDate: "2025-06-25",
-      ServiceType: "Domestic Shipping",
-      Status: "Approved",
-      Total: 9800.0,
-    },
-  ];
+  const navigate = useNavigate();
+
+  // Fetch sales orders from API
+  useEffect(() => {
+    const fetchSalesOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${APIBASEURL}/sales-Order`);
+        if (response.data && response.data.data) {
+          const normalized = response.data.data.map(order => ({
+            ...order,
+            id: order.SalesOrderID || order.id, // Normalize ID field
+          }));
+          setSalesOrders(normalized);
+        } else {
+          toast.warn("No sales orders found.");
+        }
+      } catch (error) {
+        console.error("Error fetching sales orders:", error);
+        toast.error("Failed to fetch sales orders.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSalesOrders();
+  }, []);
 
   // Filter sales orders based on search term
   const filteredSalesOrders = salesOrders.filter((order) => {
     const searchString = searchTerm.toLowerCase();
     return (
-      order.Series.toLowerCase().includes(searchString) ||
-      order.CustomerName.toLowerCase().includes(searchString) ||
-      order.SupplierName.toLowerCase().includes(searchString) ||
-      order.ServiceType.toLowerCase().includes(searchString) ||
-      order.Status.toLowerCase().includes(searchString)
+      order.Series?.toLowerCase().includes(searchString) ||
+      order.CustomerName?.toLowerCase().includes(searchString) ||
+      order.SupplierName?.toLowerCase().includes(searchString) ||
+      order.ServiceType?.toLowerCase().includes(searchString) ||
+      order.Status?.toLowerCase().includes(searchString)
     );
   });
 
-  // Table columns definition
+  // Table columns
   const columns = [
     {
       field: "Series",
@@ -126,19 +87,21 @@ const SalesOrderList = () => {
       headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
+    },
+    {
+      field: "id",
+      headerName: "ID",
+      width: 100,
+      valueGetter: (params) => params.row.id || "No ID",
     },
   ];
-
-  const navigate = useNavigate();
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -149,12 +112,15 @@ const SalesOrderList = () => {
     setPage(0);
   };
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setPage(0);
+  };
+
   const handleView = (id) => {
-    console.log("View clicked for Sales Order ID:", id);
     if (id && id !== "undefined") {
       navigate(`/sales-order/view/${id}`);
     } else {
-      console.error("Invalid Sales Order ID:", id);
       toast.error("Cannot view Sales Order: Invalid ID");
     }
   };
@@ -173,7 +139,7 @@ const SalesOrderList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      // In a real app, you would call an API to delete the sales order
+      // Replace with actual API call if deletion is implemented
       console.log(`Deleting sales order with ID: ${selectedOrder}`);
       toast.success("Sales Order deleted successfully");
       setDeleteDialogOpen(false);
@@ -183,11 +149,6 @@ const SalesOrderList = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSearch = (term) => {
-    setSearchTerm(term);
-    setPage(0);
   };
 
   const handleAdd = () => {
@@ -210,20 +171,13 @@ const SalesOrderList = () => {
             onSearch={handleSearch}
             placeholder="Search Sales Orders..."
           />
+         
         </Stack>
       </Box>
 
       <DataTable
         rows={filteredSalesOrders}
-        columns={[
-          ...columns,
-          {
-            field: "id",
-            headerName: "ID",
-            width: 100,
-            valueGetter: (params) => params.row.id || "No ID",
-          },
-        ]}
+        columns={columns}
         loading={loading}
         getRowId={(row) => row.id || "unknown"}
         page={page}
@@ -235,6 +189,7 @@ const SalesOrderList = () => {
         onDelete={handleDeleteClick}
       />
 
+      {/* View Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -258,6 +213,7 @@ const SalesOrderList = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -270,7 +226,7 @@ const SalesOrderList = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+          <Button onClick={handleDialogClose} color="primary">
             Cancel
           </Button>
           <Button onClick={confirmDelete} color="error" variant="contained">

@@ -30,43 +30,7 @@ const getHeaders = () => {
 };
 
 const SalesQuotationList = () => {
-  const [salesQuotations, setSalesQuotations] = useState([  {
-    SalesQuotationID: 1,
-    Series: "SQ-2024-001",
-    CustomerName: "ABC Company",
-    Status: "Approved",
-    CreatedDate: "2024-01-15"
-  },
-  {
-    SalesQuotationID: 2,
-    Series: "SQ-2024-002",
-    CustomerName: "XYZ Corp",
-    Status: "Pending",
-    CreatedDate: "2024-01-16"
-  },
-  {
-    SalesQuotationID: 3,
-    Series: "SQ-2024-003",
-    CustomerName: "123 Industries",
-    Status: "Rejected",
-    CreatedDate: "2024-01-17"
-  },
-  {
-    SalesQuotationID: 4,
-    Series: "SQ-2024-004",
-    CustomerName: "Tech Solutions",
-    Status: "Approved",
-    CreatedDate: "2024-01-18"
-  },
-  {
-    SalesQuotationID: 5,
-    Series: "SQ-2024-005",
-    CustomerName: "Global Trading",
-    Status: "Pending",
-    CreatedDate: "2024-01-19"
-  }
-]);
-
+  const [salesQuotations, setSalesQuotations] = useState([]); // Removed static data
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
@@ -89,97 +53,85 @@ const SalesQuotationList = () => {
       headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
     },
   ];
 
   const navigate = useNavigate();
 
   const fetchSalesQuotations = async () => {
+    let isMounted = true;
     try {
       setLoading(true);
       const { headers } = getHeaders();
+      console.log("Headers:", headers);
       const response = await axios.get(
-        "http://localhost:7000/api/sales-quotation",
+        `http://localhost:7000/api/sales-Quotation?page=${page + 1}&limit=${rowsPerPage}`,
         { headers }
       );
       console.log("Sales Quotations API response:", response);
-      let quotationData = [];
-      if (Array.isArray(response.data)) {
-        quotationData = response.data;
-      } 
-      else if (response.data && Array.isArray(response.data.data)) {
-        quotationData = response.data.data;
-      } else {
-        console.error("Unexpected API response format:", response.data);
-        quotationData = [];
+      const quotationData = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+      if (!quotationData.length) {
+        console.warn("No sales quotations found in response:", response.data);
       }
-      const mappedData = quotationData.map(quotation => ({
+      const mappedData = quotationData.map((quotation) => ({
         ...quotation,
-        id: quotation.SalesQuotationID,
-        Status: quotation.Status || 'Pending',
-        CreatedDate: dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
+        id: quotation.SalesQuotationID ?? null,
+        Status: quotation.Status || "Pending",
+        CreatedDate: quotation.CreatedDate
+          ? dayjs(quotation.CreatedDate).isValid()
+            ? dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
+            : "Invalid Date"
+          : "No Date Provided",
       }));
-      setSalesQuotations(mappedData);
-      setTotalRows(mappedData.length);
+      console.log("Mapped Data:", mappedData);
+      if (isMounted) {
+        setSalesQuotations(mappedData);
+        setTotalRows(response.data.total || mappedData.length); // Use total from API if available
+      }
     } catch (error) {
-      console.error("Error fetching Sales Quotations:", error);
-      toast.error("Failed to fetch Sales Quotations");
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${error.response.data?.message || "Unknown error"}`
+        : error.message === "Network Error"
+        ? "Network error: Please check your internet connection or server status"
+        : "Failed to fetch Sales Quotations";
+      console.error("Error fetching Sales Quotations:", error.response || error.message);
+      if (isMounted) {
+        toast.error(errorMessage);
+      }
+    } finally {
+      if (isMounted) {
+        setLoading(false);
+      }
     }
+    return () => {
+      isMounted = false;
+    };
   };
 
   useEffect(() => {
     fetchSalesQuotations();
-  }, []);
+  }, [page, rowsPerPage]); // Added dependencies for pagination
 
   const handlePageChange = async (newPage) => {
     setPage(newPage);
-    try {
-      setLoading(true);
-      const { headers } = getHeaders();
-      const response = await axios.get(
-        "http://localhost:7000/api/sales-quotation",
-        { headers }
-      );
-
-      console.log("Sales Quotations API response:", response);
-
-      let quotationData = [];
-
-      if (Array.isArray(response.data)) {
-        quotationData = response.data;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        quotationData = response.data.data;
-      } else {
-        console.error("Unexpected API response format:", response.data);
-        quotationData = [];
-      }
-
-      const mappedData = quotationData.map(quotation => ({
-        ...quotation,
-        id: quotation.SalesQuotationID,
-        Status: quotation.Status || 'Pending'
-      }));
-
-      setSalesQuotations(mappedData);
-    } catch (error) {
-      console.error("Error fetching", error);
-    } finally {
-      setLoading(false);
-    }
+    await fetchSalesQuotations(); // Reuse fetchSalesQuotations with updated page
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(0);
+    fetchSalesQuotations(); // Fetch data with new rows per page
   };
 
   const handleView = (id) => {
@@ -231,6 +183,8 @@ const SalesQuotationList = () => {
   const handleSearch = (term) => {
     setSearchTerm(term);
     setPage(0);
+    // Note: Add search to API call if backend supports it
+    // e.g., append `&search=${term}` to the API URL in fetchSalesQuotations
   };
 
   return (
@@ -252,31 +206,32 @@ const SalesQuotationList = () => {
         </Stack>
       </Box>
 
-      <DataTable
-        rows={salesQuotations.map((row) => ({
-          ...row,
-          id: row.SalesQuotationID,
-        }))}
-        columns={[
-          ...columns,
-          {
-            field: "id",
-            headerName: "ID",
-            width: 100,
-            valueGetter: (params) =>
-              params.row.SalesQuotationID || params.row.id || "No ID",
-          },
-        ]}
-        loading={loading}
-        getRowId={(row) => row.id || "unknown"}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalRows={salesQuotations.length}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
-        onView={handleView}
-        onDelete={handleDeleteClick}
-      />
+      {salesQuotations.length === 0 && !loading ? (
+        <Typography>No sales quotations available.</Typography>
+      ) : (
+        <DataTable
+          rows={salesQuotations} // Simplified, as id is already mapped
+          columns={[
+            ...columns,
+            {
+              field: "id",
+              headerName: "ID",
+              width: 100,
+              valueGetter: (params) =>
+                params.row.SalesQuotationID || params.row.id || "No ID",
+            },
+          ]}
+          loading={loading}
+          getRowId={(row) => row.id || "unknown"}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalRows={totalRows} // Use totalRows state
+          onPageChange={handlePageChange}
+          onRowsPerPageChange={handleRowsPerPageChange}
+          onView={handleView}
+          onDelete={handleDeleteClick}
+        />
+      )}
 
       <Dialog
         open={viewDialogOpen}
