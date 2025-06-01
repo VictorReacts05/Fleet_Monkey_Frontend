@@ -1,3 +1,4 @@
+// PurchaseRFQForm.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
@@ -10,15 +11,7 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   useTheme,
-  alpha,
   Checkbox,
   List,
   ListItem,
@@ -31,7 +24,7 @@ import {
 import {
   getPurchaseRFQById,
   fetchSalesRFQs,
-  fetchPurchaseRFQApprovalStatus, // Fixed typo
+  fetchPurchaseRFQApprovalStatus,
   updatePurchaseRFQApproval,
   fetchServiceTypes,
   fetchShippingPriorities,
@@ -44,6 +37,7 @@ import axios from "axios";
 import StatusIndicator from "./StatusIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import PurchaseRFQParcelTab from "./PurchaseRFQParcelTab"; // Import the new component
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -143,7 +137,7 @@ const PurchaseRFQForm = ({
         let formattedData = {
           ...rfqData,
           DeliveryDate: rfqData.DeliveryDate
-            ? new Date(rfqData.DeliveryDate) // Fixed typo
+            ? new Date(rfqData.DeliveryDate)
             : null,
           PostingDate: rfqData.PostingDate
             ? new Date(rfqData.PostingDate)
@@ -387,7 +381,10 @@ const PurchaseRFQForm = ({
           }
         );
 
-        console.log("Send RFQ response:", JSON.stringify(response.data, null, 2));
+        console.log(
+          "Send RFQ response:",
+          JSON.stringify(response.data, null, 2)
+        );
 
         toast.update(toastId, {
           render: "Email sending process completed!",
@@ -530,27 +527,32 @@ const PurchaseRFQForm = ({
     handleCloseSuppliersDialog();
   };
 
-    const handleSendPurchaseRFQ = async () => {
-      try {
-        if (selectedSuppliers.length === 0) {
-          toast.warning(
-            "Please select suppliers before sending the Purchase RFQ"
-          );
-          handleOpenSuppliersDialog();
-          return;
-        }
-
-        // Skip opening the suppliers dialog and go straight to confirmation
-        setConfirmMessage(
-          `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations? This process may take some time.`
+  const handleSendPurchaseRFQ = async () => {
+    try {
+      if (selectedSuppliers.length === 0) {
+        toast.warning(
+          "Please select suppliers before sending the Purchase RFQ"
         );
-        setConfirmAction("send");
-        setConfirmDialogOpen(true);
-      } catch (error) {
-        console.error("Error preparing to send Purchase RFQ:", error);
-        toast.error("Failed to prepare sending: " + error.message);
+        handleOpenSuppliersDialog();
+        return;
       }
-    };
+
+      // Skip opening the suppliers dialog and go straight to confirmation
+      setConfirmMessage(
+        `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations? This process may take some time.`
+      );
+      setConfirmAction("send");
+      setConfirmDialogOpen(true);
+    } catch (error) {
+      console.error("Error preparing to send Purchase RFQ:", error);
+      toast.error("Failed to prepare sending: " + error.message);
+    }
+  };
+
+  // Handle parcel changes from PurchaseRFQParcelTab
+  const handleParcelsChange = (newParcels) => {
+    setParcels(newParcels);
+  };
 
   return (
     <FormPage
@@ -577,17 +579,13 @@ const PurchaseRFQForm = ({
                   height: "37px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease-in-out",
-                  marginLeft: "16px", // Added left margin for spacing
-                  "&:hover": {
-                    boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                    transform: "scale(1.02)", // Slight scale on hover
-                  },
+                  marginLeft: "16px",
                 }}
               >
                 <Typography
                   variant="body2"
                   sx={{
-                    fontWeight: "700", // Bolder text
+                    fontWeight: "700",
                     marginRight: "8px",
                     color:
                       useTheme().palette.mode === "light" ? "white" : "black",
@@ -832,151 +830,13 @@ const PurchaseRFQForm = ({
           />
         </Grid>
       </Grid>
-      {parcels.length > 0 ? (
-        <Box
-          sx={{
-            py: 1.5,
-            px: 3,
-            fontWeight: "bold",
-            borderTop: "1px solid #e0e0e0",
-            borderRight: "1px solid #e0e0e0",
-            borderLeft: "1px solid #e0e0e0",
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
-            color: theme.palette.text.primary,
-            cursor: "pointer",
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
-          <TableContainer
-            component={Paper}
-            sx={{
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <Table>
-              <TableHead
-                sx={{
-                  backgroundColor: "#1976d2",
-                  height: "56px",
-                }}
-              >
-                <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Sr. No.
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Item
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    UOM
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Quantity
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {parcelLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      <CircularProgress size={24} sx={{ my: 2 }} />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  parcels.map((parcel, index) => (
-                    <TableRow
-                      key={parcel.id}
-                      sx={{
-                        height: "52px",
-                        "&:nth-of-type(odd)": {
-                          backgroundColor: alpha("#1976d2", 0.05),
-                        },
-                        "&:hover": {
-                          backgroundColor: alpha("#1976d2", 0.1),
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">
-                        {parcel.srNo || index + 1}
-                      </TableCell>
-                      <TableCell align="center">
-                        {parcel.itemName || `Item #${parcel.itemId}`}
-                      </TableCell>
-                      <TableCell align="center">
-                        {parcel.uomName || `UOM #${parcel.uomId}`}
-                      </TableCell>
-                      <TableCell align="center">{parcel.quantity}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      ) : (
-        <Box sx={{ mt: 3 }}>
-          <Box
-            sx={{
-              py: 1.5,
-              px: 3,
-              fontWeight: "bold",
-              borderTop: "1px solid #e0e0e0",
-              borderRight: "1px solid #e0e0e0",
-              borderLeft: "1px solid #e0e0e0",
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
-              backgroundColor:
-                theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
-              color: theme.palette.text.primary,
-              cursor: "pointer",
-              width: "fit-content",
-            }}
-          >
-            <Typography variant="h6">
-              Items
-            </Typography>
-          </Box>
-          <Paper
-            sx={{
-              // p: 3,
-              // textAlign: "center",
-              // color: "text.secondary",
-              // borderRadius: "8px",
-              // backgroundColor: alpha("#f5f5f5", 0.7),
-              p: 2,
-              border: "1px solid #e0e0e0",
-              borderBottomLeftRadius: 4,
-              borderBottomRightRadius: 4,
-              borderTopRightRadius: 0,
-              borderTopLeftRadius: 0,
-              textAlign: "center",
-            }}
-          >
-            No parcels found for this Purchase RFQ.
-          </Paper>
-        </Box>
-      )}
+
+      <PurchaseRFQParcelTab
+        purchaseRFQId={purchaseRFQId}
+        onParcelsChange={handleParcelsChange}
+        readOnly={readOnly || formData.Status === "Approved"}
+      />
+
       <Dialog
         open={suppliersDialogOpen}
         onClose={handleCloseSuppliersDialog}
