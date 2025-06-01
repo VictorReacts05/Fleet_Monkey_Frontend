@@ -19,6 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import { fetchServiceTypes } from "./PurchaseRFQAPI";
 
 // Function to fetch items from API
 const fetchItems = async (token) => {
