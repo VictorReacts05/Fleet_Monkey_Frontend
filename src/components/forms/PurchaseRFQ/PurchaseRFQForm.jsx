@@ -24,7 +24,7 @@ import {
   getPurchaseRFQById,
   fetchSalesRFQs,
   fetchPurchaseRFQApprovalStatus,
-  updatePurchaseRFQApproval,
+  approvePurchaseRFQ,
   fetchServiceTypes,
   fetchShippingPriorities,
   fetchCurrencies,
@@ -290,14 +290,20 @@ const PurchaseRFQForm = ({
   const loadApprovalStatus = useCallback(async () => {
     if (!purchaseRFQId) return;
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user?.personId) {
+        throw new Error("No user found in localStorage");
+      }
+
       const approvalData = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      console.log("Approval data in form:", approvalData);
       setApprovalRecord(approvalData);
-      if (approvalData.exists) {
-        setApprovalStatus(
-          approvalData.ApprovedYN === true || approvalData.ApprovedYN === 1
-            ? "approved"
-            : "disapproved"
-        );
+
+      if (approvalData.success && approvalData.data) {
+        const approved =
+          Number(approvalData.data.ApprovedStatus) === 1 ||
+          approvalData.data.ApprovedStatus === "true";
+        setApprovalStatus(approved ? "approved" : "disapproved");
       } else {
         setApprovalStatus(null);
       }
@@ -339,13 +345,23 @@ const PurchaseRFQForm = ({
     try {
       setLoading(true);
       if (confirmAction === "approve") {
-        await updatePurchaseRFQApproval(purchaseRFQId, true);
-        toast.success("Purchase RFQ approved successfully");
-        setApprovalStatus("approved");
+        const response = await approvePurchaseRFQ(purchaseRFQId, true);
+        if (response.success) {
+          toast.success("Purchase RFQ approved successfully");
+          setApprovalStatus("approved");
+          await loadApprovalStatus(); // Refresh approval status
+        } else {
+          throw new Error(response.message || "Approval failed");
+        }
       } else if (confirmAction === "disapprove") {
-        await updatePurchaseRFQApproval(purchaseRFQId, false);
-        toast.success("Purchase RFQ disapproved successfully");
-        setApprovalStatus("disapproved");
+        const response = await approvePurchaseRFQ(purchaseRFQId, false);
+        if (response.success) {
+          toast.success("Purchase RFQ disapproved successfully");
+          setApprovalStatus("disapproved");
+          await loadApprovalStatus(); // Refresh approval status
+        } else {
+          throw new Error(response.message || "Disapproval failed");
+        }
       } else if (confirmAction === "send") {
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
@@ -446,7 +462,11 @@ const PurchaseRFQForm = ({
         });
       }
     } catch (error) {
-      console.error("Error in handleConfirmAction:", error);
+      console.error("Error in handleConfirmAction:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       toast.error(
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
