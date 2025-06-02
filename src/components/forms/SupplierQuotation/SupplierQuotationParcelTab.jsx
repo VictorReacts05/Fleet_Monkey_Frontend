@@ -4,16 +4,8 @@ import {
   Button,
   Typography,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   TextField,
   useTheme,
-  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import FormSelect from "../../Common/FormSelect";
@@ -28,13 +20,13 @@ import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { debounce } from "lodash";
 import { getAuthHeader } from "./SupplierQuotationAPI";
+import DataTable from "../../Common/DataTable"; // Import DataTable
 
 // Function to fetch items from API
 const fetchItems = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(`${APIBASEURL}/items`, { headers });
-    console.log("Items response:", response.data); // Debug log
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching items:", error);
@@ -47,7 +39,6 @@ const fetchUOMs = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(`${APIBASEURL}/uoms`, { headers });
-    console.log("UOMs response:", response.data); // Debug log
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching UOMs:", error);
@@ -55,27 +46,23 @@ const fetchUOMs = async () => {
   }
 };
 
-// Function to fetch a single parcel by supplierQuotationParcelId
-const fetchParcels = async (supplierQuotationParcelId) => {
+// Function to fetch Supplier Quotation parcels
+const fetchSupplierQuotationParcels = async (supplierQuotationId) => {
   try {
     const { headers } = getAuthHeader();
-    console.log("Fetching parcel with ID:", supplierQuotationParcelId); // Debug log
-    const response = await axios.get(
-      `${APIBASEURL}/api/supplier-Quotation-Parcel/${supplierQuotationParcelId}`,
-      { headers }
-    );
-    console.log("Parcel fetch response:", response.data); // Debug log
-    // Wrap single parcel in an array for table rendering
-    return response.data.data ? [response.data.data] : [];
+    const url = `${APIBASEURL}/supplier-Quotation/${supplierQuotationId}`;
+    console.log("Fetching parcels from URL:", url);
+    const response = await axios.get(url, { headers });
+    console.log("Supplier Quotation response:", response.data);
+    return response.data.data?.parcels || [];
   } catch (error) {
-    console.error("Error fetching parcel:", error);
+    console.error("Error fetching Supplier Quotation parcels:", error);
     throw error;
   }
 };
 
 const SupplierQuotationParcelTab = ({
   supplierQuotationId,
-  supplierQuotationParcelId,
   onParcelsChange,
   readOnly = false,
   isEditing = false,
@@ -90,6 +77,57 @@ const SupplierQuotationParcelTab = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
+  const [page, setPage] = useState(0); // Pagination state
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Pagination state
+
+  // Define DataTable columns
+  const columns = [
+    { id: "itemName", label: "Item" },
+    { id: "uomName", label: "UOM" },
+    {
+      id: "ItemQuantity",
+      label: "Quantity",
+      renderCell: ({ value }) => value.toFixed(2),
+    },
+    {
+      id: "Rate",
+      label: "Rate",
+      renderCell: ({ row, value }) =>
+        isEditing ? (
+          <TextField
+            type="number"
+            value={value || ""}
+            onChange={(e) =>
+              handleRateChange(row.SupplierQuotationParcelID, e.target.value)
+            }
+            size="small"
+            sx={{
+              width: "100px",
+              textAlign: "center",
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
+              "& input[type=number]": {
+                "-moz-appearance": "textfield",
+              },
+            }}
+            inputProps={{ min: 0, step: "0.01" }}
+            placeholder="0.00"
+          />
+        ) : value ? (
+          value.toFixed(2)
+        ) : (
+          "-"
+        ),
+    },
+    {
+      id: "Amount",
+      label: "Amount",
+      renderCell: ({ value }) => (value ? value.toFixed(2) : "-"),
+    },
+  ];
 
   // Load dropdown data
   useEffect(() => {
@@ -99,12 +137,10 @@ const SupplierQuotationParcelTab = ({
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
             toast.error("Failed to load items");
-            console.error("Items fetch error:", err);
             return [];
           }),
           fetchUOMs().catch((err) => {
             toast.error("Failed to load UOMs");
-            console.error("UOMs fetch error:", err);
             return [];
           }),
         ]);
@@ -112,26 +148,23 @@ const SupplierQuotationParcelTab = ({
         const itemOptions = [
           { value: "", label: "Select an item" },
           ...itemsData.map((item) => ({
-            value: String(item.id),
-            label: item.name,
+            value: String(item.ItemID || item.id),
+            label: item.ItemName || item.name || "Unknown Item",
           })),
         ];
 
         const uomOptions = [
           { value: "", label: "Select a UOM" },
           ...uomsData.map((uom) => ({
-            value: String(uom.id),
-            label: uom.name || "Unknown UOM",
+            value: String(uom.UOMID || uom.id),
+            label: uom.UOM || uom.name || "Unknown UOM",
           })),
         ];
 
         setItems(itemOptions);
         setUOMs(uomOptions);
-        console.log("Items set:", itemOptions); // Debug log
-        console.log("UOMs set:", uomOptions); // Debug log
       } catch (error) {
         toast.error("Failed to load dropdown data: " + error.message);
-        console.error("Dropdown load error:", error);
       } finally {
         setLoading(false);
       }
@@ -140,72 +173,54 @@ const SupplierQuotationParcelTab = ({
     loadDropdownData();
   }, []);
 
-  // Load existing parcel
+  // Load existing parcels
   useEffect(() => {
     const loadExistingParcels = async () => {
-      if (!supplierQuotationParcelId) {
-        console.log("No supplierQuotationParcelId provided, skipping fetch"); // Debug log
+      if (!supplierQuotationId) {
         setParcels([]);
         return;
       }
 
       try {
         setLoadingExistingParcels(true);
-        const parcelData = await fetchParcels(supplierQuotationParcelId);
+        const parcelData = await fetchSupplierQuotationParcels(supplierQuotationId);
 
-        const formattedParcels = parcelData.map((parcel, index) => {
-          const itemId = String(parcel.ItemID || "");
-          const uomId = String(parcel.UOMID || "");
-          const item = items.find((i) => i.value === itemId) || {
-            label: `Item #${itemId}`,
-          };
-          const uom = uoms.find((u) => u.value === uomId) || {
-            label: `UOM #${uomId}`,
-          };
+        const formattedParcels = parcelData.map((parcel, index) => ({
+          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || Date.now() + index,
+          SupplierQuotationID: supplierQuotationId,
+          ItemID: parseInt(parcel.ItemID) || 0,
+          itemName: parcel.ItemName || "Unknown Item",
+          UOMID: parseInt(parcel.UOMID) || 0,
+          uomName: parcel.UOM || "Unknown UOM",
+          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
+          Rate: parseFloat(parcel.Rate) || 0,
+          Amount: parseFloat(parcel.Amount) || 0,
+          srNo: index + 1,
+          CountryOfOriginID: parcel.CountryOfOriginID || null,
+          CreatedByID: parcel.CreatedByID || null,
+          IsDeleted: Boolean(parcel.IsDeleted) || false,
+          id: parcel.SupplierQuotationParcelID || Date.now() + index, // For DataTable
+        }));
 
-          return {
-            SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || parcel.id,
-            SupplierQuotationID: supplierQuotationId,
-            ItemID: parseInt(itemId) || 0,
-            itemName: item.label,
-            UOMID: parseInt(uomId) || 0,
-            uomName: uom.label,
-            ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
-            Rate: parseFloat(parcel.Rate) || 0,
-            Amount: parseFloat(parcel.Amount) || 0,
-            srNo: index + 1,
-            CountryOfOriginID: parcel.CountryOfOriginID || null,
-            CreatedByID: parcel.CreatedByID || null,
-            IsDeleted: Boolean(parcel.IsDeleted) || false,
-          };
+        setParcels((prevParcels) => {
+          if (JSON.stringify(prevParcels) === JSON.stringify(formattedParcels)) {
+            return prevParcels; // Avoid re-render if parcels unchanged
+          }
+          if (onParcelsChange) {
+            onParcelsChange(formattedParcels);
+          }
+          return formattedParcels;
         });
-
-        setParcels(formattedParcels);
-        console.log("Formatted parcels:", formattedParcels); // Debug log
-        if (onParcelsChange) {
-          onParcelsChange(formattedParcels);
-        }
       } catch (error) {
-        toast.error("Failed to load parcel: " + error.message);
+        toast.error("Failed to load parcels: " + error.message);
         setParcels([]);
       } finally {
         setLoadingExistingParcels(false);
       }
     };
 
-    console.log("useEffect check:", {
-      itemsLength: items.length,
-      uomsLength: uoms.length,
-      supplierQuotationParcelId,
-    }); // Debug log
-
-    if (supplierQuotationParcelId) {
-      loadExistingParcels();
-    } else if (items.length > 1 && uoms.length > 1) {
-      // Fallback to show empty state if no parcel ID
-      setParcels([]);
-    }
-  }, [supplierQuotationParcelId, supplierQuotationId, items, uoms, onParcelsChange]);
+    loadExistingParcels();
+  }, [supplierQuotationId]);
 
   // Handle adding a new parcel form
   const handleAddParcel = () => {
@@ -238,7 +253,7 @@ const SupplierQuotationParcelTab = ({
         itemId: String(parcelToEdit.ItemID),
         uomId: String(parcelToEdit.UOMID),
         quantity: String(parcelToEdit.ItemQuantity),
-        rate: String(parcelToEdit.Rate),
+        rate: String(parcelToEdit.Rate || ""),
         editIndex: parcels.findIndex((p) => p.SupplierQuotationParcelID === id),
         originalId: id,
       },
@@ -306,22 +321,24 @@ const SupplierQuotationParcelTab = ({
       Amount: amount,
       srNo: form.editIndex !== undefined ? parcels[form.editIndex].srNo : parcels.length + 1,
       CountryOfOriginID: null,
-      CreatedByID: null,
+      CreatedByID: getAuthHeader().personId ? parseInt(getAuthHeader().personId) : null,
       IsDeleted: false,
+      id: form.originalId || Date.now(), // For DataTable
     };
 
-    let updatedParcels;
-    if (form.editIndex !== undefined) {
-      updatedParcels = [...parcels];
-      updatedParcels[form.editIndex] = newParcel;
-    } else {
-      updatedParcels = [...parcels, newParcel];
-    }
-
-    setParcels(updatedParcels);
-    if (onParcelsChange) {
-      onParcelsChange(updatedParcels);
-    }
+    setParcels((prevParcels) => {
+      let updatedParcels;
+      if (form.editIndex !== undefined) {
+        updatedParcels = [...prevParcels];
+        updatedParcels[form.editIndex] = newParcel;
+      } else {
+        updatedParcels = [...prevParcels, newParcel];
+      }
+      if (onParcelsChange) {
+        onParcelsChange(updatedParcels);
+      }
+      return updatedParcels;
+    });
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
   };
@@ -333,11 +350,13 @@ const SupplierQuotationParcelTab = ({
   };
 
   const handleConfirmDelete = () => {
-    const updatedParcels = parcels.filter((p) => p.SupplierQuotationParcelID !== deleteParcelId);
-    setParcels(updatedParcels);
-    if (onParcelsChange) {
-      onParcelsChange(updatedParcels);
-    }
+    setParcels((prevParcels) => {
+      const updatedParcels = prevParcels.filter((p) => p.SupplierQuotationParcelID !== deleteParcelId);
+      if (onParcelsChange) {
+        onParcelsChange(updatedParcels);
+      }
+      return updatedParcels;
+    });
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
   };
@@ -345,26 +364,52 @@ const SupplierQuotationParcelTab = ({
   // Handle rate change with debouncing
   const handleRateChange = useCallback(
     debounce((parcelId, value) => {
-      const updatedParcels = parcels.map((parcel) => {
-        if (parcel.SupplierQuotationParcelID === parcelId) {
-          const rate = parseFloat(value) || 0;
-          const amount = parcel.ItemQuantity * rate;
-          return { ...parcel, Rate: rate, Amount: amount };
+      setParcels((prevParcels) => {
+        const updatedParcels = prevParcels.map((parcel) => {
+          if (parcel.SupplierQuotationParcelID === parcelId) {
+            const rate = parseFloat(value) || 0;
+            const amount = parcel.ItemQuantity * rate;
+            return { ...parcel, Rate: rate, Amount: amount, id: parcel.SupplierQuotationParcelID };
+          }
+          return parcel;
+        });
+        if (onParcelsChange) {
+          onParcelsChange(updatedParcels);
         }
-        return parcel;
+        return updatedParcels;
       });
-      setParcels(updatedParcels);
-      if (onParcelsChange) {
-        onParcelsChange(updatedParcels);
-      }
     }, 300),
-    [parcels, onParcelsChange]
+    [onParcelsChange]
+  );
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0); // Reset to first page
+  };
+
+  // Slice parcels for pagination
+  const displayedParcels = parcels.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
   );
 
   return (
-    <Box sx={{ mt: 2, display: "flex", flexDirection: "column", borderRadius: 1 }}>
+    <Box
+      sx={{ mt: 2, display: "flex", flexDirection: "column", borderRadius: 1 }}
+    >
       {/* Tab header */}
-      <Box sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+        }}
+      >
         <Box
           sx={{
             py: 1.5,
@@ -375,7 +420,8 @@ const SupplierQuotationParcelTab = ({
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
-            backgroundColor: theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+            backgroundColor:
+              theme.palette.mode === "dark" ? "#1f2529" : "#1f2529",
             color: theme.palette.text.primary,
             cursor: "pointer",
           }}
@@ -411,15 +457,6 @@ const SupplierQuotationParcelTab = ({
               >
                 Add Parcel
               </Button>
-            )}
-
-            {parcels.length === 0 && parcelForms.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                <Typography variant="body1">
-                  No parcels found for this Supplier Quotation.{" "}
-                  {!readOnly && isEditing && "Click 'Add Parcel' to add a new parcel."}
-                </Typography>
-              </Box>
             )}
 
             {parcelForms.map((form) => (
@@ -491,172 +528,61 @@ const SupplierQuotationParcelTab = ({
                     />
                   </Box>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
+                >
                   <Button
                     variant="outlined"
                     onClick={() =>
-                      setParcelForms((prev) => prev.filter((f) => f.id !== form.id))
+                      setParcelForms((prev) =>
+                        prev.filter((f) => f.id !== form.id)
+                      )
                     }
                   >
                     Cancel
                   </Button>
-                  <Button variant="contained" onClick={() => handleSave(form.id)}>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSave(form.id)}
+                  >
                     Save
                   </Button>
                 </Box>
               </Box>
             ))}
 
-            {parcels.length > 0 && (
-              <TableContainer
-                component={Paper}
-                sx={{
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.7)",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                }}
-              >
-                <Table>
-                  <TableHead
-                    sx={{
-                      backgroundColor: "#1976d2",
-                      height: "56px",
-                    }}
-                  >
-                    <TableRow>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        Sr. No.
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        Item
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        UOM
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        Quantity
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        Rate
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                      >
-                        Amount
-                      </TableCell>
-                      {!readOnly && isEditing && (
-                        <TableCell
-                          align="center"
-                          sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                        >
-                          Actions
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {parcels.map((row) => (
-                      <TableRow
-                        key={row.SupplierQuotationParcelID}
-                        sx={{
-                          height: "52px",
-                          "&:nth-of-type(odd)": {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                          },
-                          "&:hover": {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                            cursor: "default",
-                            transition: "all 0.3s ease",
-                          },
-                        }}
-                      >
-                        <TableCell align="center">{row.srNo}</TableCell>
-                        <TableCell align="center">{row.itemName}</TableCell>
-                        <TableCell align="center">{row.uomName}</TableCell>
-                        <TableCell align="center">{row.ItemQuantity}</TableCell>
-                        <TableCell align="center">
-                          {isEditing ? (
-                            <TextField
-                              type="number"
-                              value={row.Rate || ""}
-                              onChange={(e) =>
-                                handleRateChange(row.SupplierQuotationParcelID, e.target.value)
-                              }
-                              size="small"
-                              sx={{
-                                width: "100px",
-                                textAlign: "center",
-                                "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                                  {
-                                    "-webkit-appearance": "none",
-                                    margin: 0,
-                                  },
-                                "& input[type=number]": {
-                                  "-moz-appearance": "textfield",
-                                },
-                              }}
-                              inputProps={{ min: 0, step: "0.01" }}
-                              placeholder="0.00"
-                            />
-                          ) : row.Rate ? (
-                            parseFloat(row.Rate).toFixed(2)
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell align="center">
-                          {typeof row.Amount === "number" && !isNaN(row.Amount)
-                            ? row.Amount.toFixed(2)
-                            : "-"}
-                        </TableCell>
-                        {!readOnly && isEditing && (
-                          <TableCell align="center">
-                            <Button
-                              size="small"
-                              onClick={() => handleEditParcel(row.SupplierQuotationParcelID)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="small"
-                              color="error"
-                              onClick={() => handleDeleteParcel(row.SupplierQuotationParcelID)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+            <DataTable
+              columns={columns}
+              rows={displayedParcels}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              totalRows={parcels.length}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              onEdit={isEditing && !readOnly ? handleEditParcel : undefined}
+              onDelete={isEditing && !readOnly ? handleDeleteParcel : undefined}
+              loading={loading || loadingExistingParcels}
+              emptyMessage={`No parcels found for this Supplier Quotation. ${
+                !readOnly && isEditing
+                  ? "Click 'Add Parcel' to add a new parcel."
+                  : ""
+              }`}
+              hideActions={readOnly || !isEditing}
+              isPagination={true}
+            />
           </>
         )}
       </Box>
 
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to remove this parcel? This action cannot be undone.
+            Are you sure you want to remove this parcel? This action cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

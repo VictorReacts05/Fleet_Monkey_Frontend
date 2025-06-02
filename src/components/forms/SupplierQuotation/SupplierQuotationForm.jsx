@@ -7,7 +7,6 @@ import {
   useTheme,
   Button,
   Alert,
-  TextField,
   Fade,
   FormControlLabel,
   Checkbox,
@@ -19,12 +18,14 @@ import {
   fetchCurrencies,
   fetchServiceTypes,
   fetchAddresses,
+  fetchCustomers,
   updateSupplierQuotation,
 } from "./SupplierQuotationAPI";
 import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
 import FormSelect from "../../Common/FormSelect";
 import FormDatePicker from "../../Common/FormDatePicker";
+import FormInput from "../../Common/FormInput";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -123,6 +124,7 @@ const SupplierQuotationForm = ({
   const [currencies, setCurrencies] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [addresses, setAddresses] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastDisplayed, setToastDisplayed] = useState(false);
@@ -159,6 +161,7 @@ const SupplierQuotationForm = ({
           currenciesData,
           serviceTypesData,
           addressesData,
+          customersData,
         ] = await Promise.all([
           fetchSuppliers().catch((err) => {
             toast.error("Failed to load suppliers");
@@ -180,6 +183,10 @@ const SupplierQuotationForm = ({
             toast.error("Failed to load addresses");
             return [];
           }),
+          fetchCustomers().catch((err) => {
+            toast.error("Failed to load customers");
+            return [];
+          }),
         ]);
 
         const suppliersOptions = [
@@ -193,7 +200,8 @@ const SupplierQuotationForm = ({
           { value: "", label: "Select an option" },
           ...purchaseRFQsData.map((rfq) => ({
             value: String(rfq.PurchaseRFQID || rfq.id),
-            label: rfq.Series || `RFQ #${rfq.PurchaseRFQID || rfq.id}`,
+            label: String(rfq.PurchaseRFQID || rfq.id),
+            series: rfq.Series || `RFQ #${rfq.PurchaseRFQID || rfq.id}`,
           })),
         ];
         const currenciesOptions = [
@@ -218,12 +226,20 @@ const SupplierQuotationForm = ({
             title: address.AddressTitle || address.Title || "",
           })),
         ];
+        const customersOptions = [
+          { value: "", label: "Select an option" },
+          ...customersData.map((customer) => ({
+            value: String(customer.CustomerID || customer.id),
+            label: customer.CustomerName || "Unknown",
+          })),
+        ];
 
         setSuppliers(suppliersOptions);
         setPurchaseRFQs(purchaseRFQsOptions);
         setCurrencies(currenciesOptions);
         setServiceTypes(serviceTypesOptions);
         setAddresses(addressesOptions);
+        setCustomers(customersOptions);
 
         setDropdownsLoaded(true);
       } catch (error) {
@@ -258,7 +274,11 @@ const SupplierQuotationForm = ({
           ? String(quotationData.SupplierID)
           : "",
         SupplierName: displayValue(quotationData.SupplierName),
-        CustomerID: displayValue(quotationData.CustomerID),
+        CustomerID: customers.find(
+          (c) => String(c.value) === String(quotationData.CustomerID)
+        )
+          ? String(quotationData.CustomerID)
+          : "",
         CustomerName: displayValue(quotationData.CustomerName),
         ExternalRefNo: displayValue(quotationData.ExternalRefNo),
         CompanyID: DEFAULT_COMPANY.value,
@@ -271,12 +291,21 @@ const SupplierQuotationForm = ({
         PurchaseRFQSeries: displayValue(quotationData.PurchaseRFQSeries),
         SalesRFQID: displayValue(quotationData.SalesRFQID),
         SalesRFQSeries: displayValue(quotationData.SalesRFQSeries),
-        PostingDate: quotationData.PostingDate ? dayjs(quotationData.PostingDate) : null,
-        DeliveryDate: quotationData.DeliveryDate ? dayjs(quotationData.DeliveryDate) : null,
-        RequiredByDate: quotationData.RequiredByDate ? dayjs(quotationData.RequiredByDate) : null,
-        DateReceived: quotationData.DateReceived ? dayjs(quotationData.DateReceived) : null,
+        PostingDate: quotationData.PostingDate
+          ? dayjs(quotationData.PostingDate)
+          : null,
+        DeliveryDate: quotationData.DeliveryDate
+          ? dayjs(quotationData.DeliveryDate)
+          : null,
+        RequiredByDate: quotationData.RequiredByDate
+          ? dayjs(quotationData.RequiredByDate)
+          : null,
+        DateReceived: quotationData.DateReceived
+          ? dayjs(quotationData.DateReceived)
+          : null,
         SalesAmount: parseFloat(quotationData.SalesAmount) || 0,
-        TaxesAndOtherCharges: parseFloat(quotationData.TaxesAndOtherCharges) || 0,
+        TaxesAndOtherCharges:
+          parseFloat(quotationData.TaxesAndOtherCharges) || 0,
         Total: parseFloat(quotationData.Total) || 0,
         CurrencyID: currencies.find(
           (c) => String(c.value) === String(quotationData.CurrencyID)
@@ -306,14 +335,20 @@ const SupplierQuotationForm = ({
           : "",
         DestinationAddress: displayValue(quotationData.DestinationAddress),
         PackagingRequiredYN: Boolean(quotationData.PackagingRequiredYN),
-        ValidTillDate: quotationData.ValidTillDate ? dayjs(quotationData.ValidTillDate) : null,
+        ValidTillDate: quotationData.ValidTillDate
+          ? dayjs(quotationData.ValidTillDate)
+          : null,
         QuotationReceivedYN: Boolean(quotationData.QuotationReceivedYN),
         FileName: displayValue(quotationData.FileName),
         FileContent: null,
         CreatedByID: displayValue(quotationData.CreatedByID),
-        CreatedDateTime: quotationData.CreatedDateTime ? dayjs(quotationData.CreatedDateTime) : null,
+        CreatedDateTime: quotationData.CreatedDateTime
+          ? dayjs(quotationData.CreatedDateTime)
+          : null,
         IsDeleted: Boolean(quotationData.IsDeleted),
-        DeletedDateTime: quotationData.DeletedDateTime ? dayjs(quotationData.DeletedDateTime) : null,
+        DeletedDateTime: quotationData.DeletedDateTime
+          ? dayjs(quotationData.DeletedDateTime)
+          : null,
         DeletedByID: displayValue(quotationData.DeletedByID),
         RowVersionColumn: displayValue(quotationData.RowVersionColumn),
       };
@@ -323,8 +358,12 @@ const SupplierQuotationForm = ({
       setDataLoaded(true);
     } catch (error) {
       setError({
-        message: error.response?.data?.message || "Failed to load supplier quotation data",
-        details: error.response?.data?.message?.includes("parameter '@SupplierID'")
+        message:
+          error.response?.data?.message ||
+          "Failed to load supplier quotation data",
+        details: error.response?.data?.message?.includes(
+          "parameter '@SupplierID'"
+        )
           ? "The server cannot find the supplier data for this quotation. Please try again or contact support."
           : "An unexpected error occurred. Please try again.",
       });
@@ -340,14 +379,29 @@ const SupplierQuotationForm = ({
     } finally {
       setLoading(false);
     }
-  }, [supplierQuotationId, toastDisplayed, DEFAULT_COMPANY, suppliers, purchaseRFQs, currencies, serviceTypes, addresses]);
+  }, [
+    supplierQuotationId,
+    toastDisplayed,
+    DEFAULT_COMPANY,
+    suppliers,
+    purchaseRFQs,
+    currencies,
+    serviceTypes,
+    addresses,
+    customers,
+  ]);
 
   useEffect(() => {
     if (supplierQuotationId && dropdownsLoaded && !dataLoaded) {
       setToastDisplayed(false);
       loadSupplierQuotationData();
     }
-  }, [supplierQuotationId, dropdownsLoaded, loadSupplierQuotationData, dataLoaded]);
+  }, [
+    supplierQuotationId,
+    dropdownsLoaded,
+    loadSupplierQuotationData,
+    dataLoaded,
+  ]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -396,13 +450,27 @@ const SupplierQuotationForm = ({
         TaxesAndOtherCharges: parseFloat(formData.TaxesAndOtherCharges) || 0,
         Total: parseFloat(formData.Total) || 0,
         CurrencyID: parseInt(formData.CurrencyID),
-        PostingDate: formData.PostingDate ? formData.PostingDate.toISOString() : null,
-        DeliveryDate: formData.DeliveryDate ? formData.DeliveryDate.toISOString() : null,
-        RequiredByDate: formData.RequiredByDate ? formData.RequiredByDate.toISOString() : null,
-        DateReceived: formData.DateReceived ? formData.DateReceived.toISOString() : null,
-        ValidTillDate: formData.ValidTillDate ? formData.ValidTillDate.toISOString() : null,
-        CreatedDateTime: formData.CreatedDateTime ? formData.CreatedDateTime.toISOString() : null,
-        DeletedDateTime: formData.DeletedDateTime ? formData.DeletedDateTime.toISOString() : null,
+        PostingDate: formData.PostingDate
+          ? formData.PostingDate.toISOString()
+          : null,
+        DeliveryDate: formData.DeliveryDate
+          ? formData.DeliveryDate.toISOString()
+          : null,
+        RequiredByDate: formData.RequiredByDate
+          ? formData.RequiredByDate.toISOString()
+          : null,
+        DateReceived: formData.DateReceived
+          ? formData.DateReceived.toISOString()
+          : null,
+        ValidTillDate: formData.ValidTillDate
+          ? formData.ValidTillDate.toISOString()
+          : null,
+        CreatedDateTime: formData.CreatedDateTime
+          ? formData.CreatedDateTime.toISOString()
+          : null,
+        DeletedDateTime: formData.DeletedDateTime
+          ? formData.DeletedDateTime.toISOString()
+          : null,
         CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
         PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
         FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
@@ -429,7 +497,9 @@ const SupplierQuotationForm = ({
       setDataLoaded(false);
       await loadSupplierQuotationData();
     } catch (error) {
-      toast.error(`Failed to save: ${error.response?.data?.message || error.message}`);
+      toast.error(
+        `Failed to save: ${error.response?.data?.message || error.message}`
+      );
     } finally {
       setLoading(false);
     }
@@ -464,7 +534,10 @@ const SupplierQuotationForm = ({
           suppliers.find((s) => s.value === value)?.label || "";
       } else if (name === "PurchaseRFQID") {
         newData.PurchaseRFQSeries =
-          purchaseRFQs.find((p) => p.value === value)?.label || "";
+          purchaseRFQs.find((p) => p.value === value)?.series || "";
+      } else if (name === "CustomerID") {
+        newData.CustomerName =
+          customers.find((c) => c.value === value)?.label || "";
       } else if (name === "ServiceTypeID") {
         newData.ServiceType =
           serviceTypes.find((st) => st.value === value)?.label || "";
@@ -516,36 +589,36 @@ const SupplierQuotationForm = ({
               {isEditing
                 ? "Edit Supplier Quotation"
                 : supplierQuotationId
-                  ? "View Supplier Quotation"
-                    : "Create Supplier Quotation"}
+                ? "View Supplier Quotation"
+                : "Create Supplier Quotation"}
             </Typography>
             {supplierQuotationId && (
               <Fade in={true} timeout={500}>
-                <Box sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  background:
-                    theme.palette.mode = "dark" ? "#90caf9" : "#1976d2",
-                  borderRadius: "4px",
-                  paddingRight: "10px",
-                  height: "37px",
-                  sm: {
-                    paddingRight: "10px"
-                  },
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease-in-out",
-                  "&:hover": {
-                    boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                    transform: "scale(1.02)",
-                  },
-                }}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    background:
+                      theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                    borderRadius: "4px",
+                    paddingRight: "10px",
+                    height: "37px",
+                    sm: {
+                      paddingRight: "10px",
+                    },
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": {
+                      boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                      transform: "scale(1.02)",
+                    },
+                  }}
                 >
                   <Typography
                     variant="body2"
                     sx={{
                       fontWeight: "700",
-                      color:
-                        theme.palette.mode === "light" ? "white" : "black",
+                      color: theme.palette.mode === "light" ? "white" : "black",
                       fontSize: "0.9rem",
                       marginRight: "8px",
                     }}
@@ -565,7 +638,9 @@ const SupplierQuotationForm = ({
         }
         onCancel={handleCancel}
         onSubmit={isEditing ? handleSave : undefined}
-        onEdit={supplierQuotationId && !isEditing ? handleEditToggle : undefined}
+        onEdit={
+          supplierQuotationId && !isEditing ? handleEditToggle : undefined
+        }
         loading={loading}
         readOnly={readOnly && !isEditing}
       >
@@ -574,7 +649,11 @@ const SupplierQuotationForm = ({
             severity="error"
             action={
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Button color="inherit" size="small" onClick={() => loadSupplierQuotationData()}>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => loadSupplierQuotationData()}
+                >
                   Retry
                 </Button>
                 <Button color="inherit" size="small" onClick={handleCancel}>
@@ -597,12 +676,16 @@ const SupplierQuotationForm = ({
             borderRadius: "8px",
             padding: "16px",
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            backgroundColor: (theme) =>
+              theme.palette.mode === "dark"
+                ? theme.palette.background.paper
+                : theme.palette.background.default,
           }}
         >
           <Grid container spacing={1}>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
+                <ReadOnlyField
                   name="Series"
                   label="Series"
                   value={formData.Series || ""}
@@ -617,14 +700,15 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="CompanyID"
+                <ReadOnlyField
+                  name="CompanyName"
                   label="Company"
-                  value={formData.CompanyID || ""}
+                  value={formData.CompanyName || ""}
                   onChange={() => {}}
                   options={[DEFAULT_COMPANY]}
                   disabled={true}
                   readOnly={true}
+                  sx={{ backgroundColor: "inherit" }}
                 />
               ) : (
                 <ReadOnlyField label="Company" value={formData.CompanyName} />
@@ -632,15 +716,16 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="SupplierID"
+                <ReadOnlyField
+                  name="SupplierName"
                   label="Supplier"
-                  value={formData.SupplierID || ""}
+                  value={formData.SupplierName || ""}
                   onChange={handleChange}
                   options={suppliers}
-                  error={!!errors.SupplierID}
-                  helperText={errors.SupplierID}
-                  disabled={readOnly}
+                  error={!!errors.SupplierName}
+                  helperText={errors.SupplierName}
+                  disabled={true}
+                  sx={{ backgroundColor: "inherit" }}
                 />
               ) : (
                 <ReadOnlyField label="Supplier" value={formData.SupplierName} />
@@ -648,7 +733,7 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
+                <ReadOnlyField
                   name="PurchaseRFQID"
                   label="Purchase RFQ"
                   value={formData.PurchaseRFQID || ""}
@@ -656,206 +741,207 @@ const SupplierQuotationForm = ({
                   options={purchaseRFQs}
                   error={!!errors.PurchaseRFQID}
                   helperText={errors.PurchaseRFQID}
-                  disabled={readOnly}
+                  disabled={true}
+                  sx={{ backgroundColor: "inherit" }}
                 />
               ) : (
-                <ReadOnlyField label="Purchase RFQ" value={formData.PurchaseRFQSeries} />
+                <ReadOnlyField
+                  label="Purchase RFQ"
+                  value={formData.PurchaseRFQID}
+                />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
-              <ReadOnlyField label="Sales RFQ" value={formData.SalesRFQSeries} />
-            </Grid>
-            <Grid sx={{ width: "24%" }}>
-              <ReadOnlyField label="Customer" value={formData.CustomerName} />
+              {isEditing ? (
+                <ReadOnlyField
+                  name="CustomerName"
+                  label="Customer"
+                  value={formData.CustomerName || ""}
+                  onChange={handleChange}
+                  options={customers}
+                  error={!!errors.CustomerName}
+                  helperText={errors.CustomerName}
+                  disabled={true}
+                  sx={{ backgroundColor: "inherit" }}
+                />
+              ) : (
+                <ReadOnlyField label="Customer" value={formData.CustomerName} />
+              )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
-                  name="ExternalRefNo"
+                <ReadOnlyField
                   label="External Ref No."
-                  value={formData.ExternalRefNo || ""}
-                  onChange={handleChange}
-                  error={!!errors.ExternalRefNo}
-                  disabled={readOnly}
-                  fullWidth
+                  value={formData.ExternalRefNo}
                 />
               ) : (
-                <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo} />
+                <ReadOnlyField
+                  label="External Ref No."
+                  value={formData.ExternalRefNo}
+                />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="ServiceTypeID"
+                <ReadOnlyField
                   label="Service Type"
-                  value={formData.ServiceTypeID || ""}
-                  onChange={handleChange}
-                  options={serviceTypes}
-                  error={!!errors.ServiceTypeID}
-                  helperText={errors.ServiceTypeID}
-                  disabled={readOnly}
+                  value={formData.ServiceType}
                 />
               ) : (
-                <ReadOnlyField label="Service Type" value={formData.ServiceType} />
+                <ReadOnlyField
+                  label="Service Type"
+                  value={formData.ServiceType}
+                />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormDatePicker
-                  name="DeliveryDate"
+                <ReadOnlyField
                   label="Delivery Date"
-                  value={formData.DeliveryDate}
-                  onChange={(date) => handleDateChange("DeliveryDate", date)}
-                  error={!!errors.DeliveryDate}
-                  helperText={errors.DeliveryDate}
-                  disabled={readOnly}
+                  value={
+                    formData.DeliveryDate
+                      ? formData.DeliveryDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               ) : (
                 <ReadOnlyField
                   label="Delivery Date"
-                  value={formData.DeliveryDate ? formData.DeliveryDate.format("MM/DD/YYYY") : "-"}
+                  value={
+                    formData.DeliveryDate
+                      ? formData.DeliveryDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormDatePicker
-                  name="PostingDate"
-                  label="Posting Date"
-                  value={formData.PostingDate}
-                  onChange={(date) => handleDateChange("PostingDate", date)}
-                  error={!!errors.PostingDate}
-                  helperText={errors.PostingDate}
-                  disabled={readOnly}
-                />
-              ) : (
                 <ReadOnlyField
                   label="Posting Date"
-                  value={formData.PostingDate ? formData.PostingDate.format("MM/DD/YYYY") : "-"}
+                  value={
+                    formData.PostingDate
+                      ? formData.PostingDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Posting Date"
+                  value={
+                    formData.PostingDate
+                      ? formData.PostingDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormDatePicker
-                  name="RequiredByDate"
-                  label="Required By Date"
-                  value={formData.RequiredByDate}
-                  onChange={(date) => handleDateChange("RequiredByDate", date)}
-                  error={!!errors.RequiredByDate}
-                  helperText={errors.RequiredByDate}
-                  disabled={readOnly}
-                />
-              ) : (
                 <ReadOnlyField
                   label="Required By Date"
-                  value={formData.RequiredByDate ? formData.RequiredByDate.format("MM/DD/YYYY") : "-"}
+                  value={
+                    formData.RequiredByDate
+                      ? formData.RequiredByDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Required By Date"
+                  value={
+                    formData.RequiredByDate
+                      ? formData.RequiredByDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormDatePicker
-                  name="DateReceived"
+                <ReadOnlyField
                   label="Date Received"
-                  value={formData.DateReceived}
-                  onChange={(date) => handleDateChange("DateReceived", date)}
-                  error={!!errors.DateReceived}
-                  helperText={errors.DateReceived}
-                  disabled={readOnly}
+                  value={
+                    formData.DateReceived
+                      ? formData.DateReceived.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               ) : (
                 <ReadOnlyField
                   label="Date Received"
-                  value={formData.DateReceived ? formData.DateReceived.format("MM/DD/YYYY") : "-"}
+                  value={
+                    formData.DateReceived
+                      ? formData.DateReceived.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormDatePicker
-                  name="ValidTillDate"
+                <ReadOnlyField
                   label="Valid Till Date"
-                  value={formData.ValidTillDate}
-                  onChange={(date) => handleDateChange("ValidTillDate", date)}
-                  error={!!errors.ValidTillDate}
-                  helperText={errors.ValidTillDate}
-                  disabled={readOnly}
+                  value={
+                    formData.ValidTillDate
+                      ? formData.ValidTillDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               ) : (
                 <ReadOnlyField
                   label="Valid Till Date"
-                  value={formData.ValidTillDate ? formData.ValidTillDate.format("MM/DD/YYYY") : "-"}
+                  value={
+                    formData.ValidTillDate
+                      ? formData.ValidTillDate.format("MM/DD/YYYY")
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="CollectionAddressID"
+                <ReadOnlyField
                   label="Collection Address"
-                  value={formData.CollectionAddressID || ""}
-                  onChange={handleChange}
-                  options={addresses}
-                  error={!!errors.CollectionAddressID}
-                  helperText={errors.CollectionAddressID}
-                  disabled={readOnly}
+                  value={formData.CollectionAddress}
                 />
               ) : (
-                <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
+                <ReadOnlyField
+                  label="Collection Address"
+                  value={formData.CollectionAddress}
+                />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="DestinationAddressID"
+                <ReadOnlyField
                   label="Destination Address"
-                  value={formData.DestinationAddressID || ""}
-                  onChange={handleChange}
-                  options={addresses}
-                  error={!!errors.DestinationAddressID}
-                  helperText={errors.DestinationAddressID}
-                  disabled={readOnly}
+                  value={formData.DestinationAddress}
                 />
               ) : (
-                <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
+                <ReadOnlyField
+                  label="Destination Address"
+                  value={formData.DestinationAddress}
+                />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
-                  name="Terms"
-                  label="Terms"
-                  value={formData.Terms || ""}
-                  onChange={handleChange}
-                  error={!!errors.Terms}
-                  helperText={errors.Terms}
-                  disabled={readOnly}
-                  fullWidth
-                />
+                <ReadOnlyField label="Terms" value={formData.Terms} />
               ) : (
                 <ReadOnlyField label="Terms" value={formData.Terms} />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormSelect
-                  name="CurrencyID"
-                  label="Currency"
-                  value={formData.CurrencyID || ""}
-                  onChange={handleChange}
-                  options={currencies}
-                  error={!!errors.CurrencyID}
-                  helperText={errors.CurrencyID}
-                  disabled={readOnly}
-                />
+                <ReadOnlyField label="Currency" value={formData.CurrencyName} />
               ) : (
                 <ReadOnlyField label="Currency" value={formData.CurrencyName} />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
+                <ReadOnlyField
                   name="SalesAmount"
                   label="Sales Amount"
                   value={formData.SalesAmount.toFixed(2) || ""}
@@ -866,31 +952,36 @@ const SupplierQuotationForm = ({
               ) : (
                 <ReadOnlyField
                   label="Sales Amount"
-                  value={formData.SalesAmount ? formData.SalesAmount.toFixed(2) : "-"}
+                  value={
+                    formData.SalesAmount ? formData.SalesAmount.toFixed(2) : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
-                  name="TaxesAndOtherCharges"
+                <ReadOnlyField
                   label="Taxes and Other Charges"
-                  value={formData.TaxesAndOtherCharges.toFixed(2) || ""}
-                  onChange={handleChange}
-                  type="number"
-                  disabled={readOnly}
-                  fullWidth
+                  value={
+                    formData.TaxesAndOtherCharges
+                      ? formData.TaxesAndOtherCharges.toFixed(2)
+                      : "-"
+                  }
                 />
               ) : (
                 <ReadOnlyField
                   label="Taxes and Other Charges"
-                  value={formData.TaxesAndOtherCharges ? formData.TaxesAndOtherCharges.toFixed(2) : "-"}
+                  value={
+                    formData.TaxesAndOtherCharges
+                      ? formData.TaxesAndOtherCharges.toFixed(2)
+                      : "-"
+                  }
                 />
               )}
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <TextField
+                <ReadOnlyField
                   name="Total"
                   label="Total"
                   value={formData.Total.toFixed(2) || ""}
@@ -907,16 +998,9 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="PackagingRequiredYN"
-                      checked={formData.PackagingRequiredYN}
-                      onChange={handleCheckboxChange("PackagingRequiredYN")}
-                      disabled={readOnly}
-                    />
-                  }
+                <ReadOnlyField
                   label="Packaging Required"
+                  value={formData.PackagingRequiredYN ? "Yes" : "No"}
                 />
               ) : (
                 <ReadOnlyField
@@ -927,16 +1011,9 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="CollectFromSupplierYN"
-                      checked={formData.CollectFromSupplierYN}
-                      onChange={handleCheckboxChange("CollectFromSupplierYN")}
-                      disabled={readOnly}
-                    />
-                  }
+                <ReadOnlyField
                   label="Collect From Supplier"
+                  value={formData.CollectFromSupplierYN ? "Yes" : "No"}
                 />
               ) : (
                 <ReadOnlyField
@@ -947,16 +1024,9 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="FormCompletedYN"
-                      checked={formData.FormCompletedYN}
-                      onChange={handleCheckboxChange("FormCompletedYN")}
-                      disabled={readOnly}
-                    />
-                  }
+                <ReadOnlyField
                   label="Form Completed"
+                  value={formData.FormCompletedYN ? "Yes" : "No"}
                 />
               ) : (
                 <ReadOnlyField
@@ -967,16 +1037,9 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="QuotationReceivedYN"
-                      checked={formData.QuotationReceivedYN}
-                      onChange={handleCheckboxChange("QuotationReceivedYN")}
-                      disabled={readOnly}
-                    />
-                  }
+                <ReadOnlyField
                   label="Quotation Received"
+                  value={formData.QuotationReceivedYN ? "Yes" : "No"}
                 />
               ) : (
                 <ReadOnlyField

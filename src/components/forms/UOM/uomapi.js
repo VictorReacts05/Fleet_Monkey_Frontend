@@ -17,7 +17,14 @@ export const getUOMById = async (id) => {
   try {
     const response = await axios.get(`${API_URL}/${id}`);
     
-    return response.data;
+    // Extract the UOM data from the response
+    // The API returns {success: true, message: '...', data: Array(1)}
+    // We need to return the first item in the data array
+    if (response.data && response.data.success && response.data.data && response.data.data.length > 0) {
+      return { data: response.data.data[0] };
+    }
+    
+    return response;
   } catch (error) {
     console.error(`Error fetching UOM with ID ${id}:`, error);
     throw error;
@@ -34,7 +41,7 @@ export const createUOM = async (uomData) => {
     // Fix: Use UOM (uppercase) instead of uom (lowercase)
     const payload = JSON.stringify({
       uom: uomData.UOM.trim(),
-      createdById: 1015
+      createdByID: 1015
     });
 
     console.log("Sending stringified JSON:", payload);
@@ -70,7 +77,7 @@ export const updateUOM = async (id, uomData) => {
     // Use the correct case for UOM property (uppercase)
     const payload = JSON.stringify({
       uom: uomData.UOM.trim(),
-      createdById: 1015
+      createdByID: 1015
     });
 
     console.log("Sending JSON payload for update:", payload);
@@ -102,15 +109,11 @@ export const deleteUOM = async (id) => {
     // Add more detailed logging
     console.log(`Attempting to delete UOM with ID: ${id}`);
     console.log("ID type:", typeof id);
-
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
     
     // Format the payload exactly as the API expects
     const payload = JSON.stringify({
-      uomId: parseInt(id), // Ensure it's an integer
-      deletedById: 1015,
-      createdById: user.personId || user.id || 1
+      uomID: parseInt(id), // Ensure it's an integer
+      deletedByID: 1015
     });
     
     
