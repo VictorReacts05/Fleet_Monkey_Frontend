@@ -419,6 +419,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     if (!formData.DestinationAddressID) {
       newErrors.DestinationAddressID = "Destination Address is required";
     }
+    /* if (!formData.ShippingPriorityID) {
+      newErrors.ShippingPriorityID = "Shipping Priority is required";
+    } */
     if (!formData.CurrencyID) {
       newErrors.CurrencyID = "Currency is required";
     }

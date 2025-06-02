@@ -221,7 +221,7 @@ const Sidebar = ({ open, variant, onClose }) => {
             onClick={item.isDropdown ? handleMastersClick : () => handleMenuItemClick(item.path)}
             selected={location.pathname === item.path}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{color:"#fff"}}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
             {item.isDropdown && <ArrowDropDownIcon />}
           </ListItem>

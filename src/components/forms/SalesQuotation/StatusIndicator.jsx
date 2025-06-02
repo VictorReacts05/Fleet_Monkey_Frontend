@@ -49,7 +49,7 @@ const StatusIndicator = ({ status, salesQuotationId, onStatusChange, readOnly })
 
       const approverID = 2; 
       const response = await axios.get( 
-        `${APIBASEURL}/sales-quotation-approvals?SalesQuotationID=${salesQuotationId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/sales-Quotation-Approvals?SalesQuotationID=${salesQuotationId}&ApproverID=${approverID}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 
