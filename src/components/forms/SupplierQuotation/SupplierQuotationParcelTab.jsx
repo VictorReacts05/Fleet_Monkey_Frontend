@@ -183,10 +183,13 @@ const SupplierQuotationParcelTab = ({
 
       try {
         setLoadingExistingParcels(true);
-        const parcelData = await fetchSupplierQuotationParcels(supplierQuotationId);
+        const parcelData = await fetchSupplierQuotationParcels(
+          supplierQuotationId
+        );
 
         const formattedParcels = parcelData.map((parcel, index) => ({
-          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || Date.now() + index,
+          SupplierQuotationParcelID:
+            parcel.SupplierQuotationParcelID || Date.now() + index,
           SupplierQuotationID: supplierQuotationId,
           ItemID: parseInt(parcel.ItemID) || 0,
           itemName: parcel.ItemName || "Unknown Item",
@@ -203,7 +206,9 @@ const SupplierQuotationParcelTab = ({
         }));
 
         setParcels((prevParcels) => {
-          if (JSON.stringify(prevParcels) === JSON.stringify(formattedParcels)) {
+          if (
+            JSON.stringify(prevParcels) === JSON.stringify(formattedParcels)
+          ) {
             return prevParcels; // Avoid re-render if parcels unchanged
           }
           if (onParcelsChange) {
@@ -239,7 +244,9 @@ const SupplierQuotationParcelTab = ({
 
   // Handle editing an existing parcel
   const handleEditParcel = (id) => {
-    const parcelToEdit = parcels.find((p) => p.SupplierQuotationParcelID === id);
+    const parcelToEdit = parcels.find(
+      (p) => p.SupplierQuotationParcelID === id
+    );
     if (!parcelToEdit) {
       toast.error("Parcel not found for editing");
       return;
@@ -280,7 +287,11 @@ const SupplierQuotationParcelTab = ({
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
-    if (!form.quantity || isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
+    if (
+      !form.quantity ||
+      isNaN(Number(form.quantity)) ||
+      Number(form.quantity) <= 0
+    ) {
       formErrors.quantity = "Quantity must be a positive number";
     }
     if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0) {
@@ -319,9 +330,14 @@ const SupplierQuotationParcelTab = ({
       ItemQuantity: quantity,
       Rate: rate,
       Amount: amount,
-      srNo: form.editIndex !== undefined ? parcels[form.editIndex].srNo : parcels.length + 1,
+      srNo:
+        form.editIndex !== undefined
+          ? parcels[form.editIndex].srNo
+          : parcels.length + 1,
       CountryOfOriginID: null,
-      CreatedByID: getAuthHeader().personId ? parseInt(getAuthHeader().personId) : null,
+      CreatedByID: getAuthHeader().personId
+        ? parseInt(getAuthHeader().personId)
+        : null,
       IsDeleted: false,
       id: form.originalId || Date.now(), // For DataTable
     };
@@ -351,7 +367,9 @@ const SupplierQuotationParcelTab = ({
 
   const handleConfirmDelete = () => {
     setParcels((prevParcels) => {
-      const updatedParcels = prevParcels.filter((p) => p.SupplierQuotationParcelID !== deleteParcelId);
+      const updatedParcels = prevParcels.filter(
+        (p) => p.SupplierQuotationParcelID !== deleteParcelId
+      );
       if (onParcelsChange) {
         onParcelsChange(updatedParcels);
       }
@@ -369,7 +387,12 @@ const SupplierQuotationParcelTab = ({
           if (parcel.SupplierQuotationParcelID === parcelId) {
             const rate = parseFloat(value) || 0;
             const amount = parcel.ItemQuantity * rate;
-            return { ...parcel, Rate: rate, Amount: amount, id: parcel.SupplierQuotationParcelID };
+            return {
+              ...parcel,
+              Rate: rate,
+              Amount: amount,
+              id: parcel.SupplierQuotationParcelID,
+            };
           }
           return parcel;
         });

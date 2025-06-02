@@ -8,8 +8,7 @@ import {
   Button,
   Alert,
   Fade,
-  FormControlLabel,
-  Checkbox,
+  Chip
 } from "@mui/material";
 import {
   getSupplierQuotationById,
@@ -584,7 +583,7 @@ const SupplierQuotationForm = ({
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <FormPage
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="h6" component="span">
               {isEditing
                 ? "Edit Supplier Quotation"
@@ -603,33 +602,43 @@ const SupplierQuotationForm = ({
                     borderRadius: "4px",
                     paddingRight: "10px",
                     height: "37px",
-                    sm: {
-                      paddingRight: "10px",
-                    },
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
+                    marginLeft: "16px",
                     "&:hover": {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
                       transform: "scale(1.02)",
                     },
                   }}
                 >
-                  <Typography
-                    variant="body2"
+                  <Chip
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: "700",
+                          color:
+                            theme.palette.mode === "light" ? "white" : "black",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Status:
+                      </Typography>
+                    }
                     sx={{
-                      fontWeight: "700",
-                      color: theme.palette.mode === "light" ? "white" : "black",
-                      fontSize: "0.9rem",
-                      marginRight: "8px",
+                      backgroundColor: "transparent",
                     }}
-                  >
-                    Status:
-                  </Typography>
+                  />
+                  {/*  {console.log(
+                    "Global status:",
+                    status,
+                    "SalesRFQId:",
+                    salesRFQId
+                  )} */}
                   <StatusIndicator
-                    status={status}
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
-                    readOnly={loading || !isEditing || status === "Approved"}
+                    readOnly={status === "Approved"}
                   />
                 </Box>
               </Fade>
