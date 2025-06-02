@@ -1,162 +1,510 @@
-  import React, { useState } from "react";
-  import {
-    Grid,
-    Box,
-    Typography,
-    Fade,
-    Chip,
-    TableContainer,
-    Table,
-    TableHead,
-    TableBody,
-    TableRow,
-    TableCell,
-    Paper,
-    alpha,
-  } from "@mui/material";
-  import { useTheme } from "@mui/material/styles";
-  import { useParams, useNavigate } from "react-router-dom";
-  import FormPage from "../../Common/FormPage";
-  import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-  import CancelIcon from "@mui/icons-material/Cancel";
-  import StatusIndicator from "./StatusIndicator"; // Import StatusIndicator component
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Grid,
+  Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  useTheme,
+  alpha,
+  Checkbox,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import FormPage from "../../Common/FormPage"; // Verify: src/components/Common/FormPage.jsx
+import StatusIndicator from "./StatusIndicator"; // Verify: src/components/forms/SalesOrder/StatusIndicator.jsx
+import SearchIcon from "@mui/icons-material/Search";
+import APIBASEURL from "../../../utils/apiBaseUrl"; // Adjust path as needed
 
-  const ReadOnlyField = ({ label, value }) => {
-    let displayValue = value;
+// API functions (to be implemented based on your backend)
+const getSalesOrderById = async (id) => {
+  const response = await axios.get(`${APIBASEURL}/sales-order/${id}`, {
+    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+  });
+  return response.data;
+};
 
-    if (value instanceof Date && !isNaN(value)) {
-      displayValue = value.toLocaleDateString();
-    } else if (typeof value === "boolean") {
-      displayValue = value ? "Yes" : "No";
-    } else if (typeof value === "number") {
-      displayValue = value.toFixed(2);
+const fetchSalesOrderApprovalStatus = async (id) => {
+  const response = await axios.get(`${APIBASEURL}/sales-order/${id}/approval`, {
+    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+  });
+  return response.data;
+};
+
+const updateSalesOrderApproval = async (id, approved) => {
+  const response = await axios.post(
+    `${APIBASEURL}/sales-order/${id}/approval`,
+    { ApprovedYN: approved },
+    { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
+  );
+  return response.data;
+};
+
+const fetchServiceTypes = async () => {
+  const response = await axios.get(`${APIBASEURL}/service-types`, {
+    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+  });
+  return response.data.data;
+};
+
+const fetchShippingPriorities = async () => {
+  const response = await axios.get(`${APIBASEURL}/shipping-priorities`, {
+    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+  });
+  return response.data.data;
+};
+
+const fetchCurrencies = async () => {
+  const response = await axios.get(`${APIBASEURL}/currencies`, {
+    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+  });
+  return response.data.data;
+};
+
+const ReadOnlyField = ({ label, value }) => {
+  let displayValue = value;
+
+  if (value instanceof Date && !isNaN(value)) {
+    displayValue = value.toLocaleDateString();
+  } else if (typeof value === "boolean") {
+    displayValue = value ? "Yes" : "No";
+  } else if (typeof value === "number") {
+    displayValue = value.toFixed(2);
+  }
+
+  return (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="caption" color="textSecondary" display="block">
+        {label}
+      </Typography>
+      <Typography variant="body1" sx={{ mt: 0.5 }}>
+        {displayValue || "-"}
+      </Typography>
+    </Box>
+  );
+};
+
+const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isViewMode = location.pathname.includes("/view/");
+  const theme = useTheme();
+  const salesOrderId = propSalesOrderId || id;
+  const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
+
+  const [formData, setFormData] = useState(null);
+  const [parcels, setParcels] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [parcelLoading, setParcelLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [approvalStatus, setApprovalStatus] = useState(null);
+  const [approvalRecord, setApprovalRecord] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [suppliersDialogOpen, setSuppliersDialogOpen] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [emailSendingStatus, setEmailSendingStatus] = useState({
+    sending: false,
+    progress: 0,
+    totalSuppliers: 0,
+    completedSuppliers: 0,
+  });
+
+  const loadSalesOrderData = useCallback(async () => {
+  if (!salesOrderId) return;
+
+  try {
+    setLoading(true);
+    setParcelLoading(true);
+    setError(null);
+
+    const response = await getSalesOrderById(salesOrderId);
+    console.log("Sales Order API response:", response.data); // Debug log
+    if (response && response.data) {
+      const orderData = response.data;
+      let formattedData = {
+        ...orderData,
+        SupplierName:orderData.SupplierName||orderData.supplierName,
+        CustomerName: orderData.CustomerName || orderData.customerName || orderData.Customer?.Name || "-",
+        ExternalRefNo: orderData.ExternalRefNo || orderData.external_ref_no || "-",
+        DeliveryDate: orderData.DeliveryDate ? new Date(orderData.DeliveryDate) : null,
+        PostingDate: orderData.PostingDate ? new Date(orderData.PostingDate) : null,
+        RequiredByDate: orderData.RequiredByDate ? new Date(orderData.RequiredByDate) : null,
+        DateReceived: orderData.DateReceived ? new Date(orderData.DateReceived) : null,
+        CollectionAddress: orderData.CollectionAddress || "-",
+        DestinationAddress: orderData.DestinationAddress || "-",
+        Status: orderData.Status || "Pending",
+      };
+
+      // Fetch addresses
+      if (orderData.CollectionAddressID) {
+        try {
+          const collectionAddressResponse = await axios.get(
+            `${APIBASEURL}/addresses/${orderData.CollectionAddressID}`,
+            { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
+          );
+          console.log("Collection Address response:", collectionAddressResponse.data);
+          if (collectionAddressResponse.data && collectionAddressResponse.data.data) {
+            const addressData = collectionAddressResponse.data.data;
+            formattedData.CollectionAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`.trim() || "-";
+          }
+        } catch (error) {
+          console.error("Failed to fetch Collection Address:", error);
+          formattedData.CollectionAddress = "-";
+        }
+      }
+
+      if (orderData.DestinationAddressID) {
+        try {
+          const destinationAddressResponse = await axios.get(
+            `${APIBASEURL}/addresses/${orderData.DestinationAddressID}`,
+            { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
+          );
+          console.log("Destination Address response:", destinationAddressResponse.data);
+          if (destinationAddressResponse.data && collectionAddressResponse.data.data) {
+            const addressData = destinationAddressResponse.data.data;
+            formattedData.DestinationAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`.trim() || "-";
+          }
+        } catch (error) {
+          console.error("Failed to fetch Destination Address:", error);
+          formattedData.DestinationAddress = "-";
+        }
+      }
+
+      // Fetch service type, priority, currency (unchanged from original)
+      if (orderData.ServiceTypeID) {
+        try {
+          const serviceTypesResponse = await fetchServiceTypes();
+          const serviceTypes = Array.isArray(serviceTypesResponse) ? serviceTypesResponse : serviceTypesResponse.data || [];
+          if (Array.isArray(serviceTypes)) {
+            const matchingServiceType = serviceTypes.find(
+              (s) => parseInt(s.ServiceTypeID) === parseInt(orderData.ServiceTypeID)
+            );
+            formattedData.ServiceType = matchingServiceType ? matchingServiceType.ServiceType : `Unknown Service Type (${orderData.ServiceTypeID})`;
+          } else {
+            formattedData.ServiceType = "Error: Invalid service types data";
+          }
+        } catch (error) {
+          console.error("Service type error:", error);
+          formattedData.ServiceType = "-";
+        }
+      }
+
+      if (orderData.ShippingPriorityID) {
+        try {
+          const prioritiesResponse = await fetchShippingPriorities();
+          const priorities = Array.isArray(prioritiesResponse) ? prioritiesResponse : prioritiesResponse.data || [];
+          if (Array.isArray(priorities)) {
+            const matchingPriority = priorities.find(
+              (p) => parseInt(p.ShippingPriorityID || p.MailingPriorityID) === parseInt(orderData.ShippingPriorityID)
+            );
+            formattedData.ShippingPriorityName = matchingPriority ? matchingPriority.PriorityName : `Unknown Priority (${orderData.ShippingPriorityID})`;
+          } else {
+            formattedData.ShippingPriorityName = "Error: Invalid priorities data";
+          }
+        } catch (error) {
+          console.error("Shipping priority error:", error);
+          formattedData.ShippingPriorityName = "-";
+        }
+      }
+
+      if (orderData.CurrencyID) {
+        try {
+          const currenciesResponse = await fetchCurrencies();
+          const currencies = Array.isArray(currenciesResponse) ? currenciesResponse : currenciesResponse.data || [];
+          if (Array.isArray(currencies)) {
+            const matchingCurrency = currencies.find(
+              (c) => parseInt(c.CurrencyID) === parseInt(orderData.CurrencyID)
+            );
+            formattedData.CurrencyName = matchingCurrency ? matchingCurrency.CurrencyName : "Unknown Currency";
+          }
+        } catch (error) {
+          console.error("Currency error:", error);
+          formattedData.CurrencyName = "-";
+        }
+      }
+
+      setFormData(formattedData);
+      console.log("Formatted formData:", formattedData);
+      if (orderData.parcels && Array.isArray(orderData.parcels)) {
+        setParcels(orderData.parcels);
+      }
     }
+  } catch (error) {
+    console.error("Error loading Sales Order data:", error);
+    setError("Failed to load Sales Order data");
+    toast.error("Failed to load Sales Order data");
+  } finally {
+    setLoading(false);
+    setParcelLoading(false);
+  }
+}, [salesOrderId]);
 
-    return (
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="caption" color="textSecondary" display="block">
-          {label}
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 0.5 }}>
-          {displayValue || "-"}
-        </Typography>
-      </Box>
-    );
+  const loadApprovalStatus = useCallback(async () => {
+    if (!salesOrderId) return;
+    try {
+      const approvalData = await fetchSalesOrderApprovalStatus(salesOrderId);
+      setApprovalRecord(approvalData);
+      if (approvalData.exists) {
+        setApprovalStatus(approvalData.ApprovedYN ? "approved" : "disapproved");
+      } else {
+        setApprovalStatus(null);
+      }
+    } catch (error) {
+      console.error("Failed to load approval status:", error);
+      setApprovalStatus(null);
+    }
+  }, [salesOrderId]);
+
+  useEffect(() => {
+    if (salesOrderId) {
+      loadSalesOrderData();
+      loadApprovalStatus();
+    }
+  }, [salesOrderId, loadSalesOrderData, loadApprovalStatus]);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoadingSuppliers(true);
+      const response = await axios.get(`${APIBASEURL}/suppliers`, {
+        headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
+      });
+      if (response.data && Array.isArray(response.data.data)) {
+        setSuppliers(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+      toast.error("Failed to load suppliers");
+    } finally {
+      setLoadingSuppliers(false);
+    }
   };
 
-  const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
-    const { id } = useParams();
-    const theme = useTheme();
-    const navigate = useNavigate();
-    const salesOrderId = propSalesOrderId || id;
-    const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
+  const handleOpenSuppliersDialog = () => {
+    fetchSuppliers();
+    setSuppliersDialogOpen(true);
+  };
 
-    // Static form data
-    const [formData, setFormData] = useState({
-      Series: "SO2025-001",
-      CompanyID: DEFAULT_COMPANY.value,
-      CompanyName: DEFAULT_COMPANY.label,
-      CustomerID: "CUST001",
-      CustomerName: "John Smith",
-      SupplierID: "SUP001",
-      SupplierName: "ABC Suppliers Inc",
-      ExternalRefNo: "EXT-REF-12345",
-      DeliveryDate: new Date("2025-06-15"),
-      PostingDate: new Date("2025-06-10"),
-      RequiredByDate: new Date("2025-06-20"),
-      DateReceived: new Date("2025-06-05"),
-      ServiceTypeID: "ST001",
-      ServiceType: "International Shipping",
-      CollectionAddressID: "ADDR001",
-      CollectionAddress: "123 Main St, Springfield, IL 62701",
-      DestinationAddressID: "ADDR002",
-      DestinationAddress: "456 Market St, Chicago, IL 60601",
-      ShippingPriorityID: "SP001",
-      ShippingPriorityName: "Express",
-      Terms: "Net 30 days",
-      CurrencyID: "CUR001",
-      CurrencyName: "USD",
-      CollectFromSupplierYN: true,
-      PackagingRequiredYN: true,
-      FormCompletedYN: 1,
-      SalesAmount: 12500.0,
-      TaxesAndOtherCharges: 1250.0,
-      Total: 13750.0,
-    });
+  const handleCloseSuppliersDialog = () => {
+    setSuppliersDialogOpen(false);
+  };
 
-    // Static status
-    const [status, setStatus] = useState("Approved");
+  const handleSupplierToggle = (supplier) => {
+    const currentIndex = selectedSuppliers.findIndex(
+      (s) => s.SupplierID === supplier.SupplierID
+    );
+    const newSelectedSuppliers = [...selectedSuppliers];
 
-    // Add status change handler
-    const handleStatusChange = (newStatus) => {
-      console.log("Status changed to:", newStatus);
-      setStatus(newStatus);
-    };
+    if (currentIndex === -1) {
+      newSelectedSuppliers.push(supplier);
+    } else {
+      newSelectedSuppliers.splice(currentIndex, 1);
+    }
 
-    // Static parcel data
-    const [parcels] = useState([
-      {
-        id: 1,
-        srNo: 1,
-        itemId: 101,
-        itemName: "Electronics Package",
-        uomId: 1,
-        uomName: "Box",
-        quantity: 5,
-      },
-      {
-        id: 2,
-        srNo: 2,
-        itemId: 102,
-        itemName: "Office Supplies",
-        uomId: 2,
-        uomName: "Carton",
-        quantity: 3,
-      },
-      {
-        id: 3,
-        srNo: 3,
-        itemId: 103,
-        itemName: "Medical Equipment",
-        uomId: 3,
-        uomName: "Pallet",
-        quantity: 1,
-      },
-    ]);
+    setSelectedSuppliers(newSelectedSuppliers);
+  };
 
-    // Handle cancel button click
-    const handleCancel = () => {
-      if (onClose) {
-        // If onClose prop is provided, call it (for dialog mode)
-        onClose();
-      } else {
-        // Otherwise navigate back to the list page
-        navigate('/sales-order');
+  const handleConfirmSupplierSelection = () => {
+    toast.success(`Selected ${selectedSuppliers.length} suppliers`);
+    handleCloseSuppliersDialog();
+  };
+
+  const handleSendSalesOrder = async () => {
+    try {
+      if (selectedSuppliers.length === 0) {
+        toast.warning("Please select suppliers before sending the Sales Order");
+        handleOpenSuppliersDialog();
+        return;
       }
-    };
 
+      setConfirmMessage(
+        `Are you sure you want to send this Sales Order to ${selectedSuppliers.length} selected suppliers? This process may take some time.`
+      );
+      setConfirmAction("send");
+      setConfirmDialogOpen(true);
+    } catch (error) {
+      console.error("Error preparing to send Sales Order:", error);
+      toast.error("Failed to prepare sending: " + error.message);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    try {
+      setLoading(true);
+      if (confirmAction === "approve") {
+        await updateSalesOrderApproval(salesOrderId, true);
+        toast.success("Sales Order approved successfully");
+        setApprovalStatus("approved");
+      } else if (confirmAction === "disapprove") {
+        await updateSalesOrderApproval(salesOrderId, false);
+        toast.success("Sales Order disapproved successfully");
+        setApprovalStatus("disapproved");
+      } else if (confirmAction === "send") {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const createdByID = user?.personId || 1;
+        const supplierIDs = selectedSuppliers.map((supplier) => supplier.SupplierID);
+
+        setEmailSendingStatus({
+          sending: true,
+          progress: 0,
+          totalSuppliers: supplierIDs.length,
+          completedSuppliers: 0,
+        });
+
+        const toastId = toast.info(
+          `Sending Order to ${supplierIDs.length} suppliers. This may take some time...`,
+          { autoClose: false }
+        );
+
+        const emailData = {
+          salesOrderID: parseInt(salesOrderId, 10),
+          supplierIDs: supplierIDs,
+          createdByID: createdByID,
+        };
+
+        const response = await axios.post(
+          `${APIBASEURL}/sales-order/send-order`,
+          emailData,
+          {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }
+        );
+
+        toast.update(toastId, {
+          render: "Email sending process completed!",
+          type: "success",
+          autoClose: 5000,
+        });
+
+        let successCount = 0;
+        let failCount = 0;
+        if (response.data && response.data.success && Array.isArray(response.data.results)) {
+          response.data.results.forEach((result) => {
+            const supplier = selectedSuppliers.find((s) => s.SupplierID === result.supplierID);
+            const supplierName = supplier?.SupplierName || `Supplier ID ${result.supplierID}`;
+
+            if (result.success) {
+              successCount++;
+              console.log(`Success for ${supplierName}: Order ID ${result.supplierOrderID}`);
+            } else {
+              failCount++;
+              toast.warning(`Failed for ${supplierName}: ${result.message}`);
+            }
+          });
+
+          if (successCount > 0) {
+            toast.success(`Sent emails to ${successCount} suppliers successfully`);
+          }
+          if (failCount > 0) {
+            toast.warning(`Failed to send to ${failCount} suppliers`);
+          }
+        } else {
+          throw new Error(response.data?.message || "Invalid response from server");
+        }
+
+        setEmailSendingStatus({
+          sending: false,
+          progress: 100,
+          totalSuppliers: supplierIDs.length,
+          completedSuppliers: supplierIDs.length,
+        });
+      }
+    } catch (error) {
+      console.error("Error in handleConfirmAction:", error);
+      toast.error(`An error occurred: ${error.response?.data?.message || error.message}`);
+      setEmailSendingStatus({
+        sending: false,
+        progress: 0,
+        totalSuppliers: 0,
+        completedSuppliers: 0,
+      });
+    } finally {
+      setLoading(false);
+      setConfirmDialogOpen(false);
+    }
+  };
+
+  const handleCancelAction = () => {
+    setConfirmDialogOpen(false);
+  };
+
+  const handleStatusChange = (newStatus) => {
+    setFormData((prev) => ({
+      ...prev,
+      Status: newStatus,
+    }));
+  };
+
+  if (loading) {
     return (
-      <FormPage
-        title={
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <Typography variant="h6">
-              View Sales Order
-            </Typography>
-            <Fade in={true} timeout={500}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">Error: {error}</Typography>
+      </Box>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>No data available for this Sales Order.</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <FormPage
+      title={
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+            <Typography variant="h6">View Sales Order</Typography>
+            {salesOrderId && (
               <Box
                 sx={{
                   display: "flex",
                   alignItems: "center",
                   background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
-                  paddingRight: "10px",
+                  padding: "0px 10px",
                   height: "37px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease-in-out",
@@ -167,124 +515,182 @@
                   },
                 }}
               >
-                <Chip
-                  label={ 
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: "700",
-                        color: theme.palette.mode === "light" ? "white" : "black",
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      Status:
-                    </Typography>
-                  }
-                  sx={{ backgroundColor: "transparent" }}
-                />
-              <StatusIndicator
-                  status={status}
-                  salesQuotationId={salesOrderId}
-                  onStatusChange={() => {}} // No-op since static
-                  initialStatus={status}
-                  skipFetch={true}
-                  readOnly={true}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: "700",
+                    marginRight: "8px",
+                    color: theme.palette.mode === "light" ? "white" : "black",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Status:
+                </Typography>
+                <StatusIndicator
+                  status={formData.Status}
+                  salesOrderId={salesOrderId}
+                  onStatusChange={handleStatusChange}
+                  readOnly={formData.Status === "Approved"}
                 />
               </Box>
-            </Fade>
+            )}
           </Box>
-        }
-        onCancel={handleCancel}
-        readOnly={true}
-      >
-        <Grid
-          container
-          spacing={1}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenSuppliersDialog}
+              disabled={formData.Status !== "Approved"}
+              sx={{
+                fontWeight: "bold",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
+                marginLeft: "24px",
+              }}
+            >
+              Select Suppliers
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleSendSalesOrder}
+              disabled={formData.Status !== "Approved" || selectedSuppliers.length === 0}
+              sx={{
+                fontWeight: "bold",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
+                position: "relative",
+              }}
+            >
+              {emailSendingStatus.sending ? (
+                <>
+                  <CircularProgress
+                    size={24}
+                    color="inherit"
+                    sx={{ position: "absolute", left: "50%", marginLeft: "-12px" }}
+                  />
+                  <span style={{ visibility: "hidden" }}>Send</span>
+                </>
+              ) : (
+                "Send"
+              )}
+            </Button>
+          </Box>
+        </Box>
+      }
+      onCancel={onClose || (() => navigate("/sales-order"))}
+      loading={loading}
+      readOnly={true}
+    >
+      {emailSendingStatus.sending && (
+        <Box
           sx={{
             width: "100%",
-            margin: 0,
-            overflow: "hidden",
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            padding: "16px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            mb: 3,
+            p: 2,
+            bgcolor: "info.light",
+            borderRadius: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
+          <Typography
+            variant="subtitle1"
+            sx={{ mb: 1, color: "info.dark", fontWeight: "bold" }}
+          >
+            Sending Order to suppliers... This may take some time.
+          </Typography>
+          <Box sx={{ width: "100%", display: "flex", alignItems: "center" }}>
+            <CircularProgress variant="indeterminate" size={24} sx={{ mr: 2 }} />
+            <Typography variant="body2">
+              Please wait while we process your request. Do not close this page.
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
+      <Grid
+        container
+        spacing={1}
+        sx={{
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          padding: "16px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        }}
+      >
+        {salesOrderId && (
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Series" value={formData.Series} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Company" value={formData.CompanyName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Service Type" value={formData.ServiceType} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Customer" value={formData.CustomerName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Supplier" value={formData.SupplierName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Date Received" value={formData.DateReceived} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Terms" value={formData.Terms} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Currency" value={formData.CurrencyName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Sales Amount"
-              value={`${formData.SalesAmount.toFixed(2)}`}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Taxes and Other Charges"
-              value={`${formData.TaxesAndOtherCharges.toFixed(2)}`}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Total"
-              value={`${formData.Total.toFixed(2)}`}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN === 1 ? "Yes" : "No"} />
-          </Grid>
+        )}
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Company" value={formData.CompanyName || DEFAULT_COMPANY.label} />
         </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Service Type" value={formData.ServiceType || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Customer" value={formData.CustomerName || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Supplier" value={formData.SupplierName || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Date Received" value={formData.DateReceived} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Collection Address" value={formData.CollectionAddress || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Destination Address" value={formData.DestinationAddress || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Currency" value={formData.CurrencyName || "-"} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Taxes and Other Charges" value={formData.TaxesAndOtherCharges} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Total" value={formData.Total} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN === 1 ? "Yes" : "No"} />
+        </Grid>
+      </Grid>
 
-        {/* Items Table */}
+      {parcels.length > 0 ? (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Items
@@ -305,60 +711,228 @@
                 }}
               >
                 <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
                     Sr. No.
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
                     Item
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
                     UOM
                   </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
+                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
                     Quantity
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {parcels.map((parcel) => (
-                  <TableRow
-                    key={parcel.id}
-                    sx={{
-                      height: "52px",
-                      "&:nth-of-type(odd)": {
-                        backgroundColor: alpha("#1976d2", 0.05),
-                      },
-                      "&:hover": {
-                        backgroundColor: alpha("#1976d2", 0.1),
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                      },
-                    }}
-                  >
-                    <TableCell align="center">{parcel.srNo}</TableCell>
-                    <TableCell align="center">{parcel.itemName}</TableCell>
-                    <TableCell align="center">{parcel.uomName}</TableCell>
-                    <TableCell align="center">{parcel.quantity}</TableCell>
+                {parcelLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      <CircularProgress size={24} sx={{ my: 2 }} />
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  parcels.map((parcel, index) => (
+                    <TableRow
+                      key={parcel.id || index}
+                      sx={{
+                        height: "52px",
+                        "&:nth-of-type(odd)": { backgroundColor: alpha("#1976d2", 0.05) },
+                        "&:hover": {
+                          backgroundColor: alpha("#1976d2", 0.1),
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                        },
+                      }}
+                    >
+                      <TableCell align="center">{parcel.srNo || index + 1}</TableCell>
+                      <TableCell align="center">{parcel.itemName || `Item #${parcel.itemId}`}</TableCell>
+                      <TableCell align="center">{parcel.uomName || `UOM #${parcel.uomId}`}</TableCell>
+                      <TableCell align="center">{parcel.quantity}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>
         </Box>
-      </FormPage>
-    );
-  };
+      ) : (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Items
+          </Typography>
+          <Paper
+            sx={{
+              p: 3,
+              textAlign: "center",
+              color: "text.secondary",
+              borderRadius: "8px",
+              backgroundColor: alpha("#f5f5f5", 0.7),
+            }}
+          >
+            No parcels found for this Sales Order.
+          </Paper>
+        </Box>
+      )}
 
-  export default SalesOrderForm;
+      <Dialog
+        open={suppliersDialogOpen}
+        onClose={handleCloseSuppliersDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h5" component="div">
+            Select Suppliers
+          </Typography>
+          {selectedSuppliers.length > 0 && (
+            <Typography variant="body2" sx={{ mr: 2 }}>
+              {selectedSuppliers.length} suppliers selected
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Search suppliers..."
+              value={supplierSearchTerm}
+              onChange={(e) => setSupplierSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              variant="outlined"
+              size="small"
+            />
+          </Box>
+          {loadingSuppliers ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List
+              sx={{
+                width: "100%",
+                bgcolor: "background.paper",
+                maxHeight: "400px",
+                overflow: "auto",
+                border: "1px solid #e0e0e0",
+                borderRadius: "4px",
+              }}
+            >
+              {suppliers.length > 0 ? (
+                suppliers
+                  .filter((supplier) =>
+                    supplier.SupplierName?.toLowerCase().includes(
+                      supplierSearchTerm.toLowerCase()
+                    )
+                  )
+                  .map((supplier) => {
+                    const isSelected = selectedSuppliers.some(
+                      (s) => s.SupplierID === supplier.SupplierID
+                    );
+                    return (
+                      <React.Fragment key={supplier.SupplierID}>
+                        <ListItem
+                          button
+                          onClick={() => handleSupplierToggle(supplier)}
+                          sx={{
+                            backgroundColor: isSelected ? alpha("#1976d2", 0.1) : "transparent",
+                            "&:hover": {
+                              backgroundColor: isSelected
+                                ? alpha("#1976d2", 0.2)
+                                : alpha("#1976d2", 0.05),
+                            },
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={isSelected}
+                              tabIndex={-1}
+                              disableRipple
+                              color="primary"
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={supplier.SupplierName}
+                            secondary={supplier.ContactPerson || "No contact person"}
+                          />
+                        </ListItem>
+                        <Divider />
+                      </React.Fragment>
+                    );
+                  })
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No suppliers found" />
+                </ListItem>
+              )}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSuppliersDialog}>Cancel</Button>
+          <Button
+            onClick={handleConfirmSupplierSelection}
+            variant="contained"
+            color="primary"
+            disabled={selectedSuppliers.length === 0}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCancelAction}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Confirm Action</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {confirmMessage}
+            {confirmAction === "send" && (
+              <Typography
+                variant="body2"
+                color="warning.main"
+                sx={{ mt: 2, fontWeight: "medium" }}
+              >
+                Note: Email sending may take several minutes depending on the number of suppliers. Please do not close this page during the process.
+              </Typography>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelAction} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmAction}
+            color="primary"
+            autoFocus
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </FormPage>
+  );
+};
+
+export default SalesOrderForm;
