@@ -2,34 +2,41 @@ import axios from "axios";
 import { store } from "../../../redux/store";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
-// Helper function to get auth header from localStorage
-const getAuthHeader = () => {
-  try {
-    // Get user from localStorage
-    const userString = localStorage.getItem("user");
-    console.log("User data from localStorage:", userString);
+// Memoized auth header to avoid redundant localStorage parsing
+const getAuthHeader = (() => {
+  let cachedHeaders = null;
+  let cachedPersonId = null;
 
-    const user = JSON.parse(userString);
-
-    const state = store.getState();
-    const token = state.loginReducer?.loginDetails?.token;
-
-    if (!token) {
-      throw new Error("Authentication token not found");
+  return () => {
+    if (cachedHeaders && cachedPersonId) {
+      return { headers: cachedHeaders, personId: cachedPersonId };
     }
 
-    const personId = user?.personId || user?.id || user?.userId || null;
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+    try {
+      const userString = localStorage.getItem("user");
+      const user = JSON.parse(userString);
+      const state = store.getState();
+      const token = state.loginReducer?.loginDetails?.token;
 
-    return { headers, personId };
-  } catch (error) {
-    console.error("Error in getAuthHeader:", error);
-    throw error;
-  }
-};
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      const personId = user?.personId || user?.id || user?.userId || null;
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      cachedHeaders = headers;
+      cachedPersonId = personId;
+
+      return { headers, personId };
+    } catch (error) {
+      throw error;
+    }
+  };
+})();
 
 // Fetch all Supplier Quotations
 export const fetchSupplierQuotations = async (
@@ -67,7 +74,6 @@ export const fetchSupplierQuotations = async (
 
     return { data: [], totalRecords: 0 };
   } catch (error) {
-    console.error("Error fetching Supplier Quotations:", error);
     throw error;
   }
 };
@@ -111,7 +117,6 @@ export const createSupplierQuotation = async (data) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Error creating Supplier Quotation:", error);
     throw error;
   }
 };
@@ -127,7 +132,6 @@ export const updateSupplierQuotation = async (id, data) => {
     );
     return response.data;
   } catch (error) {
-    console.error(`Error updating Supplier Quotation with ID ${id}:`, error);
     throw error;
   }
 };
@@ -142,7 +146,6 @@ export const deleteSupplierQuotation = async (id) => {
     );
     return response.data;
   } catch (error) {
-    console.error(`Error deleting Supplier Quotation with ID ${id}:`, error);
     throw error;
   }
 };
@@ -159,7 +162,6 @@ export const fetchSuppliers = async () => {
 
     return [];
   } catch (error) {
-    console.error("Error fetching suppliers:", error);
     throw error;
   }
 };
@@ -176,7 +178,6 @@ export const fetchPurchaseRFQs = async () => {
 
     return [];
   } catch (error) {
-    console.error("Error fetching purchase RFQs:", error);
     throw error;
   }
 };
@@ -192,7 +193,6 @@ export const approveSupplierQuotation = async (id) => {
     );
     return response.data;
   } catch (error) {
-    console.error(`Error approving Supplier Quotation with ID ${id}:`, error);
     throw error;
   }
 };
@@ -207,10 +207,39 @@ export const fetchSupplierQuotationApprovalStatus = async (id) => {
     );
     return response.data;
   } catch (error) {
-    console.error(
-      `Error fetching approval status for Supplier Quotation with ID ${id}:`,
-      error
-    );
+    if (error.response?.status === 404) {
+      return { status: "Pending", message: "No approval record found" };
+    }
     throw error;
   }
 };
+
+export const fetchCurrencies = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/currencies`);
+    return response.data.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const fetchServiceTypes = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/service-types`);
+    return response.data.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const fetchAddresses = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/addresses`);
+    return response.data.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Export getAuthHeader
+export { getAuthHeader };

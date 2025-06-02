@@ -11,15 +11,17 @@ import {
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
-import APIBASEURL from '../../../utils/apiBaseUrl'
+import APIBASEURL from "../../../utils/apiBaseUrl";
+import { useSelector } from "react-redux";
 
 const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [approvalRecord, setApprovalRecord] = useState(null);
+  const token = useSelector((state) => state.loginReducer?.token);
 
-  // Fetch existing approval record when component mounts
+  // Fetch existing approval record
   useEffect(() => {
     if (supplierQuotationId) {
       fetchApprovalRecord();
@@ -28,53 +30,25 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
 
   const fetchApprovalRecord = async () => {
     try {
-      const userData = localStorage.getItem("user");
-      if (!userData) {
-        console.warn("No user data found in localStorage");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const approverID = 2; // Hardcoded as per original
+      const response = await axios.get(
+        `${APIBASEURL}/supplier-quotation-approvals/${supplierQuotationId}/${approverID}`,
+        { headers }
+      );
+
+      if (response.data.success && response.data.data) {
+        setApprovalRecord(response.data.data);
+      } else {
         setApprovalRecord(null);
-        return;
-      }
-
-      let user;
-      try {
-        user = JSON.parse(userData);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        setApprovalRecord(null);
-        return;
-      }
-
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-
-      // The approverID is hardcoded to 2 as in other components
-      const approverID = 2;
-      
-      try {
-        const response = await axios.get(
-          `${APIBASEURL}/supplier-quotation-approvals/${supplierQuotationId}/${approverID}`,
-          { headers }
-        );
-        console.log("Fetched approval record:", response.data);
-
-        if (response.data.success && response.data.data) {
-          setApprovalRecord(response.data.data);
-        } else {
-          setApprovalRecord(null);
-        }
-      } catch (error) {
-        console.error("Error fetching approval record:", error);
-        if (error.response && error.response.status === 404) {
-          // No approval record found, which is fine
-          setApprovalRecord(null);
-        } else {
-          toast.error("Failed to fetch approval status");
-        }
       }
     } catch (error) {
-      console.error("Error in fetchApprovalRecord:", error);
-      setApprovalRecord(null);
+      console.error("Error fetching approval record:", error);
+      if (error.response?.status === 404) {
+        setApprovalRecord(null); // No approval record exists
+      } else {
+        toast.error("Failed to fetch approval status");
+      }
     }
   };
 
@@ -93,14 +67,8 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
       setLoading(true);
       handleClose();
 
-      const user = JSON.parse(localStorage.getItem("user"));
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-
-      // The approverID is hardcoded to 2 as in other components
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const approverID = 2;
-      
       const payload = {
         SupplierQuotationID: supplierQuotationId,
         ApproverID: approverID,
@@ -115,7 +83,7 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
       );
 
       if (response.data.success) {
-        toast.success(`Supplier Quotation status updated to ${newStatus}`);
+        toast.success(`Status updated to ${newStatus}`);
         if (onStatusChange) {
           onStatusChange(newStatus);
         }
@@ -125,9 +93,7 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to update status"
-      );
+      toast.error(error.response?.data?.message || "Failed to update status");
     } finally {
       setLoading(false);
     }
@@ -157,7 +123,6 @@ const StatusIndicator = ({ status, supplierQuotationId, onStatusChange, readOnly
     }
   };
 
-  // Determine the current status
   const currentStatus = approvalRecord?.Status || status || "Pending";
 
   return (

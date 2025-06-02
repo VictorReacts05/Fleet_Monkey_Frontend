@@ -4,27 +4,33 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   useTheme,
-  alpha,
   Button,
   Alert,
   TextField,
   Fade,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
-import { getSupplierQuotationById } from "./SupplierQuotationAPI";
+import {
+  getSupplierQuotationById,
+  fetchSuppliers,
+  fetchPurchaseRFQs,
+  fetchCurrencies,
+  fetchServiceTypes,
+  fetchAddresses,
+  updateSupplierQuotation,
+} from "./SupplierQuotationAPI";
 import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import FormSelect from "../../Common/FormSelect";
+import FormDatePicker from "../../Common/FormDatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import StatusIndicator from "./StatusIndicator";
-import APIBASEURL from "../../../utils/apiBaseUrl";
+import SupplierQuotationParcelTab from "./SupplierQuotationParcelTab";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -33,6 +39,8 @@ const ReadOnlyField = ({ label, value }) => {
     displayValue = value.toLocaleDateString();
   } else if (typeof value === "boolean") {
     displayValue = value ? "Yes" : "No";
+  } else if (typeof value === "number") {
+    displayValue = value.toString();
   }
 
   return (
@@ -64,59 +72,64 @@ const SupplierQuotationForm = ({
   const [isEditing, setIsEditing] = useState(isEditMode);
   const readOnly = propReadOnly && !isEditMode;
 
+  const DEFAULT_COMPANY = { value: 48, label: "Dung Beetle Logistics" };
+
   const [formData, setFormData] = useState({
-    Series: "-",
+    Series: "",
     SupplierID: "",
-    SupplierName: "-",
+    SupplierName: "",
     CustomerID: "",
-    CustomerName: "-",
-    ExternalRefNo: "-",
-    CompanyID: "",
-    CompanyName: "-",
+    CustomerName: "",
+    ExternalRefNo: "",
+    CompanyID: DEFAULT_COMPANY.value,
+    CompanyName: DEFAULT_COMPANY.label,
     PurchaseRFQID: "",
-    PurchaseRFQSeries: "-",
+    PurchaseRFQSeries: "",
     SalesRFQID: "",
-    SalesRFQSeries: "-",
+    SalesRFQSeries: "",
     PostingDate: null,
     DeliveryDate: null,
     RequiredByDate: null,
+    DateReceived: null,
     SalesAmount: 0,
     TaxesAndOtherCharges: 0,
     Total: 0,
     CurrencyID: "",
-    CurrencyName: "-",
-    Terms: "-",
+    CurrencyName: "",
+    Terms: "",
     FormCompletedYN: false,
     CollectFromSupplierYN: false,
-    DateReceived: null,
     ServiceTypeID: "",
-    ServiceType: "-",
-    ShippingPriorityID: "",
-    ShippingPriorityName: "-",
+    ServiceType: "",
     CollectionAddressID: "",
-    CollectionAddress: "-",
+    CollectionAddress: "",
     DestinationAddressID: "",
-    DestinationAddress: "-",
+    DestinationAddress: "",
     PackagingRequiredYN: false,
+    ValidTillDate: null,
+    QuotationReceivedYN: false,
+    FileName: null,
+    FileContent: null,
+    CreatedByID: "",
+    CreatedDateTime: null,
+    IsDeleted: false,
+    DeletedDateTime: null,
+    DeletedByID: "",
+    RowVersionColumn: "",
   });
   const [parcels, setParcels] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [purchaseRFQs, setPurchaseRFQs] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [parcelLoading, setParcelLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastDisplayed, setToastDisplayed] = useState(false);
-  const [status, setStatus] = useState("Pending"); // Add status state
-
-  // Add status change handler
-  const handleStatusChange = (newStatus) => {
-    console.log("Status changed to:", newStatus);
-    setStatus(newStatus);
-    
-    // Also update the formData to reflect the new status
-    setFormData(prev => ({
-      ...prev,
-      Status: newStatus
-    }));
-  };
+  const [status, setStatus] = useState("Pending");
+  const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const calculateTotals = useCallback(
     (updatedParcels) => {
@@ -135,325 +148,287 @@ const SupplierQuotationForm = ({
     [formData.TaxesAndOtherCharges]
   );
 
+  // Load dropdown data
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        setLoading(true);
+        const [
+          suppliersData,
+          purchaseRFQsData,
+          currenciesData,
+          serviceTypesData,
+          addressesData,
+        ] = await Promise.all([
+          fetchSuppliers().catch((err) => {
+            toast.error("Failed to load suppliers");
+            return [];
+          }),
+          fetchPurchaseRFQs().catch((err) => {
+            toast.error("Failed to load purchase RFQs");
+            return [];
+          }),
+          fetchCurrencies().catch((err) => {
+            toast.error("Failed to load currencies");
+            return [];
+          }),
+          fetchServiceTypes().catch((err) => {
+            toast.error("Failed to load service types");
+            return [];
+          }),
+          fetchAddresses().catch((err) => {
+            toast.error("Failed to load addresses");
+            return [];
+          }),
+        ]);
+
+        const suppliersOptions = [
+          { value: "", label: "Select an option" },
+          ...suppliersData.map((supplier) => ({
+            value: String(supplier.SupplierID || supplier.id),
+            label: supplier.SupplierName || "Unknown",
+          })),
+        ];
+        const purchaseRFQsOptions = [
+          { value: "", label: "Select an option" },
+          ...purchaseRFQsData.map((rfq) => ({
+            value: String(rfq.PurchaseRFQID || rfq.id),
+            label: rfq.Series || `RFQ #${rfq.PurchaseRFQID || rfq.id}`,
+          })),
+        ];
+        const currenciesOptions = [
+          { value: "", label: "Select an option" },
+          ...currenciesData.map((currency) => ({
+            value: String(currency.CurrencyID || currency.id),
+            label: currency.CurrencyName || "Unknown",
+          })),
+        ];
+        const serviceTypesOptions = [
+          { value: "", label: "Select an option" },
+          ...serviceTypesData.map((type) => ({
+            value: String(type.ServiceTypeID || type.id),
+            label: type.ServiceType || type.ServiceTypeName || "Unknown",
+          })),
+        ];
+        const addressesOptions = [
+          { value: "", label: "Select an option" },
+          ...addressesData.map((address) => ({
+            value: String(address.AddressID || address.id),
+            label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+            title: address.AddressTitle || address.Title || "",
+          })),
+        ];
+
+        setSuppliers(suppliersOptions);
+        setPurchaseRFQs(purchaseRFQsOptions);
+        setCurrencies(currenciesOptions);
+        setServiceTypes(serviceTypesOptions);
+        setAddresses(addressesOptions);
+
+        setDropdownsLoaded(true);
+      } catch (error) {
+        toast.error("Failed to load dropdown data: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDropdownData();
+  }, []);
+
+  // Load Supplier Quotation data
   const loadSupplierQuotationData = useCallback(async () => {
-    if (!supplierQuotationId) return;
+    if (!supplierQuotationId || dataLoaded) return;
 
     try {
       setLoading(true);
-      setParcelLoading(true);
       setError(null);
 
       const response = await getSupplierQuotationById(supplierQuotationId);
-      console.log("API Response:", response.data);
+      const quotationData = response.data?.data?.quotation || {};
 
-      // In the loadSupplierQuotationData function:
-      if (response && response.data) {
-        const quotationData = response.data.data || {};
-        console.log("Quotation Data:", quotationData);
-      
-        // Set the status from the API response
-        setStatus(quotationData.Status || "Pending");
+      const displayValue = (value) =>
+        value === null || value === undefined ? "-" : value;
 
-        let formattedData = {
-          ...quotationData,
-          Series: quotationData.Series || "-",
-          SupplierName: quotationData.SupplierName || "-",
-          CustomerName: quotationData.CustomerName || "-",
-          CompanyName: quotationData.CompanyName || "-",
-          // Fix Purchase RFQ and Sales RFQ fields
-          PurchaseRFQID: quotationData.PurchaseRFQID || "",
-          PurchaseRFQSeries: quotationData.PurchaseRFQSeries || "-",
-          SalesRFQID: quotationData.SalesRFQID || "",
-          SalesRFQSeries: quotationData.SalesRFQSeries || "-",
-          CurrencyName: quotationData.CurrencyName || "-",
-          Terms: quotationData.Terms || "-",
-          PostingDate: quotationData.PostingDate
-            ? new Date(quotationData.PostingDate)
-            : null,
-          DeliveryDate: quotationData.DeliveryDate
-            ? new Date(quotationData.DeliveryDate)
-            : null,
-          RequiredByDate: quotationData.RequiredByDate
-            ? new Date(quotationData.RequiredByDate)
-            : null,
-          DateReceived: quotationData.DateReceived
-            ? new Date(quotationData.DateReceived)
-            : null,
-          ServiceType: quotationData.ServiceType || "-",
-          ShippingPriority: quotationData.ShippingPriority || "-",
-          CollectionAddress: quotationData.CollectionAddress || "-",
-          DestinationAddress: quotationData.DestinationAddress || "-",
-          PackagingRequiredYN: quotationData.PackagingRequiredYN || false,
-        };
+      const formattedData = {
+        Series: displayValue(quotationData.Series),
+        SupplierID: suppliers.find(
+          (s) => String(s.value) === String(quotationData.SupplierID)
+        )
+          ? String(quotationData.SupplierID)
+          : "",
+        SupplierName: displayValue(quotationData.SupplierName),
+        CustomerID: displayValue(quotationData.CustomerID),
+        CustomerName: displayValue(quotationData.CustomerName),
+        ExternalRefNo: displayValue(quotationData.ExternalRefNo),
+        CompanyID: DEFAULT_COMPANY.value,
+        CompanyName: DEFAULT_COMPANY.label,
+        PurchaseRFQID: purchaseRFQs.find(
+          (p) => String(p.value) === String(quotationData.PurchaseRFQID)
+        )
+          ? String(quotationData.PurchaseRFQID)
+          : "",
+        PurchaseRFQSeries: displayValue(quotationData.PurchaseRFQSeries),
+        SalesRFQID: displayValue(quotationData.SalesRFQID),
+        SalesRFQSeries: displayValue(quotationData.SalesRFQSeries),
+        PostingDate: quotationData.PostingDate ? dayjs(quotationData.PostingDate) : null,
+        DeliveryDate: quotationData.DeliveryDate ? dayjs(quotationData.DeliveryDate) : null,
+        RequiredByDate: quotationData.RequiredByDate ? dayjs(quotationData.RequiredByDate) : null,
+        DateReceived: quotationData.DateReceived ? dayjs(quotationData.DateReceived) : null,
+        SalesAmount: parseFloat(quotationData.SalesAmount) || 0,
+        TaxesAndOtherCharges: parseFloat(quotationData.TaxesAndOtherCharges) || 0,
+        Total: parseFloat(quotationData.Total) || 0,
+        CurrencyID: currencies.find(
+          (c) => String(c.value) === String(quotationData.CurrencyID)
+        )
+          ? String(quotationData.CurrencyID)
+          : "",
+        CurrencyName: displayValue(quotationData.CurrencyName),
+        Terms: displayValue(quotationData.Terms),
+        FormCompletedYN: Boolean(quotationData.FormCompletedYN),
+        CollectFromSupplierYN: Boolean(quotationData.CollectFromSupplierYN),
+        ServiceTypeID: serviceTypes.find(
+          (st) => String(st.value) === String(quotationData.ServiceTypeID)
+        )
+          ? String(quotationData.ServiceTypeID)
+          : "",
+        ServiceType: displayValue(quotationData.ServiceType),
+        CollectionAddressID: addresses.find(
+          (a) => String(a.value) === String(quotationData.CollectionAddressID)
+        )
+          ? String(quotationData.CollectionAddressID)
+          : "",
+        CollectionAddress: displayValue(quotationData.CollectionAddress),
+        DestinationAddressID: addresses.find(
+          (a) => String(a.value) === String(quotationData.DestinationAddressID)
+        )
+          ? String(quotationData.DestinationAddressID)
+          : "",
+        DestinationAddress: displayValue(quotationData.DestinationAddress),
+        PackagingRequiredYN: Boolean(quotationData.PackagingRequiredYN),
+        ValidTillDate: quotationData.ValidTillDate ? dayjs(quotationData.ValidTillDate) : null,
+        QuotationReceivedYN: Boolean(quotationData.QuotationReceivedYN),
+        FileName: displayValue(quotationData.FileName),
+        FileContent: null,
+        CreatedByID: displayValue(quotationData.CreatedByID),
+        CreatedDateTime: quotationData.CreatedDateTime ? dayjs(quotationData.CreatedDateTime) : null,
+        IsDeleted: Boolean(quotationData.IsDeleted),
+        DeletedDateTime: quotationData.DeletedDateTime ? dayjs(quotationData.DeletedDateTime) : null,
+        DeletedByID: displayValue(quotationData.DeletedByID),
+        RowVersionColumn: displayValue(quotationData.RowVersionColumn),
+      };
 
-        console.log("Formatted Data:", formattedData);
-        setFormData(formattedData);
-
-        // Fetch Purchase RFQ and Sales RFQ details if needed
-        if (quotationData.PurchaseRFQID && !quotationData.PurchaseRFQSeries) {
-          try {
-            const purchaseRFQResponse = await axios.get(
-              `${APIBASEURL}/purchase-rfq/${quotationData.PurchaseRFQID}`
-            );
-            if (purchaseRFQResponse.data && purchaseRFQResponse.data.data) {
-              const purchaseRFQ = purchaseRFQResponse.data.data;
-              setFormData(prev => ({
-                ...prev,
-                PurchaseRFQSeries: purchaseRFQ.Series || `RFQ #${quotationData.PurchaseRFQID}`
-              }));
-            }
-          } catch (error) {
-            console.error("Error fetching Purchase RFQ details:", error);
-          }
-        }
-
-        if (quotationData.SalesRFQID && !quotationData.SalesRFQSeries) {
-          try {
-            const salesRFQResponse = await axios.get(
-              `${APIBASEURL}/sales-rfq/${quotationData.SalesRFQID}`
-            );
-            if (salesRFQResponse.data && salesRFQResponse.data.data) {
-              const salesRFQ = salesRFQResponse.data.data;
-              setFormData(prev => ({
-                ...prev,
-                SalesRFQSeries: salesRFQ.Series || `RFQ #${quotationData.SalesRFQID}`
-              }));
-            }
-          } catch (error) {
-            console.error("Error fetching Sales RFQ details:", error);
-          }
-        }
-
-        // Get parcels from response.data.parcels instead of response.parcels
-        if (response.data.parcels && Array.isArray(response.data.parcels)) {
-          try {
-            const uomResponse = await axios.get(
-              `${APIBASEURL}/uoms`
-            );
-            let uomMap = {};
-
-            if (uomResponse.data && Array.isArray(uomResponse.data.data)) {
-              uomMap = uomResponse.data.data.reduce((map, uom) => {
-                map[uom.UOMID] = uom.UOM;
-                return map;
-              }, {});
-            }
-
-            const formattedParcels = response.data.parcels.map((parcel, index) => {
-              let parcelData = {
-                ...parcel,
-                srNo: index + 1,
-                Rate: parcel.Rate || "",
-                Amount: parcel.Amount || 0,
-              };
-
-              // Use UOM directly from the parcel if available
-              parcelData.uomName = parcel.UOM || 
-                (parcel.UOMID && uomMap[parcel.UOMID]
-                  ? uomMap[parcel.UOMID]
-                  : `UOM #${parcel.UOMID}`);
-              
-              parcelData.itemName = parcel.ItemName || `Item #${parcel.ItemID}`;
-              parcelData.countryName =
-                parcel.CountryName ||
-                (parcel.CountryOfOriginID
-                  ? `Country #${parcel.CountryOfOriginID}`
-                  : "-");
-
-              return parcelData;
-            });
-
-            console.log("Formatted parcels:", formattedParcels);
-            setParcels(formattedParcels);
-            calculateTotals(formattedParcels); // Calculate totals after loading parcels
-          } catch (error) {
-            console.error("Error processing parcels:", error);
-            const basicParcels = response.parcels.map((parcel, index) => ({
-              ...parcel,
-              srNo: index + 1,
-              Rate: parcel.Rate || "",
-              Amount: parcel.Amount || 0,
-              itemName: parcel.ItemName || `Item #${parcel.ItemID}`,
-              uomName: `UOM #${parcel.UOMID}`,
-              /* countryName:
-                parcel.CountryName ||
-                (parcel.CountryOfOriginID
-                  ? `Country #${parcel.CountryOfOriginID}`
-                  : "-"), */
-            }));
-            setParcels(basicParcels);
-            calculateTotals(basicParcels); // Calculate totals after loading parcels
-          }
-        }
-      } else {
-        throw new Error("No data returned from API");
-      }
+      setFormData(formattedData);
+      setStatus(quotationData.Status || "Pending");
+      setDataLoaded(true);
     } catch (error) {
-      console.error("Error loading supplier quotation data:", error);
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-        setError({
-          message:
-            error.response.data?.message ||
-            "Failed to load supplier quotation data",
-          details: error.response.data?.message.includes(
-            "parameter '@SupplierID'"
-          )
-            ? "The server cannot find the supplier data for this quotation. Please try again or contact support."
-            : "An unexpected error occurred. Please try again.",
-        });
-        if (!toastDisplayed) {
-          toast.error(
-            error.response?.data?.message.includes("parameter '@SupplierID'")
-              ? "Failed to load supplier quotation due to missing supplier data"
-              : "Error loading supplier quotation",
-            { toastId: "supplier-quotation-error" }
-          );
-          setToastDisplayed(true);
-        }
-      } else {
-        setError({
-          message: "Failed to load supplier quotation data",
-          details:
-            "Unable to connect to the server. Please check your network and try again.",
-        });
-        if (!toastDisplayed) {
-          toast.error("Unable to connect to the server", {
-            toastId: "supplier-quotation-error",
-          });
-          setToastDisplayed(true);
-        }
+      setError({
+        message: error.response?.data?.message || "Failed to load supplier quotation data",
+        details: error.response?.data?.message?.includes("parameter '@SupplierID'")
+          ? "The server cannot find the supplier data for this quotation. Please try again or contact support."
+          : "An unexpected error occurred. Please try again.",
+      });
+      if (!toastDisplayed) {
+        toast.error(
+          error.response?.data?.message?.includes("parameter '@SupplierID'")
+            ? "Failed to load supplier quotation due to missing supplier data"
+            : "Error loading supplier quotation",
+          { toastId: "supplier-quotation-error" }
+        );
+        setToastDisplayed(true);
       }
     } finally {
       setLoading(false);
-      setParcelLoading(false);
     }
-  }, [supplierQuotationId]);
+  }, [supplierQuotationId, toastDisplayed, DEFAULT_COMPANY, suppliers, purchaseRFQs, currencies, serviceTypes, addresses]);
 
   useEffect(() => {
-    if (supplierQuotationId) {
+    if (supplierQuotationId && dropdownsLoaded && !dataLoaded) {
       setToastDisplayed(false);
       loadSupplierQuotationData();
     }
-  }, [supplierQuotationId, loadSupplierQuotationData]);
+  }, [supplierQuotationId, dropdownsLoaded, loadSupplierQuotationData, dataLoaded]);
 
-  const handleRateChange = (parcelId, value) => {
-    const updatedParcels = parcels.map((parcel) => {
-      if (parcel.SupplierQuotationParcelID === parcelId) {
-        const rate = parseFloat(value) || 0;
-        const amount = parcel.ItemQuantity * rate;
-        return { ...parcel, Rate: value, Amount: amount };
-      }
-      return parcel;
-    });
-    setParcels(updatedParcels);
-    calculateTotals(updatedParcels);
-  };
+  const validateForm = () => {
+    const newErrors = {};
 
-  // Modify your handleEditToggle function to add more debugging
-  const handleEditToggle = () => {
-    console.log("Edit toggle clicked, current state:", isEditing);
-    setIsEditing(prevState => {
-      console.log("Setting isEditing to:", !prevState);
-      return !prevState;
-    });
+    if (!formData.SupplierID) {
+      newErrors.SupplierID = "Supplier is required";
+    }
+    if (!formData.PurchaseRFQID) {
+      newErrors.PurchaseRFQID = "Purchase RFQ is required";
+    }
+    if (!formData.CurrencyID) {
+      newErrors.CurrencyID = "Currency is required";
+    }
+    if (!formData.ServiceTypeID) {
+      newErrors.ServiceTypeID = "Service Type is required";
+    }
+    if (!formData.CollectionAddressID) {
+      newErrors.CollectionAddressID = "Collection Address is required";
+    }
+    if (!formData.DestinationAddressID) {
+      newErrors.DestinationAddressID = "Destination Address is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-  
-  // Add this debugging to track state changes
-  useEffect(() => {
-    console.log("isEditing state changed to:", isEditing);
-  }, [isEditing]);
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      toast.error("Please fix the form errors");
+      return;
+    }
+
     try {
       setLoading(true);
-      console.log("handleSave triggered");
-      
-      // Get the auth header from localStorage
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const headers = user.token ? { Authorization: `Bearer ${user.token}` } : {};
-      
-      // Calculate total sales amount from parcels
-      const salesAmount = parcels.reduce(
-        (sum, parcel) => sum + (parseFloat(parcel.Amount) || 0),
-        0
-      );
-      
-      // Calculate total with taxes
-      const total = salesAmount + (parseFloat(formData.TaxesAndOtherCharges) || 0);
-      
-      console.log("Calculated totals:", { salesAmount, total });
-      
-      // Prepare supplier quotation update data - include all required fields
-      const quotationUpdateData = {
+
+      const apiData = {
+        ...formData,
         SupplierQuotationID: parseInt(supplierQuotationId),
-        SupplierID: formData.SupplierID,
-        CustomerID: formData.CustomerID,
-        CompanyID: formData.CompanyID,
-        PurchaseRFQID: formData.PurchaseRFQID,
-        SalesRFQID: formData.SalesRFQID,
-        SalesAmount: salesAmount,
-        TaxesAndOtherCharges: formData.TaxesAndOtherCharges || 0,
-        Total: total,
-        CurrencyID: formData.CurrencyID,
-        Terms: formData.Terms,
-        FormCompletedYN: formData.FormCompletedYN,
-        CollectFromSupplierYN: formData.CollectFromSupplierYN
-      };
-      
-      console.log("Updating supplier quotation with data:", quotationUpdateData);
-      
-      // Update the supplier quotation
-      const quotationResponse = await axios.put(
-        `${APIBASEURL}/supplier-quotation/${supplierQuotationId}`,
-        quotationUpdateData,
-        { headers }
-      );
-      
-      console.log("Supplier quotation update response:", quotationResponse.data);
-      
-      // Update each parcel
-      for (const parcel of parcels) {
-        const parcelData = {
-          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
+        SupplierID: parseInt(formData.SupplierID),
+        CustomerID: parseInt(formData.CustomerID) || null,
+        CompanyID: parseInt(formData.CompanyID),
+        PurchaseRFQID: parseInt(formData.PurchaseRFQID),
+        SalesRFQID: parseInt(formData.SalesRFQID) || null,
+        SalesAmount: parseFloat(formData.SalesAmount) || 0,
+        TaxesAndOtherCharges: parseFloat(formData.TaxesAndOtherCharges) || 0,
+        Total: parseFloat(formData.Total) || 0,
+        CurrencyID: parseInt(formData.CurrencyID),
+        PostingDate: formData.PostingDate ? formData.PostingDate.toISOString() : null,
+        DeliveryDate: formData.DeliveryDate ? formData.DeliveryDate.toISOString() : null,
+        RequiredByDate: formData.RequiredByDate ? formData.RequiredByDate.toISOString() : null,
+        DateReceived: formData.DateReceived ? formData.DateReceived.toISOString() : null,
+        ValidTillDate: formData.ValidTillDate ? formData.ValidTillDate.toISOString() : null,
+        CreatedDateTime: formData.CreatedDateTime ? formData.CreatedDateTime.toISOString() : null,
+        DeletedDateTime: formData.DeletedDateTime ? formData.DeletedDateTime.toISOString() : null,
+        CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
+        PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
+        FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
+        QuotationReceivedYN: formData.QuotationReceivedYN ? 1 : 0,
+        IsDeleted: formData.IsDeleted ? 1 : 0,
+        parcels: parcels.map((parcel) => ({
+          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || null,
           SupplierQuotationID: parseInt(supplierQuotationId),
-          ItemID: parcel.ItemID,
-          LineItemNumber: parcel.LineItemNumber || null,
-          ItemQuantity: parcel.ItemQuantity,
-          UOMID: parcel.UOMID,
-          Rate: parcel.Rate ? parseFloat(parcel.Rate) : null,
-          Amount: parcel.Amount ? parseFloat(parcel.Amount) : null,
-          // CountryOfOriginID: parcel.CountryOfOriginID || null,
-          CreatedByID: user.personId || 1
-        };
-        
-        console.log(`Updating parcel ${parcel.SupplierQuotationParcelID} with data:`, parcelData);
-        
-        const parcelResponse = await axios.put(
-          `${APIBASEURL}/supplier-quotation-parcel/${parcel.SupplierQuotationParcelID}`,
-          parcelData,
-          { headers }
-        );
-        
-        console.log(`Parcel ${parcel.SupplierQuotationParcelID} update response:`, parcelResponse.data);
-      }
-      
-      toast.success("Supplier quotation and parcels updated successfully");
-      
-      // Reload data to show updated values
-      await loadSupplierQuotationData();
+          ItemID: parseInt(parcel.ItemID),
+          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
+          UOMID: parseInt(parcel.UOMID),
+          Rate: parseFloat(parcel.Rate) || null,
+          Amount: parseFloat(parcel.Amount) || null,
+          CountryOfOriginID: parseInt(parcel.CountryOfOriginID) || null,
+          CreatedByID: parseInt(parcel.CreatedByID) || null,
+          IsDeleted: parcel.IsDeleted ? 1 : 0,
+        })),
+      };
+
+      await updateSupplierQuotation(supplierQuotationId, apiData);
+      toast.success("Supplier Quotation updated successfully");
       setIsEditing(false);
-      
-      if (onSave) {
-        onSave({ ...formData, parcels });
-      }
+      if (onSave) onSave(apiData);
+      setDataLoaded(false);
+      await loadSupplierQuotationData();
     } catch (error) {
-      console.error("Error saving supplier quotation:", error);
-      if (error.response) {
-        console.error("Error response status:", error.response.status);
-        console.error("Error response data:", error.response.data);
-      }
       toast.error(`Failed to save: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
@@ -461,12 +436,11 @@ const SupplierQuotationForm = ({
   };
 
   const handleCancel = () => {
-    console.log("handleCancel triggered");
     if (isEditMode) {
       navigate("/supplier-quotation");
     } else if (isEditing) {
       loadSupplierQuotationData();
-      setIsEditing(false);
+      setIsEditing(true);
     } else if (onClose) {
       onClose();
     } else {
@@ -474,79 +448,124 @@ const SupplierQuotationForm = ({
     }
   };
 
-  const handleRetry = () => {
-    console.log("handleRetry triggered");
-    setToastDisplayed(false);
-    loadSupplierQuotationData();
+  const handleEditToggle = () => {
+    setIsEditing((prev) => !prev);
   };
 
-  // Add a console log at the beginning of the component to verify it's being rendered
-  useEffect(() => {
-    console.log("SupplierQuotationForm rendered, isEditing:", isEditing);
-  }, [isEditing]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      if (name === "CurrencyID") {
+        newData.CurrencyName =
+          currencies.find((c) => c.value === value)?.label || "";
+      } else if (name === "SupplierID") {
+        newData.SupplierName =
+          suppliers.find((s) => s.value === value)?.label || "";
+      } else if (name === "PurchaseRFQID") {
+        newData.PurchaseRFQSeries =
+          purchaseRFQs.find((p) => p.value === value)?.label || "";
+      } else if (name === "ServiceTypeID") {
+        newData.ServiceType =
+          serviceTypes.find((st) => st.value === value)?.label || "";
+      } else if (name === "CollectionAddressID") {
+        newData.CollectionAddress =
+          addresses.find((a) => a.value === value)?.label || "";
+      } else if (name === "DestinationAddressID") {
+        newData.DestinationAddress =
+          addresses.find((a) => a.value === value)?.label || "";
+      }
+      return newData;
+    });
+  };
+
+  const handleCheckboxChange = (name) => (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: e.target.checked,
+    }));
+  };
+
+  const handleDateChange = (field, date) => {
+    const dayjsDate = date ? dayjs(date) : null;
+    setFormData((prevData) => ({
+      ...prevData,
+      [field]: dayjsDate,
+    }));
+  };
+
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    setFormData((prev) => ({
+      ...prev,
+      Status: newStatus,
+    }));
+  };
+
+  const handleParcelsChange = (updatedParcels) => {
+    setParcels(updatedParcels);
+    calculateTotals(updatedParcels);
+  };
 
   return (
-    <>
-      {/* REMOVE: Emergency save button outside FormPage for testing */}
-      {/* {isEditing && (
-        <Box sx={{ position: 'fixed', top: '10px', right: '10px', zIndex: 9999 }}>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              console.log("Emergency save button clicked");
-              handleSave();
-            }}
-          >
-            Emergency Save
-          </Button>
-        </Box>
-      )} */}
-
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <FormPage
         title={
-          <>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography variant="h6" component="span">
-                {isEditMode
-                  ? "Edit Supplier Quotation"
-                  : "View Supplier Quotation"}
-              </Typography>
-              {!isEditMode && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    backgroundColor:
-                      status === "Approved" ? "#e6f7e6" : "#ffebee",
-                    color: status === "Approved" ? "#2e7d32" : "#d32f2f",
-                    borderRadius: "4px",
-                    padding: "6px 12px",
-                    fontWeight: "medium",
-                  }}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h6" component="span">
+              {isEditing
+                ? "Edit Supplier Quotation"
+                : supplierQuotationId
+                  ? "View Supplier Quotation"
+                    : "Create Supplier Quotation"}
+            </Typography>
+            {supplierQuotationId && (
+              <Fade in={true} timeout={500}>
+                <Box sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  background:
+                    theme.palette.mode = "dark" ? "#90caf9" : "#1976d2",
+                  borderRadius: "4px",
+                  paddingRight: "10px",
+                  height: "37px",
+                  sm: {
+                    paddingRight: "10px"
+                  },
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  transition: "all 0.3s ease-in-out",
+                  "&:hover": {
+                    boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                    transform: "scale(1.02)",
+                  },
+                }}
                 >
                   <Typography
                     variant="body2"
                     sx={{
+                      fontWeight: "700",
+                      color:
+                        theme.palette.mode === "light" ? "white" : "black",
+                      fontSize: "0.9rem",
                       marginRight: "8px",
-                      color: status === "Approved" ? "#2e7d32" : "#d32f2f",
                     }}
                   >
-                    Status:{" "}
+                    Status:
                   </Typography>
                   <StatusIndicator
                     status={status}
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
-                    readOnly={loading || isEditing}
+                    readOnly={loading || !isEditing || status === "Approved"}
                   />
                 </Box>
-              )}
-            </Box>
-          </>
+              </Fade>
+            )}
+          </Box>
         }
         onCancel={handleCancel}
         onSubmit={isEditing ? handleSave : undefined}
+        onEdit={supplierQuotationId && !isEditing ? handleEditToggle : undefined}
         loading={loading}
         readOnly={readOnly && !isEditing}
       >
@@ -555,7 +574,7 @@ const SupplierQuotationForm = ({
             severity="error"
             action={
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Button color="inherit" size="small" onClick={handleRetry}>
+                <Button color="inherit" size="small" onClick={() => loadSupplierQuotationData()}>
                   Retry
                 </Button>
                 <Button color="inherit" size="small" onClick={handleCancel}>
@@ -569,12 +588,7 @@ const SupplierQuotationForm = ({
             <Typography variant="body2">{error.details}</Typography>
           </Alert>
         )}
-
-        {/* Remove the edit button section when viewing */}
-
-        <Grid
-          container
-          spacing={1}
+        <Box
           sx={{
             width: "100%",
             margin: 0,
@@ -585,320 +599,403 @@ const SupplierQuotationForm = ({
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Series" value={formData.Series} />
+          <Grid container spacing={1}>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="Series"
+                  label="Series"
+                  value={formData.Series || ""}
+                  onChange={handleChange}
+                  error={!!errors.Series}
+                  helperText={errors.Series}
+                  disabled={true}
+                />
+              ) : (
+                <ReadOnlyField label="Series" value={formData.Series} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="CompanyID"
+                  label="Company"
+                  value={formData.CompanyID || ""}
+                  onChange={() => {}}
+                  options={[DEFAULT_COMPANY]}
+                  disabled={true}
+                  readOnly={true}
+                />
+              ) : (
+                <ReadOnlyField label="Company" value={formData.CompanyName} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="SupplierID"
+                  label="Supplier"
+                  value={formData.SupplierID || ""}
+                  onChange={handleChange}
+                  options={suppliers}
+                  error={!!errors.SupplierID}
+                  helperText={errors.SupplierID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Supplier" value={formData.SupplierName} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="PurchaseRFQID"
+                  label="Purchase RFQ"
+                  value={formData.PurchaseRFQID || ""}
+                  onChange={handleChange}
+                  options={purchaseRFQs}
+                  error={!!errors.PurchaseRFQID}
+                  helperText={errors.PurchaseRFQID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Purchase RFQ" value={formData.PurchaseRFQSeries} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              <ReadOnlyField label="Sales RFQ" value={formData.SalesRFQSeries} />
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              <ReadOnlyField label="Customer" value={formData.CustomerName} />
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="ExternalRefNo"
+                  label="External Ref No."
+                  value={formData.ExternalRefNo || ""}
+                  onChange={handleChange}
+                  error={!!errors.ExternalRefNo}
+                  disabled={readOnly}
+                  fullWidth
+                />
+              ) : (
+                <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="ServiceTypeID"
+                  label="Service Type"
+                  value={formData.ServiceTypeID || ""}
+                  onChange={handleChange}
+                  options={serviceTypes}
+                  error={!!errors.ServiceTypeID}
+                  helperText={errors.ServiceTypeID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Service Type" value={formData.ServiceType} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormDatePicker
+                  name="DeliveryDate"
+                  label="Delivery Date"
+                  value={formData.DeliveryDate}
+                  onChange={(date) => handleDateChange("DeliveryDate", date)}
+                  error={!!errors.DeliveryDate}
+                  helperText={errors.DeliveryDate}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Delivery Date"
+                  value={formData.DeliveryDate ? formData.DeliveryDate.format("MM/DD/YYYY") : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormDatePicker
+                  name="PostingDate"
+                  label="Posting Date"
+                  value={formData.PostingDate}
+                  onChange={(date) => handleDateChange("PostingDate", date)}
+                  error={!!errors.PostingDate}
+                  helperText={errors.PostingDate}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Posting Date"
+                  value={formData.PostingDate ? formData.PostingDate.format("MM/DD/YYYY") : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormDatePicker
+                  name="RequiredByDate"
+                  label="Required By Date"
+                  value={formData.RequiredByDate}
+                  onChange={(date) => handleDateChange("RequiredByDate", date)}
+                  error={!!errors.RequiredByDate}
+                  helperText={errors.RequiredByDate}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Required By Date"
+                  value={formData.RequiredByDate ? formData.RequiredByDate.format("MM/DD/YYYY") : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormDatePicker
+                  name="DateReceived"
+                  label="Date Received"
+                  value={formData.DateReceived}
+                  onChange={(date) => handleDateChange("DateReceived", date)}
+                  error={!!errors.DateReceived}
+                  helperText={errors.DateReceived}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Date Received"
+                  value={formData.DateReceived ? formData.DateReceived.format("MM/DD/YYYY") : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormDatePicker
+                  name="ValidTillDate"
+                  label="Valid Till Date"
+                  value={formData.ValidTillDate}
+                  onChange={(date) => handleDateChange("ValidTillDate", date)}
+                  error={!!errors.ValidTillDate}
+                  helperText={errors.ValidTillDate}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Valid Till Date"
+                  value={formData.ValidTillDate ? formData.ValidTillDate.format("MM/DD/YYYY") : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="CollectionAddressID"
+                  label="Collection Address"
+                  value={formData.CollectionAddressID || ""}
+                  onChange={handleChange}
+                  options={addresses}
+                  error={!!errors.CollectionAddressID}
+                  helperText={errors.CollectionAddressID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="DestinationAddressID"
+                  label="Destination Address"
+                  value={formData.DestinationAddressID || ""}
+                  onChange={handleChange}
+                  options={addresses}
+                  error={!!errors.DestinationAddressID}
+                  helperText={errors.DestinationAddressID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="Terms"
+                  label="Terms"
+                  value={formData.Terms || ""}
+                  onChange={handleChange}
+                  error={!!errors.Terms}
+                  helperText={errors.Terms}
+                  disabled={readOnly}
+                  fullWidth
+                />
+              ) : (
+                <ReadOnlyField label="Terms" value={formData.Terms} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormSelect
+                  name="CurrencyID"
+                  label="Currency"
+                  value={formData.CurrencyID || ""}
+                  onChange={handleChange}
+                  options={currencies}
+                  error={!!errors.CurrencyID}
+                  helperText={errors.CurrencyID}
+                  disabled={readOnly}
+                />
+              ) : (
+                <ReadOnlyField label="Currency" value={formData.CurrencyName} />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="SalesAmount"
+                  label="Sales Amount"
+                  value={formData.SalesAmount.toFixed(2) || ""}
+                  onChange={handleChange}
+                  disabled={true}
+                  fullWidth
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Sales Amount"
+                  value={formData.SalesAmount ? formData.SalesAmount.toFixed(2) : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="TaxesAndOtherCharges"
+                  label="Taxes and Other Charges"
+                  value={formData.TaxesAndOtherCharges.toFixed(2) || ""}
+                  onChange={handleChange}
+                  type="number"
+                  disabled={readOnly}
+                  fullWidth
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Taxes and Other Charges"
+                  value={formData.TaxesAndOtherCharges ? formData.TaxesAndOtherCharges.toFixed(2) : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <TextField
+                  name="Total"
+                  label="Total"
+                  value={formData.Total.toFixed(2) || ""}
+                  onChange={handleChange}
+                  disabled={true}
+                  fullWidth
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Total"
+                  value={formData.Total ? formData.Total.toFixed(2) : "-"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="PackagingRequiredYN"
+                      checked={formData.PackagingRequiredYN}
+                      onChange={handleCheckboxChange("PackagingRequiredYN")}
+                      disabled={readOnly}
+                    />
+                  }
+                  label="Packaging Required"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Packaging Required"
+                  value={formData.PackagingRequiredYN ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="CollectFromSupplierYN"
+                      checked={formData.CollectFromSupplierYN}
+                      onChange={handleCheckboxChange("CollectFromSupplierYN")}
+                      disabled={readOnly}
+                    />
+                  }
+                  label="Collect From Supplier"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Collect From Supplier"
+                  value={formData.CollectFromSupplierYN ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="FormCompletedYN"
+                      checked={formData.FormCompletedYN}
+                      onChange={handleCheckboxChange("FormCompletedYN")}
+                      disabled={readOnly}
+                    />
+                  }
+                  label="Form Completed"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Form Completed"
+                  value={formData.FormCompletedYN ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="QuotationReceivedYN"
+                      checked={formData.QuotationReceivedYN}
+                      onChange={handleCheckboxChange("QuotationReceivedYN")}
+                      disabled={readOnly}
+                    />
+                  }
+                  label="Quotation Received"
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Quotation Received"
+                  value={formData.QuotationReceivedYN ? "Yes" : "No"}
+                />
+              )}
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Company" value={formData.CompanyName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Service Type" value={formData.ServiceType} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Customer" value={formData.CustomerName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Supplier" value={formData.SupplierName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="External Ref No."
-              value={formData.ExternalRefNo}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Purchase RFQ"
-              value={formData.PurchaseRFQSeries}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Sales RFQ" value={formData.SalesRFQSeries} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Delivery Date"
-              value={
-                formData.DeliveryDate
-                  ? formData.DeliveryDate.toLocaleDateString()
-                  : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Posting Date"
-              value={
-                formData.PostingDate
-                  ? formData.PostingDate.toLocaleDateString()
-                  : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Required By Date"
-              value={
-                formData.RequiredByDate
-                  ? formData.RequiredByDate.toLocaleDateString()
-                  : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Date Received"
-              value={
-                formData.DateReceived
-                  ? formData.DateReceived.toLocaleDateString()
-                  : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Sales Amount"
-              value={
-                formData.SalesAmount ? formData.SalesAmount.toFixed(2) : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Taxes and Other Charges"
-              value={
-                formData.TaxesAndOtherCharges
-                  ? formData.TaxesAndOtherCharges.toFixed(2)
-                  : "-"
-              }
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Total"
-              value={formData.Total ? formData.Total.toFixed(2) : "-"}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} sx={{ width: "48%", maxWidth: "280px" }}>
-            <ReadOnlyField
-              label="Collection Address"
-              value={formData.CollectionAddress}
-            />
-          </Grid>
+        </Box>
 
-          <Grid item xs={12} md={6} sx={{ width: "48%", maxWidth: "280px" }}>
-            <ReadOnlyField
-              label="Destination Address"
-              value={formData.DestinationAddress}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Shipping Priority"
-              value={formData.ShippingPriority}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Terms" value={formData.Terms} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Currency" value={formData.CurrencyName} />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Packaging Required"
-              value={formData.PackagingRequiredYN ? "Yes" : "No"}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Collect From Supplier"
-              value={formData.CollectFromSupplierYN ? "Yes" : "No"}
-            />
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField
-              label="Form Completed"
-              value={formData.FormCompletedYN ? "Yes" : "No"}
-            />
-          </Grid>
-
-          {/* Continue with existing grid items */}
-        </Grid>
-
-        {parcels.length > 0 ? (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Items
-            </Typography>
-            <TableContainer
-              component={Paper}
-              sx={{
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                borderRadius: "8px",
-                overflow: "hidden",
-              }}
-            >
-              <Table>
-                <TableHead
-                  sx={{
-                    backgroundColor: "#1976d2",
-                    height: "56px",
-                  }}
-                >
-                  <TableRow>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Sr. No.
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Item
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      UOM
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Quantity
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Rate
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Amount
-                    </TableCell>
-                    {/* <TableCell
-                      align="center"
-                      sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                    >
-                      Country of Origin
-                    </TableCell> */}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {parcelLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        <CircularProgress size={24} sx={{ my: 2 }} />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    parcels.map((parcel) => (
-                      <TableRow
-                        key={parcel.SupplierQuotationParcelID}
-                        sx={{
-                          height: "52px",
-                          "&:nth-of-type(odd)": {
-                            backgroundColor: alpha("#1976d2", 0.05),
-                          },
-                          "&:hover": {
-                            backgroundColor: alpha("#1976d2", 0.1),
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                          },
-                        }}
-                      >
-                        <TableCell align="center">{parcel.srNo}</TableCell>
-                        <TableCell align="center">{parcel.itemName}</TableCell>
-                        <TableCell align="center">{parcel.uomName}</TableCell>
-                        <TableCell align="center">
-                          {parcel.ItemQuantity}
-                        </TableCell>
-                        <TableCell align="center">
-                          {isEditing ? (
-                            <TextField
-                              type="number"
-                              value={parcel.Rate}
-                              onChange={(e) =>
-                                handleRateChange(
-                                  parcel.SupplierQuotationParcelID,
-                                  e.target.value
-                                )
-                              }
-                              size="small"
-                              sx={{
-                                width: "100px",
-                                textAlign: "center",
-                                "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                                  {
-                                    "-webkit-appearance": "none",
-                                    margin: 0,
-                                  },
-                                "& input[type=number]": {
-                                  "-moz-appearance": "textfield",
-                                },
-                              }}
-                              inputProps={{ min: 0, step: "0.01" }}
-                              placeholder="Enter rate"
-                            />
-                          ) : parcel.Rate ? (
-                            parseFloat(parcel.Rate).toFixed(2)
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell align="center">
-                          {typeof parcel.Amount === "number" &&
-                          !isNaN(parcel.Amount)
-                            ? parcel.Amount.toFixed(2)
-                            : "-"}
-                        </TableCell>
-                        {/* <TableCell align="center">
-                          {parcel.countryName || "-"}
-                        </TableCell> */}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        ) : (
-          <Box sx={{ mt: 3 }}>
-            <Box
-              sx={{
-                p: 2,
-                border: "1px solid #e0e0e0",
-                borderBottomLeftRadius: 4,
-                borderBottomRightRadius: 4,
-                borderTopRightRadius: 0,
-                borderTopLeftRadius: 0,}}
-            >
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Items
-              </Typography>
-            </Box>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: "center",
-                color: "text.secondary",
-                borderRadius: "8px",
-                backgroundColor: alpha("#f5f5f5", 0.7),
-              }}
-            >
-              No parcels found for this Supplier Quotation.
-            </Paper>
-          </Box>
-        )}
+        <SupplierQuotationParcelTab
+          supplierQuotationId={supplierQuotationId}
+          onParcelsChange={handleParcelsChange}
+          readOnly={readOnly}
+          isEditing={isEditing}
+        />
       </FormPage>
-    </>
+    </LocalizationProvider>
   );
 };
 
