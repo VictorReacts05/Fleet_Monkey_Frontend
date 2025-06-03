@@ -176,10 +176,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     }
   };
 
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    validateField(name, value);
-  };
+  
 
   const handleSubmit = async (e) => {
     // Add null check for the event parameter

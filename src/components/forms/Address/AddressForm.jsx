@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, MenuItem, Select, InputLabel, FormControl, Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
+import { toast } from 'react-toastify';
 import FormPage from '../../Common/FormPage';
 import FormInput from '../../Common/FormInput';
-import { toast } from 'react-toastify';
+import FormSelect from '../../Common/FormSelect';
 import { fetchAddressTypes, fetchCities, fetchCountries, createAddress, updateAddress, getAddressById } from './AddressAPI';
+import FormTextArea from '../../Common/FormTextArea';
 
 const AddressForm = ({ addressId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -45,9 +47,19 @@ const AddressForm = ({ addressId, onSave, onClose }) => {
         fetchCities(),
         fetchCountries(),
       ]);
-      setAddressTypes(addressTypesData);
-      setCities(citiesData);
-      setCountries(countriesData);
+      // Transform data to match FormSelect options format
+      setAddressTypes(addressTypesData.map((type) => ({
+        id: type.AddressTypeID || type.id,
+        label: type.AddressType || type.addressType,
+      })));
+      setCities(citiesData.map((city) => ({
+        id: city.CityID || city.id,
+        label: city.CityName || city.name,
+      })));
+      setCountries(countriesData.map((country) => ({
+        id: country.CountryID || country.id,
+        label: country.CountryName || country.name,
+      })));
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       toast.error(`Failed to load dropdown data: ${error.message}${error.status ? ` (Status: ${error.status})` : ''}`);
@@ -222,30 +234,17 @@ const AddressForm = ({ addressId, onSave, onClose }) => {
         required
       />
 
-      <FormControl fullWidth margin="normal" error={!!errors.addressTypeId}>
-        <InputLabel>Address Type</InputLabel>
-        <Select
-          name="addressTypeId"
-          value={formData.addressTypeId}
-          onChange={handleChange}
-          label="Address Type"
-          required
-        >
-          <MenuItem value="">Select Address Type</MenuItem>
-          {addressTypes.map((type) => (
-            <MenuItem key={type.AddressTypeID || type.id} value={type.AddressTypeID || type.id}>
-              {type.AddressType || type.addressType}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.addressTypeId && (
-          <Typography color="error" variant="caption">
-            {errors.addressTypeId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="Address Type"
+        name="addressTypeId"
+        value={formData.addressTypeId}
+        onChange={handleChange}
+        error={errors.addressTypeId}
+        options={addressTypes}
+        required
+      />
 
-      <FormInput
+      <FormTextArea
         label="Address Line 1"
         name="addressLine1"
         value={formData.addressLine1}
@@ -256,61 +255,35 @@ const AddressForm = ({ addressId, onSave, onClose }) => {
         rows={4}
       />
 
-      <FormInput
+      <FormTextArea
         label="Address Line 2"
         name="addressLine2"
         value={formData.addressLine2}
         onChange={handleChange}
         error={errors.addressLine2}
         multiline
-        rows={4}
+        rows={2}
       />
 
-      <FormControl fullWidth margin="normal" error={!!errors.cityId}>
-        <InputLabel>City</InputLabel>
-        <Select
-          name="cityId"
-          value={formData.cityId}
-          onChange={handleChange}
-          label="City"
-          required
-        >
-          <MenuItem value="">Select City</MenuItem>
-          {cities.map((city) => (
-            <MenuItem key={city.CityID || city.id} value={city.CityID || city.id}>
-              {city.CityName || city.name}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.cityId && (
-          <Typography color="error" variant="caption">
-            {errors.cityId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="City"
+        name="cityId"
+        value={formData.cityId}
+        onChange={handleChange}
+        error={errors.cityId}
+        options={cities}
+        required
+      />
 
-      <FormControl fullWidth margin="normal" error={!!errors.countryId}>
-        <InputLabel>Country</InputLabel>
-        <Select
-          name="countryId"
-          value={formData.countryId}
-          onChange={handleChange}
-          label="Country"
-          required
-        >
-          <MenuItem value="">Select Country</MenuItem>
-          {countries.map((country) => (
-            <MenuItem key={country.CountryID || country.id} value={country.CountryID || country.id}>
-              {country.CountryName || country.name}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.countryId && (
-          <Typography color="error" variant="caption">
-            {errors.countryId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="Country"
+        name="countryId"
+        value={formData.countryId}
+        onChange={handleChange}
+        error={errors.countryId}
+        options={countries}
+        required
+      />
     </FormPage>
   );
 };

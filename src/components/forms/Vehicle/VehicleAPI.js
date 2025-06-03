@@ -55,15 +55,14 @@ export const createVehicle = async (vehicleData) => {
       // Use PascalCase for field names as expected by the backend
       TruckNumberPlate: vehicleData.truckNumberPlate,
       VIN: vehicleData.vin,
-      CompanyID: Number(vehicleData.companyId),
-      VehicleTypeID: 2, // Adding a default value since it's required
-      CreatedByID: Number(userId),
-      MaxWeight: vehicleData.maxWeight,
-      Length: vehicleData.length,
-      Width: vehicleData.width,
-      Height: vehicleData.height,
-      NumberOfWheels: 10, // Default value
-      NumberOfAxels: 4,   // Default value
+      companyId: Number(vehicleData.companyId),
+      createdById: Number(userId),
+      maxWeight: vehicleData.maxWeight,
+      length: vehicleData.length,
+      width: vehicleData.width,
+      height: vehicleData.height,
+      numberOfWheels: 10, // Default value
+      numberOfAxels: 4,   // Default value
       
       // Also include camelCase versions for compatibility
       truckNumberPlate: vehicleData.truckNumberPlate,
@@ -107,10 +106,10 @@ export const updateVehicle = async (vehicleId, data) => {
       CompanyID: Number(data.companyId),
       VehicleTypeID: 2, // Adding a default value since it's required
       CreatedByID: Number(userId),
-      MaxWeight: data.maxWeight,
-      Length: data.length,
-      Width: data.width,
-      Height: data.height,
+      maxWeight: data.maxWeight,
+      length: data.length,
+      width: data.width,
+      height: data.height,
       NumberOfWheels: 10, // Default value
       NumberOfAxels: 4,   // Default value
       
@@ -181,7 +180,6 @@ export const deleteVehicle = async (id, personId = null) => {
     }
 
     const requestBody = {
-      deletedByID,
       deletedById: deletedByID, 
     };
 

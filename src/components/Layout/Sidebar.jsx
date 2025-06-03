@@ -52,6 +52,9 @@ const menuItems = [
   { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
   { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
   { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
+  
+  
+  { text:"Addresses", icon: <HomeIcon />, path: "/addresses" },
   {text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
@@ -79,7 +82,6 @@ const menuItems = [
     icon: <SubscriptionsIcon />,
     path: "/subscriptions",
   },
-  { text:"Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Suppliers", icon: <GroupIcon />, path: "/suppliers" },
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
