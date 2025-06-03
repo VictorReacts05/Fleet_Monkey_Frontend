@@ -8,7 +8,7 @@ import {
   Button,
   Alert,
   Fade,
-  Chip
+  Chip,
 } from "@mui/material";
 import {
   getSupplierQuotationById,
@@ -19,6 +19,9 @@ import {
   fetchAddresses,
   fetchCustomers,
   updateSupplierQuotation,
+  updateSupplierQuotationParcel,
+  createSupplierQuotationParcel,
+  getAuthHeader,
 } from "./SupplierQuotationAPI";
 import { toast } from "react-toastify";
 import FormPage from "../../Common/FormPage";
@@ -31,6 +34,8 @@ import dayjs from "dayjs";
 import StatusIndicator from "./StatusIndicator";
 import SupplierQuotationParcelTab from "./SupplierQuotationParcelTab";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -118,6 +123,7 @@ const SupplierQuotationForm = ({
     RowVersionColumn: "",
   });
   const [parcels, setParcels] = useState([]);
+  const [originalParcels, setOriginalParcels] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [purchaseRFQs, setPurchaseRFQs] = useState([]);
   const [currencies, setCurrencies] = useState([]);
@@ -255,38 +261,43 @@ const SupplierQuotationForm = ({
   const loadSupplierQuotationData = useCallback(async () => {
     if (!supplierQuotationId || dataLoaded) return;
 
+    // Ensure dropdowns are loaded before proceeding
+    if (!dropdownsLoaded) {
+      console.log(
+        "Dropdowns not loaded yet, delaying loadSupplierQuotationData"
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
       const response = await getSupplierQuotationById(supplierQuotationId);
       const quotationData = response.data?.data?.quotation || {};
+      const parcelData = response.data?.data?.parcels || [];
+
+      console.log("API Response quotationData:", quotationData); // Debug log
 
       const displayValue = (value) =>
-        value === null || value === undefined ? "-" : value;
+        value === null || value === undefined ? "" : value;
 
       const formattedData = {
         Series: displayValue(quotationData.Series),
-        SupplierID: suppliers.find(
-          (s) => String(s.value) === String(quotationData.SupplierID)
-        )
-          ? String(quotationData.SupplierID)
-          : "",
+        SupplierID: String(quotationData.SupplierID || ""), // Use raw SupplierID from API
         SupplierName: displayValue(quotationData.SupplierName),
-        CustomerID: customers.find(
-          (c) => String(c.value) === String(quotationData.CustomerID)
-        )
-          ? String(quotationData.CustomerID)
-          : "",
+        CustomerID:
+          customers.find(
+            (c) => String(c.value) === String(quotationData.CustomerID)
+          )?.value || String(quotationData.CustomerID || ""),
         CustomerName: displayValue(quotationData.CustomerName),
         ExternalRefNo: displayValue(quotationData.ExternalRefNo),
         CompanyID: DEFAULT_COMPANY.value,
         CompanyName: DEFAULT_COMPANY.label,
-        PurchaseRFQID: purchaseRFQs.find(
-          (p) => String(p.value) === String(quotationData.PurchaseRFQID)
-        )
-          ? String(quotationData.PurchaseRFQID)
-          : "",
+        PurchaseRFQID:
+          purchaseRFQs.find(
+            (p) => String(p.value) === String(quotationData.PurchaseRFQID)
+          )?.value || String(quotationData.PurchaseRFQID || ""),
         PurchaseRFQSeries: displayValue(quotationData.PurchaseRFQSeries),
         SalesRFQID: displayValue(quotationData.SalesRFQID),
         SalesRFQSeries: displayValue(quotationData.SalesRFQSeries),
@@ -306,32 +317,29 @@ const SupplierQuotationForm = ({
         TaxesAndOtherCharges:
           parseFloat(quotationData.TaxesAndOtherCharges) || 0,
         Total: parseFloat(quotationData.Total) || 0,
-        CurrencyID: currencies.find(
-          (c) => String(c.value) === String(quotationData.CurrencyID)
-        )
-          ? String(quotationData.CurrencyID)
-          : "",
+        CurrencyID:
+          currencies.find(
+            (c) => String(c.value) === String(quotationData.CurrencyID)
+          )?.value || String(quotationData.CurrencyID || ""),
         CurrencyName: displayValue(quotationData.CurrencyName),
         Terms: displayValue(quotationData.Terms),
         FormCompletedYN: Boolean(quotationData.FormCompletedYN),
         CollectFromSupplierYN: Boolean(quotationData.CollectFromSupplierYN),
-        ServiceTypeID: serviceTypes.find(
-          (st) => String(st.value) === String(quotationData.ServiceTypeID)
-        )
-          ? String(quotationData.ServiceTypeID)
-          : "",
+        ServiceTypeID:
+          serviceTypes.find(
+            (st) => String(st.value) === String(quotationData.ServiceTypeID)
+          )?.value || String(quotationData.ServiceTypeID || ""),
         ServiceType: displayValue(quotationData.ServiceType),
-        CollectionAddressID: addresses.find(
-          (a) => String(a.value) === String(quotationData.CollectionAddressID)
-        )
-          ? String(quotationData.CollectionAddressID)
-          : "",
+        CollectionAddressID:
+          addresses.find(
+            (a) => String(a.value) === String(quotationData.CollectionAddressID)
+          )?.value || String(quotationData.CollectionAddressID || ""),
         CollectionAddress: displayValue(quotationData.CollectionAddress),
-        DestinationAddressID: addresses.find(
-          (a) => String(a.value) === String(quotationData.DestinationAddressID)
-        )
-          ? String(quotationData.DestinationAddressID)
-          : "",
+        DestinationAddressID:
+          addresses.find(
+            (a) =>
+              String(a.value) === String(quotationData.DestinationAddressID)
+          )?.value || String(quotationData.DestinationAddressID || ""),
         DestinationAddress: displayValue(quotationData.DestinationAddress),
         PackagingRequiredYN: Boolean(quotationData.PackagingRequiredYN),
         ValidTillDate: quotationData.ValidTillDate
@@ -352,7 +360,31 @@ const SupplierQuotationForm = ({
         RowVersionColumn: displayValue(quotationData.RowVersionColumn),
       };
 
+      console.log("Loaded formData:", formattedData); // Debug log
+
       setFormData(formattedData);
+
+      // Format and store parcels
+      const formattedParcels = parcelData.map((parcel, index) => ({
+        SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
+        SupplierQuotationID: supplierQuotationId,
+        ItemID: parseInt(parcel.ItemID) || 0,
+        itemName: parcel.ItemName || "Unknown Item",
+        UOMID: parseInt(parcel.UOMID) || 0,
+        uomName: parcel.UOM || "Unknown UOM",
+        ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
+        Rate: parseFloat(parcel.Rate) || 0,
+        Amount: parseFloat(parcel.Amount) || 0,
+        srNo: index + 1,
+        CountryOfOriginID: parcel.CountryOfOriginID || null,
+        CreatedByID: parcel.CreatedByID || null,
+        IsDeleted: Boolean(parcel.IsDeleted) || false,
+        id: parcel.SupplierQuotationParcelID,
+      }));
+
+      setOriginalParcels(formattedParcels);
+      setParcels(formattedParcels);
+
       setStatus(quotationData.Status || "Pending");
       setDataLoaded(true);
     } catch (error) {
@@ -388,6 +420,8 @@ const SupplierQuotationForm = ({
     serviceTypes,
     addresses,
     customers,
+    dropdownsLoaded,
+    dataLoaded,
   ]);
 
   useEffect(() => {
@@ -405,8 +439,10 @@ const SupplierQuotationForm = ({
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.SupplierID) {
-      newErrors.SupplierID = "Supplier is required";
+    // Check required fields
+    // Validate based on SupplierName since SupplierID might not be available
+    if (!formData.SupplierName) {
+      newErrors.SupplierName = "Supplier is required";
     }
     if (!formData.PurchaseRFQID) {
       newErrors.PurchaseRFQID = "Purchase RFQ is required";
@@ -425,6 +461,13 @@ const SupplierQuotationForm = ({
     }
 
     setErrors(newErrors);
+
+    // Log validation errors for debugging
+    if (Object.keys(newErrors).length > 0) {
+      console.log("Validation failed. Errors:", newErrors);
+      console.log("Current formData:", formData);
+    }
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -437,10 +480,11 @@ const SupplierQuotationForm = ({
     try {
       setLoading(true);
 
+      // Prepare supplier quotation data
       const apiData = {
         ...formData,
         SupplierQuotationID: parseInt(supplierQuotationId),
-        SupplierID: parseInt(formData.SupplierID),
+        SupplierID: formData.SupplierID ? parseInt(formData.SupplierID) : null,
         CustomerID: parseInt(formData.CustomerID) || null,
         CompanyID: parseInt(formData.CompanyID),
         PurchaseRFQID: parseInt(formData.PurchaseRFQID),
@@ -475,26 +519,80 @@ const SupplierQuotationForm = ({
         FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
         QuotationReceivedYN: formData.QuotationReceivedYN ? 1 : 0,
         IsDeleted: formData.IsDeleted ? 1 : 0,
-        parcels: parcels.map((parcel) => ({
-          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || null,
-          SupplierQuotationID: parseInt(supplierQuotationId),
-          ItemID: parseInt(parcel.ItemID),
-          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
-          UOMID: parseInt(parcel.UOMID),
-          Rate: parseFloat(parcel.Rate) || null,
-          Amount: parseFloat(parcel.Amount) || null,
-          CountryOfOriginID: parseInt(parcel.CountryOfOriginID) || null,
-          CreatedByID: parseInt(parcel.CreatedByID) || null,
-          IsDeleted: parcel.IsDeleted ? 1 : 0,
-        })),
       };
 
+      console.log("Data being sent to API:", apiData);
+
+      // Update supplier quotation
       await updateSupplierQuotation(supplierQuotationId, apiData);
-      toast.success("Supplier Quotation updated successfully");
+
+      // Update parcels
+      const originalParcelIds = originalParcels.map(
+        (p) => p.SupplierQuotationParcelID
+      );
+      const currentParcelIds = parcels.map((p) => p.SupplierQuotationParcelID);
+
+      // Identify deleted parcels
+      const deletedParcelIds = originalParcelIds.filter(
+        (id) => !currentParcelIds.includes(id)
+      );
+      for (const parcelId of deletedParcelIds) {
+        try {
+          await axios.delete(
+            `${APIBASEURL}/supplier-Quotation-Parcel/${parcelId}`,
+            { headers: getAuthHeader().headers }
+          );
+          console.log(`Deleted parcel with ID ${parcelId}`);
+        } catch (error) {
+          console.error(`Failed to delete parcel ${parcelId}:`, error);
+          throw new Error(
+            `Failed to delete parcel ${parcelId}: ${error.message}`
+          );
+        }
+      }
+
+      // Update or create parcels
+      for (const parcel of parcels) {
+        const parcelData = {
+          SupplierQuotationID: parseInt(supplierQuotationId),
+          ItemID: parcel.ItemID,
+          UOMID: parcel.UOMID,
+          ItemQuantity: parcel.ItemQuantity,
+          Rate: parcel.Rate,
+          Amount: parcel.Amount,
+          CountryOfOriginID: parcel.CountryOfOriginID,
+          CreatedByID: parcel.CreatedByID,
+          IsDeleted: parcel.IsDeleted ? 1 : 0,
+        };
+
+        if (originalParcelIds.includes(parcel.SupplierQuotationParcelID)) {
+          // Update existing parcel
+          await updateSupplierQuotationParcel(
+            parcel.SupplierQuotationParcelID,
+            {
+              ...parcelData,
+              SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
+            }
+          );
+          console.log(
+            `Updated parcel with ID ${parcel.SupplierQuotationParcelID}`
+          );
+        } else {
+          // Create new parcel
+          const response = await createSupplierQuotationParcel(parcelData);
+          console.log(
+            `Created new parcel with ID ${response.data?.SupplierQuotationParcelID}`
+          );
+        }
+      }
+
+      toast.success("Supplier Quotation and parcels updated successfully");
       setIsEditing(false);
-      if (onSave) onSave(apiData);
+      if (onSave) onSave({ ...apiData, parcels });
       setDataLoaded(false);
+      setOriginalParcels([...parcels]); // Update original parcels after save
       await loadSupplierQuotationData();
+      navigate("/supplier-quotation");
     } catch (error) {
       toast.error(
         `Failed to save: ${error.response?.data?.message || error.message}`
@@ -574,10 +672,13 @@ const SupplierQuotationForm = ({
     }));
   };
 
-  const handleParcelsChange = (updatedParcels) => {
-    setParcels(updatedParcels);
-    calculateTotals(updatedParcels);
-  };
+  const handleParcelsChange = useCallback(
+    (updatedParcels) => {
+      setParcels(updatedParcels);
+      calculateTotals(updatedParcels);
+    },
+    [calculateTotals]
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -629,12 +730,6 @@ const SupplierQuotationForm = ({
                       backgroundColor: "transparent",
                     }}
                   />
-                  {/*  {console.log(
-                    "Global status:",
-                    status,
-                    "SalesRFQId:",
-                    salesRFQId
-                  )} */}
                   <StatusIndicator
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
@@ -794,12 +889,12 @@ const SupplierQuotationForm = ({
               {isEditing ? (
                 <ReadOnlyField
                   label="Service Type"
-                  value={formData.ServiceType}
+                  value={formData.ServiceType || ""}
                 />
               ) : (
                 <ReadOnlyField
                   label="Service Type"
-                  value={formData.ServiceType}
+                  value={formData.ServiceType || ""}
                 />
               )}
             </Grid>
@@ -1062,6 +1157,7 @@ const SupplierQuotationForm = ({
 
         <SupplierQuotationParcelTab
           supplierQuotationId={supplierQuotationId}
+          initialParcels={parcels}
           onParcelsChange={handleParcelsChange}
           readOnly={readOnly}
           isEditing={isEditing}

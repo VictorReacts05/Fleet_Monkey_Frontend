@@ -9,6 +9,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Tooltip,
+  IconButton
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
@@ -203,6 +205,24 @@ const SalesQuotationList = () => {
             onSearch={handleSearch}
             placeholder="Search Sales Quotations..."
           />
+          <Tooltip title="Add New Sales Quotation">
+            <IconButton
+              color="primary"
+              // onClick={handleCreate}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+                height: 40,
+                width: 40,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 

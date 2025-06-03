@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -18,9 +18,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { debounce } from "lodash";
 import { getAuthHeader } from "./SupplierQuotationAPI";
-import DataTable from "../../Common/DataTable"; // Import DataTable
+import DataTable from "../../Common/DataTable";
 
 // Function to fetch items from API
 const fetchItems = async () => {
@@ -46,29 +45,15 @@ const fetchUOMs = async () => {
   }
 };
 
-// Function to fetch Supplier Quotation parcels
-const fetchSupplierQuotationParcels = async (supplierQuotationId) => {
-  try {
-    const { headers } = getAuthHeader();
-    const url = `${APIBASEURL}/supplier-Quotation/${supplierQuotationId}`;
-    console.log("Fetching parcels from URL:", url);
-    const response = await axios.get(url, { headers });
-    console.log("Supplier Quotation response:", response.data);
-    return response.data.data?.parcels || [];
-  } catch (error) {
-    console.error("Error fetching Supplier Quotation parcels:", error);
-    throw error;
-  }
-};
-
 const SupplierQuotationParcelTab = ({
   supplierQuotationId,
+  initialParcels,
   onParcelsChange,
   readOnly = false,
   isEditing = false,
 }) => {
   const theme = useTheme();
-  const [parcels, setParcels] = useState([]);
+  const [parcels, setParcels] = useState(initialParcels || []);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -76,11 +61,14 @@ const SupplierQuotationParcelTab = ({
   const [errors, setErrors] = useState({});
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
-  const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [page, setPage] = useState(0); // Pagination state
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  // Define DataTable columns
+  // Update parcels when initialParcels changes
+  useEffect(() => {
+    setParcels(initialParcels || []);
+  }, [initialParcels]);
+
   const columns = [
     { id: "itemName", label: "Item" },
     { id: "uomName", label: "UOM" },
@@ -173,61 +161,7 @@ const SupplierQuotationParcelTab = ({
     loadDropdownData();
   }, []);
 
-  // Load existing parcels
-  useEffect(() => {
-    const loadExistingParcels = async () => {
-      if (!supplierQuotationId) {
-        setParcels([]);
-        return;
-      }
-
-      try {
-        setLoadingExistingParcels(true);
-        const parcelData = await fetchSupplierQuotationParcels(
-          supplierQuotationId
-        );
-
-        const formattedParcels = parcelData.map((parcel, index) => ({
-          SupplierQuotationParcelID:
-            parcel.SupplierQuotationParcelID || Date.now() + index,
-          SupplierQuotationID: supplierQuotationId,
-          ItemID: parseInt(parcel.ItemID) || 0,
-          itemName: parcel.ItemName || "Unknown Item",
-          UOMID: parseInt(parcel.UOMID) || 0,
-          uomName: parcel.UOM || "Unknown UOM",
-          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
-          Rate: parseFloat(parcel.Rate) || 0,
-          Amount: parseFloat(parcel.Amount) || 0,
-          srNo: index + 1,
-          CountryOfOriginID: parcel.CountryOfOriginID || null,
-          CreatedByID: parcel.CreatedByID || null,
-          IsDeleted: Boolean(parcel.IsDeleted) || false,
-          id: parcel.SupplierQuotationParcelID || Date.now() + index, // For DataTable
-        }));
-
-        setParcels((prevParcels) => {
-          if (
-            JSON.stringify(prevParcels) === JSON.stringify(formattedParcels)
-          ) {
-            return prevParcels; // Avoid re-render if parcels unchanged
-          }
-          if (onParcelsChange) {
-            onParcelsChange(formattedParcels);
-          }
-          return formattedParcels;
-        });
-      } catch (error) {
-        toast.error("Failed to load parcels: " + error.message);
-        setParcels([]);
-      } finally {
-        setLoadingExistingParcels(false);
-      }
-    };
-
-    loadExistingParcels();
-  }, [supplierQuotationId]);
-
-  // Handle adding a new parcel form
+  // Add new parcel form
   const handleAddParcel = () => {
     const newFormId = Date.now();
     setParcelForms((prev) => [
@@ -332,14 +266,14 @@ const SupplierQuotationParcelTab = ({
       Amount: amount,
       srNo:
         form.editIndex !== undefined
-          ? parcels[form.editIndex].srNo
+          ? parcels[form.editIndex]?.srNo
           : parcels.length + 1,
       CountryOfOriginID: null,
       CreatedByID: getAuthHeader().personId
         ? parseInt(getAuthHeader().personId)
         : null,
       IsDeleted: false,
-      id: form.originalId || Date.now(), // For DataTable
+      id: form.originalId || Date.now(),
     };
 
     setParcels((prevParcels) => {
@@ -357,6 +291,9 @@ const SupplierQuotationParcelTab = ({
     });
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
+    toast.success(
+      form.originalId ? "Parcel updated locally" : "Parcel added locally"
+    );
   };
 
   // Handle deleting a parcel
@@ -377,33 +314,31 @@ const SupplierQuotationParcelTab = ({
     });
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
+    toast.info("Parcel deleted locally");
   };
 
-  // Handle rate change with debouncing
-  const handleRateChange = useCallback(
-    debounce((parcelId, value) => {
-      setParcels((prevParcels) => {
-        const updatedParcels = prevParcels.map((parcel) => {
-          if (parcel.SupplierQuotationParcelID === parcelId) {
-            const rate = parseFloat(value) || 0;
-            const amount = parcel.ItemQuantity * rate;
-            return {
-              ...parcel,
-              Rate: rate,
-              Amount: amount,
-              id: parcel.SupplierQuotationParcelID,
-            };
-          }
-          return parcel;
-        });
-        if (onParcelsChange) {
-          onParcelsChange(updatedParcels);
+  // Handle rate change without API call
+  const handleRateChange = (parcelId, value) => {
+    setParcels((prevParcels) => {
+      const updatedParcels = prevParcels.map((p) => {
+        if (p.SupplierQuotationParcelID === parcelId) {
+          const rate = parseFloat(value) || 0;
+          const amount = p.ItemQuantity * rate;
+          return {
+            ...p,
+            Rate: rate,
+            Amount: amount,
+            id: p.SupplierQuotationParcelID,
+          };
         }
-        return updatedParcels;
+        return p;
       });
-    }, 300),
-    [onParcelsChange]
-  );
+      if (onParcelsChange) {
+        onParcelsChange(updatedParcels);
+      }
+      return updatedParcels;
+    });
+  };
 
   // Pagination handlers
   const handlePageChange = (newPage) => {
@@ -412,7 +347,7 @@ const SupplierQuotationParcelTab = ({
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
-    setPage(0); // Reset to first page
+    setPage(0);
   };
 
   // Slice parcels for pagination
@@ -447,11 +382,25 @@ const SupplierQuotationParcelTab = ({
               theme.palette.mode === "dark" ? "#1f2529" : "#1f2529",
             color: theme.palette.text.primary,
             cursor: "pointer",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
           }}
         >
           <Typography variant="h6" component="div">
             Items
           </Typography>
+          {isEditing && !readOnly && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddParcel}
+              sx={{ ml: 2 }}
+            >
+              Add Parcel
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -465,23 +414,12 @@ const SupplierQuotationParcelTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading || loadingExistingParcels ? (
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
             <CircularProgress />
           </Box>
         ) : (
           <>
-            {!readOnly && isEditing && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddParcel}
-                sx={{ mb: 2 }}
-              >
-                Add Parcel
-              </Button>
-            )}
-
             {parcelForms.map((form) => (
               <Box
                 key={form.id}
@@ -584,7 +522,7 @@ const SupplierQuotationParcelTab = ({
               onRowsPerPageChange={handleRowsPerPageChange}
               onEdit={isEditing && !readOnly ? handleEditParcel : undefined}
               onDelete={isEditing && !readOnly ? handleDeleteParcel : undefined}
-              loading={loading || loadingExistingParcels}
+              loading={loading}
               emptyMessage={`No parcels found for this Supplier Quotation. ${
                 !readOnly && isEditing
                   ? "Click 'Add Parcel' to add a new parcel."

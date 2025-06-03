@@ -136,6 +136,36 @@ export const updateSupplierQuotation = async (id, data) => {
   }
 };
 
+// Update a Supplier Quotation Parcel
+export const updateSupplierQuotationParcel = async (parcelId, data) => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.put(
+      `${APIBASEURL}/supplier-Quotation-Parcel/${parcelId}`,
+      data,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Create a new Supplier Quotation Parcel
+export const createSupplierQuotationParcel = async (data) => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.post(
+      `${APIBASEURL}/supplier-Quotation-Parcel`,
+      data,
+      { headers }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Delete a Supplier Quotation
 export const deleteSupplierQuotation = async (id) => {
   try {
