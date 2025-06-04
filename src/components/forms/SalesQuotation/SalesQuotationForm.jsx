@@ -1,12 +1,23 @@
-import React, { useState } from "react";
-import { Grid, Box, Typography, Fade, Chip } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Grid,
+  Box,
+  Typography,
+  Fade,
+  Chip,
+  CircularProgress,
+  Button,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
-import FormPage from "../../Common/FormPage"; // Verify: src/components/Common/FormPage.jsx
-import StatusIndicator from "./StatusIndicator"; // Verify: src/components/forms/SalesQuotation/StatusIndicator.jsx
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import ParcelTab from "./ParcelTab"; // Verify: src/components/forms/SalesQuotation/ParcelTab.jsx
+import FormPage from "../../Common/FormPage";
+import StatusIndicator from "./StatusIndicator";
+import ParcelTab from "./ParcelTab.jsx"; // Added missing import
+import { toast } from "react-toastify";
+import {
+  fetchSalesQuotation,
+  fetchSalesQuotationParcels,
+} from "./SalesQuotationAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -17,6 +28,8 @@ const ReadOnlyField = ({ label, value }) => {
     displayValue = value ? "Yes" : "No";
   } else if (typeof value === "number") {
     displayValue = value.toFixed(2);
+  } else if (value === null || value === undefined) {
+    displayValue = "-";
   }
 
   return (
@@ -25,7 +38,7 @@ const ReadOnlyField = ({ label, value }) => {
         {label}
       </Typography>
       <Typography variant="body1" sx={{ mt: 0.5 }}>
-        {displayValue || "-"}
+        {displayValue}
       </Typography>
     </Box>
   );
@@ -34,76 +47,155 @@ const ReadOnlyField = ({ label, value }) => {
 const SalesQuotationForm = ({
   salesQuotationId: propSalesQuotationId,
   onClose,
+  readOnly,
 }) => {
   const { id } = useParams();
   const theme = useTheme();
-  const navigate = useNavigate(); // Add this line to get the navigate function
+  const navigate = useNavigate();
   const salesQuotationId = propSalesQuotationId || id;
-  const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
-  // Static form data
-  const [formData] = useState({
-    Series: "SQ2025-001",
-    CompanyID: DEFAULT_COMPANY.value,
-    CustomerID: "CUST001",
-    CustomerName: "John",
-    SupplierID: "SUP001",
-    SupplierName: "ABC Inc",
-    ExternalRefNo: "EXT-REF-12345",
-    DeliveryDate: new Date("2025-06-15"),
-    PostingDate: new Date("2025-06-20"),
-    RequiredByDate: new Date("2025-06-28"),
-    DateReceived: new Date("2025-06-30"),
-    ServiceTypeID: "ST001",
-    ServiceType: "International Procurement",
-    CollectionAddressID: "ADDR001",
-    CollectionAddress: "123 Main St, Springfield, IL 62701",
-    DestinationAddressID: "ADDR002",
-    DestinationAddress: "456 Market St, Chicago, IL 60601",
-    ShippingPriorityID: "SP001",
-    ShippingPriorityName: "High Priority",
-    Terms: "Net 30",
-    CurrencyID: "CUR001",
-    CurrencyName: "USD",
-    CollectFromCustomerYN: true,
-    PackagingRequiredYN: true,
-    FormCompletedYN: true,
-    SalesAmount: 15000.0,
-    TaxAmount: "-",
-    Total: 16200.0,
-  });
+  const [formData, setFormData] = useState(null);
+  const [parcels, setParcels] = useState([]);
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [parcelError, setParcelError] = useState(null);
 
-  // Static parcel data
-  const [parcels] = useState([
-    {
-      ParcelID: "P001",
-      Description: "Electronics",
-      Quantity: 10,
-      Weight: 50.5,
-      Dimensions: "20x20x20 cm",
-    },
-    {
-      ParcelID: "P002",
-      Description: "Documents",
-      Quantity: 5,
-      Weight: 2.3,
-      Dimensions: "30x20x5 cm",
-    },
-  ]);
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    setParcelError(null);
+    try {
+      // Fetch Sales Quotation
+      const quotation = await fetchSalesQuotation(salesQuotationId);
+      if (quotation) {
+        setFormData({
+          Series: quotation.Series,
+          CompanyID: quotation.CompanyID || "-",
+          CompanyName: "Dung Beetle Logistics", // Replace with API call if available
+          CustomerID: quotation.CustomerID || "-",
+          CustomerName: quotation.CustomerName || "-",
+          SupplierID: quotation.SupplierID || "-",
+          SupplierName: quotation.SupplierName || "-",
+          ExternalRefNo: quotation.ExternalRefNo || "-",
+          DeliveryDate: quotation.DeliveryDate
+            ? new Date(quotation.DeliveryDate)
+            : null,
+          PostingDate: quotation.PostingDate
+            ? new Date(quotation.PostingDate)
+            : null,
+          RequiredByDate: quotation.RequiredByDate
+            ? new Date(quotation.RequiredByDate)
+            : null,
+          DateReceived: quotation.DateReceived
+            ? new Date(quotation.DateReceived)
+            : null,
+          ServiceTypeID: quotation.ServiceTypeID || "-",
+          ServiceType: quotation.ServiceType || "-",
+          CollectionAddressID: quotation.CollectionAddressID || "-",
+          CollectionAddress: quotation.CollectionAddressTitle || "-",
+          DestinationAddressID: quotation.DestinationAddressID || "-",
+          DestinationAddress: quotation.DestinationAddressTitle || "-",
+          ShippingPriorityID: quotation.ShippingPriorityID || "-",
+          ShippingPriorityName: quotation.ShippingPriorityID
+            ? `Priority ID: ${quotation.ShippingPriorityID}`
+            : "-",
+          Terms: quotation.Terms || "-",
+          CurrencyID: quotation.CurrencyID || "-",
+          CurrencyName: quotation.CurrencyName || "-",
+          CollectFromCustomerYN: !!quotation.CollectFromSupplierYN,
+          PackagingRequiredYN: !!quotation.PackagingRequiredYN,
+          FormCompletedYN: !!quotation.SalesQuotationCompletedYN,
+          SalesAmount: quotation.SalesAmount || 0,
+          TaxAmount: quotation.TaxesAndOtherCharges || "0.00",
+          Total: quotation.Total || 0,
+        });
+        setStatus(quotation.Status || "Pending");
+      } else {
+        throw new Error("No Sales Quotation data returned");
+      }
 
-  // Static status
-  const [status] = useState("Approved");
+      // Fetch Sales Quotation Parcels
+      try {
+        const fetchedParcels = await fetchSalesQuotationParcels(
+          salesQuotationId
+        );
+        const mappedParcels = fetchedParcels.map((parcel) => ({
+          ParcelID: parcel.SalesQuotationParcelID || "-",
+          itemName: parcel.ItemName || "Unknown Item",
+          uomName: parcel.UOMName || parcel.UOM || "-",
+          quantity: parseFloat(parcel.ItemQuantity) || 0,
+        }));
+        setParcels(mappedParcels);
+      } catch (parcelErr) {
+        const parcelErrorMessage = parcelErr.response
+          ? `Server error: ${parcelErr.response.status} - ${
+              parcelErr.response.data?.message || parcelErr.message
+            }`
+          : `Failed to fetch parcels: ${parcelErr.message}`;
+        console.error("Parcel fetch error:", parcelErrorMessage);
+        setParcelError(parcelErrorMessage);
+        toast.error(parcelErrorMessage);
+      }
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        : `Failed to fetch data: ${error.message}`;
+      console.error("Error in fetchData:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Handle cancel button click
+  useEffect(() => {
+    if (salesQuotationId) {
+      fetchData();
+    } else {
+      setError("No Sales Quotation ID provided");
+      setLoading(false);
+    }
+  }, [salesQuotationId]);
+
   const handleCancel = () => {
     if (onClose) {
-      // If onClose prop is provided, call it (for dialog mode)
       onClose();
     } else {
-      // Otherwise navigate back to the list page
       navigate("/sales-quotation");
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error" variant="h6">
+          An error occurred: {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchData} sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6">No Sales Quotation data available</Typography>
+      </Box>
+    );
+  }
 
   return (
     <FormPage
@@ -154,17 +246,17 @@ const SalesQuotationForm = ({
               <StatusIndicator
                 status={status}
                 salesQuotationId={salesQuotationId}
-                onStatusChange={() => {}} // No-op since static
+                onStatusChange={() => {}}
                 initialStatus={status}
                 skipFetch={true}
-                readOnly={true}
+                readOnly={readOnly}
               />
             </Box>
           </Fade>
         </Box>
       }
-      onCancel={handleCancel} // Change this line to use our new handler
-      readOnly={true}
+      onCancel={handleCancel}
+      readOnly={readOnly}
     >
       <Grid
         container
@@ -183,7 +275,7 @@ const SalesQuotationForm = ({
           <ReadOnlyField label="Series" value={formData.Series} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+          <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
@@ -240,21 +332,17 @@ const SalesQuotationForm = ({
           <ReadOnlyField label="Currency" value={formData.CurrencyName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField
-            label="Sales Amount"
-            value={`${formData.SalesAmount.toFixed(2)}`}
-          />
+          <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Taxes and Other Charges"
-            value={`${formData.TaxAmount}`}
+            value={formData.TaxAmount}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Total" value={`${formData.Total.toFixed(2)}`} />
+          <ReadOnlyField label="Total" value={formData.Total} />
         </Grid>
-
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collect From Customer"
@@ -278,7 +366,8 @@ const SalesQuotationForm = ({
       <ParcelTab
         salesQuotationId={salesQuotationId}
         parcels={parcels}
-        readOnly={true}
+        readOnly={readOnly}
+        error={parcelError}
       />
     </FormPage>
   );

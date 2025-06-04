@@ -1,35 +1,21 @@
-// src/components/forms/SalesQuotation/ParcelTab.jsx
 import React from "react";
-import {
-  Box,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  useTheme,
-} from "@mui/material";
-import DataTable from "../../Common/DataTable"; // Verify: src/components/Common/DataTable.jsx
+import { Box, Typography, Button, useTheme } from "@mui/material";
+import DataTable from "../../Common/DataTable";
 
-const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
+const ParcelTab = ({ salesQuotationId, parcels, readOnly = true, error }) => {
   const theme = useTheme();
 
-  // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
   ];
 
-  // Format static parcels for DataTable
   const formattedParcels = parcels.map((parcel, index) => ({
     id: parcel.ParcelID || `parcel-${index}`,
-    itemName: parcel.Description || "Unknown Item", // Map Description to itemName
-    uomName: parcel.Dimensions || "Unknown UOM", // Map Dimensions to uomName
-    quantity: String(parcel.Quantity || "0"),
+    itemName: parcel.itemName || "Unknown Item",
+    uomName: parcel.uomName || "-",
+    quantity: parcel.quantity || 0,
     srNo: index + 1,
   }));
 
@@ -42,7 +28,6 @@ const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
         borderRadius: 1,
       }}
     >
-      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -71,7 +56,6 @@ const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
         </Box>
       </Box>
 
-      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -81,7 +65,20 @@ const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
           borderTopRightRadius: 4,
         }}
       >
-        {formattedParcels.length === 0 ? (
+        {error ? (
+          <Box sx={{ textAlign: "center", py: 3 }}>
+            <Typography color="error" variant="body1">
+              Error loading parcels: {error}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => window.location.reload()}
+              sx={{ mt: 2 }}
+            >
+              Retry
+            </Button>
+          </Box>
+        ) : formattedParcels.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
             <Typography variant="body1">No parcels available.</Typography>
           </Box>
@@ -94,7 +91,7 @@ const ParcelTab = ({ salesQuotationId, parcels, readOnly = true }) => {
             checkboxSelection={false}
             disableSelectionOnClick
             autoHeight
-            hideActions={true} // No edit/delete actions
+            hideActions={true}
             totalRows={formattedParcels.length}
             pagination={true}
           />
