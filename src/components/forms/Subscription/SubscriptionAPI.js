@@ -2,37 +2,17 @@ import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth token and personId from localStorage
-const getAuthHeader = () => {
-  try {
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (!user || !user.token) {
-      console.warn(
-        "User authentication data not found, proceeding without auth token"
-      );
-      return { headers: {}, personId: null };
-    }
-
-    // Try different possible keys for personId
-    const personId = user.personId || user.id || user.userId || null;
-
-    if (!personId) {
-      console.warn(
-        "No personId found in user object. Available keys:",
-        Object.keys(user)
-      );
-    }
-
-    return {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-      personId,
-    };
-  } catch (error) {
-    console.error("Error parsing user data from localStorage:", error);
+export const getAuthHeader = () => {
+  const token = localStorage.getItem('authToken'); // Example: fetching token from localStorage
+  const personId = localStorage.getItem('personId'); // Example: fetching personId
+  if (!token || !personId) {
+    console.warn("User authentication data not found, proceeding without auth token");
     return { headers: {}, personId: null };
   }
+  return {
+    headers: { Authorization: `Bearer ${token}` },
+    personId
+  };
 };
 
 // Fetch all subscription plans
@@ -43,6 +23,9 @@ export const fetchSubscriptionPlans = async (
   toDate = null
 ) => {
   try {
+    console.log('authToken:', localStorage.getItem('authToken'));
+console.log('personId:', localStorage.getItem('personId'));
+
     let url = `${APIBASEURL}/subscriptionPlan?page=${page}&limit=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
@@ -69,7 +52,7 @@ export const createSubscriptionPlan = async (subscriptionData) => {
       Description: subscriptionData.description,
       Fees: Number(subscriptionData.fees) || 0,
       BillingFrequencyID: Number(subscriptionData.billingFrequencyId) || 1,
-      CreatedByID: Number(personId)
+      createdById: Number(personId)
     };
 
     const response = await axios.post(`${APIBASEURL}/subscriptionPlan`, apiData, { headers });

@@ -128,13 +128,15 @@ export const deleteSupplier = async (id) => {
   }
 };
 
-
+// Fixed getSupplierById function
 export const getSupplierById = async (id) => {
-   try {
-    const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/suppliers/${id}`, { headers });
+  try {
+    console.log(`Fetching supplier with ID: ${id}`);
+    const response = await axios.get(`${APIBASEURL}/suppliers/${id}`);
+    console.log('Get supplier by ID response:', response.data);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error.message;
+    console.error('Error in getSupplierById:', error);
+    throw error.response?.data || { message: error.message, success: false };
   }
 };

@@ -5,19 +5,20 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const token = localStorage.getItem("token"); // Also check for separate token storage
     
     // Debug the user object
     console.log("User from localStorage:", user);
+    console.log("Token from localStorage:", token);
 
-    if (!user || !user.token) {
-      console.warn("User authentication data not found, proceeding without auth token");
-      return { headers: {}, personId: null };
-    }
-
+    // Get token from user object or separate storage
+    const authToken = user.token || token;
+    
     // Try different possible keys for personId
-    const personId = user.personId || user.id || user.userId || null;
+    const personId = user.personId || user.id || user.userId || user.PersonId || user.ID || user.UserId;
     
     console.log("Extracted personId:", personId);
+    console.log("Auth token available:", !!authToken);
 
     if (!personId) {
       console.warn(
@@ -27,27 +28,52 @@ const getAuthHeader = () => {
     }
 
     return {
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
+      headers: authToken ? {
+        Authorization: `Bearer ${authToken}`,
+        "Content-Type": "application/json"
+      } : { "Content-Type": "application/json" },
       personId,
     };
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
-    return { headers: {}, personId: null };
+    return { 
+      headers: { "Content-Type": "application/json" }, 
+      personId: null 
+    };
+  }
+};
+
+// Helper function to get personId with better error handling
+const getPersonId = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    
+    // Try different possible keys for personId
+    const personId = user.personId || user.id || user.userId || user.PersonId || user.ID || user.UserId;
+    
+    if (!personId) {
+      console.error("PersonId not found. User object:", user);
+      console.error("Available keys in user object:", Object.keys(user));
+      
+      // Show what's actually in localStorage for debugging
+      console.error("Raw localStorage 'user':", localStorage.getItem("user"));
+    }
+    
+    return personId;
+  } catch (error) {
+    console.error("Error getting personId:", error);
+    return null;
   }
 };
 
 // Create a new vehicle
 export const createVehicle = async (vehicleData) => {
   try {
-    // Get user info directly from localStorage as a fallback
-    const { headers, personId } = getAuthHeader();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const userId = personId || user?.personId || user?.id || user?.userId || vehicleData.createdById;
+    const { headers } = getAuthHeader();
+    const personId = getPersonId();
     
-    if (!userId) {
-      throw new Error("personId is required for createdByID");
+    if (!personId) {
+      throw new Error("User authentication required. PersonId not found in localStorage.");
     }
 
     // Format the payload according to the expected API format
@@ -56,7 +82,7 @@ export const createVehicle = async (vehicleData) => {
       TruckNumberPlate: vehicleData.truckNumberPlate,
       VIN: vehicleData.vin,
       companyId: Number(vehicleData.companyId),
-      createdById: Number(userId),
+      createdById: Number(personId),
       maxWeight: vehicleData.maxWeight,
       length: vehicleData.length,
       width: vehicleData.width,
@@ -69,7 +95,7 @@ export const createVehicle = async (vehicleData) => {
       vin: vehicleData.vin,
       companyId: Number(vehicleData.companyId),
       vehicleTypeId: 2,
-      createdById: Number(userId)
+      createdById: Number(personId)
     };
 
     console.log("Creating vehicle with payload:", payload);
@@ -89,13 +115,11 @@ export const createVehicle = async (vehicleData) => {
 
 export const updateVehicle = async (vehicleId, data) => {
   try {
-    // Get user info directly from localStorage as a fallback
-    const { headers, personId } = getAuthHeader();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const userId = personId || user?.personId || user?.id || user?.userId || data.createdById;
+    const { headers } = getAuthHeader();
+    const personId = getPersonId();
     
-    if (!userId) {
-      throw new Error("personId is required for createdByID");
+    if (!personId) {
+      throw new Error("User authentication required. PersonId not found in localStorage.");
     }
 
     // Format the payload according to the expected API format
@@ -105,7 +129,7 @@ export const updateVehicle = async (vehicleId, data) => {
       VIN: data.vin,
       CompanyID: Number(data.companyId),
       VehicleTypeID: 2, // Adding a default value since it's required
-      CreatedByID: Number(userId),
+      CreatedByID: Number(personId),
       maxWeight: data.maxWeight,
       length: data.length,
       width: data.width,
@@ -118,7 +142,7 @@ export const updateVehicle = async (vehicleId, data) => {
       vin: data.vin,
       companyId: Number(data.companyId),
       vehicleTypeId: 2,
-      createdById: Number(userId)
+      createdById: Number(personId)
     };
 
     console.log("Updating vehicle with payload:", payload);
@@ -138,53 +162,33 @@ export const updateVehicle = async (vehicleId, data) => {
   }
 };
 
-// Update an existing vehicle
-/* export const updateVehicle = async (id, vehicleData) => {
-  try {
-    const { headers, personId } = getAuthHeader();
-    
-    if (!personId) {
-      throw new Error("personId is required for createdByID");
-    }
-
-    const apiData = {
-      ...vehicleData,
-      createdById: Number(personId)  // Ensure createdById is included
-    };
-
-    const response = await axios.put(`${APIBASEURL}/vehicles/${id}`, apiData, {
-      headers,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error updating vehicle:", error);
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-    }
-    throw error.response?.data || error.message;
-  }
-}; */
-
 // Delete a vehicle
 export const deleteVehicle = async (id, personId = null) => {
   try {
-    const { headers, personId: storedPersonId } = getAuthHeader();
-
-    const deletedByID = personId || storedPersonId;
+    const { headers } = getAuthHeader();
+    
+    // Use provided personId or get from localStorage
+    const deletedByID = personId || getPersonId();
 
     if (!deletedByID) {
+      // More specific error message with debugging info
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const userKeys = Object.keys(user);
+      
       throw new Error(
-        "personId is required for deletedByID. Check localStorage or pass personId explicitly."
+        `PersonId is required for deletion. ` +
+        `Available user keys: [${userKeys.join(', ')}]. ` +
+        `Please ensure you're logged in and user data is properly stored in localStorage.`
       );
     }
 
     const requestBody = {
-      deletedById: deletedByID, 
+      deletedById: Number(deletedByID), 
     };
 
     console.log("Sending DELETE request to:", `${APIBASEURL}/vehicles/${id}`);
     console.log("Request body:", requestBody);
+    console.log("Using personId:", deletedByID);
 
     const response = await axios.delete(`${APIBASEURL}/vehicles/${id}`, {
       headers,
@@ -277,4 +281,20 @@ export const fetchVehicles = async (
   } catch (error) {
     throw error.response?.data || error.message;
   }
+};
+
+// Debug function to check localStorage contents
+export const debugLocalStorage = () => {
+  console.log("=== LocalStorage Debug ===");
+  console.log("user:", localStorage.getItem("user"));
+  console.log("token:", localStorage.getItem("token"));
+  
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    console.log("Parsed user object:", user);
+    console.log("User object keys:", Object.keys(user));
+  } catch (error) {
+    console.error("Error parsing user from localStorage:", error);
+  }
+  console.log("========================");
 };
