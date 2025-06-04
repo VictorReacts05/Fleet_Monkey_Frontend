@@ -66,7 +66,7 @@ export const fetchCountries = async () => {
       'Content-Type': 'application/json',
       ...(user.token && { Authorization: `Bearer ${user.token}` }),
     };
-    const response = await axios.get(`${APIBASEURL}/countries`, { headers });
+    const response = await axios.get(`${APIBASEURL}/country-of-origin`, { headers });
     console.log('Fetch countries response:', response.data);
     return response.data.data || response.data;
   } catch (error) {
@@ -122,14 +122,14 @@ export const createAddress = async (addressData) => {
       AddressLine2: addressData.addressLine2?.trim() || '',
       CityID: Number(addressData.cityId) || null,
       CountryID: Number(addressData.countryId) || null,
-      CreatedByID: Number(user.personId),
+      createdById: Number(user.createdById)||Number(user.personId),
       addressName: addressData.addressName?.trim() || '',
       addressTypeId: Number(addressData.addressTypeId) || null,
       addressLine1: addressData.addressLine1?.trim() || '',
       addressLine2: addressData.addressLine2?.trim() || '',
       cityId: Number(addressData.cityId) || null,
       countryId: Number(addressData.countryId) || null,
-      createdById: Number(user.personId),
+      updatedById: Number(user.personId),
     };
 
     console.log('Formatted request data:', payload);

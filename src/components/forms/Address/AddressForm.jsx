@@ -1,215 +1,241 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, MenuItem, Select, InputLabel, FormControl, Box, CircularProgress } from '@mui/material';
-import FormPage from '../../Common/FormPage';
-import FormInput from '../../Common/FormInput';
-import { toast } from 'react-toastify';
-import { fetchAddressTypes, fetchCities, fetchCountries, createAddress, updateAddress, getAddressById } from './AddressAPI';
+// src/features/address/AddressForm.jsx
+import React, { useState, useEffect } from "react";
+import { Box, CircularProgress } from "@mui/material";
+import { toast } from "react-toastify";
+import FormPage from "../../Common/FormPage";
+import FormInput from "../../Common/FormInput";
+import FormSelect from "../../Common/FormSelect";
+import FormTextArea from "../../Common/FormTextArea";
+import {
+  fetchAddressTypes,
+  fetchCities,
+  fetchCountries,
+  createAddress,
+  updateAddress,
+  getAddressById,
+} from "./AddressAPI";
 
-const AddressForm = ({ addressId, onSave, onClose }) => {
+const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) => {
+  // Form state
   const [formData, setFormData] = useState({
-    addressName: '',
-    addressTypeId: '',
-    addressLine1: '',
-    addressLine2: '',
-    cityId: '',
-    countryId: '',
+    addressName: "",
+    addressTypeId: "",
+    addressLine1: "",
+    addressLine2: "",
+    cityId: "",
+    countryId: "",
   });
 
   const [errors, setErrors] = useState({
-    addressName: '',
-    addressTypeId: '',
-    addressLine1: '',
-    addressLine2: '',
-    cityId: '',
-    countryId: '',
+    addressName: "",
+    addressTypeId: "",
+    addressLine1: "",
+    addressLine2: "",
+    cityId: "",
+    countryId: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [dropdownLoading, setDropdownLoading] = useState(true);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Dropdown options
   const [addressTypes, setAddressTypes] = useState([]);
   const [cities, setCities] = useState([]);
   const [countries, setCountries] = useState([]);
 
+  // 1) Fetch dropdown data on mount
   useEffect(() => {
-    fetchDropdownData();
-    if (addressId) {
-      loadAddress();
-    }
-  }, [addressId]);
+    const loadDropdowns = async () => {
+      try {
+        setDropdownLoading(true);
 
-  const fetchDropdownData = async () => {
-    try {
-      setLoading(true);
-      const [addressTypesData, citiesData, countriesData] = await Promise.all([
-        fetchAddressTypes(),
-        fetchCities(),
-        fetchCountries(),
-      ]);
-      setAddressTypes(addressTypesData);
-      setCities(citiesData);
-      setCountries(countriesData);
-    } catch (error) {
-      console.error('Error fetching dropdown data:', error);
-      toast.error(`Failed to load dropdown data: ${error.message}${error.status ? ` (Status: ${error.status})` : ''}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const [typesData, citiesData, countriesDataRaw] = await Promise.all([
+          fetchAddressTypes(),
+          fetchCities(),
+          fetchCountries(),
+        ]);
 
-  const loadAddress = async () => {
-    try {
-      setLoading(true);
-      const response = await getAddressById(addressId);
-      console.log('Loaded address response:', response);
+        // typesData: array of { AddressTypeID, AddressType, … }
+        // citiesData: array of { CityID, CityName, … }
+        // countriesDataRaw: array of { CountryOfOriginID, CountryOfOrigin, … }
 
-      const addressData = response.AddressID ? response : response.data || response;
+        // Map address types → { value, label }
+        const mappedTypes = typesData.map((item) => ({
+          value: item.AddressTypeID || item.addressTypeId || item.id,
+          label:
+            item.AddressType ||
+            item.addressType ||
+            item.AddressTypeName ||
+            item.addressTypeName ||
+            item.name ||
+            "",
+        }));
 
+        // Map cities → { value, label }
+        const mappedCities = citiesData.map((item) => ({
+          value: item.CityID || item.cityId || item.id,
+          label: item.CityName || item.cityName || item.name || "",
+        }));
+
+        // *** Here's the fix: map countriesDataRaw correctly ***
+        const mappedCountries = countriesDataRaw.map((item) => ({
+          // use CountryOfOriginID as value
+          value: item.CountryOfOriginID,
+          // use CountryOfOrigin as label
+          label: item.CountryOfOrigin,
+        }));
+
+        // Debug logs (optional):
+        console.log("Mapped addressTypes:", mappedTypes);
+        console.log("Mapped cities:", mappedCities);
+        console.log("Mapped countries:", mappedCountries);
+
+        setAddressTypes(mappedTypes);
+        setCities(mappedCities);
+        setCountries(mappedCountries);
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+        toast.error(`Failed to load dropdown data: ${error.message || error}`);
+      } finally {
+        setDropdownLoading(false);
+      }
+    };
+
+    loadDropdowns();
+  }, []);
+
+  // 2) If editing (addressId) and initialData passed, populate formData
+  useEffect(() => {
+    if (addressId && initialData) {
       setFormData({
-        addressName: addressData.AddressName || addressData.addressName || '',
-        addressTypeId: addressData.AddressTypeID || addressData.addressTypeId || '',
-        addressLine1: addressData.AddressLine1 || addressData.addressLine1 || '',
-        addressLine2: addressData.AddressLine2 || addressData.addressLine2 || '',
-        cityId: addressData.CityID || addressData.cityId || '',
-        countryId: addressData.CountryID || addressData.countryId || '',
+        addressName: initialData.AddressName || initialData.addressName || "",
+        addressTypeId: initialData.AddressTypeID || initialData.addressTypeId || "",
+        addressLine1: initialData.AddressLine1 || initialData.addressLine1 || "",
+        addressLine2: initialData.AddressLine2 || initialData.addressLine2 || "",
+        cityId: initialData.CityID || initialData.cityId || "",
+        countryId: initialData.CountryID || initialData.countryId || "",
       });
-    } catch (error) {
-      console.error('Error loading address:', error);
-      toast.error(`Failed to load address: ${error.message}${error.status ? ` (Status: ${error.status})` : ''}`);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [addressId, initialData]);
 
+  // 3) If editing but initialData is not yet available, fetch it
+  useEffect(() => {
+    if (addressId && !initialData) {
+      const fetchOne = async () => {
+        try {
+          setLoading(true);
+          const data = await getAddressById(addressId);
+          setFormData({
+            addressName: data.AddressName || data.addressName || "",
+            addressTypeId: data.AddressTypeID || data.addressTypeId || "",
+            addressLine1: data.AddressLine1 || data.addressLine1 || "",
+            addressLine2: data.AddressLine2 || data.addressLine2 || "",
+            cityId: data.CityID || data.cityId || "",
+            countryId: data.CountryID || data.countryId || "",
+          });
+        } catch (error) {
+          console.error("Error loading address:", error);
+          toast.error(`Failed to load address: ${error.message || error}`);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchOne();
+    }
+  }, [addressId, initialData]);
+
+  // Validation logic
   const getValidationError = (field, value) => {
     switch (field) {
-      case 'addressName':
-        if (!value.trim()) {
-          return 'Address name is required';
-        } else if (value.length < 2) {
-          return 'Address name must be at least 2 characters';
-        } else if (!/^[a-zA-Z0-9\s-]+$/.test(value)) {
-          return 'Address name can only contain letters, numbers, spaces, and hyphens';
-        }
-        return '';
-      case 'addressTypeId':
-        if (!value) {
-          return 'Address type is required';
-        }
-        return '';
-      case 'addressLine1':
-        if (!value.trim()) {
-          return 'Address line 1 is required';
-        } else if (value.length < 5) {
-          return 'Address line 1 must be at least 5 characters';
-        }
-        return '';
-      case 'addressLine2':
-        return ''; // Optional field
-      case 'cityId':
-        if (!value) {
-          return 'City is required';
-        }
-        return '';
-      case 'countryId':
-        if (!value) {
-          return 'Country is required';
-        }
-        return '';
+      case "addressName":
+        if (!value.trim()) return "Address name is required";
+        if (value.length < 2) return "Address name must be at least 2 characters";
+        if (!/^[a-zA-Z0-9\s-]+$/.test(value))
+          return "Address name can only contain letters, numbers, spaces, and hyphens";
+        return "";
+      case "addressTypeId":
+        if (!value) return "Address type is required";
+        return "";
+      case "addressLine1":
+        if (!value.trim()) return "Address line 1 is required";
+        if (value.length < 5) return "Address line 1 must be at least 5 characters";
+        return "";
+      case "addressLine2":
+        return ""; // optional
+      case "cityId":
+        if (!value) return "City is required";
+        return "";
+      case "countryId":
+        if (!value) return "Country is required";
+        return "";
       default:
-        return '';
+        return "";
     }
   };
 
   const validateForm = () => {
     const newErrors = {
-      addressName: getValidationError('addressName', formData.addressName),
-      addressTypeId: getValidationError('addressTypeId', formData.addressTypeId),
-      addressLine1: getValidationError('addressLine1', formData.addressLine1),
-      addressLine2: getValidationError('addressLine2', formData.addressLine2),
-      cityId: getValidationError('cityId', formData.cityId),
-      countryId: getValidationError('countryId', formData.countryId),
+      addressName: getValidationError("addressName", formData.addressName),
+      addressTypeId: getValidationError("addressTypeId", formData.addressTypeId),
+      addressLine1: getValidationError("addressLine1", formData.addressLine1),
+      addressLine2: getValidationError("addressLine2", formData.addressLine2),
+      cityId: getValidationError("cityId", formData.cityId),
+      countryId: getValidationError("countryId", formData.countryId),
     };
-
     setErrors(newErrors);
-    return Object.values(newErrors).every((error) => !error);
+    return Object.values(newErrors).every((err) => !err);
   };
 
+  // Handle field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (isSubmitted) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: getValidationError(name, value),
-      }));
+      setErrors((prev) => ({ ...prev, [name]: getValidationError(name, value) }));
     }
   };
 
-  const handleSubmit = async (e) => {
-    if (e) {
-      e.preventDefault();
+  // Submit handler
+   const handleSubmit = async (e) => {
+    if (e?.preventDefault) {
+     e.preventDefault();
     }
-    setIsSubmitted(true);
+    if (!validateForm()) return;
 
-    if (validateForm()) {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        const user = JSON.parse(localStorage.getItem('user')) || {};
-        const personId = user?.personId || user?.id || user?.userId;
-        const token = user?.token || localStorage.getItem('token');
-
-        if (!personId) {
-          throw new Error('User ID not found. Please log in again.');
-        }
-
-        const payload = {
-          addressName: formData.addressName.trim(),
-          addressTypeId: Number(formData.addressTypeId),
-          addressLine1: formData.addressLine1.trim(),
-          addressLine2: formData.addressLine2.trim(),
-          cityId: Number(formData.cityId),
-          countryId: Number(formData.countryId),
-          // Include uppercase variants for backend compatibility
-          AddressName: formData.addressName.trim(),
-          AddressTypeID: Number(formData.addressTypeId),
-          AddressLine1: formData.addressLine1.trim(),
-          AddressLine2: formData.addressLine2.trim(),
-          CityID: Number(formData.cityId),
-          CountryID: Number(formData.countryId),
-        };
-
-        console.log('Submitting payload:', payload);
-        console.log('Token exists:', !!token);
-
-        let response;
-        if (addressId) {
-          response = await updateAddress(addressId, payload);
-          toast.success('Address updated successfully');
-        } else {
-          response = await createAddress(payload);
-          toast.success('Address created successfully');
-        }
-
-        console.log('Address response:', response);
-        if (onSave) onSave(response.data || response);
-        if (onClose) onClose();
-      } catch (error) {
-        console.error('Error saving address:', error);
-        const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          url: error.config?.url,
-        });
-        toast.error(`Failed to ${addressId ? 'update' : 'create'} address: ${errorMessage}`);
-      } finally {
-        setLoading(false);
+      let response;
+      if (addressId) {
+        response = await updateAddress(addressId, formData);
+        toast.success("Address updated successfully");
+      } else {
+        response = await createAddress(formData);
+        toast.success("Address created successfully");
       }
+
+      // Return newly created/updated record
+      if (onSave) onSave(response.data || response);
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error saving address:", error);
+      const message = error.message || error;
+      toast.error(`Failed to ${addressId ? "update" : "create"} address: ${message}`);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // If dropdowns are still loading, show a spinner
+  if (dropdownLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <FormPage onSubmit={handleSubmit} onCancel={onClose} loading={loading}>
@@ -220,97 +246,59 @@ const AddressForm = ({ addressId, onSave, onClose }) => {
         onChange={handleChange}
         error={errors.addressName}
         required
+        placeholder="Enter address name"
       />
 
-      <FormControl fullWidth margin="normal" error={!!errors.addressTypeId}>
-        <InputLabel>Address Type</InputLabel>
-        <Select
-          name="addressTypeId"
-          value={formData.addressTypeId}
-          onChange={handleChange}
-          label="Address Type"
-          required
-        >
-          <MenuItem value="">Select Address Type</MenuItem>
-          {addressTypes.map((type) => (
-            <MenuItem key={type.AddressTypeID || type.id} value={type.AddressTypeID || type.id}>
-              {type.AddressType || type.addressType}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.addressTypeId && (
-          <Typography color="error" variant="caption">
-            {errors.addressTypeId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="Address Type"
+        name="addressTypeId"
+        value={formData.addressTypeId}
+        onChange={handleChange}
+        error={errors.addressTypeId}
+        options={addressTypes}
+        required
+      />
 
-      <FormInput
+      <FormTextArea
         label="Address Line 1"
         name="addressLine1"
         value={formData.addressLine1}
         onChange={handleChange}
         error={errors.addressLine1}
         required
-        multiline
-        rows={4}
+        rows={3}
+        placeholder="Enter address line 1"
       />
 
-      <FormInput
+      <FormTextArea
         label="Address Line 2"
         name="addressLine2"
         value={formData.addressLine2}
         onChange={handleChange}
         error={errors.addressLine2}
-        multiline
-        rows={4}
+        rows={2}
+        placeholder="(Optional) Address line 2"
       />
 
-      <FormControl fullWidth margin="normal" error={!!errors.cityId}>
-        <InputLabel>City</InputLabel>
-        <Select
-          name="cityId"
-          value={formData.cityId}
-          onChange={handleChange}
-          label="City"
-          required
-        >
-          <MenuItem value="">Select City</MenuItem>
-          {cities.map((city) => (
-            <MenuItem key={city.CityID || city.id} value={city.CityID || city.id}>
-              {city.CityName || city.name}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.cityId && (
-          <Typography color="error" variant="caption">
-            {errors.cityId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="City"
+        name="cityId"
+        value={formData.cityId}
+        onChange={handleChange}
+        error={errors.cityId}
+        options={cities}
+        required
+      />
 
-      <FormControl fullWidth margin="normal" error={!!errors.countryId}>
-        <InputLabel>Country</InputLabel>
-        <Select
-          name="countryId"
-          value={formData.countryId}
-          onChange={handleChange}
-          label="Country"
-          required
-        >
-          <MenuItem value="">Select Country</MenuItem>
-          {countries.map((country) => (
-            <MenuItem key={country.CountryID || country.id} value={country.CountryID || country.id}>
-              {country.CountryName || country.name}
-            </MenuItem>
-          ))}
-        </Select>
-        {errors.countryId && (
-          <Typography color="error" variant="caption">
-            {errors.countryId}
-          </Typography>
-        )}
-      </FormControl>
+      <FormSelect
+        label="Country"
+        name="countryId"
+        value={formData.countryId}
+        onChange={handleChange}
+        error={errors.countryId}
+        options={countries}
+        required
+      />
     </FormPage>
   );
 };

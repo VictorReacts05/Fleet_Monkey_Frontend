@@ -35,7 +35,7 @@ const getUserData = () => {
 export const fetchFormRoleApprovers = async (
   pageNumber = 1,
   pageSize = 10,
-  searchTerm = ""
+  searchTerm = ''
 ) => {
   try {
     let url = `${APIBASEURL}/formRoleApprover?pageNumber=${pageNumber}&pageSize=${pageSize}`;
@@ -47,13 +47,11 @@ export const fetchFormRoleApprovers = async (
       ? response.data.data
       : response.data.data || [];
 
-    // Cache totalRecords in localStorage
-    let cachedTotalRecords =
-      Number(localStorage.getItem("formRoleApproverTotalRecords")) || 0;
+    const cachedTotalRecords =
+      Number(localStorage.getItem('formRoleApproverTotalRecords')) || 0;
 
     if (data.length > cachedTotalRecords) {
-      cachedTotalRecords = data.length;
-      localStorage.setItem("formRoleApproverTotalRecords", cachedTotalRecords);
+      localStorage.setItem('formRoleApproverTotalRecords', data.length);
     }
 
     const totalRecords = Number(
@@ -67,15 +65,16 @@ export const fetchFormRoleApprovers = async (
       },
     };
   } catch (error) {
-    console.error("[ERROR] Failed to fetch form role approvers:", {
+    console.error('[ERROR] Failed to fetch form role approvers:', {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
     });
-    throw error.response?.data?.message || error.message;
+    throw new Error(
+      error.response?.data?.message || 'Failed to fetch form role approvers. Please try again later.'
+    );
   }
 };
-
 // Fetch all form roles for dropdown
 export const fetchFormRoles = async () => {
   try {
@@ -129,7 +128,7 @@ export const createFormRoleApprover = async (formRoleApproverData) => {
     console.log("[DEBUG] Creating form role approver with payload:", requestData);
 
     const response = await axios.post(
-      `${APIBASEURL}/formRoleApprover`,
+      `${APIBASEURL}/formRoleApproval`,
       requestData,
       getAxiosConfig()
     );

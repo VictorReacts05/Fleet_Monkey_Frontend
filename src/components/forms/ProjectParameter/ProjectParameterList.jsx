@@ -6,6 +6,7 @@ import ConfirmDialog from '../../Common/ConfirmDialog';
 import { getProjectParameters, deleteProjectParameter } from './projectParameterStorage';
 import { Add } from "@mui/icons-material";
 import SearchBar from "../../Common/SearchBar";
+import { toast } from 'react-toastify';
 
 const ProjectParameterList = () => {
   const [rows, setRows] = useState([]);
@@ -40,7 +41,7 @@ const ProjectParameterList = () => {
       parameterName: param.parameterName || '',
       parameterValue: param.parameterValue || ''
     }));
-    showToast("Parameter deleted successfully", "success"); 
+    toast.success("Parameter deleted successfully")
     setRows(formattedRows);
     setDeleteDialogOpen(false);
     setItemToDelete(null);

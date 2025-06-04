@@ -112,8 +112,8 @@ const VehicleList = (props) => {
   const confirmDelete = async () => {
     try {
       await deleteVehicle(itemToDelete.id);
-      // toast.success('Vehicle deleted successfully');
-      showToast("Vehicle deleted successfully", "success");
+      toast.success('Vehicle deleted successfully');
+      // showToast("Vehicle deleted successfully", "success");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadVehicles();
