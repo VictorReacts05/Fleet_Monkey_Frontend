@@ -10,15 +10,7 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   useTheme,
-  alpha,
   Checkbox,
   List,
   ListItem,
@@ -31,8 +23,8 @@ import {
 import {
   getPurchaseRFQById,
   fetchSalesRFQs,
-  fetchPurchaseRFQApprovalStatus, // Fixed typo
-  updatePurchaseRFQApproval,
+  fetchPurchaseRFQApprovalStatus,
+  approvePurchaseRFQ,
   fetchServiceTypes,
   fetchShippingPriorities,
   fetchCurrencies,
@@ -44,6 +36,7 @@ import axios from "axios";
 import StatusIndicator from "./StatusIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import PurchaseRFQParcelTab from "./PurchaseRFQParcelTab";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -143,7 +136,7 @@ const PurchaseRFQForm = ({
         let formattedData = {
           ...rfqData,
           DeliveryDate: rfqData.DeliveryDate
-            ? new Date(rfqData.DeliveryDate) // Fixed typo
+            ? new Date(rfqData.DeliveryDate)
             : null,
           PostingDate: rfqData.PostingDate
             ? new Date(rfqData.PostingDate)
@@ -155,17 +148,23 @@ const PurchaseRFQForm = ({
             ? new Date(rfqData.DateReceived)
             : null,
           SalesRFQID: rfqData.SalesRFQID ? rfqData.SalesRFQID.toString() : "",
+          ServiceType: "Unknown Service Type", // Default
         };
 
         try {
+          // Fetch Collection Address
           if (rfqData.CollectionAddressID) {
             const collectionAddressResponse = await axios.get(
-              `${APIBASEURL}/addresses/${rfqData.CollectionAddressID}`
+              `${APIBASEURL}/addresses/${rfqData.CollectionAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
+                },
+              }
             );
-            if (
-              collectionAddressResponse.data &&
-              collectionAddressResponse.data.data
-            ) {
+            if (collectionAddressResponse.data?.data) {
               const addressData = collectionAddressResponse.data.data;
               formattedData.CollectionAddress = `${
                 addressData.AddressLine1 || ""
@@ -173,14 +172,19 @@ const PurchaseRFQForm = ({
             }
           }
 
+          // Fetch Destination Address
           if (rfqData.DestinationAddressID) {
             const destinationAddressResponse = await axios.get(
-              `${APIBASEURL}/addresses/${rfqData.DestinationAddressID}`
+              `${APIBASEURL}/addresses/${rfqData.DestinationAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
+                },
+              }
             );
-            if (
-              destinationAddressResponse.data &&
-              destinationAddressResponse.data.data
-            ) {
+            if (destinationAddressResponse.data?.data) {
               const addressData = destinationAddressResponse.data.data;
               formattedData.DestinationAddress = `${
                 addressData.AddressLine1 || ""
@@ -188,74 +192,67 @@ const PurchaseRFQForm = ({
             }
           }
 
+          // Fetch Shipping Priority
           if (rfqData.ShippingPriorityID) {
             try {
               const prioritiesResponse = await fetchShippingPriorities();
               const priorities = Array.isArray(prioritiesResponse)
                 ? prioritiesResponse
                 : prioritiesResponse.data || [];
-              if (Array.isArray(priorities)) {
-                const matchingPriority = priorities.find(
-                  (p) =>
-                    parseInt(p.ShippingPriorityID || p.MailingPriorityID) ===
-                    parseInt(rfqData.ShippingPriorityID)
-                );
-                if (matchingPriority) {
-                  formattedData.ShippingPriorityName =
-                    matchingPriority.PriorityName || "Unknown Priority";
-                } else {
-                  formattedData.ShippingPriorityName = `Unknown Priority (${rfqData.ShippingPriorityID})`;
-                }
-              } else {
-                formattedData.ShippingPriorityName = `Error: Invalid priorities data`;
-              }
+              const matchingPriority = priorities.find(
+                (p) =>
+                  parseInt(p.ShippingPriorityID || p.MailingPriorityID) ===
+                  parseInt(rfqData.ShippingPriorityID)
+              );
+              formattedData.ShippingPriorityName =
+                matchingPriority?.PriorityName ||
+                `Unknown Priority (${rfqData.ShippingPriorityID})`;
             } catch (priorityError) {
+              console.error(
+                "Failed to fetch shipping priority:",
+                priorityError
+              );
               formattedData.ShippingPriorityName = `Error: Failed to fetch priority`;
             }
           }
 
+          // Fetch Service Type
           if (rfqData.ServiceTypeID) {
             try {
               const serviceTypesResponse = await fetchServiceTypes();
+              console.log("Service Types Response:", serviceTypesResponse);
               const serviceTypes = Array.isArray(serviceTypesResponse)
                 ? serviceTypesResponse
                 : serviceTypesResponse.data || [];
-              if (Array.isArray(serviceTypes)) {
-                const matchingServiceType = serviceTypes.find(
-                  (s) =>
-                    parseInt(s.ServiceTypeID) ===
-                    parseInt(rfqData.ServiceTypeID)
-                );
-                if (matchingServiceType) {
-                  formattedData.ServiceType =
-                    matchingServiceType.ServiceType || "Unknown Service Type";
-                } else {
-                  formattedData.ServiceType = `Unknown Service Type (${rfqData.ServiceTypeID})`;
-                }
-              } else {
-                formattedData.ServiceType = `Error: Invalid service types data`;
-              }
+              const matchingServiceType = serviceTypes.find(
+                (s) =>
+                  parseInt(s.ServiceTypeID) === parseInt(rfqData.ServiceTypeID)
+              );
+              formattedData.ServiceType =
+                matchingServiceType?.ServiceType ||
+                `Unknown Service Type (${rfqData.ServiceTypeID})`;
             } catch (serviceTypeError) {
-              formattedData.ServiceType = `Error: Failed to fetch service type`;
+              console.error("Failed to fetch service type:", serviceTypeError);
+              formattedData.ServiceType = `Error: Failed to fetch service type (${rfqData.ServiceTypeID})`;
             }
           }
 
+          // Fetch Currency
           if (rfqData.CurrencyID) {
             try {
               const currenciesResponse = await fetchCurrencies();
               const currencies = Array.isArray(currenciesResponse)
                 ? currenciesResponse
                 : currenciesResponse.data || [];
-              if (Array.isArray(currencies)) {
-                const matchingCurrency = currencies.find(
-                  (c) => parseInt(c.CurrencyID) === parseInt(rfqData.CurrencyID)
-                );
-                if (matchingCurrency) {
-                  formattedData.CurrencyName =
-                    matchingCurrency.CurrencyName || "Unknown Currency";
-                }
-              }
-            } catch (currencyError) {}
+              const matchingCurrency = currencies.find(
+                (c) => parseInt(c.CurrencyID) === parseInt(rfqData.CurrencyID)
+              );
+              formattedData.CurrencyName =
+                matchingCurrency?.CurrencyName ||
+                `Unknown Currency (${rfqData.CurrencyID})`;
+            } catch (currencyError) {
+              console.error("Failed to fetch currency:", currencyError);
+            }
           }
         } catch (fetchError) {
           console.error("Error fetching additional data:", fetchError);
@@ -293,14 +290,20 @@ const PurchaseRFQForm = ({
   const loadApprovalStatus = useCallback(async () => {
     if (!purchaseRFQId) return;
     try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user?.personId) {
+        throw new Error("No user found in localStorage");
+      }
+
       const approvalData = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      console.log("Approval data in form:", approvalData);
       setApprovalRecord(approvalData);
-      if (approvalData.exists) {
-        setApprovalStatus(
-          approvalData.ApprovedYN === true || approvalData.ApprovedYN === 1
-            ? "approved"
-            : "disapproved"
-        );
+
+      if (approvalData.success && approvalData.data) {
+        const approved =
+          Number(approvalData.data.ApprovedStatus) === 1 ||
+          approvalData.data.ApprovedStatus === "true";
+        setApprovalStatus(approved ? "approved" : "disapproved");
       } else {
         setApprovalStatus(null);
       }
@@ -324,7 +327,7 @@ const PurchaseRFQForm = ({
         supplierData,
         {
           headers: {
-            Authorization: `Bearer ${user?.token}`,
+            Authorization: `Bearer ${user?.personId}`,
           },
         }
       );
@@ -342,13 +345,23 @@ const PurchaseRFQForm = ({
     try {
       setLoading(true);
       if (confirmAction === "approve") {
-        await updatePurchaseRFQApproval(purchaseRFQId, true);
-        toast.success("Purchase RFQ approved successfully");
-        setApprovalStatus("approved");
+        const response = await approvePurchaseRFQ(purchaseRFQId, true);
+        if (response.success) {
+          toast.success("Purchase RFQ approved successfully");
+          setApprovalStatus("approved");
+          await loadApprovalStatus(); // Refresh approval status
+        } else {
+          throw new Error(response.message || "Approval failed");
+        }
       } else if (confirmAction === "disapprove") {
-        await updatePurchaseRFQApproval(purchaseRFQId, false);
-        toast.success("Purchase RFQ disapproved successfully");
-        setApprovalStatus("disapproved");
+        const response = await approvePurchaseRFQ(purchaseRFQId, false);
+        if (response.success) {
+          toast.success("Purchase RFQ disapproved successfully");
+          setApprovalStatus("disapproved");
+          await loadApprovalStatus(); // Refresh approval status
+        } else {
+          throw new Error(response.message || "Disapproval failed");
+        }
       } else if (confirmAction === "send") {
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
@@ -368,26 +381,21 @@ const PurchaseRFQForm = ({
           { autoClose: false }
         );
 
-        console.log("Sending RFQ to suppliers...");
         const emailData = {
           purchaseRFQID: parseInt(purchaseRFQId, 10),
           supplierIDs: supplierIDs,
           createdByID: createdByID,
         };
 
-        console.log("Email request data:", JSON.stringify(emailData, null, 2));
-
         const response = await axios.post(
           `${APIBASEURL}/rfqsent/send-rfq`,
           emailData,
           {
             headers: {
-              Authorization: `Bearer ${user?.token}`,
+              Authorization: `Bearer ${user?.personId}`,
             },
           }
         );
-
-        console.log("Send RFQ response:", JSON.stringify(response.data, null, 2));
 
         toast.update(toastId, {
           render: "Email sending process completed!",
@@ -413,13 +421,8 @@ const PurchaseRFQForm = ({
 
             if (result.success) {
               successCount++;
-              console.log(
-                `Success for ${supplierName}: Quotation ID ${result.supplierQuotationID}`
-              );
-              console.log(`Email sent successfully to ${supplierName}`);
             } else {
               failCount++;
-              console.warn(`Failed for ${supplierName}: ${result.message}`);
               toast.warning(`Failed for ${supplierName}: ${result.message}`);
             }
 
@@ -459,7 +462,11 @@ const PurchaseRFQForm = ({
         });
       }
     } catch (error) {
-      console.error("Error in handleConfirmAction:", error);
+      console.error("Error in handleConfirmAction:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
       toast.error(
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
@@ -489,7 +496,13 @@ const PurchaseRFQForm = ({
   const fetchSuppliers = async () => {
     try {
       setLoadingSuppliers(true);
-      const response = await axios.get(`${APIBASEURL}/suppliers`);
+      const response = await axios.get(`${APIBASEURL}/suppliers`, {
+        headers: {
+          Authorization: `Bearer ${
+            JSON.parse(localStorage.getItem("user"))?.personId
+          }`,
+        },
+      });
       if (response.data && Array.isArray(response.data.data)) {
         setSuppliers(response.data.data);
       }
@@ -530,27 +543,30 @@ const PurchaseRFQForm = ({
     handleCloseSuppliersDialog();
   };
 
-    const handleSendPurchaseRFQ = async () => {
-      try {
-        if (selectedSuppliers.length === 0) {
-          toast.warning(
-            "Please select suppliers before sending the Purchase RFQ"
-          );
-          handleOpenSuppliersDialog();
-          return;
-        }
-
-        // Skip opening the suppliers dialog and go straight to confirmation
-        setConfirmMessage(
-          `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations? This process may take some time.`
+  const handleSendPurchaseRFQ = async () => {
+    try {
+      if (selectedSuppliers.length === 0) {
+        toast.warning(
+          "Please select suppliers before sending the Purchase RFQ"
         );
-        setConfirmAction("send");
-        setConfirmDialogOpen(true);
-      } catch (error) {
-        console.error("Error preparing to send Purchase RFQ:", error);
-        toast.error("Failed to prepare sending: " + error.message);
+        handleOpenSuppliersDialog();
+        return;
       }
-    };
+
+      setConfirmMessage(
+        `Are you sure you want to send this Purchase RFQ to ${selectedSuppliers.length} selected suppliers and create their quotations? This process may take some time.`
+      );
+      setConfirmAction("send");
+      setConfirmDialogOpen(true);
+    } catch (error) {
+      console.error("Error preparing to send Purchase RFQ:", error);
+      toast.error("Failed to prepare sending: " + error.message);
+    }
+  };
+
+  const handleParcelsChange = (newParcels) => {
+    setParcels(newParcels);
+  };
 
   return (
     <FormPage
@@ -570,25 +586,23 @@ const PurchaseRFQForm = ({
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  background: useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                  background:
+                    useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
                   padding: "0px 10px",
                   height: "37px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease-in-out",
-                  marginLeft: "16px", // Added left margin for spacing
-                  "&:hover": {
-                    boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                    transform: "scale(1.02)", // Slight scale on hover
-                  },
-                  }}
+                  marginLeft: "16px",
+                }}
               >
                 <Typography
                   variant="body2"
                   sx={{
-                    fontWeight: "700", // Bolder text
+                    fontWeight: "700",
                     marginRight: "8px",
-                    color: useTheme().palette.mode === "light" ? "white" : "black",
+                    color:
+                      useTheme().palette.mode === "light" ? "white" : "black",
                     fontSize: "0.9rem",
                   }}
                 >
@@ -625,8 +639,7 @@ const PurchaseRFQForm = ({
               color="secondary"
               onClick={handleSendPurchaseRFQ}
               disabled={
-                formData.Status !== "Approved" ||
-                selectedSuppliers.length === 0
+                formData.Status !== "Approved" || selectedSuppliers.length === 0
               }
               sx={{
                 fontWeight: "bold",
@@ -831,111 +844,13 @@ const PurchaseRFQForm = ({
           />
         </Grid>
       </Grid>
-      {parcels.length > 0 ? (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
-          <TableContainer
-            component={Paper}
-            sx={{
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <Table>
-              <TableHead
-                sx={{
-                  backgroundColor: "#1976d2",
-                  height: "56px",
-                }}
-              >
-                <TableRow>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Sr. No.
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Item
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    UOM
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                  >
-                    Quantity
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {parcelLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      <CircularProgress size={24} sx={{ my: 2 }} />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  parcels.map((parcel, index) => (
-                    <TableRow
-                      key={parcel.id}
-                      sx={{
-                        height: "52px",
-                        "&:nth-of-type(odd)": {
-                          backgroundColor: alpha("#1976d2", 0.05),
-                        },
-                        "&:hover": {
-                          backgroundColor: alpha("#1976d2", 0.1),
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">
-                        {parcel.srNo || index + 1}
-                      </TableCell>
-                      <TableCell align="center">
-                        {parcel.itemName || `Item #${parcel.itemId}`}
-                      </TableCell>
-                      <TableCell align="center">
-                        {parcel.uomName || `UOM #${parcel.uomId}`}
-                      </TableCell>
-                      <TableCell align="center">{parcel.quantity}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      ) : (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
-          <Paper
-            sx={{
-              p: 3,
-              textAlign: "center",
-              color: "text.secondary",
-              borderRadius: "8px",
-              backgroundColor: alpha("#f5f5f5", 0.7),
-            }}
-          >
-            No parcels found for this Purchase RFQ.
-          </Paper>
-        </Box>
-      )}
+
+      <PurchaseRFQParcelTab
+        purchaseRFQId={purchaseRFQId}
+        onParcelsChange={handleParcelsChange}
+        readOnly={readOnly || formData.Status === "Approved"}
+      />
+
       <Dialog
         open={suppliersDialogOpen}
         onClose={handleCloseSuppliersDialog}
@@ -1009,12 +924,12 @@ const PurchaseRFQForm = ({
                           onClick={() => handleSupplierToggle(supplier)}
                           sx={{
                             backgroundColor: isSelected
-                              ? alpha("#1976d2", 0.1)
+                              ? theme.palette.primary.light
                               : "transparent",
                             "&:hover": {
                               backgroundColor: isSelected
-                                ? alpha("#1976d2", 0.2)
-                                : alpha("#1976d2", 0.05),
+                                ? theme.palette.primary.main
+                                : theme.palette.action.hover,
                             },
                           }}
                         >

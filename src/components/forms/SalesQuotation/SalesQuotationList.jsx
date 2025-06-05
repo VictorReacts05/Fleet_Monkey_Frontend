@@ -9,10 +9,13 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
+import FormSelect from "../../Common/FormSelect";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
@@ -20,25 +23,28 @@ import { showToast } from "../../toastNotification";
 import axios from "axios";
 import SalesQuotationForm from "./SalesQuotationForm";
 import { Chip } from "@mui/material";
-
-const getHeaders = () => {
-  return {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-};
+import {
+  fetchPurchaseRFQs,
+  createSalesQuotation,
+  getAuthHeader,
+} from "./SalesQuotationAPI"; // Import getAuthHeader
 
 const SalesQuotationList = () => {
-  const [salesQuotations, setSalesQuotations] = useState([]); // Removed static data
+  const [salesQuotations, setSalesQuotations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [purchaseRFQs, setPurchaseRFQs] = useState([]);
+  const [selectedPurchaseRFQ, setSelectedPurchaseRFQ] = useState("");
+  const [personId, setPersonId] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
+  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
@@ -65,17 +71,47 @@ const SalesQuotationList = () => {
 
   const navigate = useNavigate();
 
+  // Check authentication and load personId
+  const checkAuthAndLoadPersonId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      console.log("User data from localStorage:", user);
+      if (!user || !user.personId) {
+        console.warn("Invalid user data, redirecting to home");
+        toast.error("Please log in to continue");
+        navigate("/"); // Redirect to root
+        return;
+      }
+      const personId = user.personId || user.id || user.userId || null;
+      if (personId) {
+        setPersonId(personId);
+        console.log("PersonID Loaded:", personId);
+      } else {
+        console.warn("No personId found, redirecting to home");
+        toast.error("Please log in to continue");
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error checking auth or loading personId:", error);
+      toast.error("Failed to load user data. Please log in again.");
+      navigate("/");
+    }
+  };
+
+  // Fetch Sales Quotations
   const fetchSalesQuotations = async () => {
     let isMounted = true;
     try {
       setLoading(true);
-      const { headers } = getHeaders();
-      console.log("Headers:", headers);
+      const { headers } = getAuthHeader();
+      console.log("Fetching Sales Quotations with headers:", headers);
       const response = await axios.get(
-        `http://localhost:7000/api/sales-Quotation?page=${page + 1}&limit=${rowsPerPage}`,
+        `http://localhost:7000/api/sales-Quotation?page=${
+          page + 1
+        }&limit=${rowsPerPage}`,
         { headers }
       );
-      console.log("Sales Quotations API response:", response);
+      console.log("Sales Quotations API response:", response.data);
       const quotationData = Array.isArray(response.data)
         ? response.data
         : Array.isArray(response.data?.data)
@@ -92,22 +128,29 @@ const SalesQuotationList = () => {
           ? dayjs(quotation.CreatedDate).isValid()
             ? dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
             : "Invalid Date"
-          : "No Date Provided",
+          : "No Data Provided",
       }));
-      console.log("Mapped Data:", mappedData);
+      console.log("Mapped Sales Quotation Data:", mappedData);
       if (isMounted) {
         setSalesQuotations(mappedData);
-        setTotalRows(response.data.total || mappedData.length); // Use total from API if available
+        setTotalRows(response.data.total || mappedData.length);
+        setError(null); // Clear error on success
       }
     } catch (error) {
       const errorMessage = error.response
-        ? `Server error: ${error.response.status} - ${error.response.data?.message || "Unknown error"}`
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
         : error.message === "Network Error"
         ? "Network error: Please check your internet connection or server status"
-        : "Failed to fetch Sales Quotations";
-      console.error("Error fetching Sales Quotations:", error.response || error.message);
+        : `Failed to fetch Sales Quotations: ${error.message}`;
+      console.error(
+        "Error fetching Sales Quotations:",
+        error.response || error.message
+      );
       if (isMounted) {
         toast.error(errorMessage);
+        setError(errorMessage);
       }
     } finally {
       if (isMounted) {
@@ -119,19 +162,44 @@ const SalesQuotationList = () => {
     };
   };
 
+  // Fetch Purchase RFQs for dropdown
+  const loadPurchaseRFQs = async () => {
+    try {
+      const rfqs = await fetchPurchaseRFQs();
+      console.log("Fetched Purchase RFQs:", rfqs);
+      const formattedOptions = [
+        { value: "", label: "Select a Purchase RFQ" },
+        ...rfqs,
+      ];
+      console.log("Formatted Purchase RFQ Options:", formattedOptions);
+      setPurchaseRFQs(formattedOptions);
+    } catch (error) {
+      console.error("Error fetching Purchase RFQs:", error);
+      toast.error("Failed to load Purchase data");
+      setPurchaseRFQs([{ value: "", label: "No Purchase RFQs Available" }]);
+    }
+  };
+
   useEffect(() => {
-    fetchSalesQuotations();
-  }, [page, rowsPerPage]); // Added dependencies for pagination
+    checkAuthAndLoadPersonId();
+  }, []);
+
+  useEffect(() => {
+    if (personId) {
+      fetchSalesQuotations();
+      loadPurchaseRFQs();
+    }
+  }, [personId, page, rowsPerPage]);
 
   const handlePageChange = async (newPage) => {
     setPage(newPage);
-    await fetchSalesQuotations(); // Reuse fetchSalesQuotations with updated page
+    await fetchSalesQuotations();
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(0);
-    fetchSalesQuotations(); // Fetch data with new rows per page
+    fetchSalesQuotations();
   };
 
   const handleView = (id) => {
@@ -157,14 +225,16 @@ const SalesQuotationList = () => {
   const handleDialogClose = () => {
     setViewDialogOpen(false);
     setDeleteDialogOpen(false);
+    setCreateDialogOpen(false);
     setSelectedQuotation(null);
-    fetchSalesQuotations();
+    setSelectedPurchaseRFQ("");
+    setErrors({});
   };
 
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      const { headers } = getHeaders();
+      const { headers } = getAuthHeader();
       await axios.delete(
         `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
         { headers }
@@ -183,9 +253,79 @@ const SalesQuotationList = () => {
   const handleSearch = (term) => {
     setSearchTerm(term);
     setPage(0);
-    // Note: Add search to API call if backend supports it
-    // e.g., append `&search=${term}` to the API URL in fetchSalesQuotations
   };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!selectedPurchaseRFQ) {
+      newErrors.purchaseRFQ = "Purchase RFQ is required";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleCreateSalesQuotation = async () => {
+    if (!validateForm()) {
+      toast.error("Please select a Purchase RFQ");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = {
+        PurchaseRFQID: parseInt(selectedPurchaseRFQ),
+      };
+      console.log("Creating Sales Quotation with data:", data);
+      const response = await createSalesQuotation(data);
+      console.log("Create Sales Quotation response:", response);
+      const newSalesQuotationId = response?.newSalesQuotationId;
+      if (newSalesQuotationId) {
+        toast.success("Sales Quotation created successfully");
+        handleDialogClose();
+        navigate(`/sales-quotation/edit/${newSalesQuotationId}`);
+      } else {
+        throw new Error("No Sales Quotation ID returned");
+      }
+    } catch (error) {
+      const errorMessage = error.message || "Failed to create Sales Quotation";
+      console.error("Error creating Sales Quotation:", errorMessage);
+      toast.error(errorMessage);
+      if (errorMessage.includes("User not logged in")) {
+        navigate("/");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePurchaseRFQChange = (e) => {
+    const { value } = e.target;
+    setSelectedPurchaseRFQ(value);
+    setErrors((prev) => ({
+      ...prev,
+      purchaseRFQ: value ? "" : "Purchase RFQ is required",
+    }));
+  };
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error" variant="h6">
+          An error occurred: {error}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setError(null);
+            fetchSalesQuotations();
+          }}
+          sx={{ mt: 2 }}
+        >
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -203,14 +343,34 @@ const SalesQuotationList = () => {
             onSearch={handleSearch}
             placeholder="Search Sales Quotations..."
           />
+          <Tooltip title="Add New Sales Quotation">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                console.log("Add New Sales Quotation clicked");
+                setCreateDialogOpen(true);
+              }}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+                height: 40,
+                width: 40,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
-
       {salesQuotations.length === 0 && !loading ? (
         <Typography>No sales quotations available.</Typography>
       ) : (
         <DataTable
-          rows={salesQuotations} // Simplified, as id is already mapped
+          rows={salesQuotations}
           columns={[
             ...columns,
             {
@@ -225,7 +385,7 @@ const SalesQuotationList = () => {
           getRowId={(row) => row.id || "unknown"}
           page={page}
           rowsPerPage={rowsPerPage}
-          totalRows={totalRows} // Use totalRows state
+          totalRows={totalRows}
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleRowsPerPageChange}
           onView={handleView}
@@ -233,6 +393,7 @@ const SalesQuotationList = () => {
         />
       )}
 
+      {/* View Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -256,6 +417,7 @@ const SalesQuotationList = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -276,8 +438,84 @@ const SalesQuotationList = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Create Sales Quotation Dialog */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Create New Sales Quotation</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <FormSelect
+              name="purchaseRFQ"
+              label="Purchase RFQ"
+              value={selectedPurchaseRFQ}
+              onChange={handlePurchaseRFQChange}
+              options={purchaseRFQs}
+              error={!!errors.purchaseRFQ}
+              helperText={errors.purchaseRFQ}
+              disabled={loading}
+            />
+            {purchaseRFQs.length === 1 && purchaseRFQs[0].value === "" && (
+              <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                No Purchase RFQs available. Please create a Purchase RFQ with
+                Supplier Quotations first.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreateSalesQuotation}
+            color="primary"
+            variant="contained"
+            disabled={loading || !selectedPurchaseRFQ}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-export default SalesQuotationList;
+// Error boundary component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box sx={{ p: 3 }}>
+          <Typography color="error" variant="h6">
+            Something went wrong: {this.state.error.message}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            sx={{ mt: 2 }}
+          >
+            Retry
+          </Button>
+        </Box>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default () => (
+  <ErrorBoundary>
+    <SalesQuotationList />
+  </ErrorBoundary>
+);

@@ -64,7 +64,6 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
 
   const theme = useTheme();
 
-  // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
@@ -143,7 +142,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
         let response;
         try {
           response = await axios.get(
-            `${APIBASEURL}/sales-quotation-parcels?salesQuotationID=${salesQuotationId}`
+            `${APIBASEURL}/sales-quotation-parcel?salesQuotationID=${salesQuotationId}`
           );
         } catch (err) {
           console.log(
@@ -152,11 +151,11 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
           );
           try {
             response = await axios.get(
-              `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcels`
+              `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcel`
             );
           } catch (err2) {
             response = await axios.get(
-              `${APIBASEURL}/sales-quotation-parcels/salesquotation/${salesQuotationId}`
+              `${APIBASEURL}/sales-quotation-parcel/salesquotation/${salesQuotationId}`
             );
           }
         }
@@ -476,7 +475,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
     try {
       // Try to update using the SalesQuotationParcel endpoint
       const response = await axios.put(
-        `${APIBASEURL}/sales-quotation-parcels/${parcel.SalesQuotationParcelID}`,
+        `${APIBASEURL}/sales-quotation-parcel/${parcel.SalesQuotationParcelID}`,
         {
           SalesQuotationID: salesQuotationId,
           ItemID: parseInt(parcel.ItemID, 10),
@@ -493,7 +492,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
       // Try alternative endpoint
       try {
         const altResponse = await axios.put(
-          `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcels/${parcel.SalesQuotationParcelID}`,
+          `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcel/${parcel.SalesQuotationParcelID}`,
           {
             ItemID: parseInt(parcel.ItemID, 10),
             UOMID: parseInt(parcel.UOMID, 10),
@@ -532,7 +531,6 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
         borderRadius: 1,
       }}
     >
-      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -562,7 +560,6 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
         </Box>
       </Box>
 
-      {/* Content area */}
       <Box
         sx={{
           p: 2,

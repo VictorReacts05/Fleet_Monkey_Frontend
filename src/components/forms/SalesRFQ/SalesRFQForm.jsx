@@ -27,6 +27,8 @@ import {
   fetchAddresses,
   fetchMailingPriorities,
   fetchCurrencies,
+  fetchSalesRFQStatus,
+  fetchUserApprovalStatus,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -112,6 +114,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [purchaseRFQDialogOpen, setPurchaseRFQDialogOpen] = useState(false);
   const [creatingPurchaseRFQ, setCreatingPurchaseRFQ] = useState(false);
   const [status, setStatus] = useState("");
+  const [userStatus, setUserStatus] = useState("Pending");
   const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
   const [fieldDisabled, setFieldDisabled] = useState({
     Series: true,
@@ -134,6 +137,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     FormCompletedYN: true,
   });
 
+  // Load dropdown data
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -262,6 +266,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     loadDropdownData();
   }, []);
 
+  // Load SalesRFQ data
   const loadSalesRFQ = useCallback(async () => {
     if (!salesRFQId) return;
 
@@ -325,14 +330,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         CurrencyName: displayValue(
           data.CurrencyName || data.currencyName || data.Currency?.CurrencyName
         ),
-        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
+        CollectFromSupplierID: Boolean(data.CustomerID),
         PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
         FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? dayjs(data.CreatedDateTime)
           : null,
-        IsDeleted: data.IsDeleted || false,
+        IsDeleted: data.Boolean || false,
         DeletedDateTime: data.DeletedDateTime
           ? dayjs(data.DeletedDateTime)
           : null,
@@ -363,35 +368,31 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     }
   }, [salesRFQId, dropdownsLoaded, loadSalesRFQ]);
 
-  useEffect(() => {
-    const loadSalesRFQ = async () => {
-      if (salesRFQId) {
-        try {
-          setLoading(true);
-          const response = await getSalesRFQById(salesRFQId);
-          if (response.data) {
-            console.log(
-              "SalesRFQ Table - Status:",
-              response.data.Status || response.data.status
-            );
+  // Load SalesRFQ status
+  const loadSalesRFQStatus = useCallback(async () => {
+    if (!salesRFQId) return;
 
-            if (response.data.Status || response.data.status) {
-              setStatus(response.data.Status || response.data.status);
-            } else {
-              setStatus("Pending");
-            }
-          }
-        } catch (error) {
-          console.error("Error loading SalesRFQ:", error);
-          toast.error("Failed to load SalesRFQ details");
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadSalesRFQ();
+    try {
+      setLoading(true);
+      const status = await fetchSalesRFQStatus(salesRFQId);
+      console.log("Fetched SalesRFQ status for ID:", salesRFQId, status);
+      setStatus(status);
+    } catch (error) {
+      console.error("Error loading SalesRFQ status:", error);
+      toast.error(
+        "Failed to load SalesRFQ status: " + (error.message || "Unknown error")
+      );
+      setStatus("Pending"); // Fallback to Pending
+    } finally {
+      setLoading(false);
+    }
   }, [salesRFQId]);
+
+  useEffect(() => {
+    if (salesRFQId) {
+      loadSalesRFQStatus();
+    }
+  }, [salesRFQId, loadSalesRFQStatus]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -643,13 +644,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const handleConfirmCreatePurchaseRFQ = async () => {
     try {
       setCreatingPurchaseRFQ(true);
-
+  
       if (!salesRFQId || isNaN(parseInt(salesRFQId, 10))) {
         throw new Error("Invalid Sales RFQ ID");
       }
-
+  
       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
-
+      console.log("Create Purchase RFQ response:", response);
+  
       let purchaseRFQId = null;
       if (response?.data?.data) {
         purchaseRFQId =
@@ -659,7 +661,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       } else if (response?.purchaseRFQId) {
         purchaseRFQId = response.purchaseRFQId;
       }
-
+  
       if (purchaseRFQId) {
         toast.info(
           <div>
@@ -681,29 +683,67 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </div>,
           { autoClose: 8000 }
         );
-        setPurchaseRFQDialogOpen(false);
+        setPurchaseRFQExists(true);
       } else {
-        console.warn(
-          "Purchase RFQ created, but ID is unavailable in response:",
-          response.data
-        );
+        console.warn("Purchase RFQ created, but ID is unavailable:", response.data);
         toast.error("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
         message: error.message,
-        stack: error.stack,
+        responseData: error.response?.data, // Log full response
+        salesRFQId,
       });
-      toast.error(
-        `Failed to create Purchase RFQ: ${
-          error.message || "Unknown server error"
-        }`
-      );
+      toast.error(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
+      setCreatingPurchaseRFQ(false);
+      setPurchaseRFQDialogOpen(false);
       setPurchaseRFQDialogOpen(false);
     }
   };
+
+  useEffect(() => {
+    const loadStatuses = async () => {
+      try {
+        // Fetch global status
+        const globalStatus = await fetchSalesRFQStatus(salesRFQId);
+        console.log("Global status for SalesRFQID:", salesRFQId, globalStatus);
+        setStatus(globalStatus || "Pending");
+
+        // Log user for debugging
+        const rawUser = localStorage.getItem("user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        console.log("Current user in loadStatuses:", { rawUser, user });
+      } catch (error) {
+        console.error(
+          "Error loading global status for SalesRFQID:",
+          salesRFQId,
+          error
+        );
+        setStatus("Pending");
+        toast.error("Failed to load status information");
+      }
+    };
+
+    if (salesRFQId) {
+      loadStatuses();
+    }
+  }, [salesRFQId]);
+
+  const handleStatusChange = async (newStatus) => {
+    console.log("User approval status changed to:", newStatus);
+    setUserStatus(newStatus);
+    // Refresh SalesRFQ status from API to check if all approvals are complete
+    await loadSalesRFQStatus();
+  };
+
+  console.log("StatusIndicator props", {
+    status,
+    userStatus,
+    readOnly: userStatus === "Approved" || readOnly,
+    salesRFQId,
+  });
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -715,8 +755,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
-              
-
             }}
           >
             <Typography variant="h6">
@@ -744,40 +782,38 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
                       transform: "scale(1.02)",
                     },
-  }}
->
-  <Chip
-
-    label={
-      <Typography
-        variant="body2"
-        sx={{
-          fontWeight: "700", // Bolder text
-          color: useTheme().palette.mode === "light" ? "white" : "black",
-          fontSize: "0.9rem",
-        }}
-      >
-        Status:
-      </Typography>
-    }
-    sx={{
-      backgroundColor: "transparent",
-          }}
-  />
-  <StatusIndicator
-    
-    status={status}
-    salesRFQId={salesRFQId}
-    onStatusChange={(newStatus) => {
-      console.log("Status changed to:", newStatus);
-      setStatus(newStatus);
-    }}
-    initialStatus={status}
-    skipFetch={true}
-    readOnly={status === "Approved"}
-    
-  />
-</Box>
+                  }}
+                >
+                  <Chip
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: "700",
+                          color:
+                            theme.palette.mode === "light" ? "white" : "black",
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Status:
+                      </Typography>
+                    }
+                    sx={{
+                      backgroundColor: "transparent",
+                    }}
+                  />
+                  {console.log(
+                    "Global status:",
+                    status,
+                    "SalesRFQId:",
+                    salesRFQId
+                  )}
+                  <StatusIndicator
+                    salesRFQId={salesRFQId}
+                    onStatusChange={handleStatusChange}
+                    readOnly={readOnly && status === "Approved"}
+                  />
+                </Box>
               </Fade>
             )}
           </Box>
@@ -788,7 +824,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         readOnly={!isEditing}
         onEdit={salesRFQId && !isEditing ? toggleEdit : null}
         onCreatePurchaseRFQ={
-          status === "Approved" ? handleCreatePurchaseRFQ : null
+          status === "Approved" && !purchaseRFQExists
+            ? handleCreatePurchaseRFQ
+            : null
         }
         isApproved={status === "Approved"}
       >
@@ -1163,7 +1201,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         <ParcelTab
           salesRFQId={salesRFQId}
           onParcelsChange={handleParcelsChange}
-          readOnly={!isEditing}
+          readOnly={!isEditing || status === "Approved"}
         />
         <Dialog
           open={purchaseRFQDialogOpen}

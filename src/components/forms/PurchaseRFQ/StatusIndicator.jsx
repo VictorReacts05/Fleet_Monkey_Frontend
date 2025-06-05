@@ -9,131 +9,141 @@ import {
   useTheme,
 } from "@mui/material";
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
-import axios from "axios";
 import { toast } from "react-toastify";
-import APIBASEURL from "../../../utils/apiBaseUrl";
+import {
+  approvePurchaseRFQ,
+  fetchPurchaseRFQApprovalStatus,
+} from "./PurchaseRFQAPI";
 
-const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) => {
+const StatusIndicator = ({
+  status,
+  purchaseRFQId,
+  onStatusChange,
+  readOnly,
+}) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [approvalRecord, setApprovalRecord] = useState(null);
+  const [userApprovalStatus, setUserApprovalStatus] = useState("Pending");
 
-  // Fetch existing approval record when component mounts
+  const getCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem("user");
+      if (!userData) {
+        console.warn("No user data found in localStorage");
+        return null;
+      }
+      return JSON.parse(userData);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      return null;
+    }
+  };
+
+  const fetchApprovalRecord = async () => {
+    if (!purchaseRFQId) return;
+
+    try {
+      const user = getCurrentUser();
+      if (!user?.personId) {
+        throw new Error("No user found in localStorage");
+      }
+
+      console.log(
+        `Fetching approval for user ${user.personId} and RFQ ${purchaseRFQId}`
+      );
+      const response = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      console.log("Fetched approval record:", response);
+
+      if (response.success && response.data) {
+        // Handle single object or array
+        const approval = Array.isArray(response.data)
+          ? response.data.find(
+              (record) =>
+                parseInt(record.ApproverID) === parseInt(user.personId)
+            )
+          : response.data;
+
+        if (approval) {
+          const approved =
+            Number(approval.ApprovedYN || approval.ApprovedStatus) === 1 ||
+            approval.ApprovedYN === "true" ||
+            approval.ApprovedStatus === "true";
+          console.log(
+            `User approval for ${user.personId}: Approved=${approved}`
+          );
+          setUserApprovalStatus(approved ? "Approved" : "Pending");
+        } else {
+          console.log(`No approval record for user ${user.personId}`);
+          setUserApprovalStatus("Pending");
+        }
+      } else {
+        console.log("No approval records or invalid response format");
+        setUserApprovalStatus("Pending");
+      }
+    } catch (error) {
+      console.error("Error fetching approval record:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      setUserApprovalStatus("Pending");
+    }
+  };
+
   useEffect(() => {
     if (purchaseRFQId) {
       fetchApprovalRecord();
     }
   }, [purchaseRFQId]);
 
-  const fetchApprovalRecord = async () => {
-    try {
-      const userData = localStorage.getItem("user");
-      if (!userData) {
-        console.warn("No user data found in localStorage");
-        setApprovalRecord(null);
-        return;
-      }
-
-      let user;
-      try {
-        user = JSON.parse(userData);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        setApprovalRecord(null);
-        return;
-      }
-
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-
-      const approverID = 2;
-      const response = await axios.get(
-        `${APIBASEURL}/purchase-rfq-approvals?PurchaseRFQID=${purchaseRFQId}&ApproverID=${approverID}`,
-        { headers }
-      );
-      console.log("Fetched approval record:", response.data);
-
-      if (
-        response.data.success &&
-        response.data.data &&
-        response.data.data.length > 0
-      ) {
-        setApprovalRecord(response.data.data[0]);
-      } else {
-        setApprovalRecord(null);
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        console.log("No approval record exists yet for this PurchaseRFQ");
-        setApprovalRecord(null);
-      } else {
-        console.error("Error fetching approval record:", error);
-        setApprovalRecord(null);
-      }
-    }
-  };
-
   const updateStatus = async (newStatus) => {
     if (!purchaseRFQId || isNaN(parseInt(purchaseRFQId, 10))) {
-      toast.error("Invalid PurchaseRFQ ID");
+      toast.error("Invalid Purchase RFQ ID");
       setAnchorEl(null);
       return;
     }
 
     try {
       setLoading(true);
-      console.log(`Updating PurchaseRFQ status to: ${newStatus}`);
-      console.log(`PurchaseRFQ ID: ${purchaseRFQId}, Type: ${typeof purchaseRFQId}`);
-
-      const userData = localStorage.getItem("user");
-      if (!userData) {
-        throw new Error("User data not found in localStorage");
-      }
-
-      let user;
-      try {
-        user = JSON.parse(userData);
-      } catch (error) {
-        throw new Error("Invalid user data format");
-      }
-
-      const headers = user?.token
-        ? { Authorization: `Bearer ${user.token}` }
-        : {};
-
-      const approveEndpoint = `${APIBASEURL}/purchase-rfq/approve/`;
-      const approveData = {
-        purchaseRFQID: parseInt(purchaseRFQId, 10),
-      };
-
-      console.log("Sending approval request with data:", approveData);
-
-      const statusResponse = await axios.post(
-        approveEndpoint,
-        approveData,
-        { headers }
+      const isApproved = newStatus === "Approved";
+      console.log(
+        `Updating approval status to: ${newStatus} for PurchaseRFQId: ${purchaseRFQId}`
       );
 
-      console.log("PurchaseRFQ status update response:", statusResponse.data);
+      const response = await approvePurchaseRFQ(purchaseRFQId, isApproved);
+      console.log("Approval response:", response);
 
-      if (onStatusChange) {
-        onStatusChange(newStatus);
+      setUserApprovalStatus(newStatus);
+
+      // Fetch updated RFQ status
+      const user = getCurrentUser();
+      const headers = { Authorization: `Bearer ${user.personId}` };
+      const rfqResponse = await fetch(
+        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        { headers }
+      );
+      const rfqData = await rfqResponse.json();
+      const overallStatus = rfqData.data?.Status || "Pending";
+
+      if (onStatusChange && overallStatus !== status) {
+        onStatusChange(overallStatus);
       }
 
-      await fetchApprovalRecord();
-
-      const isApproved = newStatus === "Approved";
-      toast.success(`PurchaseRFQ ${isApproved ? "approved" : "disapproved"} successfully`);
+      toast.success(
+        `Purchase RFQ ${isApproved ? "approved" : "disapproved"} successfully`
+      );
     } catch (error) {
-      console.error("Error updating status:", error);
-      console.error("Error details:", {
+      console.error("Error updating status:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(`Failed to update status: ${error.response?.data?.message || error.message}`);
+      toast.error(
+        `Failed to update status: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     } finally {
       setLoading(false);
       setAnchorEl(null);
@@ -159,7 +169,7 @@ const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) =>
   };
 
   const getChipProps = () => {
-    switch (status) {
+    switch (userApprovalStatus) {
       case "Approved":
         return {
           color: "success",
@@ -182,14 +192,11 @@ const StatusIndicator = ({ status, purchaseRFQId, onStatusChange, readOnly }) =>
   };
 
   const chipProps = getChipProps();
-  const validStatus = status || "Unknown";
+  const validStatus = userApprovalStatus || "Pending";
 
   return (
     <Box
-    sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"}}
+      sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
     >
       <Chip
         label={
