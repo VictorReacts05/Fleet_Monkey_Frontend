@@ -1,6 +1,5 @@
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { useSelector } from "react-redux";
 
 const getTokenFromRedux = () => {
   try {
@@ -50,21 +49,20 @@ export const getAuthHeader = () => {
 };
 
 // Fetch a single Sales Quotation by ID
-export const fetchSalesQuotation = async (salesQuotationId) => {
+export const fetchSalesQuotation = async (SalesQuotationID) => {
   try {
     const { headers } = getAuthHeader();
     console.log(
-      `Fetching Sales Quotation ID ${salesQuotationId} from: ${APIBASEURL}/sales-Quotation/${salesQuotationId}`
+      `Fetching Sales Quotation ID ${SalesQuotationID} from: ${APIBASEURL}/sales-Quotation/${SalesQuotationID}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-Quotation/${salesQuotationId}`,
+      `${APIBASEURL}/sales-Quotation/${SalesQuotationID}`,
       { headers }
     );
     console.log("Sales Quotation API Response:", response.data);
     if (response.data && response.data.data) {
       const quotation = response.data.data;
 
-      // Fetch addresses and currency mappings
       let addressMap = {};
       let currencyMap = {};
 
@@ -120,7 +118,6 @@ export const fetchSalesQuotation = async (salesQuotationId) => {
         );
       }
 
-      // Enhance quotation with mapped values
       quotation.CollectionAddressTitle = quotation.CollectionAddressID
         ? addressMap[quotation.CollectionAddressID] ||
           `Address ID: ${quotation.CollectionAddressID}`
@@ -140,7 +137,7 @@ export const fetchSalesQuotation = async (salesQuotationId) => {
     return null;
   } catch (error) {
     console.error(
-      `Error fetching Sales Quotation ${salesQuotationId}:`,
+      `Error fetching Sales Quotation ${SalesQuotationID}:`,
       error.response?.data || error.message
     );
     throw error.response?.data || error;
@@ -148,19 +145,19 @@ export const fetchSalesQuotation = async (salesQuotationId) => {
 };
 
 // Get Sales Quotation parcels by SalesQuotationID
-export const fetchSalesQuotationParcels = async (salesQuotationId) => {
+export const fetchSalesQuotationParcels = async (SalesQuotationID) => {
   try {
     const { headers } = getAuthHeader();
-    if (!salesQuotationId) {
-      console.warn("No salesQuotationId provided, returning empty parcels");
+    if (!SalesQuotationID) {
+      console.warn("No SalesQuotationID provided, returning empty parcels");
       return [];
     }
 
     console.log(
-      `Fetching parcels for SalesQuotationID ${salesQuotationId} from: ${APIBASEURL}/sales-Quotation-Parcel?salesQuotationId=${salesQuotationId}`
+      `Fetching parcels for SalesQuotationID ${SalesQuotationID} from: ${APIBASEURL}/sales-Quotation-Parcel?SalesQuotationID=${SalesQuotationID}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-Quotation-Parcel/${salesQuotationId}`,
+      `${APIBASEURL}/sales-Quotation-Parcel/?SalesQuotationID=${SalesQuotationID}`,
       { headers }
     );
     console.log("Sales Quotation Parcels API Response:", response.data);
@@ -226,7 +223,7 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
     return [];
   } catch (error) {
     console.error(
-      `Error fetching parcels for SalesQuotationID ${salesQuotationId}:`,
+      `Error fetching parcels for SalesQuotationID ${SalesQuotationID}:`,
       error.response?.data || error.message
     );
     throw error.response?.data || error;
@@ -335,5 +332,164 @@ export const createSalesQuotation = async (data) => {
       error.response?.data || error.message
     );
     throw error.response?.data || error;
+  }
+};
+
+// Approve a Sales Quotation
+export const approveSalesQuotation = async (SalesQuotationID) => {
+  try {
+    const { headers, personId } = getAuthHeader();
+    console.log(
+      `Approving Sales Quotation with ID: ${SalesQuotationID}, ApproverID: ${personId}`
+    );
+
+    if (!personId) {
+      throw new Error("No personId found for approval");
+    }
+
+    const response = await axios.post(
+      `${APIBASEURL}/sales-Quotation/approve`,
+      {
+        SalesQuotationID: Number(SalesQuotationID),
+        approverID: Number(personId),
+      },
+      { headers }
+    );
+
+    console.log("Approval response:", {
+      status: response.status,
+      data: response.data,
+    });
+
+    return {
+      success: response.data.success || true,
+      message: response.data.message || "Approval successful",
+      data: response.data.data || {},
+      SalesQuotationID, // Fixed typo: was SalesQuotationID
+    };
+  } catch (error) {
+    console.error("Error approving Sales Quotation:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error.response?.data || error;
+  }
+};
+
+// Fetch approval status for a Sales Quotation
+export const fetchSalesQuotationApprovalStatus = async (SalesQuotationID) => {
+  try {
+    const { headers } = getAuthHeader();
+
+    const response = await axios.get(
+      `${APIBASEURL}/sales-Quotation/${SalesQuotationID}`,
+      { headers }
+    );
+
+    if (response.data && response.data.data) {
+      const status = response.data.data.Status;
+      return {
+        SalesQuotationID: SalesQuotationID,
+        ApprovedYN: status === "Approved" ? true : false,
+        ApproverDateTime: new Date().toISOString(),
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error fetching Sales Quotation status:", error);
+    throw error;
+  }
+};
+
+// Fetch global Sales Quotation status
+export const fetchSalesQuotationStatus = async (SalesQuotationID) => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.get(
+      `${APIBASEURL}/sales-Quotation/${SalesQuotationID}`,
+      { headers }
+    );
+
+    console.log(
+      "Fetched Sales Quotation status for ID:",
+      SalesQuotationID,
+      response.data
+    );
+
+    if (response.data && response.data.data) {
+      const status = response.data.data.Status || response.data.data.status;
+      if (status) {
+        console.log("Parsed status:", status);
+        return status;
+      }
+    } else if (
+      response.data &&
+      (response.data.Status || response.data.status)
+    ) {
+      const status = response.data.Status || response.data.status;
+      console.log("Parsed status:", status);
+      return status;
+    }
+
+    console.warn("Status field not found in response:", response.data);
+    return "Pending"; // Default to Pending
+  } catch (error) {
+    console.error("Error fetching Sales Quotation status:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return "Pending"; // Fallback to Pending
+  }
+};
+
+// Fetch user-specific approval status
+export const fetchUserApprovalStatus = async (SalesQuotationID, approverId) => {
+  try {
+    const { headers } = getAuthHeader();
+    console.log("Fetching approval status with params:", {
+      SalesQuotationID,
+      approverId,
+    });
+    const response = await axios.get(
+      `${APIBASEURL}/sales-Quotation-Approvals/${SalesQuotationID}/${approverId}`,
+      { headers }
+    );
+
+    console.log(
+      "Full API response for SalesQuotationID:",
+      SalesQuotationID,
+      "ApproverID:",
+      approverId,
+      {
+        status: response.status,
+        data: response.data,
+      }
+    );
+
+    let approval = null;
+    if (response.data?.data) {
+      approval = response.data.data;
+    } else if (response.data && typeof response.data === "object") {
+      approval = response.data;
+    }
+
+    console.log("Processed approval data:", approval);
+
+    if (approval && approval.ApprovedYN === 1) {
+      console.log("Approval found with ApprovedYN: 1, returning Approved");
+      return "Approved";
+    }
+    console.log("No approval or ApprovedYN !== 1, returning Pending");
+    return "Pending";
+  } catch (error) {
+    console.error("Error fetching user approval status:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return "Pending"; // Fallback to Pending
   }
 };

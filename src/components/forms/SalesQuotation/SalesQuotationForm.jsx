@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
@@ -12,11 +12,12 @@ import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
 import FormPage from "../../Common/FormPage";
 import StatusIndicator from "./StatusIndicator";
-import ParcelTab from "./ParcelTab.jsx"; // Added missing import
+import ParcelTab from "./ParcelTab.jsx";
 import { toast } from "react-toastify";
 import {
   fetchSalesQuotation,
   fetchSalesQuotationParcels,
+  fetchSalesQuotationStatus,
 } from "./SalesQuotationAPI";
 
 const ReadOnlyField = ({ label, value }) => {
@@ -72,7 +73,7 @@ const SalesQuotationForm = ({
         setFormData({
           Series: quotation.Series,
           CompanyID: quotation.CompanyID || "-",
-          CompanyName: "Dung Beetle Logistics", // Replace with API call if available
+          CompanyName: "Dung Beetle Logistics",
           CustomerID: quotation.CustomerID || "-",
           CustomerName: quotation.CustomerName || "-",
           SupplierID: quotation.SupplierID || "-",
@@ -110,7 +111,6 @@ const SalesQuotationForm = ({
           TaxAmount: quotation.TaxesAndOtherCharges || "0.00",
           Total: quotation.Total || 0,
         });
-        setStatus(quotation.Status || "Pending");
       } else {
         throw new Error("No Sales Quotation data returned");
       }
@@ -121,7 +121,7 @@ const SalesQuotationForm = ({
           salesQuotationId
         );
         const mappedParcels = fetchedParcels.map((parcel) => ({
-          ParcelID: parcel.SalesQuotationParcelID || "-",
+          ParcelID: parcel.SalesQuotationParcelID || "Unknown",
           itemName: parcel.ItemName || "Unknown Item",
           uomName: parcel.UOMName || parcel.UOM || "-",
           quantity: parseFloat(parcel.ItemQuantity) || 0,
@@ -140,7 +140,7 @@ const SalesQuotationForm = ({
     } catch (error) {
       const errorMessage = error.response
         ? `Server error: ${error.response.status} - ${
-            error.response.data?.message || error.message
+            error.response?.data?.message || error.message
           }`
         : `Failed to fetch data: ${error.message}`;
       console.error("Error in fetchData:", error);
@@ -151,14 +151,38 @@ const SalesQuotationForm = ({
     }
   };
 
+  const loadSalesQuotationStatus = useCallback(async () => {
+    if (!salesQuotationId) return;
+
+    try {
+      setLoading(true);
+      const status = await fetchSalesQuotationStatus(salesQuotationId);
+      console.log(
+        "Fetched SalesQuotation status for ID:",
+        salesQuotationId,
+        status
+      );
+      setStatus(status);
+    } catch (error) {
+      console.error("Error loading SalesQuotation status:", error);
+      toast.error(
+        "Failed to load status: " + (error.message || "Unknown error")
+      );
+      setStatus("Pending");
+    } finally {
+      setLoading(false);
+    }
+  }, [salesQuotationId]);
+
   useEffect(() => {
     if (salesQuotationId) {
       fetchData();
+      loadSalesQuotationStatus();
     } else {
       setError("No Sales Quotation ID provided");
       setLoading(false);
     }
-  }, [salesQuotationId]);
+  }, [salesQuotationId, loadSalesQuotationStatus]);
 
   const handleCancel = () => {
     if (onClose) {
@@ -166,6 +190,12 @@ const SalesQuotationForm = ({
     } else {
       navigate("/sales-quotation");
     }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    console.log("Status changed to:", newStatus);
+    setStatus(newStatus);
+    await loadSalesQuotationStatus();
   };
 
   if (loading) {
@@ -244,12 +274,9 @@ const SalesQuotationForm = ({
                 sx={{ backgroundColor: "transparent" }}
               />
               <StatusIndicator
-                status={status}
                 salesQuotationId={salesQuotationId}
-                onStatusChange={() => {}}
-                initialStatus={status}
-                skipFetch={true}
-                readOnly={readOnly}
+                onStatusChange={handleStatusChange}
+                // readOnly={readOnly}
               />
             </Box>
           </Fade>

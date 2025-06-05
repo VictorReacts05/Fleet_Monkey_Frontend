@@ -1,13 +1,12 @@
 import axios from 'axios';
-
-const API_URL = '/api/po';
+import APIBASEURL from './../../../utils/apiBaseUrl';
 
 export const fetchPurchaseOrders = async (page = 1, limit = 10) => {
   try {
-    const response = await axios.get(API_URL, {
+    const response = await axios.get(`${APIBASEURL}/po`, {
       params: { page, limit },
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     return response.data;
