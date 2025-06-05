@@ -9,7 +9,7 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
     }
     
     const response = await axios.get(
-      `${APIBASEURL}/sales-quotation-parcels?salesQuotationId=${salesQuotationId}`
+      `${APIBASEURL}/sales-quotation-parcel?salesQuotationId=${salesQuotationId}`
     );
     if (response.data && response.data.data) {
       const parcels = response.data.data;
