@@ -142,7 +142,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
         let response;
         try {
           response = await axios.get(
-            `${APIBASEURL}/sales-quotation-parcel?salesQuotationID=${salesQuotationId}`
+            `${APIBASEURL}/sales-quotation-parcel/${salesQuotationId}`
           );
         } catch (err) {
           console.log(
@@ -155,7 +155,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
             );
           } catch (err2) {
             response = await axios.get(
-              `${APIBASEURL}/sales-quotation-parcel/salesquotation/${salesQuotationId}`
+              `${APIBASEURL}/sales-quotation-parcel/${salesQuotationId}`
             );
           }
         }

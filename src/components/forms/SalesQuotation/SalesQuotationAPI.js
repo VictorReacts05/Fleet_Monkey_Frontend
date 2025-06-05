@@ -154,7 +154,7 @@ export const fetchSalesQuotationParcels = async (SalesQuotationParcelID) => {
     }
     
     const response = await axios.get(
-      `${APIBASEURL}/sales-Quotation-Parcel/?SalesQuotationParcelID=${SalesQuotationParcelID}`,
+      `${APIBASEURL}/sales-Quotation-Parcel/${SalesQuotationParcelID}`,
       { headers }
     );
     console.log("Sales Quotation Parcels API Response:", response.data);
