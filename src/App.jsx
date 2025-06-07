@@ -35,7 +35,7 @@ import PersonList from './components/forms/Person/PersonList';
 import VehicleList from './components/forms/Vehicle/VehicleList';
 import WarehouseList from './components/forms/Warehouse/WarehouseList';
 import AddressTypeList from './components/forms/AddressType/AddressTypeList';
-import UOMList from './components/forms/UOM/UOMList';
+import UOMList from './components/forms/UOM/uomlist';
 import Login from './pages/Login';
 import ProtectedRoute from './components/Common/ProtectedRoute';
 import { ThemeProvider } from './context/ThemeContext';

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 // import { getUOMById, createUOM, updateUOM } from './UOMAPI';
-import { getUOMById, createUOM, updateUOM, deleteUOM } from "./UOMAPI";
+import { getUOMById, createUOM, updateUOM, deleteUOM } from "./uomapi";
 
 const UOMModal = ({ open, onClose, uomId, onSave }) => {
   const [formData, setFormData] = useState({

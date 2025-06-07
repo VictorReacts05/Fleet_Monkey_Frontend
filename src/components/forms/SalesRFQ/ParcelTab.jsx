@@ -28,7 +28,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { getAuthHeader } from "./SalesRFQAPI"; // Adjust the path as needed
 import { useNavigate } from "react-router-dom"; // Added for navigation
-import UOMList from "./../UOM/UOMList";
+import UOMList from "./../UOM/uomlist";
 
 // Function to fetch items from API
 const fetchItems = async () => {

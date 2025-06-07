@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '13.204.68.87',
     port: 3000,
     proxy: {
       "/api": {
@@ -16,9 +17,6 @@ export default defineConfig({
           proxy.proxyTimeout = 60000;
         },
       },
-    },
-    allowedHosts: [
-      "22b2-2402-a00-408-591e-75ef-3988-5d17-47d7.ngrok-free.app"
-    ],
+    }
   },
 });
