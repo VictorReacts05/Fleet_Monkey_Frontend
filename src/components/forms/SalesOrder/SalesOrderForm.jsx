@@ -1,85 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Grid,
   Box,
   Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
+  Fade,
+  Chip,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  useTheme,
-  alpha,
-  Checkbox,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
-  TextField,
-  InputAdornment,
+  Button,
 } from "@mui/material";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+import Grid2 from "@mui/material/Grid";
+import { useTheme } from "@mui/material/styles";
+import { useParams, useNavigate } from "react-router-dom";
+import FormPage from "../../Common/FormPage";
+import StatusIndicator from "./StatusIndicator";
+import ParcelTab from "./ParcelTab.jsx";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage"; // Verify: src/components/Common/FormPage.jsx
-import StatusIndicator from "./StatusIndicator"; // Verify: src/components/forms/SalesOrder/StatusIndicator.jsx
-import SearchIcon from "@mui/icons-material/Search";
-import APIBASEURL from "../../../utils/apiBaseUrl"; // Adjust path as needed
-
-// API functions (to be implemented based on your backend)
-const getSalesOrderById = async (id) => {
-  const response = await axios.get(`${APIBASEURL}/sales-order/${id}`, {
-    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-  });
-  return response.data;
-};
-
-const fetchSalesOrderApprovalStatus = async (id) => {
-  const response = await axios.get(`${APIBASEURL}/sales-order/${id}/approval`, {
-    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-  });
-  return response.data;
-};
-
-const updateSalesOrderApproval = async (id, approved) => {
-  const response = await axios.post(
-    `${APIBASEURL}/sales-order/${id}/approval`,
-    { ApprovedYN: approved },
-    { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
-  );
-  return response.data;
-};
-
-const fetchServiceTypes = async () => {
-  const response = await axios.get(`${APIBASEURL}/service-types`, {
-    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-  });
-  return response.data.data;
-};
-
-const fetchShippingPriorities = async () => {
-  const response = await axios.get(`${APIBASEURL}/shipping-priorities`, {
-    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-  });
-  return response.data.data;
-};
-
-const fetchCurrencies = async () => {
-  const response = await axios.get(`${APIBASEURL}/currencies`, {
-    headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-  });
-  return response.data.data;
-};
+import axios from "axios";
+import {
+  fetchSalesOrder,
+  fetchSalesOrderParcels,
+  fetchSalesOrderStatus,
+  getAuthHeader,
+} from "./SalesOrderAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -90,6 +31,8 @@ const ReadOnlyField = ({ label, value }) => {
     displayValue = value ? "Yes" : "No";
   } else if (typeof value === "number") {
     displayValue = value.toFixed(2);
+  } else if (value === null || value === undefined) {
+    displayValue = "-";
   }
 
   return (
@@ -98,371 +41,381 @@ const ReadOnlyField = ({ label, value }) => {
         {label}
       </Typography>
       <Typography variant="body1" sx={{ mt: 0.5 }}>
-        {displayValue || "-"}
+        {displayValue}
       </Typography>
     </Box>
   );
 };
 
-const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
+const SalesOrderForm = ({
+  salesOrderId: propSalesOrderId,
+  onClose,
+  readOnly,
+}) => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isViewMode = location.pathname.includes("/view/");
   const theme = useTheme();
+  const navigate = useNavigate();
   const salesOrderId = propSalesOrderId || id;
-  const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
-  const [formData, setFormData] = useState(null);
-  const [parcels, setParcels] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [parcelLoading, setParcelLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [approvalStatus, setApprovalStatus] = useState(null);
-  const [approvalRecord, setApprovalRecord] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [suppliersDialogOpen, setSuppliersDialogOpen] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
-  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
-  const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
-  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
-  const [emailSendingStatus, setEmailSendingStatus] = useState({
-    sending: false,
-    progress: 0,
-    totalSuppliers: 0,
-    completedSuppliers: 0,
+  const DEFAULT_COMPANY = { value: 48, label: "Dung Beetle Logistics" };
+
+  const [formData, setFormData] = useState({
+    Series: "",
+    CompanyID: DEFAULT_COMPANY.value,
+    CompanyName: DEFAULT_COMPANY.label,
+    CustomerID: "",
+    CustomerName: "",
+    SupplierID: "",
+    SupplierName: "",
+    ExternalRefNo: "",
+    OrderDate: null,
+    DeliveryDate: null,
+    PostingDate: null,
+    RequiredByDate: null,
+    DateReceived: null,
+    ServiceTypeID: "",
+    ServiceType: "",
+    CollectionAddressID: "",
+    CollectionAddress: "",
+    DestinationAddressID: "",
+    DestinationAddress: "",
+    ShippingPriorityID: "",
+    ShippingPriorityName: "",
+    Terms: "",
+    CurrencyID: "",
+    CurrencyName: "",
+    CollectFromCustomerYN: false,
+    PackagingRequiredYN: false,
+    FormCompletedYN: false,
+    SalesAmount: 0,
+    TaxAmount: 0,
+    Total: 0,
+    PaymentTerms: "",
+    PaymentStatus: "",
+    DeliveryStatus: "",
+    Notes: "",
   });
+  const [parcels, setParcels] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [addresses, setAddresses] = useState([]);
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [parcelError, setParcelError] = useState(null);
+  const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const loadSalesOrderData = useCallback(async () => {
-  if (!salesOrderId) return;
+  // Fetch dropdown data (currencies, suppliers, customers, service types, addresses)
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      try {
+        setLoading(true);
+        const { headers } = getAuthHeader();
 
-  try {
+        const [
+          currenciesData,
+          suppliersData,
+          customersData,
+          serviceTypesData,
+          addressesData,
+        ] = await Promise.all([
+          axios
+            .get("http://localhost:7000/api/currencies", { headers })
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              toast.error("Failed to load currencies");
+              return [];
+            }),
+          axios
+            .get("http://localhost:7000/api/suppliers", { headers })
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              toast.error("Failed to load suppliers", err);
+              return [];
+            }),
+          axios
+            .get("http://localhost:7000/api/customers", { headers })
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              toast.error("Failed to load customers");
+              return [];
+            }),
+          axios
+            .get("http://localhost:7000/api/service-types", { headers })
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              toast.error("Failed to load service types");
+              return [];
+            }),
+          axios
+            .get("http://localhost:7000/api/addresses", { headers })
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              toast.error("Failed to load addresses");
+              return [];
+            }),
+        ]);
+
+        const currenciesOptions = [
+          { value: "", label: "Select a Currency" },
+          ...currenciesData.map((currency) => ({
+            value: String(currency.CurrencyID),
+            label: currency.CurrencyName || "Unknown",
+          })),
+        ];
+        const suppliersOptions = [
+          { value: "", label: "Select a Supplier" },
+          ...suppliersData.map((supplier) => ({
+            value: String(supplier.SupplierID),
+            label: supplier.SupplierName || "Unknown",
+          })),
+        ];
+        const customersOptions = [
+          { value: "", label: "Select a Customer" },
+          ...customersData.map((customer) => ({
+            value: String(customer.CustomerID),
+            label: customer.CustomerName || "Unknown",
+          })),
+        ];
+        const serviceTypesOptions = [
+          { value: "", label: "Select a Service Type" },
+          ...serviceTypesData.map((type) => ({
+            value: String(type.ServiceTypeID),
+            label: type.ServiceType || type.ServiceTypeName || "Unknown",
+          })),
+        ];
+        const addressesOptions = [
+          { value: "", label: "Select an Address" },
+          ...addressesData.map((address) => ({
+            value: String(address.AddressID),
+            label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+          })),
+        ];
+
+        setCurrencies(currenciesOptions);
+        setSuppliers(suppliersOptions);
+        setCustomers(customersOptions);
+        setServiceTypes(serviceTypesOptions);
+        setAddresses(addressesOptions);
+
+        setDropdownsLoaded(true);
+      } catch (error) {
+        toast.error("Failed to load dropdown data: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDropdownData();
+  }, []);
+
+  // Handle changes to form data (used for mapping IDs to names)
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      if (name === "CurrencyID") {
+        newData.CurrencyName =
+          currencies.find((c) => c.value === value)?.label || "";
+      } else if (name === "SupplierID") {
+        newData.SupplierName =
+          suppliers.find((s) => s.value === value)?.label || "";
+      } else if (name === "CustomerID") {
+        newData.CustomerName =
+          customers.find((c) => c.value === value)?.label || "";
+      } else if (name === "ServiceTypeID") {
+        newData.ServiceType =
+          serviceTypes.find((st) => st.value === value)?.label || "";
+      } else if (name === "CollectionAddressID") {
+        newData.CollectionAddress =
+          addresses.find((a) => a.value === value)?.label || "";
+      } else if (name === "DestinationAddressID") {
+        newData.DestinationAddress =
+          addresses.find((a) => a.value === value)?.label || "";
+      }
+      return newData;
+    });
+  };
+
+  // Fetch Sales Order and Parcels
+  const fetchData = useCallback(async () => {
+    if (!salesOrderId || dataLoaded || !dropdownsLoaded) return;
+
     setLoading(true);
-    setParcelLoading(true);
     setError(null);
+    setParcelError(null);
 
-    const response = await getSalesOrderById(salesOrderId);
-    console.log("Sales Order API response:", response.data); // Debug log
-    if (response && response.data) {
-      const orderData = response.data;
-      let formattedData = {
-        ...orderData,
-        SupplierName:orderData.SupplierName||orderData.supplierName,
-        CustomerName: orderData.CustomerName || orderData.customerName || orderData.Customer?.Name || "-",
-        ExternalRefNo: orderData.ExternalRefNo || orderData.external_ref_no || "-",
-        DeliveryDate: orderData.DeliveryDate ? new Date(orderData.DeliveryDate) : null,
-        PostingDate: orderData.PostingDate ? new Date(orderData.PostingDate) : null,
-        RequiredByDate: orderData.RequiredByDate ? new Date(orderData.RequiredByDate) : null,
-        DateReceived: orderData.DateReceived ? new Date(orderData.DateReceived) : null,
-        CollectionAddress: orderData.CollectionAddress || "-",
-        DestinationAddress: orderData.DestinationAddress || "-",
-        Status: orderData.Status || "Pending",
-      };
-
-      // Fetch addresses
-      if (orderData.CollectionAddressID) {
-        try {
-          const collectionAddressResponse = await axios.get(
-            `${APIBASEURL}/addresses/${orderData.CollectionAddressID}`,
-            { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
-          );
-          console.log("Collection Address response:", collectionAddressResponse.data);
-          if (collectionAddressResponse.data && collectionAddressResponse.data.data) {
-            const addressData = collectionAddressResponse.data.data;
-            formattedData.CollectionAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`.trim() || "-";
-          }
-        } catch (error) {
-          console.error("Failed to fetch Collection Address:", error);
-          formattedData.CollectionAddress = "-";
-        }
-      }
-
-      if (orderData.DestinationAddressID) {
-        try {
-          const destinationAddressResponse = await axios.get(
-            `${APIBASEURL}/addresses/${orderData.DestinationAddressID}`,
-            { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` } }
-          );
-          console.log("Destination Address response:", destinationAddressResponse.data);
-          if (destinationAddressResponse.data && collectionAddressResponse.data.data) {
-            const addressData = destinationAddressResponse.data.data;
-            formattedData.DestinationAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`.trim() || "-";
-          }
-        } catch (error) {
-          console.error("Failed to fetch Destination Address:", error);
-          formattedData.DestinationAddress = "-";
-        }
-      }
-
-      // Fetch service type, priority, currency (unchanged from original)
-      if (orderData.ServiceTypeID) {
-        try {
-          const serviceTypesResponse = await fetchServiceTypes();
-          const serviceTypes = Array.isArray(serviceTypesResponse) ? serviceTypesResponse : serviceTypesResponse.data || [];
-          if (Array.isArray(serviceTypes)) {
-            const matchingServiceType = serviceTypes.find(
-              (s) => parseInt(s.ServiceTypeID) === parseInt(orderData.ServiceTypeID)
-            );
-            formattedData.ServiceType = matchingServiceType ? matchingServiceType.ServiceType : `Unknown Service Type (${orderData.ServiceTypeID})`;
-          } else {
-            formattedData.ServiceType = "Error: Invalid service types data";
-          }
-        } catch (error) {
-          console.error("Service type error:", error);
-          formattedData.ServiceType = "-";
-        }
-      }
-
-      if (orderData.ShippingPriorityID) {
-        try {
-          const prioritiesResponse = await fetchShippingPriorities();
-          const priorities = Array.isArray(prioritiesResponse) ? prioritiesResponse : prioritiesResponse.data || [];
-          if (Array.isArray(priorities)) {
-            const matchingPriority = priorities.find(
-              (p) => parseInt(p.ShippingPriorityID || p.MailingPriorityID) === parseInt(orderData.ShippingPriorityID)
-            );
-            formattedData.ShippingPriorityName = matchingPriority ? matchingPriority.PriorityName : `Unknown Priority (${orderData.ShippingPriorityID})`;
-          } else {
-            formattedData.ShippingPriorityName = "Error: Invalid priorities data";
-          }
-        } catch (error) {
-          console.error("Shipping priority error:", error);
-          formattedData.ShippingPriorityName = "-";
-        }
-      }
-
-      if (orderData.CurrencyID) {
-        try {
-          const currenciesResponse = await fetchCurrencies();
-          const currencies = Array.isArray(currenciesResponse) ? currenciesResponse : currenciesResponse.data || [];
-          if (Array.isArray(currencies)) {
-            const matchingCurrency = currencies.find(
-              (c) => parseInt(c.CurrencyID) === parseInt(orderData.CurrencyID)
-            );
-            formattedData.CurrencyName = matchingCurrency ? matchingCurrency.CurrencyName : "Unknown Currency";
-          }
-        } catch (error) {
-          console.error("Currency error:", error);
-          formattedData.CurrencyName = "-";
-        }
-      }
-
-      setFormData(formattedData);
-      console.log("Formatted formData:", formattedData);
-      if (orderData.parcels && Array.isArray(orderData.parcels)) {
-        setParcels(orderData.parcels);
-      }
-    }
-  } catch (error) {
-    console.error("Error loading Sales Order data:", error);
-    setError("Failed to load Sales Order data");
-    toast.error("Failed to load Sales Order data");
-  } finally {
-    setLoading(false);
-    setParcelLoading(false);
-  }
-}, [salesOrderId]);
-
-  const loadApprovalStatus = useCallback(async () => {
-    if (!salesOrderId) return;
     try {
-      const approvalData = await fetchSalesOrderApprovalStatus(salesOrderId);
-      setApprovalRecord(approvalData);
-      if (approvalData.exists) {
-        setApprovalStatus(approvalData.ApprovedYN ? "approved" : "disapproved");
+      // Fetch Sales Order
+      const response = await fetchSalesOrder(salesOrderId);
+      const order = Array.isArray(response) ? response[0] : response;
+
+      console.log("Fetched Sales Order:", order);
+
+      if (order) {
+        const newFormData = {
+          Series: order.Series || "",
+          CompanyID: order.CompanyID || DEFAULT_COMPANY.value,
+          CompanyName: DEFAULT_COMPANY.label,
+          CustomerID: String(order.CustomerID || ""),
+          CustomerName:
+            customers.find((c) => String(c.value) === String(order.CustomerID))
+              ?.label || order.Customer?.Name || "",
+          SupplierID: String(order.SupplierID || ""),
+          SupplierName:
+            suppliers.find((s) => String(s.value) === String(order.SupplierID))
+              ?.label || order.SupplierName || "",
+          ExternalRefNo: order.ExternalRefNo || "",
+          OrderDate: order.OrderDate ? new Date(order.OrderDate) : null,
+          DeliveryDate: order.DeliveryDate ? new Date(order.DeliveryDate) : null,
+          PostingDate: order.PostingDate ? new Date(order.PostingDate) : null,
+          RequiredByDate: order.RequiredByDate
+            ? new Date(order.RequiredByDate)
+            : null,
+          DateReceived: order.DateReceived ? new Date(order.DateReceived) : null,
+          ServiceTypeID: String(order.ServiceTypeID || ""),
+          ServiceType:
+            serviceTypes.find(
+              (st) => String(st.value) === String(order.ServiceTypeID)
+            )?.label || order.ServiceType || "",
+          CollectionAddressID: String(order.CollectionAddressID || ""),
+          CollectionAddress:
+            addresses.find(
+              (a) => String(a.value) === String(order.CollectionAddressID)
+            )?.label || order.CollectionAddressTitle || "",
+          DestinationAddressID: String(order.DestinationAddressID || ""),
+          DestinationAddress:
+            addresses.find(
+              (a) => String(a.value) === String(order.DestinationAddressID)
+            )?.label || order.DestinationAddressTitle || "",
+          ShippingPriorityID: String(order.ShippingPriorityID || ""),
+          ShippingPriorityName: order.ShippingPriorityID
+            ? `Priority ID: ${order.ShippingPriorityID}`
+            : "",
+          Terms: order.Terms || "",
+          CurrencyID: String(order.CurrencyID || ""),
+          CurrencyName:
+            currencies.find((c) => String(c.value) === String(order.CurrencyID))
+              ?.label || order.CurrencyName || "",
+          CollectFromCustomerYN: !!order.CollectFromSupplierYN,
+          PackagingRequiredYN: !!order.PackagingRequiredYN,
+          FormCompletedYN: !!order.SalesOrderCompletedYN,
+          SalesAmount: parseFloat(order.SalesAmount) || 0,
+          TaxAmount: parseFloat(order.TaxesAndOtherCharges) || 0,
+          Total: parseFloat(order.Total || order.TotalAmount) || 0,
+          PaymentTerms: order.PaymentTerms || "",
+          PaymentStatus: order.PaymentStatus || "Unpaid",
+          DeliveryStatus: order.DeliveryStatus || "Pending",
+          Notes: order.Notes || "",
+        };
+        setFormData(newFormData);
+        setDataLoaded(true);
       } else {
-        setApprovalStatus(null);
+        throw new Error("No Sales Order data returned");
+      }
+
+      // Fetch Sales Order Parcels
+      try {
+        const fetchedParcels = await fetchSalesOrderParcels(salesOrderId);
+        const mappedParcels = fetchedParcels.map((parcel) => ({
+          ParcelID: parcel.SalesOrderParcelID || "Unknown",
+          itemName: parcel.ItemName || "Unknown Item",
+          uomName: parcel.UOMName || parcel.UOM || "-",
+          quantity: parseFloat(parcel.ItemQuantity) || 0,
+        }));
+        setParcels(mappedParcels);
+      } catch (parcelErr) {
+        const parcelErrorMessage = parcelErr.response
+          ? `Server error: ${parcelErr.response.status} - ${
+              parcelErr.response.data?.message || parcelErr.message
+            }`
+          : `Failed to fetch parcels: ${parcelErr.message}`;
+        console.error("Parcel fetch error:", parcelErrorMessage);
+        setParcelError(parcelErrorMessage);
+        toast.error(parcelErrorMessage);
       }
     } catch (error) {
-      console.error("Failed to load approval status:", error);
-      setApprovalStatus(null);
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response?.data?.message || error.message
+          }`
+        : `Failed to fetch data: ${error.message}`;
+      console.error("Error in fetchData:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    salesOrderId,
+    dropdownsLoaded,
+    dataLoaded,
+    customers,
+    suppliers,
+    serviceTypes,
+    addresses,
+    currencies,
+  ]);
+
+  useEffect(() => {
+    if (salesOrderId && dropdownsLoaded && !dataLoaded) {
+      fetchData();
+    } else if (!salesOrderId) {
+      setError("No Sales Order ID provided");
+      setLoading(false);
+    }
+  }, [salesOrderId, dropdownsLoaded, dataLoaded, fetchData]);
+
+  // Add useEffect to log formData after it updates
+  useEffect(() => {
+    console.log("Updated formData:", formData);
+  }, [formData]);
+
+  const loadSalesOrderStatus = useCallback(async () => {
+    if (!salesOrderId) return;
+
+    try {
+      setLoading(true);
+      const status = await fetchSalesOrderStatus(salesOrderId);
+      console.log("Fetched SalesOrder status for ID:", salesOrderId, status);
+      setStatus(status);
+    } catch (error) {
+      console.error("Error loading SalesOrder status:", error);
+      toast.error(
+        "Failed to load status: " + (error.message || "Unknown error")
+      );
+      setStatus("Pending");
+    } finally {
+      setLoading(false);
     }
   }, [salesOrderId]);
 
   useEffect(() => {
-    if (salesOrderId) {
-      loadSalesOrderData();
-      loadApprovalStatus();
+    if (salesOrderId && dropdownsLoaded) {
+      loadSalesOrderStatus();
     }
-  }, [salesOrderId, loadSalesOrderData, loadApprovalStatus]);
+  }, [salesOrderId, dropdownsLoaded, loadSalesOrderStatus]);
 
-  const fetchSuppliers = async () => {
-    try {
-      setLoadingSuppliers(true);
-      const response = await axios.get(`${APIBASEURL}/suppliers`, {
-        headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.token}` },
-      });
-      if (response.data && Array.isArray(response.data.data)) {
-        setSuppliers(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching suppliers:", error);
-      toast.error("Failed to load suppliers");
-    } finally {
-      setLoadingSuppliers(false);
-    }
-  };
-
-  const handleOpenSuppliersDialog = () => {
-    fetchSuppliers();
-    setSuppliersDialogOpen(true);
-  };
-
-  const handleCloseSuppliersDialog = () => {
-    setSuppliersDialogOpen(false);
-  };
-
-  const handleSupplierToggle = (supplier) => {
-    const currentIndex = selectedSuppliers.findIndex(
-      (s) => s.SupplierID === supplier.SupplierID
-    );
-    const newSelectedSuppliers = [...selectedSuppliers];
-
-    if (currentIndex === -1) {
-      newSelectedSuppliers.push(supplier);
+  const handleCancel = () => {
+    if (onClose) {
+      onClose();
     } else {
-      newSelectedSuppliers.splice(currentIndex, 1);
-    }
-
-    setSelectedSuppliers(newSelectedSuppliers);
-  };
-
-  const handleConfirmSupplierSelection = () => {
-    toast.success(`Selected ${selectedSuppliers.length} suppliers`);
-    handleCloseSuppliersDialog();
-  };
-
-  const handleSendSalesOrder = async () => {
-    try {
-      if (selectedSuppliers.length === 0) {
-        toast.warning("Please select suppliers before sending the Sales Order");
-        handleOpenSuppliersDialog();
-        return;
-      }
-
-      setConfirmMessage(
-        `Are you sure you want to send this Sales Order to ${selectedSuppliers.length} selected suppliers? This process may take some time.`
-      );
-      setConfirmAction("send");
-      setConfirmDialogOpen(true);
-    } catch (error) {
-      console.error("Error preparing to send Sales Order:", error);
-      toast.error("Failed to prepare sending: " + error.message);
+      navigate("/sales-order");
     }
   };
 
-  const handleConfirmAction = async () => {
-    try {
-      setLoading(true);
-      if (confirmAction === "approve") {
-        await updateSalesOrderApproval(salesOrderId, true);
-        toast.success("Sales Order approved successfully");
-        setApprovalStatus("approved");
-      } else if (confirmAction === "disapprove") {
-        await updateSalesOrderApproval(salesOrderId, false);
-        toast.success("Sales Order disapproved successfully");
-        setApprovalStatus("disapproved");
-      } else if (confirmAction === "send") {
-        const user = JSON.parse(localStorage.getItem("user"));
-        const createdByID = user?.personId || 1;
-        const supplierIDs = selectedSuppliers.map((supplier) => supplier.SupplierID);
-
-        setEmailSendingStatus({
-          sending: true,
-          progress: 0,
-          totalSuppliers: supplierIDs.length,
-          completedSuppliers: 0,
-        });
-
-        const toastId = toast.info(
-          `Sending Order to ${supplierIDs.length} suppliers. This may take some time...`,
-          { autoClose: false }
-        );
-
-        const emailData = {
-          salesOrderID: parseInt(salesOrderId, 10),
-          supplierIDs: supplierIDs,
-          createdByID: createdByID,
-        };
-
-        const response = await axios.post(
-          `${APIBASEURL}/sales-order/send-order`,
-          emailData,
-          {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          }
-        );
-
-        toast.update(toastId, {
-          render: "Email sending process completed!",
-          type: "success",
-          autoClose: 5000,
-        });
-
-        let successCount = 0;
-        let failCount = 0;
-        if (response.data && response.data.success && Array.isArray(response.data.results)) {
-          response.data.results.forEach((result) => {
-            const supplier = selectedSuppliers.find((s) => s.SupplierID === result.supplierID);
-            const supplierName = supplier?.SupplierName || `Supplier ID ${result.supplierID}`;
-
-            if (result.success) {
-              successCount++;
-              console.log(`Success for ${supplierName}: Order ID ${result.supplierOrderID}`);
-            } else {
-              failCount++;
-              toast.warning(`Failed for ${supplierName}: ${result.message}`);
-            }
-          });
-
-          if (successCount > 0) {
-            toast.success(`Sent emails to ${successCount} suppliers successfully`);
-          }
-          if (failCount > 0) {
-            toast.warning(`Failed to send to ${failCount} suppliers`);
-          }
-        } else {
-          throw new Error(response.data?.message || "Invalid response from server");
-        }
-
-        setEmailSendingStatus({
-          sending: false,
-          progress: 100,
-          totalSuppliers: supplierIDs.length,
-          completedSuppliers: supplierIDs.length,
-        });
-      }
-    } catch (error) {
-      console.error("Error in handleConfirmAction:", error);
-      toast.error(`An error occurred: ${error.response?.data?.message || error.message}`);
-      setEmailSendingStatus({
-        sending: false,
-        progress: 0,
-        totalSuppliers: 0,
-        completedSuppliers: 0,
-      });
-    } finally {
-      setLoading(false);
-      setConfirmDialogOpen(false);
-    }
-  };
-
-  const handleCancelAction = () => {
-    setConfirmDialogOpen(false);
-  };
-
-  const handleStatusChange = (newStatus) => {
-    setFormData((prev) => ({
-      ...prev,
-      Status: newStatus,
-    }));
+  const handleStatusChange = async (newStatus) => {
+    console.log("Status changed to:", newStatus);
+    setStatus(newStatus);
+    await loadSalesOrderStatus();
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -471,7 +424,12 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography color="error">Error: {error}</Typography>
+        <Typography color="error" variant="h6">
+          An error occurred: {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchData} sx={{ mt: 2 }}>
+          Retry
+        </Button>
       </Box>
     );
   }
@@ -479,7 +437,7 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
   if (!formData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography>No data available for this Sales Order.</Typography>
+        <Typography variant="h6">No Sales Order data available</Typography>
       </Box>
     );
   }
@@ -495,122 +453,53 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
             width: "100%",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-            <Typography variant="h6">View Sales Order</Typography>
-            {salesOrderId && (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
-                  borderRadius: "4px",
-                  padding: "0px 10px",
-                  height: "37px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  transition: "all 0.3s ease-in-out",
-                  marginLeft: "16px",
-                  "&:hover": {
-                    boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
-                    transform: "scale(1.02)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: "700",
-                    marginRight: "8px",
-                    color: theme.palette.mode === "light" ? "white" : "black",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  Status:
-                </Typography>
-                <StatusIndicator
-                  status={formData.Status}
-                  salesOrderId={salesOrderId}
-                  onStatusChange={handleStatusChange}
-                  readOnly={formData.Status === "Approved"}
-                />
-              </Box>
-            )}
-          </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleOpenSuppliersDialog}
-              disabled={formData.Status !== "Approved"}
+          <Typography variant="h6">View Sales Order</Typography>
+          <Fade in={true} timeout={500}>
+            <Box
               sx={{
-                fontWeight: "bold",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
-                marginLeft: "24px",
+                display: "flex",
+                alignItems: "center",
+                background:
+                  theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                borderRadius: "4px",
+                paddingRight: "10px",
+                height: "37px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                transition: "all 0.3s ease-in-out",
+                marginLeft: "16px",
+                "&:hover": {
+                  boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
+                  transform: "scale(1.02)",
+                },
               }}
             >
-              Select Suppliers
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleSendSalesOrder}
-              disabled={formData.Status !== "Approved" || selectedSuppliers.length === 0}
-              sx={{
-                fontWeight: "bold",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
-                position: "relative",
-              }}
-            >
-              {emailSendingStatus.sending ? (
-                <>
-                  <CircularProgress
-                    size={24}
-                    color="inherit"
-                    sx={{ position: "absolute", left: "50%", marginLeft: "-12px" }}
-                  />
-                  <span style={{ visibility: "hidden" }}>Send</span>
-                </>
-              ) : (
-                "Send"
-              )}
-            </Button>
-          </Box>
+              <Chip
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: "700",
+                      color: theme.palette.mode === "light" ? "white" : "black",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    Status:
+                  </Typography>
+                }
+                sx={{ backgroundColor: "transparent" }}
+              />
+              <StatusIndicator
+                salesOrderId={salesOrderId}
+                onStatusChange={handleStatusChange}
+              />
+            </Box>
+          </Fade>
         </Box>
       }
-      onCancel={onClose || (() => navigate("/sales-order"))}
-      loading={loading}
-      readOnly={true}
+      onCancel={handleCancel}
+      readOnly={readOnly}
     >
-      {emailSendingStatus.sending && (
-        <Box
-          sx={{
-            width: "100%",
-            mb: 3,
-            p: 2,
-            bgcolor: "info.light",
-            borderRadius: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{ mb: 1, color: "info.dark", fontWeight: "bold" }}
-          >
-            Sending Order to suppliers... This may take some time.
-          </Typography>
-          <Box sx={{ width: "100%", display: "flex", alignItems: "center" }}>
-            <CircularProgress variant="indeterminate" size={24} sx={{ mr: 2 }} />
-            <Typography variant="body2">
-              Please wait while we process your request. Do not close this page.
-            </Typography>
-          </Box>
-        </Box>
-      )}
-
-      <Grid
+      <Grid2
         container
         spacing={1}
         sx={{
@@ -623,314 +512,119 @@ const SalesOrderForm = ({ salesOrderId: propSalesOrderId, onClose }) => {
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {salesOrderId && (
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            <ReadOnlyField label="Series" value={formData.Series} />
-          </Grid>
-        )}
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Company" value={formData.CompanyName || DEFAULT_COMPANY.label} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Service Type" value={formData.ServiceType || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Customer" value={formData.CustomerName || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Supplier" value={formData.SupplierName || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="External Ref No." value={formData.ExternalRefNo || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Series" value={formData.Series} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Company" value={formData.CompanyName} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Service Type" value={formData.ServiceType} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Customer" value={formData.CustomerName} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Supplier" onChange={handleChange} value={formData.SupplierName} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="External Ref No."
+            value={formData.ExternalRefNo}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Order Date" value={formData.OrderDate} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Required By Date"
+            value={formData.RequiredByDate}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collection Address" value={formData.CollectionAddress || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Destination Address" value={formData.DestinationAddress || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Currency" value={formData.CurrencyName || "-"} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Collection Address"
+            value={formData.CollectionAddress}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Address"
+            value={formData.DestinationAddress}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Shipping Priority"
+            value={formData.ShippingPriorityName}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Terms" value={formData.Terms} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Currency" value={formData.CurrencyName} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Payment Terms" value={formData.PaymentTerms} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Payment Status" value={formData.PaymentStatus} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Delivery Status" value={formData.DeliveryStatus} />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Taxes and Other Charges" value={formData.TaxesAndOtherCharges} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Taxes and Other Charges"
+            value={formData.TaxAmount}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Total" value={formData.Total} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
-        </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN === 1 ? "Yes" : "No"} />
-        </Grid>
-      </Grid>
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Collect From Customer"
+            value={formData.CollectFromCustomerYN}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Packaging Required"
+            value={formData.PackagingRequiredYN}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Form Completed"
+            value={formData.FormCompletedYN}
+          />
+        </Grid2>
+        <Grid2 xs={12} md={6} sx={{ width: "48%" }}>
+          <ReadOnlyField label="Notes" value={formData.Notes} />
+        </Grid2>
+      </Grid2>
 
-      {parcels.length > 0 ? (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
-          <TableContainer
-            component={Paper}
-            sx={{
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <Table>
-              <TableHead
-                sx={{
-                  backgroundColor: "#1976d2",
-                  height: "56px",
-                }}
-              >
-                <TableRow>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
-                    Sr. No.
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
-                    Item
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
-                    UOM
-                  </TableCell>
-                  <TableCell align="center" sx={{ fontWeight: "bold", color: "white", py: 2 }}>
-                    Quantity
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {parcelLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center">
-                      <CircularProgress size={24} sx={{ my: 2 }} />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  parcels.map((parcel, index) => (
-                    <TableRow
-                      key={parcel.id || index}
-                      sx={{
-                        height: "52px",
-                        "&:nth-of-type(odd)": { backgroundColor: alpha("#1976d2", 0.05) },
-                        "&:hover": {
-                          backgroundColor: alpha("#1976d2", 0.1),
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                        },
-                      }}
-                    >
-                      <TableCell align="center">{parcel.srNo || index + 1}</TableCell>
-                      <TableCell align="center">{parcel.itemName || `Item #${parcel.itemId}`}</TableCell>
-                      <TableCell align="center">{parcel.uomName || `UOM #${parcel.uomId}`}</TableCell>
-                      <TableCell align="center">{parcel.quantity}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-      ) : (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Items
-          </Typography>
-          <Paper
-            sx={{
-              p: 3,
-              textAlign: "center",
-              color: "text.secondary",
-              borderRadius: "8px",
-              backgroundColor: alpha("#f5f5f5", 0.7),
-            }}
-          >
-            No parcels found for this Sales Order.
-          </Paper>
-        </Box>
-      )}
-
-      <Dialog
-        open={suppliersDialogOpen}
-        onClose={handleCloseSuppliersDialog}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Typography variant="h5" component="div">
-            Select Suppliers
-          </Typography>
-          {selectedSuppliers.length > 0 && (
-            <Typography variant="body2" sx={{ mr: 2 }}>
-              {selectedSuppliers.length} suppliers selected
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              fullWidth
-              placeholder="Search suppliers..."
-              value={supplierSearchTerm}
-              onChange={(e) => setSupplierSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              variant="outlined"
-              size="small"
-            />
-          </Box>
-          {loadingSuppliers ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <List
-              sx={{
-                width: "100%",
-                bgcolor: "background.paper",
-                maxHeight: "400px",
-                overflow: "auto",
-                border: "1px solid #e0e0e0",
-                borderRadius: "4px",
-              }}
-            >
-              {suppliers.length > 0 ? (
-                suppliers
-                  .filter((supplier) =>
-                    supplier.SupplierName?.toLowerCase().includes(
-                      supplierSearchTerm.toLowerCase()
-                    )
-                  )
-                  .map((supplier) => {
-                    const isSelected = selectedSuppliers.some(
-                      (s) => s.SupplierID === supplier.SupplierID
-                    );
-                    return (
-                      <React.Fragment key={supplier.SupplierID}>
-                        <ListItem
-                          button
-                          onClick={() => handleSupplierToggle(supplier)}
-                          sx={{
-                            backgroundColor: isSelected ? alpha("#1976d2", 0.1) : "transparent",
-                            "&:hover": {
-                              backgroundColor: isSelected
-                                ? alpha("#1976d2", 0.2)
-                                : alpha("#1976d2", 0.05),
-                            },
-                          }}
-                        >
-                          <ListItemIcon>
-                            <Checkbox
-                              edge="start"
-                              checked={isSelected}
-                              tabIndex={-1}
-                              disableRipple
-                              color="primary"
-                            />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={supplier.SupplierName}
-                            secondary={supplier.ContactPerson || "No contact person"}
-                          />
-                        </ListItem>
-                        <Divider />
-                      </React.Fragment>
-                    );
-                  })
-              ) : (
-                <ListItem>
-                  <ListItemText primary="No suppliers found" />
-                </ListItem>
-              )}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSuppliersDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmSupplierSelection}
-            variant="contained"
-            color="primary"
-            disabled={selectedSuppliers.length === 0}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={confirmDialogOpen}
-        onClose={handleCancelAction}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Confirm Action</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {confirmMessage}
-            {confirmAction === "send" && (
-              <Typography
-                variant="body2"
-                color="warning.main"
-                sx={{ mt: 2, fontWeight: "medium" }}
-              >
-                Note: Email sending may take several minutes depending on the number of suppliers. Please do not close this page during the process.
-              </Typography>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelAction} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmAction}
-            color="primary"
-            autoFocus
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : null}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ParcelTab
+        salesOrderId={salesOrderId}
+        parcels={parcels}
+        readOnly={readOnly}
+        error={parcelError}
+      />
     </FormPage>
   );
 };
