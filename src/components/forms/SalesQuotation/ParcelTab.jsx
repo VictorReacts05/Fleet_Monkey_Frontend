@@ -2,6 +2,47 @@ import React from "react";
 import { Box, Typography, Button, TextField } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import DataTable from "../../Common/DataTable";
+import FormSelect from "../../Common/FormSelect";
+import FormInput from "../../Common/FormInput";
+import { toast } from "react-toastify";
+import axios from "axios";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import APIBASEURL from "../../../utils/apiBaseUrl";
+
+// Function to fetch items from API
+const fetchItems = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/items`);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching items:", error);
+    throw error;
+  }
+};
+
+// Function to fetch UOMs from API
+const fetchUOMs = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/uoms`);
+    if (response.data && response.data.data) {
+      return response.data.data;
+    } else if (Array.isArray(response.data)) {
+      return response.data;
+    } else {
+      console.warn("Unexpected UOM API response format:", response.data);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching UOMs:", error);
+    throw error;
+  }
+};
+
+// (Removed duplicate and incorrect ParcelTab definition)
 
 // ErrorBoundary to catch rendering errors
 class ErrorBoundary extends React.Component {

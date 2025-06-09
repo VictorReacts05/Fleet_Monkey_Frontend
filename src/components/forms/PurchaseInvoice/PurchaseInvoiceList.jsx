@@ -172,7 +172,7 @@ const PurchaseInvoiceList = () => {
   const handleView = (id) => {
     console.log("View clicked for Purchase Invoice ID:", id);
     if (id && id !== "undefined") {
-      navigate(`/purchase-invoice/view/${id}`);
+      navigate(`/piinovice/${id}`);
     } else {
       console.error("Invalid Purchase Invoice ID:", id);
       toast.error("Cannot view Purchase Invoice: Invalid ID");
