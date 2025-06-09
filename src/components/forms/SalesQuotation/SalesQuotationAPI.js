@@ -4,8 +4,22 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 const getTokenFromRedux = () => {
   try {
     const state = window.__REDUX_STATE__ || {};
-    return state.loginReducer?.token || null;
-  } catch {
+    console.log("Full Redux state:", JSON.stringify(state, null, 2));
+    const token = state.loginReducer?.loginDetails?.token || null;
+    console.log("Redux token:", token ? token.slice(0, 20) + "..." : "null");
+
+    if (!token) {
+      const localToken = localStorage.getItem("token");
+      console.log(
+        "LocalStorage token:",
+        localToken ? localToken.slice(0, 20) + "..." : "null"
+      );
+      return localToken || null;
+    }
+
+    return token;
+  } catch (error) {
+    console.error("Error accessing Redux state for token:", error);
     return null;
   }
 };
@@ -18,6 +32,7 @@ export const getAuthHeader = () => {
       localStorage.getItem("user")
     );
     console.log("Parsed user data:", user);
+
     const personId = user?.personId || user?.id || user?.userId || null;
     console.log("Extracted personId:", personId);
 
@@ -31,13 +46,22 @@ export const getAuthHeader = () => {
     const headers = {
       "Content-Type": "application/json",
     };
-    const token = user.token || getTokenFromRedux();
+
+    let token = user.token || getTokenFromRedux();
+    console.log(
+      "Token from user or Redux:",
+      token ? token.slice(0, 20) + "..." : "null"
+    );
+
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log("Using token for Authorization:", token.slice(0, 20) + "...");
+      console.log(
+        "Authorization header set with token:",
+        token.slice(0, 20) + "..."
+      );
     } else {
-      console.warn(
-        "No token found in user data or Redux, proceeding without Authorization header"
+      console.error(
+        "No token found in user data or Redux. Requests may fail with 401 Unauthorized."
       );
     }
 
@@ -48,7 +72,6 @@ export const getAuthHeader = () => {
   }
 };
 
-// Fetch a single Sales Quotation by ID
 export const fetchSalesQuotation = async (SalesQuotationID) => {
   try {
     const { headers } = getAuthHeader();
@@ -144,29 +167,31 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
   }
 };
 
-// Get Sales Quotation parcels by SalesQuotationID
-export const fetchSalesQuotationParcels = async (SalesQuotationID) => {
+export const fetchSalesQuotationParcels = async (salesQuotationId) => {
   try {
     const { headers } = getAuthHeader();
-    if (!SalesQuotationID) {
-      console.warn("No SalesQuotationID provided, returning empty parcels");
+    if (!salesQuotationId) {
+      console.warn("No salesQuotationId provided, returning empty parcels");
       return [];
     }
 
     console.log(
-      `Fetching parcels for SalesQuotationID ${SalesQuotationID} from: ${APIBASEURL}/sales-Quotation-Parcel?SalesQuotationID=${SalesQuotationID}`
+      `Fetching parcels for SalesQuotationID ${salesQuotationId} from: ${APIBASEURL}/sales-Quotation-Parcel?SalesQuotationID=${salesQuotationId}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-Quotation-Parcel/?SalesQuotationID=${SalesQuotationID}`,
+      `${APIBASEURL}/sales-Quotation-Parcel/?salesQuotationId=${salesQuotationId}`,
       { headers }
     );
     console.log("Sales Quotation Parcels API Response:", response.data);
     if (response.data && response.data.data) {
-      const parcels = response.data.data;
+      const parcels = Array.isArray(response.data.data)
+        ? response.data.data
+        : [response.data.data];
 
       let uomMap = {};
       try {
         const uomResponse = await axios.get(`${APIBASEURL}/uoms`, { headers });
+        console.log("UOMs API Raw Response:", uomResponse.data);
         if (uomResponse.data && uomResponse.data.data) {
           uomMap = uomResponse.data.data.reduce((acc, uom) => {
             const uomName =
@@ -191,46 +216,56 @@ export const fetchSalesQuotationParcels = async (SalesQuotationID) => {
         const itemResponse = await axios.get(`${APIBASEURL}/items`, {
           headers,
         });
+        console.log("Items API Raw Response:", itemResponse.data);
         if (itemResponse.data && itemResponse.data.data) {
           itemMap = itemResponse.data.data.reduce((acc, item) => {
-            acc[item.ItemID] = item.ItemName || item.Description;
-            acc[String(item.ItemID)] = item;
+            const itemName =
+              item.ItemName || item.Description || "Unknown Item";
+            acc[item.ItemID] = itemName;
+            acc[String(item.ItemID)] = itemName;
             return acc;
           }, {});
           console.log("Item Map:", itemMap);
         }
       } catch (err) {
         console.error(
-          "Could not fetch items:",
+          "Error fetching items:",
           err.response?.data || err.message
         );
       }
 
       const enhancedParcels = parcels.map((parcel) => {
         console.log("Processing parcel:", parcel);
-        if (parcel.ItemID && itemMap[parcel.ItemID]) {
-          parcel.ItemName = itemMap[parcel.ItemID];
-        }
-        if (parcel.UOMID && uomMap[parcel.UOMID]) {
-          parcel.UOMName = uomMap[parcel.UOMID];
-        }
+        parcel.ItemName =
+          parcel.ItemID && itemMap[parcel.ItemID]
+            ? itemMap[parcel.ItemID]
+            : "Unknown Item";
+        parcel.UOMName =
+          parcel.UOMID && uomMap[parcel.UOMID] ? uomMap[parcel.UOMID] : "-";
+        parcel.SupplierRate = parseFloat(parcel.SupplierRate) || 0;
+        parcel.SupplierAmount = parseFloat(parcel.SupplierAmount) || 0;
+        parcel.SalesRate = parseFloat(parcel.SalesRate) || 0;
+        parcel.SalesAmount = parseFloat(parcel.SalesAmount) || 0;
+        parcel.SupplierQuotationParcelID =
+          parcel.SupplierQuotationParcelID || null;
+        console.log("Enhanced parcel:", parcel);
         return parcel;
       });
 
+      console.log("Enhanced Parcels:", enhancedParcels);
       return enhancedParcels;
     }
     console.warn("No parcels found in response:", response.data);
     return [];
   } catch (error) {
     console.error(
-      `Error fetching parcels for SalesQuotationID ${SalesQuotationID}:`,
+      `Error fetching parcels for SalesQuotationID ${salesQuotationId}:`,
       error.response?.data || error.message
     );
     throw error.response?.data || error;
   }
 };
 
-// Fetch Purchase RFQs for dropdown, filtered by those with Supplier Quotations
 export const fetchPurchaseRFQs = async () => {
   try {
     const { headers } = getAuthHeader();
@@ -302,7 +337,6 @@ export const fetchPurchaseRFQs = async () => {
   }
 };
 
-// Create a new Sales Quotation
 export const createSalesQuotation = async (data) => {
   try {
     const { headers, personId } = getAuthHeader();
@@ -335,7 +369,76 @@ export const createSalesQuotation = async (data) => {
   }
 };
 
-// Approve a Sales Quotation
+export const updateSalesQuotation = async (SalesQuotationID, data) => {
+  try {
+    const { headers, personId } = getAuthHeader();
+    console.log(
+      `Updating Sales Quotation ID ${SalesQuotationID} with personId:`,
+      personId
+    );
+    if (!personId) {
+      throw new Error("User not logged in. Please log in again.");
+    }
+
+    const payload = {
+      ...data,
+      UpdatedByID: Number(personId),
+    };
+
+    console.log("Updating Sales Quotation with data:", payload);
+    const response = await axios.put(
+      `${APIBASEURL}/sales-Quotation/${SalesQuotationID}`,
+      payload,
+      { headers }
+    );
+    console.log("Update Sales Quotation Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error updating Sales Quotation ${SalesQuotationID}:`,
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};
+
+export const updateSalesQuotationParcels = async (parcels) => {
+  try {
+    const { headers, personId } = getAuthHeader();
+    console.log("Updating Sales Quotation Parcels with data:", parcels);
+
+    if (!personId) {
+      throw new Error("User not logged in. Please log in again.");
+    }
+
+    const responses = await Promise.all(
+      parcels.map((parcel) =>
+        axios.put(
+          `${APIBASEURL}/sales-Quotation-Parcel/${parcel.SalesQuotationParcelID}`,
+          {
+            salesQuotationParcelId: parcel.SalesQuotationParcelID,
+            salesQuotationId: Number(parcel.SalesQuotationID),
+            supplierQuotationParcelId: parcel.SupplierQuotationParcelID,
+            salesRate: parcel.SalesRate,
+            // salesAmount: parcel.SalesAmount,
+            createdById: Number(personId),
+          },
+          { headers }
+        )
+      )
+    );
+
+    console.log("Update Sales Quotation Parcels Responses:", responses);
+    return responses;
+  } catch (error) {
+    console.error(
+      "Error updating Sales Quotation Parcels:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};
+
 export const approveSalesQuotation = async (SalesQuotationID) => {
   try {
     const { headers, personId } = getAuthHeader();
@@ -365,7 +468,7 @@ export const approveSalesQuotation = async (SalesQuotationID) => {
       success: response.data.success || true,
       message: response.data.message || "Approval successful",
       data: response.data.data || {},
-      SalesQuotationID, // Fixed typo: was SalesQuotationID
+      SalesQuotationID,
     };
   } catch (error) {
     console.error("Error approving Sales Quotation:", {
@@ -377,7 +480,6 @@ export const approveSalesQuotation = async (SalesQuotationID) => {
   }
 };
 
-// Fetch approval status for a Sales Quotation
 export const fetchSalesQuotationApprovalStatus = async (SalesQuotationID) => {
   try {
     const { headers } = getAuthHeader();
@@ -403,7 +505,6 @@ export const fetchSalesQuotationApprovalStatus = async (SalesQuotationID) => {
   }
 };
 
-// Fetch global Sales Quotation status
 export const fetchSalesQuotationStatus = async (SalesQuotationID) => {
   try {
     const { headers } = getAuthHeader();
@@ -434,18 +535,17 @@ export const fetchSalesQuotationStatus = async (SalesQuotationID) => {
     }
 
     console.warn("Status field not found in response:", response.data);
-    return "Pending"; // Default to Pending
+    return "Pending";
   } catch (error) {
     console.error("Error fetching Sales Quotation status:", {
       error: error.message,
       response: error.response?.data,
       status: error.response?.status,
     });
-    return "Pending"; // Fallback to Pending
+    return "Pending";
   }
 };
 
-// Fetch user-specific approval status
 export const fetchUserApprovalStatus = async (SalesQuotationID, approverId) => {
   try {
     const { headers } = getAuthHeader();
@@ -490,6 +590,49 @@ export const fetchUserApprovalStatus = async (SalesQuotationID, approverId) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    return "Pending"; // Fallback to Pending
+    return "Pending";
+  }
+};
+
+export const fetchCustomerById = async (customerId) => {
+  try {
+    const { headers } = getAuthHeader();
+    console.log("Fetching Customer with ID:", customerId);
+    const response = await axios.get(`${APIBASEURL}/customers/${customerId}`, {
+      headers,
+    });
+    console.log("Fetched Customer:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching Customer:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+export const sendSalesQuotation = async (salesQuotationId) => {
+  try {
+    const { headers } = getAuthHeader();
+    console.log("Preparing to send Sales Quotation with ID:", salesQuotationId);
+    const payload = { salesQuotationID: parseInt(salesQuotationId) };
+    console.log("Sending payload:", payload);
+    console.log("Request headers:", headers);
+    console.log("Request URL:", `${APIBASEURL}/send-sales-quotation`);
+    const response = await axios.post(
+      `${APIBASEURL}/send-sales-quotation`,
+      payload,
+      { headers }
+    );
+    console.log("Send Sales Quotation Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending Sales Quotation:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error.response?.data || error;
   }
 };
