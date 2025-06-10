@@ -3,6 +3,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Box,
@@ -44,18 +45,37 @@ const drawerWidth = 240;
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-  { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
-  { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
-  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
-  { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
-  { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
-  { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
-  { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
-  { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
-  
-  
-  { text:"Addresses", icon: <HomeIcon />, path: "/addresses" },
-  {text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
+  { text: "Inquiry", icon: <LocalShippingIcon />, path: "/sales-rfq" },
+  {
+    text: "Quotation Request",
+    icon: <ShoppingCartIcon />,
+    path: "/purchase-rfq",
+  },
+  {
+    text: "Supplier Quotation",
+    icon: <RequestQuote />,
+    path: "/supplier-quotation",
+  },
+  { text: "Estimate", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
+  {
+    text: "Approved Estimate",
+    icon: <ShoppingBagIcon />,
+    path: "/sales-order",
+  },
+  {
+    text: "Purchase Order",
+    icon: <ShoppingCartCheckoutIcon />,
+    path: "/purchase-order",
+  },
+  {
+    text: "Invoice",
+    icon: <ReceiptIcon />,
+    path: "/purchase-invoice",
+  },
+  { text: "Bill", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
+
+  { text: "Addresses", icon: <HomeIcon />, path: "/addresses" },
+  { text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
@@ -132,51 +152,51 @@ const Sidebar = ({ open, variant, onClose }) => {
   
   // Use this as the main menu items
   const mainMenuItems = [
-    menuItems.find(item => item.text === "Dashboard"),
+    menuItems.find((item) => item.text === "Dashboard"),
     { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
     ...menuItems.filter(
-      item =>
-        item.text === "Sales RFQ" ||
-        item.text === "Purchase RFQ" ||
+      (item) =>
+        item.text === "Inquiry" ||
+        item.text === "Quotation Request" ||
         item.text === "Supplier Quotation" ||
-        item.text === "Sales Quotation" ||
-        item.text === "Sales Order" ||
+        item.text === "Estimate" ||
+        item.text === "Approved Estimate" ||
         item.text === "Purchase Order" ||
-        item.text === "Purchase Invoice" ||
-        item.text === "Sales Invoice"
-    )
+        item.text === "Invoice" ||
+        item.text === "Bill"
+    ),
   ];
 
   // Remove mainMenuItemstemp as it's no longer needed
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
-      item.text !== "Sales RFQ" &&
-      item.text !== "Purchase RFQ" &&
+      item.text !== "Inquiry" &&
+      item.text !== "Quotation Request" &&
       item.text !== "Supplier Quotation" &&
-      item.text !== "Sales Quotation" &&
-      item.text !== "Sales Order" &&
+      item.text !== "Estimate" &&
+      item.text !== "Approved Estimate" &&
       item.text !== "Purchase Order" &&
-      item.text !== "Purchase Invoice" &&
+      item.text !== "Invoice" &&
       item.text !== "Sales Invoice"
   );
 
   // Update the mainMenuItems to include Masters as second item
   // Update the mainMenuItems to keep Dashboard first
   const mainMenuItemstemp = [
-    menuItems.find(item => item.text === "Dashboard"),
+    menuItems.find((item) => item.text === "Dashboard"),
     ...menuItems.filter(
-      item =>
-        item.text === "Sales RFQ" ||
-        item.text === "Purchase RFQ" ||
+      (item) =>
+        item.text === "Inquiry" ||
+        item.text === "Quotation Request" ||
         item.text === "Supplier Quotation" ||
-        item.text === "Sales Quotation" ||
-        item.text === "Sales Order" ||
+        item.text === "Estimate" ||
+        item.text === "Approved Estimate" ||
         item.text === "Purchase Order" ||
-        item.text === "Purchase Invoice" ||
-        item.text === "Sales Invoice"
+        item.text === "Invoice" ||
+        item.text === "Bill"
     ),
-    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true }
+    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
   ];
 
   // Paginate masters items to show 5 at a time
@@ -190,42 +210,43 @@ const Sidebar = ({ open, variant, onClose }) => {
   };
 
   return (
-    <Drawer  variant={variant}
-    anchor="left"
-    open={open}
-    onClose={onClose}
-    sx={{
-      width: drawerWidth,
-      flexShrink: 0,
-      "& .MuiDrawer-paper": {
+    <Drawer
+      variant={variant}
+      anchor="left"
+      open={open}
+      onClose={onClose}
+      sx={{
         width: drawerWidth,
-        boxSizing: "border-box",
-        backgroundColor:
-          theme.palette.mode === "dark"
-            ? theme.palette.background.paper
-            : "#1976d2",
-        color:
-          theme.palette.mode === "dark" ? theme.palette.text.primary : "#fff",
-        top: variant === "temporary" ? 0 : 64,
-        height: variant === "temporary" ? "100%" : "calc(100% - 64px)",
-        borderRight:
-          theme.palette.mode === "dark"
-            ? `1px solid ${theme.palette.divider}`
-            : "none",
-      },
-    }}
-      >
+        flexShrink: 0,
+        "& .MuiDrawer-paper": {
+          width: drawerWidth,
+          boxSizing: "border-box",
+          backgroundColor:
+            theme.palette.mode === "dark"
+              ? theme.palette.background.paper
+              : "#1976d2",
+          color:
+            theme.palette.mode === "dark" ? theme.palette.text.primary : "#fff",
+          top: variant === "temporary" ? 0 : 64,
+          height: variant === "temporary" ? "100%" : "calc(100% - 64px)",
+          borderRight:
+            theme.palette.mode === "dark"
+              ? `1px solid ${theme.palette.divider}`
+              : "none",
+        },
+      }}
+    >
       <List>
         {mainMenuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={item.isDropdown ? handleMastersClick : () => handleMenuItemClick(item.path)}
-            selected={location.pathname === item.path}
-          >
-            <ListItemIcon sx={{color:"#fff"}}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-            {item.isDropdown && <ArrowDropDownIcon />}
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              onClick={item.isDropdown ? handleMastersClick : () => handleMenuItemClick(item.path)}
+              selected={location.pathname === item.path}
+            >
+              <ListItemIcon sx={{color:"#fff"}}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+              {item.isDropdown && <ArrowDropDownIcon />}
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

@@ -1,23 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
   Typography,
   Fade,
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  alpha,
-  Chip
+  CircularProgress,
+  Button,
+  Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
 import FormPage from "../../Common/FormPage";
 import StatusIndicator from "./StatusIndicator";
+import PurchaseOrderParcelsTab from "./PurchaseOrderParcelsTab";
+import { toast } from "react-toastify";
+import {
+  fetchPurchaseOrder,
+  fetchPurchaseOrderParcels,
+} from "./PurchaseOrderAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -28,6 +28,8 @@ const ReadOnlyField = ({ label, value }) => {
     displayValue = value ? "Yes" : "No";
   } else if (typeof value === "number") {
     displayValue = value.toFixed(2);
+  } else if (value === null || value === undefined) {
+    displayValue = "-";
   }
 
   return (
@@ -36,108 +38,184 @@ const ReadOnlyField = ({ label, value }) => {
         {label}
       </Typography>
       <Typography variant="body1" sx={{ mt: 0.5 }}>
-        {displayValue || "-"}
+        {displayValue}
       </Typography>
     </Box>
   );
 };
 
-const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, readOnly = true }) => {
+const PurchaseOrderForm = ({
+  purchaseOrderId: propPurchaseOrderId,
+  onClose,
+  readOnly = true,
+}) => {
   const { id } = useParams();
   const theme = useTheme();
   const navigate = useNavigate();
   const purchaseOrderId = propPurchaseOrderId || id;
-  const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
-  // Static form data
-  const [formData, setFormData] = useState({
-    Series: "PO2025-001",
-    CompanyID: DEFAULT_COMPANY.value,
-    CompanyName: DEFAULT_COMPANY.label,
-    SupplierID: "SUP001",
-    SupplierName: "ABC Suppliers Inc",
-    CustomerID: "CUST001",
-    CustomerName: "John Smith",
-    ExternalRefNo: "EXT-REF-12345",
-    DeliveryDate: new Date("2025-06-15"),
-    PostingDate: new Date("2025-06-10"),
-    RequiredByDate: new Date("2025-06-20"),
-    DateReceived: new Date("2025-06-05"),
-    ServiceTypeID: "ST001",
-    ServiceType: "International Shipping",
-    CollectionAddressID: "ADDR001",
-    CollectionAddress: "123 Main St, Springfield, IL 62701",
-    DestinationAddressID: "ADDR002",
-    DestinationAddress: "456 Market St, Chicago, IL 60601",
-    ShippingPriorityID: "SP001",
-    ShippingPriorityName: "Express",
-    Terms: "Net 30 days",
-    CurrencyID: "CUR001",
-    CurrencyName: "USD",
-    CollectFromSupplierYN: true,
-    PackagingRequiredYN: true,
-    FormCompletedYN: true,
-    SalesAmount: 12500.0,
-    TaxesAndOtherCharges: 1250.0,
-    Total: 13750.0,
-  });
+  const [formData, setFormData] = useState(null);
+  const [parcels, setParcels] = useState([]);
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Static status
-  const [status, setStatus] = useState("Approved");
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const po = await fetchPurchaseOrder(purchaseOrderId);
+      if (po) {
+        const formData = {
+          Series: po.Series || "-",
+          CompanyID: po.CompanyID || "-",
+          CompanyName: po.CompanyName || "-",
+          SupplierID: po.SupplierID || "-",
+          SupplierName: po.SupplierName || "-",
+          CustomerID: po.CustomerID || "-",
+          CustomerName: po.CustomerName || "-",
+          ExternalRefNo: po.ExternalRefNo || "-",
+          DeliveryDate: po.DeliveryDate ? new Date(po.DeliveryDate) : null,
+          PostingDate: po.PostingDate ? new Date(po.PostingDate) : null,
+          RequiredByDate: po.RequiredByDate
+            ? new Date(po.RequiredByDate)
+            : null,
+          DateReceived: po.DateReceived ? new Date(po.DateReceived) : null,
+          ServiceTypeID: po.ServiceTypeID || "-",
+          ServiceType: po.ServiceTypeName || "-",
+          CollectionAddressID: po.CollectionAddressID || "-",
+          CollectionAddress: po.CollectionAddressTitle || "-",
+          DestinationAddressID: po.DestinationAddressID || "-",
+          DestinationAddress: po.DestinationAddressTitle || "-",
+          ShippingPriorityID: po.ShippingPriorityID || "-",
+          ShippingPriorityName: po.ShippingPriorityID
+            ? `Priority ID: ${po.ShippingPriorityID}`
+            : "-",
+          Terms: po.Terms || "-",
+          CurrencyID: po.CurrencyID || "-",
+          CurrencyName: po.CurrencyName || "-",
+          CollectFromSupplierYN: !!po.CollectFromSupplierYN,
+          PackagingRequiredYN: !!po.PackagingRequiredYN,
+          FormCompletedYN: !!po.FormCompletedYN,
+          SalesAmount: parseFloat(po.SalesAmount) || 0,
+          TaxesAndOtherCharges: parseFloat(po.TaxesAndOtherCharges) || 0,
+          Total: parseFloat(po.Total) || 0,
+        };
+        console.log("Form Data:", {
+          CurrencyID: formData.CurrencyID,
+          CurrencyName: formData.CurrencyName,
+          SupplierID: formData.SupplierID,
+          SupplierName: formData.SupplierName,
+          ServiceType: formData.ServiceType,
+          CompanyName: formData.CompanyName,
+          CustomerName: formData.CustomerName,
+          CollectionAddress: formData.CollectionAddress,
+          DestinationAddress: formData.DestinationAddress,
+        });
+        setFormData(formData);
 
-  // Add status change handler
+        try {
+          const fetchedParcels = await fetchPurchaseOrderParcels(
+            purchaseOrderId
+          );
+          const mappedParcels = fetchedParcels.map((parcel, index) => ({
+            id: parcel.PurchaseOrderParcelID || `Parcel-${index + 1}`,
+            itemName: parcel.ItemName || "Unknown Item",
+            uomName: parcel.UOMName || "-",
+            quantity: String(parseFloat(parcel.ItemQuantity) || 0),
+            rate: String(parseFloat(parcel.Rate) || 0),
+            amount: String(parseFloat(parcel.Amount) || 0),
+            itemId: String(parcel.ItemID || ""),
+            uomId: String(parcel.UOMID || ""),
+            PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
+            POID: purchaseOrderId,
+          }));
+          setParcels(mappedParcels);
+        } catch (parcelErr) {
+          const parcelErrorMessage = parcelErr.response
+            ? `Server error: ${parcelErr.response.status} - ${
+                parcelErr.response.data?.message || parcelErr.message
+              }`
+            : `Failed to fetch parcels: ${parcelErr.message}`;
+          console.error("Parcel fetch error:", parcelErrorMessage);
+          toast.error(parcelErrorMessage);
+        }
+      } else {
+        throw new Error("No Purchase Order data returned");
+      }
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        : `Failed to fetch data: ${error.message}`;
+      console.error("Error in fetchData:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPurchaseOrderStatus = useCallback(async () => {
+    setStatus("Pending");
+  }, [purchaseOrderId]);
+
+  useEffect(() => {
+    if (purchaseOrderId) {
+      fetchData();
+      loadPurchaseOrderStatus();
+    } else {
+      setError("No Purchase Order ID provided");
+      setLoading(false);
+    }
+  }, [purchaseOrderId, loadPurchaseOrderStatus]);
+
+  const handleParcelsChange = (updatedParcels) => {
+    setParcels(updatedParcels);
+  };
+
+  const handleCancel = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate("/Purchase-Order");
+    }
+  };
+
   const handleStatusChange = (newStatus) => {
     console.log("Status changed to:", newStatus);
     setStatus(newStatus);
   };
 
-  // Static items data
-  const [items] = useState([
-    {
-      id: 1,
-      srNo: 1,
-      itemId: 101,
-      itemName: "Electronics Package",
-      uomId: 1,
-      uomName: "Box",
-      quantity: 5,
-      rate: 1500,
-      amount: 7500
-    },
-    {
-      id: 2,
-      srNo: 2,
-      itemId: 102,
-      itemName: "Office Supplies",
-      uomId: 2,
-      uomName: "Carton",
-      quantity: 3,
-      rate: 1000,
-      amount: 3000
-    },
-    {
-      id: 3,
-      srNo: 3,
-      itemId: 103,
-      itemName: "Medical Equipment",
-      uomId: 3,
-      uomName: "Pallet",
-      quantity: 1,
-      rate: 2000,
-      amount: 2000
-    },
-  ]);
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  // Handle cancel button click
-  const handleCancel = () => {
-    if (onClose) {
-      // If onClose prop is provided, call it (for dialog mode)
-      onClose();
-    } else {
-      // Otherwise navigate back to the list page
-      navigate('/purchase-order');
-    }
-  };
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error" variant="h6">
+          An error occurred: {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchData} sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6">No Purchase Order data available</Typography>
+      </Box>
+    );
+  }
 
   return (
     <FormPage
@@ -150,17 +228,16 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
             width: "100%",
           }}
         >
-          <Typography variant="h6">
-            View Purchase Order
-          </Typography>
+          <Typography variant="h6">View Purchase Order</Typography>
           <Fade in={true} timeout={500}>
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                background:
+                  theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                 borderRadius: "4px",
-                paddingRight:"10px",
+                paddingRight: "10px",
                 height: "37px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 transition: "all 0.3s ease-in-out",
@@ -171,8 +248,8 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
                 },
               }}
             >
-                <Chip
-                label={ 
+              <Chip
+                label={
                   <Typography
                     variant="body2"
                     sx={{
@@ -186,11 +263,10 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
                 }
                 sx={{ backgroundColor: "transparent" }}
               />
-              <StatusIndicator 
-                status={status} 
-                purchaseOrderId={purchaseOrderId} 
+              <StatusIndicator
+                purchaseOrderId={purchaseOrderId}
                 onStatusChange={handleStatusChange}
-                readOnly={readOnly}
+                readOnly={false}
               />
             </Box>
           </Fade>
@@ -222,13 +298,13 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Customer" value={formData.CustomerName} />
+          <ReadOnlyField label="Customers" value={formData.CustomerName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Supplier" value={formData.SupplierName} />
+          <ReadOnlyField label="Suppliers" value={formData.SupplierName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="External Ref No" value={formData.ExternalRefNo} />
+          <ReadOnlyField label="External Ref" value={formData.ExternalRefNo} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
@@ -237,132 +313,75 @@ const PurchaseOrderForm = ({ purchaseOrderId: propPurchaseOrderId, onClose, read
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
+          <ReadOnlyField
+            label="Required By Date"
+            value={formData.RequiredByDate}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
         <Grid item xs={12} md={6} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
+          <ReadOnlyField
+            label="Collection Address"
+            value={formData.CollectionAddress}
+          />
         </Grid>
         <Grid item xs={12} md={6} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
+          <ReadOnlyField
+            label="Destination Address"
+            value={formData.DestinationAddress}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName} />
+          <ReadOnlyField
+            label="Shipment Priority"
+            value={formData.ShippingPriorityName}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Currency" value={formData.CurrencyName} />
+          <ReadOnlyField label="Currencies" value={formData.CurrencyName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
+          <ReadOnlyField label="Sales Amounts" value={formData.SalesAmount} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Taxes and Other Charges" value={formData.TaxesAndOtherCharges} />
+          <ReadOnlyField
+            label="Taxes/Other Charges"
+            value={formData.TaxesAndOtherCharges}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Total" value={formData.Total} />
+          <ReadOnlyField label="Totals" value={formData.Total} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
+          <ReadOnlyField
+            label="Collect From Supplier"
+            value={formData.CollectFromSupplierYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
+          <ReadOnlyField
+            label="Packaging Required"
+            value={formData.PackagingRequiredYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN} />
+          <ReadOnlyField
+            label="Form Completed"
+            value={formData.FormCompletedYN}
+          />
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Items
-        </Typography>
-        <TableContainer
-          component={Paper}
-          sx={{
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <Table>
-            <TableHead
-              sx={{
-                backgroundColor: "#1976d2",
-                height: "56px",
-              }}
-            >
-              <TableRow>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Sr. No.
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Item
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  UOM
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Quantity
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Rate
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Amount
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  sx={{
-                    height: "52px",
-                    "&:nth-of-type(odd)": {
-                      backgroundColor: alpha("#1976d2", 0.05),
-                    },
-                    "&:hover": {
-                      backgroundColor: alpha("#1976d2", 0.1),
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                    },
-                  }}
-                >
-                  <TableCell align="center">{item.srNo}</TableCell>
-                  <TableCell align="center">{item.itemName}</TableCell>
-                  <TableCell align="center">{item.uomName}</TableCell>
-                  <TableCell align="center">{item.quantity}</TableCell>
-                  <TableCell align="center">{item.rate.toFixed(2)}</TableCell>
-                  <TableCell align="center">{item.amount.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+      <PurchaseOrderParcelsTab
+        purchaseOrderId={purchaseOrderId}
+        onParcelsChange={handleParcelsChange}
+        readOnly={readOnly}
+      />
     </FormPage>
   );
 };

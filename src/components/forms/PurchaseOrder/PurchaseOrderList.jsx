@@ -19,14 +19,6 @@ import PurchaseOrderForm from "./PurchaseOrderForm";
 import { Chip } from "@mui/material";
 import { fetchPurchaseOrders, deletePurchaseOrder } from "./PurchaseOrderAPI";
 
-const getHeaders = () => {
-  return {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-};
-
 const PurchaseOrderList = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,15 +60,21 @@ const PurchaseOrderList = () => {
       headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
+
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
+    },
+    {
+      field: "POID",
+      headerName: "ID",
+      width: 100,
+      valueGetter: (params) => params.row.POID || "No ID",
     },
   ];
 
@@ -88,7 +86,14 @@ const PurchaseOrderList = () => {
       setLoading(true);
       try {
         const response = await fetchPurchaseOrders(page + 1, rowsPerPage);
-        setPurchaseOrders(response.data || []);
+        console.log("Fetched Purchase Orders:", response.data);
+        // Map data to include id field for DataTable
+        const mappedData = (response.data || []).map((order) => ({
+          ...order,
+          id: order.POID,
+        }));
+        console.log("Mapped Purchase Orders:", mappedData);
+        setPurchaseOrders(mappedData);
         setTotalRows(response.total || 0);
       } catch (error) {
         console.error("Error fetching purchase orders:", error);
@@ -111,6 +116,7 @@ const PurchaseOrderList = () => {
   };
 
   const handleView = (id) => {
+    console.log("handleView called with ID:", id);
     if (id && id !== "undefined") {
       navigate(`/purchase-order/view/${id}`);
     } else {
@@ -120,8 +126,14 @@ const PurchaseOrderList = () => {
   };
 
   const handleDeleteClick = (id) => {
-    setSelectedOrder(id);
-    setDeleteDialogOpen(true);
+    console.log("handleDeleteClick called with ID:", id);
+    if (id && id !== "undefined") {
+      setSelectedOrder(id);
+      setDeleteDialogOpen(true);
+    } else {
+      console.error("Invalid Purchase Order ID for deletion:", id);
+      toast.error("Cannot delete Purchase Order: Invalid ID");
+    }
   };
 
   const handleDialogClose = () => {
@@ -134,7 +146,9 @@ const PurchaseOrderList = () => {
     try {
       setLoading(true);
       await deletePurchaseOrder(selectedOrder);
-      setPurchaseOrders(purchaseOrders.filter(order => order.id !== selectedOrder));
+      setPurchaseOrders(
+        purchaseOrders.filter((order) => order.POID !== selectedOrder)
+      );
       toast.success("Purchase Order deleted successfully");
       setDeleteDialogOpen(false);
     } catch (error) {
@@ -150,9 +164,9 @@ const PurchaseOrderList = () => {
     setPage(0);
   };
 
-  const handleAdd = () => {
+  /* const handleAdd = () => {
     navigate("/purchase-order/add");
-  };
+  }; */
 
   return (
     <Box>
@@ -170,22 +184,22 @@ const PurchaseOrderList = () => {
             onSearch={handleSearch}
             placeholder="Search Purchase Orders..."
           />
+          {/* <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleAdd}
+            sx={{ height: "40px" }}
+          >
+            Add
+          </Button> */}
         </Stack>
       </Box>
 
       <DataTable
         rows={filteredPurchaseOrders}
-        columns={[
-          ...columns,
-          {
-            field: "id",
-            headerName: "ID",
-            width: 100,
-            valueGetter: (params) => params.row.id || "No ID",
-          },
-        ]}
+        columns={columns}
         loading={loading}
-        getRowId={(row) => row.id || "unknown"}
+        getRowId={(row) => row.POID || "unknown"}
         page={page}
         rowsPerPage={rowsPerPage}
         totalRows={totalRows}

@@ -18,7 +18,7 @@ import SearchBar from "../../Common/SearchBar";
 import FormSelect from "../../Common/FormSelect";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import { Add } from "@mui/icons-material";
+import { Add, Edit } from "@mui/icons-material";
 import { showToast } from "../../toastNotification";
 import axios from "axios";
 import SalesQuotationForm from "./SalesQuotationForm";
@@ -27,7 +27,7 @@ import {
   fetchPurchaseRFQs,
   createSalesQuotation,
   getAuthHeader,
-} from "./SalesQuotationAPI"; // Import getAuthHeader
+} from "./SalesQuotationAPI";
 
 const SalesQuotationList = () => {
   const [salesQuotations, setSalesQuotations] = useState([]);
@@ -45,6 +45,8 @@ const SalesQuotationList = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
+
+  const navigate = useNavigate();
 
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
@@ -67,11 +69,20 @@ const SalesQuotationList = () => {
         return <Chip label={status} color={color} size="small" />;
       },
     },
+    /* {
+      field: "actions",
+      headerName: "Actions",
+      width: 100,
+      renderCell: (params) => (
+        <Tooltip title="Edit">
+          <IconButton onClick={() => handleEdit(params.row.id)} size="small">
+            <Edit />
+          </IconButton>
+        </Tooltip>
+      ),
+    }, */
   ];
 
-  const navigate = useNavigate();
-
-  // Check authentication and load personId
   const checkAuthAndLoadPersonId = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
@@ -79,7 +90,7 @@ const SalesQuotationList = () => {
       if (!user || !user.personId) {
         console.warn("Invalid user data, redirecting to home");
         toast.error("Please log in to continue");
-        navigate("/"); // Redirect to root
+        navigate("/");
         return;
       }
       const personId = user.personId || user.id || user.userId || null;
@@ -98,7 +109,6 @@ const SalesQuotationList = () => {
     }
   };
 
-  // Fetch Sales Quotations
   const fetchSalesQuotations = async () => {
     let isMounted = true;
     try {
@@ -134,7 +144,7 @@ const SalesQuotationList = () => {
       if (isMounted) {
         setSalesQuotations(mappedData);
         setTotalRows(response.data.total || mappedData.length);
-        setError(null); // Clear error on success
+        setError(null);
       }
     } catch (error) {
       const errorMessage = error.response
@@ -162,7 +172,6 @@ const SalesQuotationList = () => {
     };
   };
 
-  // Fetch Purchase RFQs for dropdown
   const loadPurchaseRFQs = async () => {
     try {
       const rfqs = await fetchPurchaseRFQs();
@@ -209,6 +218,16 @@ const SalesQuotationList = () => {
     } else {
       console.error("Invalid Sales Quotation ID:", id);
       toast.error("Cannot view Sales Quotation: Invalid ID");
+    }
+  };
+
+  const handleEdit = (id) => {
+    console.log("Edit clicked for Sales Quotation ID:", id);
+    if (id && id !== "undefined") {
+      navigate(`/sales-quotation/edit/${id}`);
+    } else {
+      console.error("Invalid Sales Quotation ID:", id);
+      toast.error("Cannot edit Sales Quotation: Invalid ID");
     }
   };
 
@@ -389,11 +408,11 @@ const SalesQuotationList = () => {
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleRowsPerPageChange}
           onView={handleView}
+          onEdit={handleEdit}
           onDelete={handleDeleteClick}
         />
       )}
 
-      {/* View Dialog */}
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
@@ -417,7 +436,6 @@ const SalesQuotationList = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -439,7 +457,6 @@ const SalesQuotationList = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Create Sales Quotation Dialog */}
       <Dialog
         open={createDialogOpen}
         onClose={handleDialogClose}
@@ -485,7 +502,6 @@ const SalesQuotationList = () => {
   );
 };
 
-// Error boundary component
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
 
