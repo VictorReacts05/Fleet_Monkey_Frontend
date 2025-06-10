@@ -9,6 +9,7 @@ import {
 } from "./AddressTypeAPI";
 import { toast } from "react-toastify";
 import { showToast } from "../../toastNotification";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
   const [formData, setFormData] = useState({
@@ -123,7 +124,6 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
             await createAddressType(payload);
           }
         } else {
-          const APIBASEURL = "http://localhost:7000/api";
           const headers = {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

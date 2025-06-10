@@ -15,6 +15,7 @@ import {
   fetchPurchaseRFQApprovalStatus,
 } from "./PurchaseRFQAPI";
 
+import APIBASEURL from "../../../utils/apiBaseUrl";
 const StatusIndicator = ({
   status,
   purchaseRFQId,
@@ -120,7 +121,7 @@ const StatusIndicator = ({
       const user = getCurrentUser();
       const headers = { Authorization: `Bearer ${user.personId}` };
       const rfqResponse = await fetch(
-        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
+        `${APIBASEURL}/purchase-rfq/${purchaseRFQId}`,
         { headers }
       );
       const rfqData = await rfqResponse.json();

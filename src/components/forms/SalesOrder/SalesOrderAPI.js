@@ -59,7 +59,7 @@ export const fetchSalesOrder = async (SalesOrderID) => {
       try {
         console.log("Fetching addresses from: http://localhost:7000/api/addresses");
         const addressResponse = await axios.get(
-          "http://localhost:7000/api/addresses",
+          `${APIBASEURL}/addresses`,
           { headers }
         );
         console.log("Address API Raw Response:", addressResponse.data);
@@ -80,7 +80,7 @@ export const fetchSalesOrder = async (SalesOrderID) => {
       try {
         console.log("Fetching currencies from: http://localhost:7000/api/currencies");
         const currencyResponse = await axios.get(
-          "http://localhost:7000/api/currencies",
+          `${APIBASEURL}/currencies`,
           { headers }
         );
         console.log("Currency API Raw Response:", currencyResponse.data);
@@ -101,7 +101,7 @@ export const fetchSalesOrder = async (SalesOrderID) => {
       try {
         console.log("Fetching service types from: http://localhost:7000/api/service-types");
         const serviceTypeResponse = await axios.get(
-          "http://localhost:7000/api/service-types",
+          `${APIBASEURL}/service-types`,
           { headers }
         );
         console.log("Service Type API Raw Response:", serviceTypeResponse.data);
@@ -122,7 +122,7 @@ export const fetchSalesOrder = async (SalesOrderID) => {
       try {
         console.log("Fetching shipping priorities from: http://localhost:7000/api/shipping-priorities");
         const shippingPriorityResponse = await axios.get(
-          "http://localhost:7000/api/shipping-priorities",
+          `${APIBASEURL}/shipping-priorities`,
           { headers }
         );
         console.log("Shipping Priority API Raw Response:", shippingPriorityResponse.data);

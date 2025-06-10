@@ -116,7 +116,7 @@ const SalesQuotationList = () => {
       const { headers } = getAuthHeader();
       console.log("Fetching Sales Quotations with headers:", headers);
       const response = await axios.get(
-        `http://localhost:7000/api/sales-Quotation?page=${
+        `${APIBASEURL}/sales-Quotation?page=${
           page + 1
         }&limit=${rowsPerPage}`,
         { headers }
@@ -255,7 +255,7 @@ const SalesQuotationList = () => {
       setLoading(true);
       const { headers } = getAuthHeader();
       await axios.delete(
-        `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
+        `${APIBASEURL}/sales-quotation/${selectedQuotation}`,
         { headers }
       );
       showToast("Sales Quotation deleted successfully", "success");

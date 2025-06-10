@@ -19,6 +19,7 @@ import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 import { Chip } from "@mui/material";
 import { fetchPurchaseInvoices, deletePurchaseInvoice } from "./PurchaseInvoiceAPI";
 import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -46,7 +47,7 @@ const PurchaseInvoiceList = () => {
     const fetchSuppliers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:7000/api/suppliers",
+          `${APIBASEURL}/suppliers`,
           getHeaders()
         );
         const suppliersData = response.data.data || [];

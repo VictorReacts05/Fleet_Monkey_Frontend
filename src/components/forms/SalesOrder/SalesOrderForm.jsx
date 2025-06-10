@@ -123,35 +123,35 @@ const SalesOrderForm = ({
           addressesData,
         ] = await Promise.all([
           axios
-            .get("http://localhost:7000/api/currencies", { headers })
+            .get(`${APIBASEURL}/currencies`, { headers })
             .then((res) => res.data.data || [])
             .catch((err) => {
               toast.error("Failed to load currencies");
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/suppliers", { headers })
+            .get(`${APIBASEURL}/suppliers`, { headers })
             .then((res) => res.data.data || [])
             .catch((err) => {
               toast.error("Failed to load suppliers", err);
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/customers", { headers })
+            .get(`${APIBASEURL}/customers`, { headers })
             .then((res) => res.data.data || [])
             .catch((err) => {
               toast.error("Failed to load customers");
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/service-types", { headers })
+            .get(`${APIBASEURL}/service-types`, { headers })
             .then((res) => res.data.data || [])
             .catch((err) => {
               toast.error("Failed to load service types");
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/addresses", { headers })
+            .get(`${APIBASEURL}/addresses`, { headers })
             .then((res) => res.data.data || [])
             .catch((err) => {
               toast.error("Failed to load addresses");

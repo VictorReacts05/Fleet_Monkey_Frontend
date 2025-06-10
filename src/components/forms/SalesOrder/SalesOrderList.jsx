@@ -118,7 +118,7 @@ const SalesOrderList = () => {
       console.log("Fetching Sales Orders with headers:", headers);
       
       const response = await axios.get(
-        `http://localhost:7000/api/sales-order?page=${page + 1}&limit=${rowsPerPage}`,
+        `${APIBASEURL}/sales-order?page=${page + 1}&limit=${rowsPerPage}`,
         { headers }
       );
       
@@ -231,7 +231,7 @@ const SalesOrderList = () => {
       setLoading(true);
       const { headers } = getAuthHeader();
       await axios.delete(
-        `http://localhost:7000/api/sales-order/${selectedOrder}`,
+        `${APIBASEURL}/sales-order/${selectedOrder}`,
         { headers }
       );
       showToast("Sales Order deleted successfully", "success");

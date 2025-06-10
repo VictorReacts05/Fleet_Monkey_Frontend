@@ -94,7 +94,7 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
           "Fetching addresses from: http://localhost:7000/api/addresses"
         );
         const addressResponse = await axios.get(
-          "http://localhost:7000/api/addresses",
+          `${APIBASEURL}/addresses`,
           { headers }
         );
         console.log("Address API Raw Response:", addressResponse.data);
@@ -120,7 +120,7 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
           "Fetching currencies from: http://localhost:7000/api/currencies"
         );
         const currencyResponse = await axios.get(
-          "http://localhost:7000/api/currencies",
+          `${APIBASEURL}/currencies`,
           { headers }
         );
         console.log("Currency API Raw Response:", currencyResponse.data);
