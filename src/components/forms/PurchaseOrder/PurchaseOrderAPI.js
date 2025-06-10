@@ -349,10 +349,10 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
     }
 
     console.log(
-      `Fetching parcels for PO ${purchaseOrderId} from: ${APIBASEURL}/PO-Parcels?POID=${purchaseOrderId}`
+      `Fetching parcels for PO ${purchaseOrderId} from: ${APIBASEURL}/PO-Parcel?POID=${purchaseOrderId}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/PO-Parcels?POID=${purchaseOrderId}`,
+      `${APIBASEURL}/PO-Parcel?POID=${purchaseOrderId}`,
       { headers }
     );
     console.log("PO Parcels API Response:", response.data);
@@ -440,6 +440,63 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
       error.response?.status
     );
     throw error.response?.data || error;
+  }
+};
+
+
+
+
+export const fetchPurchaseOrderApprovalStatus = async (purchaseOrderId) => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.personId) {
+      throw new Error("No valid personId found in localStorage");
+    }
+    const headers = getAuthHeader().headers;
+    const response = await axios.get(
+      `${APIBASEURL}/purchase-order-approvals/${purchaseOrderId}/${user.personId}`,
+      { headers }
+    );
+    console.log(
+      `Approval status response for Purchase Order ${purchaseOrderId}:`,
+      response.data
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Purchase Order approval status:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+export const approvePurchaseOrder = async (purchaseOrderId, isApproved = true) => {
+  try {
+    const headers = getAuthHeader().headers;
+    const endpoint = isApproved
+      ? `${APIBASEURL}/pO/approve`
+      : `${APIBASEURL}/purchase-order/disapprove`;
+
+    const response = await axios.post(
+      endpoint,
+      { purchaseOrderId: parseInt(purchaseOrderId, 10) },
+      { headers }
+    );
+
+    console.log(
+      `Approval/disapproval response for Purchase Order ${purchaseOrderId}:`,
+      response.data
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error approving/disapproving Purchase Order:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error;
   }
 };
 

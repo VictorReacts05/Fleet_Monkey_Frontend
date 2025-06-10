@@ -1,4 +1,3 @@
-
 import { 
   Box, 
   Typography, 
@@ -7,7 +6,6 @@ import {
   MenuItem, 
   CircularProgress, 
   useTheme, 
-  
 } from "@mui/material"; 
 import { CheckCircle, Cancel } from "@mui/icons-material"; 
 import axios from "axios"; 
@@ -15,15 +13,15 @@ import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
-const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) => { 
+const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly,approverID }) => { 
   const theme = useTheme(); 
   const [anchorEl, setAnchorEl] = useState(null); 
   const [loading, setLoading] = useState(false); 
   const [approvalRecord, setApprovalRecord] = useState(null); 
-  const [localStatus, setLocalStatus] = useState(status || "Unknown"); // Local status state
+  const [localStatus, setLocalStatus] = useState(status || "Unknown");
 
   useEffect(() => { 
-    setLocalStatus(status || "Unknown"); // Sync with prop
+    setLocalStatus(status || "Unknown");
     if (purchaseOrderId) { 
       fetchApprovalRecord(); 
     } 
@@ -51,9 +49,9 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
         ? { Authorization: `Bearer ${user.token}` } 
         : {}; 
 
-      const approverID = 2; 
+      
       const response = await axios.get( 
-        `${APIBASEURL}/purchase-order-approvals?purchaseOrderId=${purchaseOrderId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/po-Approval/${purchaseOrderId}/${approverID}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 
@@ -106,12 +104,10 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
         ? { Authorization: `Bearer ${user.token}` } 
         : {}; 
 
-      // Use different endpoints for approve and disapprove
-      const endpoint = newStatus === "Approved" 
-        ? `${APIBASEURL}/purchase-order/approve/` 
-        : `${APIBASEURL}/purchase-order/disapprove/`; 
+      const endpoint = 
+         `${APIBASEURL}/po/approve` 
       const approveData = { 
-        purchaseOrderId: parseInt(purchaseOrderId, 10), 
+        POID: parseInt(purchaseOrderId, 10), 
       }; 
 
       console.log(`Sending ${newStatus} request with data:`, approveData); 
@@ -124,7 +120,11 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
 
       console.log(`Purchase Order ${newStatus} response:`, statusResponse.data); 
 
-      setLocalStatus(newStatus); // Update local status
+      if (!statusResponse.data.success) {
+        throw new Error(statusResponse.data.message || `Failed to ${newStatus.toLowerCase()} Purchase Order`);
+      }
+
+      setLocalStatus(newStatus);
       if (onStatusChange) { 
         onStatusChange(newStatus); 
       } 
@@ -148,7 +148,7 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
   }; 
 
   const handleClick = (event) => { 
-    console.log("Chip clicked, readOnly:", readOnly); // Debug log
+    console.log("Chip clicked, readOnly:", readOnly);
     if (!readOnly) { 
       setAnchorEl(event.currentTarget); 
     } 
@@ -159,12 +159,12 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
   }; 
 
   const handleApprove = () => { 
-    console.log("Approve clicked"); // Debug log
+    console.log("Approve clicked");
     updateStatus("Approved"); 
   }; 
 
   const handleDisapprove = () => { 
-    console.log("Disapprove clicked"); // Debug log
+    console.log("Disapprove clicked");
     updateStatus("Pending"); 
   }; 
 
@@ -176,10 +176,10 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
           icon: <CheckCircle />, 
           clickable: !readOnly, 
         }; 
-      default: // Handle "Pending" and "Unknown"
+      default:
         return { 
-          color: "error", // Use error for non-approved states
-          icon: <Cancel />, // Show cross icon
+          color: "error",
+          icon: <Cancel />,
           clickable: !readOnly, 
         }; 
     } 
@@ -194,10 +194,9 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
         display: "flex", 
         alignItems: "center", 
         gap: 1, 
-        justifyContent: "center" // Match sample alignment
+        justifyContent: "center"
       }}
     >
-     
       <Chip
         label={
           <Typography variant="body2">
@@ -234,10 +233,10 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
         onClose={handleClose}
         sx={{
           "& .MuiMenu-paper": {
-            minWidth: 200, // Set a minimum width for the menu
-            borderRadius: "8px", // Rounded corners for the menu
-            boxShadow: theme.shadows[3], // Use theme shadows for consistency
-            backgroundColor: theme.palette.background.paper, // Match theme background
+            minWidth: 200,
+            borderRadius: "8px",
+            boxShadow: theme.shadows[3],
+            backgroundColor: theme.palette.background.paper,
           },
         }}
       >

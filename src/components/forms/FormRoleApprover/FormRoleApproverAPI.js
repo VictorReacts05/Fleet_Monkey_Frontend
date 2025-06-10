@@ -38,7 +38,7 @@ export const fetchFormRoleApprovers = async (
   searchTerm = ''
 ) => {
   try {
-    let url = `${APIBASEURL}/formRoleApprover?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/formRoleApproval?pageNumber=${pageNumber}&pageSize=${pageSize}`;
     if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     const response = await axios.get(url, getAxiosConfig());
@@ -178,7 +178,7 @@ export const updateFormRoleApprover = async (id, formRoleApproverData) => {
     console.log("[DEBUG] Updating form role approver with payload:", requestData);
 
     const response = await axios.put(
-      `${APIBASEURL}/formRoleApprover/${id}`,
+      `${APIBASEURL}/formRoleApproval/${id}`,
       requestData,
       getAxiosConfig()
     );
@@ -214,7 +214,7 @@ export const deleteFormRoleApprover = async (id) => {
 
     console.log("[DEBUG] Deleting form role approver with ID:", id, "payload:", requestData);
 
-    const response = await axios.delete(`${APIBASEURL}/formRoleApprover/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/formRoleApproval/${id}`, {
       ...getAxiosConfig(),
       data: requestData,
     });
@@ -249,7 +249,7 @@ export const deleteFormRoleApprover = async (id) => {
 export const getFormRoleApproverById = async (id) => {
   try {
     const response = await axios.get(
-      `${APIBASEURL}/formRoleApprover/${id}`,
+      `${APIBASEURL}/formRoleApproval/${id}`,
       getAxiosConfig()
     );
 

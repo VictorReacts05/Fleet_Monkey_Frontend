@@ -264,9 +264,11 @@ const PurchaseOrderForm = ({
                 sx={{ backgroundColor: "transparent" }}
               />
               <StatusIndicator
+                status={status}
                 purchaseOrderId={purchaseOrderId}
                 onStatusChange={handleStatusChange}
-                readOnly={readOnly}
+                readOnly={false}
+                approverID={formData.ApproverID}
               />
             </Box>
           </Fade>
