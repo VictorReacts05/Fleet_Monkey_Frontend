@@ -1,23 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Grid,
   Box,
   Typography,
   Fade,
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Paper,
-  alpha,
+  CircularProgress,
+  Button,
   Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
 import FormPage from "../../Common/FormPage";
 import StatusIndicator from "./StatusIndicator";
+import PurchaseInvoiceItemsTab from "./PurchaseInvoiceParcelsTab"; // New component for items
+import { toast } from "react-toastify";
+import {
+  fetchPurchaseInvoice,
+  fetchPurchaseInvoiceItems,
+} from "./PurchaseInvoiceAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -28,6 +28,8 @@ const ReadOnlyField = ({ label, value }) => {
     displayValue = value ? "Yes" : "No";
   } else if (typeof value === "number") {
     displayValue = value.toFixed(2);
+  } else if (value === null || value === undefined) {
+    displayValue = "-";
   }
 
   return (
@@ -36,111 +38,187 @@ const ReadOnlyField = ({ label, value }) => {
         {label}
       </Typography>
       <Typography variant="body1" sx={{ mt: 0.5 }}>
-        {displayValue || "-"}
+        {displayValue}
       </Typography>
     </Box>
   );
 };
 
-const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose, readOnly = true }) => {
+const PurchaseInvoiceForm = ({
+  purchaseInvoiceId: propPurchaseInvoiceId,
+  onClose,
+  readOnly = true,
+}) => {
   const { id } = useParams();
   const theme = useTheme();
   const navigate = useNavigate();
   const purchaseInvoiceId = propPurchaseInvoiceId || id;
-  const DEFAULT_COMPANY = { value: "1", label: "Dung Beetle Logistics" };
 
-  // Static form data
-  const [formData, setFormData] = useState({
-    Series: "PI2025-001",
-    CompanyID: DEFAULT_COMPANY.value,
-    CompanyName: DEFAULT_COMPANY.label,
-    SupplierID: "SUP001",
-    SupplierName: "ABC Suppliers Inc",
-    CustomerID: "CUST001",
-    CustomerName: "John Smith",
-    ExternalRefNo: "EXT-REF-12345",
-    DeliveryDate: new Date("2025-06-15"),
-    PostingDate: new Date("2025-06-10"),
-    RequiredByDate: new Date("2025-06-20"),
-    DateReceived: new Date("2025-06-05"),
-    ServiceTypeID: "ST001",
-    ServiceType: "International Shipping",
-    CollectionAddressID: "ADDR001",
-    CollectionAddress: "123 Main St, Springfield, IL 62701",
-    DestinationAddressID: "ADDR002",
-    DestinationAddress: "456 Market St, Chicago, IL 60601",
-    BillingAddressID: "ADDR003",
-    BillingAddress: "789 Finance St, New York, NY 10001",
-    ShippingPriorityID: "SP001",
-    ShippingPriorityName: "Express",
-    Terms: "Net 30 days",
-    CurrencyID: "CUR001",
-    CurrencyName: "USD",
-    CollectFromSupplierYN: true,
-    PackagingRequiredYN: true,
-    FormCompletedYN: true,
-    IsPaid: false,
-    SubTotal: 12500.0,
-    TaxAmount: 1250.0,
-    Total: 13750.0,
-  });
+  const [formData, setFormData] = useState(null);
+  const [items, setItems] = useState([]);
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Static status
-  const [status, setStatus] = useState("Approved");
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const invoice = await fetchPurchaseInvoice(purchaseInvoiceId);
+      if (invoice) {
+        const formData = {
+          Series: invoice.Series || "-",
+          CompanyID: invoice.CompanyID || "-",
+          CompanyName: invoice.CompanyName || "-",
+          SupplierID: invoice.SupplierID || "-",
+          SupplierName: invoice.SupplierName || "-",
+          CustomerID: invoice.CustomerID || "-",
+          CustomerName: invoice.CustomerName || "-",
+          ExternalRefNo: invoice.ExternalRefNo || "-",
+          DeliveryDate: invoice.DeliveryDate ? new Date(invoice.DeliveryDate) : null,
+          PostingDate: invoice.PostingDate ? new Date(invoice.PostingDate) : null,
+          RequiredByDate: invoice.RequiredByDate
+            ? new Date(invoice.RequiredByDate)
+            : null,
+          DateReceived: invoice.DateReceived ? new Date(invoice.DateReceived) : null,
+          ServiceTypeID: invoice.ServiceTypeID || "-",
+          ServiceType: invoice.ServiceTypeName || "-",
+          CollectionAddressID: invoice.CollectionAddressID || "-",
+          CollectionAddress: invoice.CollectionAddressTitle || "-",
+          DestinationAddressID: invoice.DestinationAddressID || "-",
+          DestinationAddress: invoice.DestinationAddressTitle || "-",
+          BillingAddressID: invoice.BillingAddressID || "-",
+          BillingAddress: invoice.BillingAddressTitle || "-",
+          ShippingPriorityID: invoice.ShippingPriorityID || "-",
+          ShippingPriorityName: invoice.ShippingPriorityID
+            ? `Priority ID: ${invoice.ShippingPriorityID}`
+            : "-",
+          Terms: invoice.Terms || "-",
+          CurrencyID: invoice.CurrencyID || "-",
+          CurrencyName: invoice.CurrencyName || "-",
+          CollectFromSupplierYN: !!invoice.CollectFromSupplierYN,
+          PackagingRequiredYN: !!invoice.PackagingRequiredYN,
+          FormCompletedYN: !!invoice.FormCompletedYN,
+          IsPaid: !!invoice.IsPaid,
+          SubTotal: parseFloat(invoice.SubTotal) || 0,
+          TaxAmount: parseFloat(invoice.TaxAmount) || 0,
+          Total: parseFloat(invoice.Total) || 0,
+        };
+        console.log("Form Data:", {
+          CurrencyID: formData.CurrencyID,
+          CurrencyName: formData.CurrencyName,
+          SupplierID: formData.SupplierID,
+          SupplierName: formData.SupplierName,
+          ServiceType: formData.ServiceType,
+          CompanyName: formData.CompanyName,
+          CustomerName: formData.CustomerName,
+          CollectionAddress: formData.CollectionAddress,
+          DestinationAddress: formData.DestinationAddress,
+          BillingAddress: formData.BillingAddress,
+        });
+        setFormData(formData);
 
-  // Add status change handler
+        try {
+          const fetchedItems = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+          const mappedItems = fetchedItems.map((item, index) => ({
+            id: item.PurchaseInvoiceItemID || `Item-${index + 1}`,
+            itemName: item.ItemName || "Unknown Item",
+            uomName: item.UOMName || "-",
+            quantity: String(parseFloat(item.ItemQuantity) || 0),
+            rate: String(parseFloat(item.Rate) || 0),
+            amount: String(parseFloat(item.Amount) || 0),
+            itemId: String(item.ItemID || ""),
+            uomId: String(item.UOMID || ""),
+            PurchaseInvoiceItemID: item.PurchaseInvoiceItemID,
+            PIID: purchaseInvoiceId,
+          }));
+          setItems(mappedItems);
+        } catch (itemErr) {
+          const itemErrorMessage = itemErr.response
+            ? `Server error: ${itemErr.response.status} - ${
+                itemErr.response.data?.message || itemErr.message
+              }`
+            : `Failed to fetch items: ${itemErr.message}`;
+          console.error("Item fetch error:", itemErrorMessage);
+          toast.error(itemErrorMessage);
+        }
+      } else {
+        throw new Error("No Purchase Invoice data returned");
+      }
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        : `Failed to fetch data: ${error.message}`;
+      console.error("Error in fetchData:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPurchaseInvoiceStatus = useCallback(async () => {
+    setStatus("Pending");
+    // Note: Implement actual status fetching logic if needed
+  }, [purchaseInvoiceId]);
+
+  useEffect(() => {
+    if (purchaseInvoiceId) {
+      fetchData();
+      loadPurchaseInvoiceStatus();
+    } else {
+      setError("No Purchase Invoice ID provided");
+      setLoading(false);
+    }
+  }, [purchaseInvoiceId, loadPurchaseInvoiceStatus]);
+
+  const handleItemsChange = (updatedItems) => {
+    setItems(updatedItems);
+  };
+
+  const handleCancel = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate("/purchase-invoice");
+    }
+  };
+
   const handleStatusChange = (newStatus) => {
     console.log("Status changed to:", newStatus);
     setStatus(newStatus);
   };
 
-  // Static items data
-  const [items] = useState([
-    {
-      id: 1,
-      srNo: 1,
-      itemId: 101,
-      itemName: "Electronics Package",
-      uomId: 1,
-      uomName: "Box",
-      quantity: 5,
-      rate: 1500,
-      amount: 7500
-    },
-    {
-      id: 2,
-      srNo: 2,
-      itemId: 102,
-      itemName: "Office Supplies",
-      uomId: 2,
-      uomName: "Carton",
-      quantity: 3,
-      rate: 1000,
-      amount: 3000
-    },
-    {
-      id: 3,
-      srNo: 3,
-      itemId: 103,
-      itemName: "Medical Equipment",
-      uomId: 3,
-      uomName: "Pallet",
-      quantity: 1,
-      rate: 2000,
-      amount: 2000
-    },
-  ]);
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  // Handle cancel button click
-  const handleCancel = () => {
-    if (onClose) {
-      // If onClose prop is provided, call it (for dialog mode)
-      onClose();
-    } else {
-      // Otherwise navigate back to the list page
-      navigate('/purchase-invoice');
-    }
-  };
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography color="error" variant="h6">
+          An error occurred: {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchData} sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6">No Purchase Invoice data available</Typography>
+      </Box>
+    );
+  }
 
   return (
     <FormPage
@@ -161,9 +239,10 @@ const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose
               sx={{
                 display: "flex",
                 alignItems: "center",
-                background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                background:
+                  theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                 borderRadius: "4px",
-                paddingRight:"10px",
+                paddingRight: "10px",
                 height: "37px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                 transition: "all 0.3s ease-in-out",
@@ -174,7 +253,7 @@ const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose
                 },
               }}
             >
-               <Chip
+              <Chip
                 label={
                   <Typography
                     variant="body2"
@@ -189,9 +268,8 @@ const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose
                 }
                 sx={{ backgroundColor: "transparent" }}
               />
-              <StatusIndicator 
-                status={status} 
-                purchaseInvoiceId={purchaseInvoiceId} 
+              <StatusIndicator
+                purchaseInvoiceId={purchaseInvoiceId}
                 onStatusChange={handleStatusChange}
                 readOnly={readOnly}
               />
@@ -251,6 +329,9 @@ const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose
         <Grid item xs={12} md={4} sx={{ width: "24%" }}>
           <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
         </Grid>
+        <Grid item xs={12} md={4} sx={{ width: "24%" }}>
+          <ReadOnlyField label="Billing Address" value={formData.BillingAddress} />
+        </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName} />
         </Grid>
@@ -283,92 +364,11 @@ const PurchaseInvoiceForm = ({ purchaseInvoiceId: propPurchaseInvoiceId, onClose
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Items
-        </Typography>
-        <TableContainer
-          component={Paper}
-          sx={{
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <Table>
-            <TableHead
-              sx={{
-                backgroundColor: "#1976d2",
-                height: "56px",
-              }}
-            >
-              <TableRow>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Sr. No.
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Item
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  UOM
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Quantity
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Rate
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Amount
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  sx={{
-                    height: "52px",
-                    "&:nth-of-type(odd)": {
-                      backgroundColor: alpha("#1976d2", 0.05),
-                    },
-                    "&:hover": {
-                      backgroundColor: alpha("#1976d2", 0.1),
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                    },
-                  }}
-                >
-                  <TableCell align="center">{item.srNo}</TableCell>
-                  <TableCell align="center">{item.itemName}</TableCell>
-                  <TableCell align="center">{item.uomName}</TableCell>
-                  <TableCell align="center">{item.quantity}</TableCell>
-                  <TableCell align="center">{item.rate.toFixed(2)}</TableCell>
-                  <TableCell align="center">{item.amount.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+      <PurchaseInvoiceItemsTab
+        purchaseInvoiceId={purchaseInvoiceId}
+        onItemsChange={handleItemsChange}
+        readOnly={readOnly}
+      />
     </FormPage>
   );
 };
