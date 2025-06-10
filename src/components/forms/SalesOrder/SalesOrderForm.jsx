@@ -22,6 +22,7 @@ import {
   getAuthHeader,
   approveSalesOrder,
 } from "./SalesOrderAPI";
+import APIBASEURL from "../../../utils/apiBaseUrl.js";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -128,7 +129,7 @@ const SalesOrderForm = ({ onClose }) => {
           addressesData,
         ] = await Promise.all([
           axios
-            .get("http://localhost:7000/api/currencies", { headers })
+            .get(`${APIBASEURL}/currencies`, { headers })
             .then((res) => {
               console.log("Currencies fetched:", res.data.data);
               return res.data.data || [];
@@ -139,7 +140,7 @@ const SalesOrderForm = ({ onClose }) => {
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/suppliers", { headers })
+            .get(`${APIBASEURL}/suppliers`, { headers })
             .then((res) => {
               console.log("Suppliers fetched:", res.data.data);
               return res.data.data || [];
@@ -150,7 +151,7 @@ const SalesOrderForm = ({ onClose }) => {
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/customers", { headers })
+            .get(`${APIBASEURL}/customers`, { headers })
             .then((res) => {
               console.log("Customers fetched:", res.data.data);
               return res.data.data || [];
@@ -161,7 +162,7 @@ const SalesOrderForm = ({ onClose }) => {
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/service-types", { headers })
+            .get(`${APIBASEURL}/service-types`, { headers })
             .then((res) => {
               console.log("Service types fetched:", res.data.data);
               return res.data.data || [];
@@ -172,7 +173,7 @@ const SalesOrderForm = ({ onClose }) => {
               return [];
             }),
           axios
-            .get("http://localhost:7000/api/addresses", { headers })
+            .get(`${APIBASEURL}/addresses`, { headers })
             .then((res) => {
               console.log("Addresses fetched:", res.data.data);
               return res.data.data || [];
@@ -465,7 +466,7 @@ const SalesOrderForm = ({ onClose }) => {
 
       const payload = { salesOrderID: Number(salesOrderId) };
       const response = await axios.post(
-        "http://localhost:7000/api/purchase-Order",
+        `${APIBASEURL}/po`,
         payload,
         { headers }
       );

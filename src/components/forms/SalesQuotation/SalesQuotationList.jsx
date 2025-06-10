@@ -28,6 +28,7 @@ import {
   createSalesQuotation,
   getAuthHeader,
 } from "./SalesQuotationAPI";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const SalesQuotationList = () => {
   const [salesQuotations, setSalesQuotations] = useState([]);
@@ -116,9 +117,7 @@ const SalesQuotationList = () => {
       const { headers } = getAuthHeader();
       console.log("Fetching Sales Quotations with headers:", headers);
       const response = await axios.get(
-        `http://localhost:7000/api/sales-Quotation?page=${
-          page + 1
-        }&limit=${rowsPerPage}`,
+        `${APIBASEURL}/sales-Quotation?page=${page + 1}&limit=${rowsPerPage}`,
         { headers }
       );
       console.log("Sales Quotations API response:", response.data);
@@ -254,10 +253,9 @@ const SalesQuotationList = () => {
     try {
       setLoading(true);
       const { headers } = getAuthHeader();
-      await axios.delete(
-        `http://localhost:7000/api/sales-quotation/${selectedQuotation}`,
-        { headers }
-      );
+      await axios.delete(`${APIBASEURL}/sales-quotation/${selectedQuotation}`, {
+        headers,
+      });
       showToast("Sales Quotation deleted successfully", "success");
       setDeleteDialogOpen(false);
       fetchSalesQuotations();

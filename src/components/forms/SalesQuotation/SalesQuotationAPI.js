@@ -91,12 +91,11 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
 
       try {
         console.log(
-          "Fetching addresses from: http://localhost:7000/api/addresses"
+          `Fetching addresses from: ${APIBASEURL}/addresses`
         );
-        const addressResponse = await axios.get(
-          "http://localhost:7000/api/addresses",
-          { headers }
-        );
+        const addressResponse = await axios.get(`${APIBASEURL}/addresses`, {
+          headers,
+        });
         console.log("Address API Raw Response:", addressResponse.data);
         if (addressResponse.data && addressResponse.data.data) {
           addressMap = addressResponse.data.data.reduce((acc, address) => {
@@ -117,12 +116,11 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
 
       try {
         console.log(
-          "Fetching currencies from: http://localhost:7000/api/currencies"
+          `Fetching currencies from: ${APIBASEURL}/api/currencies`
         );
-        const currencyResponse = await axios.get(
-          "http://localhost:7000/api/currencies",
-          { headers }
-        );
+        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`, {
+          headers,
+        });
         console.log("Currency API Raw Response:", currencyResponse.data);
         if (currencyResponse.data && currencyResponse.data.data) {
           currencyMap = currencyResponse.data.data.reduce((acc, currency) => {
