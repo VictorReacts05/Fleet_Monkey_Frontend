@@ -155,7 +155,7 @@ const PurchaseOrderParcelsTab = ({
         setLoadingExistingParcels(true);
         const { headers } = getAuthHeader();
         const response = await axios.get(
-          `${APIBASEURL}/po-parcels?poId=${purchaseOrderId}`,
+          `${APIBASEURL}/po-Parcel?poId=${purchaseOrderId}`,
           { headers }
         );
 

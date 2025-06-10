@@ -139,6 +139,19 @@ const ViewSalesQuotationWrapper = () => {
   );
 };
 
+// Wrapper for View Sales Order
+const ViewSalesOrderWrapper = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  return (
+    <SalesOrderForm
+      salesOrderId={id}
+      onClose={() => navigate("/sales-order")}
+      readOnly={true}
+    />
+  );
+};
+
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
@@ -523,6 +536,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SalesOrderForm readOnly={false} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-order/detail/:id"
+            element={
+              <ProtectedRoute>
+                <ViewSalesOrderWrapper />
               </ProtectedRoute>
             }
           />

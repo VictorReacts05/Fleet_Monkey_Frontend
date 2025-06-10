@@ -18,6 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import { fetchSalesOrderParcels } from "./SalesOrderAPI";
 
 // Function to fetch items from API
 const fetchItems = async () => {
@@ -48,7 +49,7 @@ const fetchUOMs = async () => {
   }
 };
 
-const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
+const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
@@ -60,14 +61,17 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [activeTab] = useState("parcels");
 
   const theme = useTheme();
 
   const columns = [
-    { field: "itemName", headerName: "Item Name", flex: 1 },
-    { field: "uomName", headerName: "UOM", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1 },
+    { field: "ItemName", headerName: "Item Name", flex: 1 },
+    { field: "UOMName", headerName: "UOM", flex: 1 },
+    { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
+    /* { field: "SupplierRate", headerName: "Supplier Rate", flex: 1 },
+    { field: "SupplierAmount", headerName: "Supplier Amount", flex: 1 }, */
+    { field: "SalesRate", headerName: "Sales Rate", flex: 1 },
+    { field: "SalesAmount", headerName: "Sales Amount", flex: 1 },
   ];
 
   // Load dropdown data when component mounts
@@ -130,164 +134,53 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
     loadDropdownData();
   }, []);
 
-  // Load existing parcels when salesQuotationId is provided
+  // Load existing Sales Order parcels when salesOrderId is provided
   useEffect(() => {
-    const loadExistingParcels = async () => {
-      if (!salesQuotationId) {
+    const loadExistingSalesOrderParcels = async () => {
+      if (!salesOrderId) {
         return;
       }
 
       try {
         setLoadingExistingParcels(true);
-        let response;
-        try {
-          response = await axios.get(
-            `${APIBASEURL}/sales-quotation-parcel/${salesQuotationId}`
-          );
-        } catch (err) {
-          console.log(
-            "First endpoint attempt failed, trying alternative...",
-            err.message
-          );
-          try {
-            response = await axios.get(
-              `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcel`
-            );
-          } catch (err2) {
-            response = await axios.get(
-              `${APIBASEURL}/sales-quotation-parcel/${salesQuotationId}`
-            );
-          }
-        }
+        console.log(`Loading parcels for Sales Order ID: ${salesOrderId}`);
 
-        if (response && response.data) {
-          let parcelData = [];
+        // Use the fetchSalesOrderParcels function from SalesOrderAPI
+        const parcelData = await fetchSalesOrderParcels(salesOrderId);
 
-          // Handle different response formats
-          if (response.data.data && Array.isArray(response.data.data)) {
-            parcelData = response.data.data;
-          } else if (Array.isArray(response.data)) {
-            parcelData = response.data;
-          } else if (
-            response.data.parcels &&
-            Array.isArray(response.data.parcels)
-          ) {
-            parcelData = response.data.parcels;
-          } else {
-            console.warn("Unexpected response format:", response.data);
-          }
+        console.log("Sales Order Parcels received:", parcelData);
 
-          const filteredParcels = parcelData.filter((parcel) => {
-            const parcelSalesQuotationId =
-              parcel.SalesQuotationID ||
-              parcel.salesQuotationID ||
-              parcel.salesQuotationId ||
-              parcel.salesquotationid ||
-              parcel.SalesQuotationId;
-
-            // Convert both to strings for comparison
-            return String(parcelSalesQuotationId) === String(salesQuotationId);
-          });
-
-          if (filteredParcels.length === 0) {
-            setParcels([]);
-            return;
-          }
-
-          let itemsToUse = items;
-          let uomsToUse = uoms;
-
-          if (items.length <= 1) {
-            try {
-              const itemsResponse = await fetchItems();
-              const itemsData = itemsResponse || [];
-              itemsToUse = [
-                { value: "", label: "Select an item" },
-                ...itemsData.map((item) => ({
-                  value: String(item.ItemID),
-                  label: item.ItemName,
-                })),
-              ];
-            } catch (err) {
-              console.error("Failed to fetch items directly:", err);
-            }
-          }
-
-          if (uoms.length <= 1) {
-            try {
-              const uomsResponse = await fetchUOMs();
-              const uomsData = uomsResponse || [];
-              uomsToUse = [
-                { value: "", label: "Select a UOM" },
-                ...uomsData.map((uom) => ({
-                  value: String(
-                    uom.UOMID ||
-                      uom.UOMId ||
-                      uom.uomID ||
-                      uom.uomId ||
-                      uom.id ||
-                      uom.ID
-                  ),
-                  label:
-                    uom.UOM ||
-                    uom.uom ||
-                    uom.UOMName ||
-                    uom.uomName ||
-                    uom.name ||
-                    String(
-                      uom.UOMDescription || uom.Description || "Unknown UOM"
-                    ),
-                })),
-              ];
-            } catch (err) {
-              console.error("Failed to fetch UOMs directly:", err);
-            }
-          }
-
-          const formattedParcels = filteredParcels.map((parcel, index) => {
-            let itemName = "Unknown Item";
-            let uomName = "Unknown UOM";
-
-            try {
-              const itemId = String(parcel.ItemID || "");
-              const uomId = String(parcel.UOMID || "");
-
-              const item = itemsToUse.find((i) => i.value === itemId);
-              if (item) {
-                itemName = item.label;
-              } else {
-                itemName = `Item #${itemId}`;
-              }
-
-              const uom = uomsToUse.find((u) => u.value === uomId);
-              if (uom) {
-                uomName = uom.label;
-              } else {
-                uomName = `UOM #${uomId}`;
-              }
-            } catch (err) {
-              console.error("Error formatting parcel data:", err);
-            }
-
-            // Add index+1 as srNo for proper numbering
-            return {
-              id: parcel.SalesQuotationParcelID || parcel.id || Date.now() + index,
-              itemId: String(parcel.ItemID || ""),
-              uomId: String(parcel.UOMID || ""),
-              quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
-              itemName,
-              uomName,
-              srNo: index + 1,
-            };
-          });
+        if (parcelData && parcelData.length > 0) {
+          // The fetchSalesOrderParcels function already enhances the parcels with ItemName and UOMName
+          const formattedParcels = parcelData.map((parcel, index) => ({
+            id: parcel.SalesOrderParcelID || parcel.id || Date.now() + index,
+            SalesOrderParcelID: parcel.SalesOrderParcelID,
+            SalesOrderID: parcel.SalesOrderID,
+            ItemID: parcel.ItemID,
+            UOMID: parcel.UOMID,
+            ItemQuantity: parcel.ItemQuantity,
+            ItemName: parcel.ItemName || "Unknown Item",
+            UOMName: parcel.UOMName || "Unknown UOM",
+            srNo: index + 1,
+            /* SupplierRate: parcel.SupplierRate || 0,
+            SupplierAmount: parcel.SupplierAmount || 0, */
+            SalesRate: parcel.SalesRate || 0,
+            SalesAmount: parcel.SalesAmount || 0,
+          }));
 
           setParcels(formattedParcels);
+
+          // Notify parent component
+          if (onParcelsChange) {
+            onParcelsChange(formattedParcels);
+          }
         } else {
-          console.warn("No parcel data found in response");
+          console.log("No parcels found for this Sales Order");
           setParcels([]);
         }
       } catch (error) {
-        console.error("Error loading existing parcels:", error);
+        console.error("Error loading Sales Order parcels:", error);
+        toast.error("Failed to load Sales Order parcels: " + error.message);
         setParcels([]);
       } finally {
         setLoadingExistingParcels(false);
@@ -295,9 +188,8 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
     };
 
     setParcels([]);
-
-    loadExistingParcels();
-  }, [salesQuotationId, items, uoms]);
+    loadExistingSalesOrderParcels();
+  }, [salesOrderId, onParcelsChange]);
 
   // Handle adding a new parcel form
   const handleAddParcel = () => {
@@ -326,11 +218,12 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
       ...prev,
       {
         id: editFormId,
-        itemId: parcelToEdit.itemId,
-        uomId: parcelToEdit.uomId,
-        quantity: parcelToEdit.quantity,
+        itemId: String(parcelToEdit.ItemID),
+        uomId: String(parcelToEdit.UOMID),
+        quantity: String(parcelToEdit.ItemQuantity),
         editIndex: parcels.findIndex((p) => p.id === id),
         originalId: id,
+        salesOrderParcelId: parcelToEdit.SalesOrderParcelID,
       },
     ]);
   };
@@ -371,7 +264,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
   };
 
   // Handle saving a parcel form
-  const handleSave = (formId) => {
+  const handleSave = async (formId) => {
     const form = parcelForms.find((f) => f.id === formId);
     if (!form) return;
 
@@ -384,124 +277,94 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
       return;
     }
 
-    // Get item and UOM names for display
-    const selectedItem = items.find((i) => i.value === form.itemId);
-    const selectedUOM = uoms.find((u) => u.value === form.uomId);
-
-    // Find the original parcel if we're editing
-    const originalParcel =
-      form.editIndex !== undefined ? parcels[form.editIndex] : null;
-
-    // Create a completely new parcel object with all required fields
-    const newParcel = {
-      // Keep original ID and SalesQuotationParcelID for database reference
-      id: form.originalId || form.id,
-      SalesQuotationParcelID: originalParcel?.SalesQuotationParcelID || originalParcel?.id,
-
-      // Ensure SalesQuotationID is included for proper association
-      SalesQuotationID: salesQuotationId,
-
-      // Include all possible field name variations for maximum compatibility
-      ItemID: parseInt(form.itemId, 10), // Convert to number for backend
-      itemId: form.itemId,
-
-      UOMID: parseInt(form.uomId, 10), // Convert to number for backend
-      uomId: form.uomId,
-
-      ItemQuantity: parseInt(form.quantity, 10), // Convert to number for backend
-      Quantity: parseInt(form.quantity, 10), // Convert to number for backend
-      quantity: form.quantity,
-
-      // Display values for UI
-      itemName: selectedItem ? selectedItem.label : "Unknown Item",
-      uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-
-      // Preserve srNo
-      srNo: originalParcel?.srNo || parcels.length + 1,
-
-      // Add a flag to indicate this record has been modified
-      isModified: true,
-
-      // Add any other fields that might be required by the backend
-      SalesQuotationParcel: {
-        SalesQuotationParcelID:
-          originalParcel?.SalesQuotationParcelID || originalParcel?.id,
-        SalesQuotationID: salesQuotationId,
-        ItemID: parseInt(form.itemId, 10),
-        UOMID: parseInt(form.uomId, 10),
-        ItemQuantity: parseInt(form.quantity, 10),
-      },
-    };
-
-    if (form.editIndex !== undefined) {
-      // Update existing parcel - create a completely new array
-      const updatedParcels = [...parcels];
-      updatedParcels[form.editIndex] = newParcel;
-      setParcels(updatedParcels);
-
-      // Force a notification to the parent component
-      if (onParcelsChange) {
-        setTimeout(() => onParcelsChange(updatedParcels), 0);
-
-        // Also try to directly update the database
-        try {
-          updateParcelInDatabase(newParcel);
-        } catch (error) {
-          console.error("Error directly updating parcel:", error);
-        }
-      }
-    } else {
-      // Add new parcel
-      const newParcelsArray = [...parcels, newParcel];
-      setParcels(newParcelsArray);
-
-      // Force a notification to the parent component
-      if (onParcelsChange) {
-        setTimeout(() => onParcelsChange(newParcelsArray), 0);
-      }
-    }
-
-    // Remove the form
-    setParcelForms((prev) => prev.filter((f) => f.id !== formId));
-  };
-
-  // Function to directly update a parcel in the database
-  const updateParcelInDatabase = async (parcel) => {
-    if (!salesQuotationId || !parcel.SalesQuotationParcelID) {
-      console.error("Missing required IDs for direct parcel update");
-      return;
-    }
-
     try {
-      // Try to update using the SalesQuotationParcel endpoint
-      const response = await axios.put(
-        `${APIBASEURL}/sales-quotation-parcel/${parcel.SalesQuotationParcelID}`,
-        {
-          SalesQuotationID: salesQuotationId,
-          ItemID: parseInt(parcel.ItemID, 10),
-          UOMID: parseInt(parcel.UOMID, 10),
-          ItemQuantity: parseInt(parcel.ItemQuantity, 10),
-        }
-      );
+      // Get item and UOM names for display
+      const selectedItem = items.find((i) => i.value === form.itemId);
+      const selectedUOM = uoms.find((u) => u.value === form.uomId);
 
-      if (response.data.success) {
-        toast.success("Parcel updated successfully");
-      }
-    } catch (error) {
-      console.error("Failed to directly update parcel:", error);
-      // Try alternative endpoint
-      try {
-        const altResponse = await axios.put(
-          `${APIBASEURL}/sales-quotation/${salesQuotationId}/parcel/${parcel.SalesQuotationParcelID}`,
+      if (form.editIndex !== undefined) {
+        // Update existing parcel
+        const response = await axios.put(
+          `${APIBASEURL}/sales-Order-Parcel/${form.salesOrderParcelId}`,
           {
-            ItemID: parseInt(parcel.ItemID, 10),
-            UOMID: parseInt(parcel.UOMID, 10),
-            ItemQuantity: parseInt(parcel.ItemQuantity, 10),
+            SalesOrderID: parseInt(salesOrderId),
+            ItemID: parseInt(form.itemId),
+            UOMID: parseInt(form.uomId),
+            ItemQuantity: parseInt(form.quantity),
           }
         );
-      } catch (altError) {
-        console.error("Failed alternative direct update:", altError);
+
+        if (response.data.success || response.status === 200) {
+          // Update the parcels state
+          const updatedParcels = [...parcels];
+          updatedParcels[form.editIndex] = {
+            ...updatedParcels[form.editIndex],
+            ItemID: parseInt(form.itemId),
+            UOMID: parseInt(form.uomId),
+            ItemQuantity: parseInt(form.quantity),
+            ItemName: selectedItem ? selectedItem.label : "Unknown Item",
+            UOMName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+          };
+          setParcels(updatedParcels);
+
+          if (onParcelsChange) {
+            onParcelsChange(updatedParcels);
+          }
+
+          toast.success("Parcel updated successfully");
+        }
+      } else {
+        // Create new parcel
+        const response = await axios.post(`${APIBASEURL}/sales-Order-Parcel`, {
+          SalesOrderID: parseInt(salesOrderId),
+          ItemID: parseInt(form.itemId),
+          UOMID: parseInt(form.uomId),
+          ItemQuantity: parseInt(form.quantity),
+        });
+
+        if (response.data.success || response.status === 201) {
+          // Add the new parcel to state
+          const newParcel = {
+            id: response.data.id || Date.now(),
+            SalesOrderParcelID:
+              response.data.id || response.data.data?.SalesOrderParcelID,
+            SalesOrderID: parseInt(salesOrderId),
+            ItemID: parseInt(form.itemId),
+            UOMID: parseInt(form.uomId),
+            ItemQuantity: parseInt(form.quantity),
+            ItemName: selectedItem ? selectedItem.label : "Unknown Item",
+            UOMName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+            srNo: parcels.length + 1,
+            /* SupplierRate: 0, 
+            SupplierAmount: 0, */
+            SalesRate: 0, // Default value, update if API provides
+            SalesAmount: 0, // Default value, update if API provides
+          };
+
+          const updatedParcels = [...parcels, newParcel];
+          setParcels(updatedParcels);
+
+          if (onParcelsChange) {
+            onParcelsChange(updatedParcels);
+          }
+
+          toast.success("Parcel added successfully");
+        }
       }
+
+      // Remove the form
+      setParcelForms((prev) => prev.filter((f) => f.id !== formId));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[formId];
+        return newErrors;
+      });
+    } catch (error) {
+      console.error("Error saving parcel:", error);
+      toast.error(
+        "Failed to save parcel: " +
+          (error.response?.data?.message || error.message)
+      );
     }
   };
 
@@ -511,10 +374,40 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
     setDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    setParcels((prev) => prev.filter((p) => p.id !== deleteParcelId));
-    setDeleteConfirmOpen(false);
-    setDeleteParcelId(null);
+  const handleConfirmDelete = async () => {
+    try {
+      const parcelToDelete = parcels.find((p) => p.id === deleteParcelId);
+      if (!parcelToDelete) {
+        toast.error("Parcel not found");
+        setDeleteConfirmOpen(false);
+        setDeleteParcelId(null);
+        return;
+      }
+
+      const response = await axios.delete(
+        `${APIBASEURL}/sales-Order-Parcel/${parcelToDelete.SalesOrderParcelID}`
+      );
+
+      if (response.data.success || response.status === 200) {
+        const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
+        setParcels(updatedParcels);
+
+        if (onParcelsChange) {
+          onParcelsChange(updatedParcels);
+        }
+
+        toast.success("Parcel deleted successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting parcel:", error);
+      toast.error(
+        "Failed to delete parcel: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setDeleteConfirmOpen(false);
+      setDeleteParcelId(null);
+    }
   };
 
   const handleCancelDelete = () => {
@@ -555,7 +448,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
           }}
         >
           <Typography variant="h6" component="div">
-            Items
+            Sales Order Parcels
           </Typography>
         </Box>
       </Box>
@@ -591,7 +484,7 @@ const ParcelTab = ({ salesQuotationId, onParcelsChange, readOnly = false }) => {
             {parcels.length === 0 && parcelForms.length === 0 && (
               <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
                 <Typography variant="body1">
-                  No parcels added yet.{" "}
+                  No parcels found for this Sales Order.{" "}
                   {!readOnly && "Click 'Add Parcel' to add a new parcel."}
                 </Typography>
               </Box>

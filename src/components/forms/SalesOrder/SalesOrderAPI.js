@@ -1,17 +1,20 @@
 import axios from "axios";
-import APIBASEURL from "../../../utils/apiBaseUrl"; // Adjust path as needed
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 export const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));
-    console.log("Raw user data from localStorage:", localStorage.getItem("user"));
+    console.log(
+      "Raw user data from localStorage:",
+      localStorage.getItem("user")
+    );
     console.log("Parsed user data:", user);
     const personId = user?.personId || user?.id || user?.userId || null;
     console.log("Extracted personId:", personId);
 
     if (!user || !personId) {
       console.warn("User data or personId not found, redirecting to login");
-      window.location.href = "/"; // Redirect to login page
+      window.location.href = "/";
       throw new Error("User not authenticated");
     }
 
@@ -24,14 +27,14 @@ export const getAuthHeader = () => {
       console.log("Using token for Authorization:", token.slice(0, 20) + "...");
     } else {
       console.warn("No token found in localStorage, redirecting to login");
-      window.location.href = "/"; // Redirect to login page
+      window.location.href = "/";
       throw new Error("No token found");
     }
 
     return { headers, personId };
   } catch (error) {
     console.error("Error parsing user data from localStorage:", error);
-    window.location.href = "/"; // Redirect to login page
+    window.location.href = "/";
     throw error;
   }
 };
@@ -41,10 +44,10 @@ export const fetchSalesOrder = async (SalesOrderID) => {
   try {
     const { headers } = getAuthHeader();
     console.log(
-      `Fetching Sales Order ID ${SalesOrderID} from: ${APIBASEURL}/sales-order/${SalesOrderID}`
+      `Fetching Sales Order ID ${SalesOrderID} from: ${APIBASEURL}/sales-Order/${SalesOrderID}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-order/${SalesOrderID}`,
+      `${APIBASEURL}/sales-Order/${SalesOrderID}`,
       { headers }
     );
     console.log("Sales Order API Response:", response.data);
@@ -57,11 +60,10 @@ export const fetchSalesOrder = async (SalesOrderID) => {
       let shippingPriorityMap = {};
 
       try {
-        console.log("Fetching addresses from: http://localhost:7000/api/addresses");
-        const addressResponse = await axios.get(
-          "http://localhost:7000/api/addresses",
-          { headers }
-        );
+        console.log(`Fetching addresses from: ${APIBASEURL}/addresses`);
+        const addressResponse = await axios.get(`${APIBASEURL}/addresses`, {
+          headers,
+        });
         console.log("Address API Raw Response:", addressResponse.data);
         if (addressResponse.data && addressResponse.data.data) {
           addressMap = addressResponse.data.data.reduce((acc, address) => {
@@ -74,15 +76,17 @@ export const fetchSalesOrder = async (SalesOrderID) => {
           console.log("Address Map:", addressMap);
         }
       } catch (err) {
-        console.error("Could not fetch addresses:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch addresses:",
+          err.response?.data || err.message
+        );
       }
 
       try {
-        console.log("Fetching currencies from: http://localhost:7000/api/currencies");
-        const currencyResponse = await axios.get(
-          "http://localhost:7000/api/currencies",
-          { headers }
-        );
+        console.log(`Fetching currencies from: ${APIBASEURL}/currencies`);
+        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`, {
+          headers,
+        });
         console.log("Currency API Raw Response:", currencyResponse.data);
         if (currencyResponse.data && currencyResponse.data.data) {
           currencyMap = currencyResponse.data.data.reduce((acc, currency) => {
@@ -95,65 +99,94 @@ export const fetchSalesOrder = async (SalesOrderID) => {
           console.log("Currency Map:", currencyMap);
         }
       } catch (err) {
-        console.error("Could not fetch currencies:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch currencies:",
+          err.response?.data || err.message
+        );
       }
 
       try {
-        console.log("Fetching service types from: http://localhost:7000/api/service-types");
+        console.log(`Fetching service types from: ${APIBASEURL}/service-types`);
         const serviceTypeResponse = await axios.get(
-          "http://localhost:7000/api/service-types",
+          `${APIBASEURL}/service-types`,
           { headers }
         );
-        console.log("Service Type API Raw Response:", serviceTypeResponse.data);
+        console.log("Sales Type API:", serviceTypeResponse.data);
         if (serviceTypeResponse.data && serviceTypeResponse.data.data) {
-          serviceTypeMap = serviceTypeResponse.data.data.reduce((acc, serviceType) => {
-            if (serviceType.ServiceTypeID && serviceType.ServiceType) {
-              acc[serviceType.ServiceTypeID] = serviceType.ServiceType;
-              acc[String(serviceType.ServiceTypeID)] = serviceType.ServiceType;
-            }
-            return acc;
-          }, {});
+          serviceTypeMap = serviceTypeResponse.data.data.reduce(
+            (acc, serviceType) => {
+              if (serviceType.ServiceTypeID && serviceType.ServiceType) {
+                acc[serviceType.ServiceTypeID] = serviceType.ServiceType;
+                acc[String(serviceType.ServiceTypeID)] =
+                  serviceType.ServiceType;
+              }
+              return acc;
+            },
+            {}
+          );
           console.log("Service Type Map:", serviceTypeMap);
         }
       } catch (err) {
-        console.error("Could not fetch service types:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch service types:",
+          err.response?.data || err.message
+        );
       }
 
       try {
-        console.log("Fetching shipping priorities from: http://localhost:7000/api/shipping-priorities");
+        console.log(
+          `Fetching shipping priorities from: ${APIBASEURL}/shipping-priorities`
+        );
         const shippingPriorityResponse = await axios.get(
-          "http://localhost:7000/api/shipping-priorities",
+          `${APIBASEURL}/shipping-priorities`,
           { headers }
         );
-        console.log("Shipping Priority API Raw Response:", shippingPriorityResponse.data);
-        if (shippingPriorityResponse.data && shippingPriorityResponse.data.data) {
-          shippingPriorityMap = shippingPriorityResponse.data.data.reduce((acc, priority) => {
-            if (priority.ShippingPriorityID && priority.PriorityName) {
-              acc[priority.ShippingPriorityID] = priority.PriorityName;
-              acc[String(priority.ShippingPriorityID)] = priority.PriorityName;
-            }
-            return acc;
-          }, {});
+        console.log(
+          "Shipping Priority API Raw Response:",
+          shippingPriorityResponse.data
+        );
+        if (
+          shippingPriorityResponse.data &&
+          shippingPriorityResponse.data.data
+        ) {
+          shippingPriorityMap = shippingPriorityResponse.data.data.reduce(
+            (acc, priority) => {
+              if (priority.ShippingPriorityID && priority.PriorityName) {
+                acc[priority.ShippingPriorityID] = priority.PriorityName;
+                acc[String(priority.ShippingPriorityID)] =
+                  priority.PriorityName;
+              }
+              return acc;
+            },
+            {}
+          );
           console.log("Shipping Priority Map:", shippingPriorityMap);
         }
       } catch (err) {
-        console.error("Could not fetch shipping priorities:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch shipping priorities:",
+          err.response?.data || err.message
+        );
       }
 
       order.CollectionAddressTitle = order.CollectionAddressID
-        ? addressMap[order.CollectionAddressID] || `Address ID: ${order.CollectionAddressID}`
+        ? addressMap[order.CollectionAddressID] ||
+          `Address ID: ${order.CollectionAddressID}`
         : "-";
       order.DestinationAddressTitle = order.DestinationAddressID
-        ? addressMap[order.DestinationAddressID] || `Address ID: ${order.DestinationAddressID}`
+        ? addressMap[order.DestinationAddressID] ||
+          `Address ID: ${order.DestinationAddressID}`
         : "-";
       order.CurrencyName = order.CurrencyID
         ? currencyMap[order.CurrencyID] || `Currency ID: ${order.CurrencyID}`
         : "-";
       order.ServiceType = order.ServiceTypeID
-        ? serviceTypeMap[order.ServiceTypeID] || `Service Type ID: ${order.ServiceTypeID}`
+        ? serviceTypeMap[order.ServiceTypeID] ||
+          `Service Type ID: ${order.ServiceTypeID}`
         : "-";
       order.ShippingPriorityName = order.ShippingPriorityID
-        ? shippingPriorityMap[order.ShippingPriorityID] || `Priority ID: ${order.ShippingPriorityID}`
+        ? shippingPriorityMap[order.ShippingPriorityID] ||
+          `Priority ID: ${order.ShippingPriorityID}`
         : "-";
 
       return order;
@@ -179,7 +212,7 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/sales-order/parcels/${SalesOrderID}`, // Updated endpoint
+      `${APIBASEURL}/sales-Order-Parcel?salesOrderId=${SalesOrderID}`,
       { headers }
     );
     console.log("Sales Order Parcels API Response:", response.data);
@@ -191,7 +224,8 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
         const uomResponse = await axios.get(`${APIBASEURL}/uoms`, { headers });
         if (uomResponse.data && uomResponse.data.data) {
           uomMap = uomResponse.data.data.reduce((acc, uom) => {
-            const uomName = uom.UOM || uom.UOMName || uom.Name || uom.Description;
+            const uomName =
+              uom.UOM || uom.UOMName || uom.Name || uom.Description;
             if (uom.UOMID && uomName) {
               acc[uom.UOMID] = uomName;
               acc[String(uom.UOMID)] = uomName;
@@ -201,22 +235,30 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
           console.log("UOM Map:", uomMap);
         }
       } catch (err) {
-        console.error("Could not fetch UOMs:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch UOMs:",
+          err.response?.data || err.message
+        );
       }
 
       let itemMap = {};
       try {
-        const itemResponse = await axios.get(`${APIBASEURL}/items`, { headers });
+        const itemResponse = await axios.get(`${APIBASEURL}/items`, {
+          headers,
+        });
         if (itemResponse.data && itemResponse.data.data) {
           itemMap = itemResponse.data.data.reduce((acc, item) => {
             acc[item.ItemID] = item.ItemName || item.Description;
-            acc[String(item.ItemID)] = item;
+            acc[String(item.ItemID)] = item.ItemName || item.Description;
             return acc;
           }, {});
           console.log("Item Map:", itemMap);
         }
       } catch (err) {
-        console.error("Could not fetch items:", err.response?.data || err.message);
+        console.error(
+          "Could not fetch items:",
+          err.response?.data || err.message
+        );
       }
 
       const enhancedParcels = parcels.map((parcel) => {
@@ -248,7 +290,7 @@ export const fetchSalesOrderStatus = async (SalesOrderID) => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      `${APIBASEURL}/sales-order/${SalesOrderID}`,
+      `${APIBASEURL}/sales-Order/${SalesOrderID}`,
       { headers }
     );
 
@@ -264,53 +306,63 @@ export const fetchSalesOrderStatus = async (SalesOrderID) => {
         console.log("Parsed status:", status);
         return status;
       }
-    } else if (response.data && (response.data.Status || response.data.status)) {
+    } else if (
+      response.data &&
+      (response.data.Status || response.data.status)
+    ) {
       const status = response.data.Status || response.data.status;
       console.log("Parsed status:", status);
       return status;
     }
 
     console.warn("Status field not found in response:", response.data);
-    return "Pending"; // Default to Pending
+    return "Pending";
   } catch (error) {
     console.error("Error fetching Sales Order status:", {
       error: error.message,
       response: error.response?.data,
       status: error.response?.status,
     });
-    return "Pending"; // Fallback to Pending
+    return "Pending";
   }
 };
 
 // Fetch user-specific approval status for a Sales Order
-export const fetchUserApprovalStatus = async (SalesOrderID, approverId) => {
+export const fetchUserApprovalStatus = async (salesOrderID, approverId) => {
   try {
     const { headers } = getAuthHeader();
     console.log("Fetching approval status with params:", {
-      SalesOrderID,
+      salesOrderID,
       approverId,
     });
     const response = await axios.get(
-      `${APIBASEURL}/sales-order/approvals/${SalesOrderID}/${approverId}`, // Updated endpoint
+      `${APIBASEURL}/sales-Order-Approval/${salesOrderID}/${approverId}`,
       { headers }
     );
 
     console.log(
-      "Full API response for SalesOrderID:",
-      SalesOrderID,
+      "Raw API response for SalesOrderID:",
+      salesOrderID,
       "ApproverID:",
       approverId,
-      {
-        status: response.status,
-        data: response.data,
-      }
+      response.data
     );
 
     let approval = null;
-    if (response.data?.data) {
+    if (Array.isArray(response.data?.data)) {
+      // Handle array response
+      approval = response.data.data.find(
+        (record) =>
+          record.ApproverID === approverId ||
+          record.ApproverID === String(approverId)
+      );
+      console.log("Filtered approval record for ApproverID:", approval);
+    } else if (response.data?.data) {
       approval = response.data.data;
+      console.log("Single approval record:", approval);
     } else if (response.data && typeof response.data === "object") {
       approval = response.data;
+      console.log("Direct approval object:", approval);
     }
 
     console.log("Processed approval data:", approval);
@@ -327,28 +379,20 @@ export const fetchUserApprovalStatus = async (SalesOrderID, approverId) => {
       response: error.response?.data,
       status: error.response?.status,
     });
-    return "Pending"; // Fallback to Pending
+    return "Pending";
   }
 };
 
 // Approve a Sales Order
 export const approveSalesOrder = async (SalesOrderID) => {
   try {
-    const { headers, personId } = getAuthHeader();
-    console.log(
-      `Approving Sales Order with ID: ${SalesOrderID}, ApproverID: ${personId}`
-    );
+    const { headers } = getAuthHeader();
+    console.log(`Approving Sales Order with ID: ${SalesOrderID}`);
 
-    if (!personId) {
-      throw new Error("No personId found for approval");
-    }
-
+    const payload = { SalesOrderID: Number(SalesOrderID) };
     const response = await axios.post(
-      `${APIBASEURL}/sales-order/approve`,
-      {
-        SalesOrderID: Number(SalesOrderID),
-        approverID: Number(personId),
-      },
+      `${APIBASEURL}/sales-Order/approve`,
+      payload,
       { headers }
     );
 
@@ -359,7 +403,7 @@ export const approveSalesOrder = async (SalesOrderID) => {
 
     return {
       success: response.data.success || true,
-      message: response.data.message || "Approval successful",
+      message: response.data.message || "Sales Order approved successfully",
       data: response.data.data || {},
       SalesOrderID,
     };
@@ -373,29 +417,116 @@ export const approveSalesOrder = async (SalesOrderID) => {
   }
 };
 
-// Fetch approval status for a Sales Order
-export const fetchSalesOrderApprovalStatus = async (SalesOrderID) => {
+// Disapprove a Sales Order
+export const disapproveSalesOrder = async (SalesOrderID) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers, personId } = getAuthHeader();
+    console.log(
+      `Disapproving Sales Order with ID: ${SalesOrderID}, ApproverID: ${personId}`
+    );
 
-    const response = await axios.get(
-      `${APIBASEURL}/sales-order/${SalesOrderID}`,
+    if (!personId) {
+      throw new Error("No personId found for disapproval");
+    }
+
+    // First, check if an approval record exists
+    const approvalCheck = await axios.get(
+      `${APIBASEURL}/sales-Order-Approval/${SalesOrderID}/${personId}`,
       { headers }
     );
 
+    let response;
+    if (approvalCheck.data?.data) {
+      // Update existing approval
+      response = await axios.put(
+        `${APIBASEURL}/sales-Order-Approval/${SalesOrderID}/${personId}`,
+        {
+          approvedYN: 0,
+          approverDateTime: new Date().toISOString(),
+        },
+        { headers }
+      );
+    } else {
+      // Create new approval with disapproval
+      response = await axios.post(
+        `${APIBASEURL}/sales-Order-Approval`,
+        {
+          salesOrderID: Number(SalesOrderID),
+          approverID: Number(personId),
+          approvedYN: 0,
+          approverDateTime: new Date().toISOString(),
+          createdByID: Number(personId),
+        },
+        { headers }
+      );
+    }
+
+    console.log("Disapproval response:", {
+      status: response.status,
+      data: response.data,
+    });
+
+    return {
+      success: response.data.success || true,
+      message: response.data.message || "Disapproval successful",
+      data: response.data.data || {},
+      SalesOrderID,
+    };
+  } catch (error) {
+    console.error("Error disapproving Sales Order:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    throw error.response?.data || error;
+  }
+};
+
+// Fetch approval status for a Sales Order
+export const fetchSalesOrderApprovalStatus = async (SalesOrderID) => {
+  try {
+    const { headers, personId } = getAuthHeader();
+    console.log(
+      `Fetching approval status for SalesOrderID: ${SalesOrderID}, ApproverID: ${personId}`
+    );
+    const response = await axios.get(
+      `${APIBASEURL}/sales-Order-Approval/${SalesOrderID}/${personId}`,
+      { headers }
+    );
+
+    console.log("Approval status response:", response.data);
+
     if (response.data && response.data.data) {
-      const status = response.data.data.Status;
+      const approval = response.data.data;
       return {
-        SalesOrderID: SalesOrderID,
-        ApprovedYN: status === "Approved" ? true : false,
-        ApproverDateTime: new Date().toISOString(),
+        success: true,
+        data: approval,
+        SalesOrderID,
+        ApprovedYN: approval.ApprovedYN === 1,
+        ApproverDateTime: approval.ApproverDateTime || new Date().toISOString(),
       };
     }
 
-    return null;
+    return {
+      success: false,
+      data: null,
+      SalesOrderID,
+      ApprovedYN: false,
+      ApproverDateTime: null,
+    };
   } catch (error) {
-    console.error("Error fetching Sales Order approval status:", error);
-    throw error;
+    console.error("Error fetching Sales Order approval status:", {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    return {
+      success: false,
+      data: null,
+      SalesOrderID,
+      ApprovedYN: false,
+      ApproverDateTime: null,
+    };
   }
 };
 
@@ -403,15 +534,20 @@ export const fetchSalesOrderApprovalStatus = async (SalesOrderID) => {
 export const fetchAddress = async (addressId) => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(
-      `${APIBASEURL}/addresses/${addressId}`,
-      { headers }
+    const response = await axios.get(`${APIBASEURL}/addresses/${addressId}`, {
+      headers,
+    });
+    console.log(
+      `Address API Response for AddressID ${addressId}:`,
+      response.data
     );
-    console.log(`Address API Response for AddressID ${addressId}:`, response.data);
     if (response.data && response.data.data) {
       return response.data.data;
     }
-    console.warn(`No address data found for AddressID ${addressId}:`, response.data);
+    console.warn(
+      `No address data found for AddressID ${addressId}:`,
+      response.data
+    );
     return null;
   } catch (error) {
     console.error(
@@ -426,7 +562,9 @@ export const fetchAddress = async (addressId) => {
 export const fetchServiceTypes = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/service-types`, { headers });
+    const response = await axios.get(`${APIBASEURL}/service-types`, {
+      headers,
+    });
     console.log("Service Types API Response:", response.data);
     if (response.data && response.data.data) {
       return response.data.data;
@@ -434,7 +572,10 @@ export const fetchServiceTypes = async () => {
     console.warn("No service types found in response:", response.data);
     return [];
   } catch (error) {
-    console.error("Error fetching service types:", error.response?.data || error.message);
+    console.error(
+      "Error fetching service types:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 };
@@ -443,7 +584,9 @@ export const fetchServiceTypes = async () => {
 export const fetchShippingPriorities = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/shipping-priorities`, { headers });
+    const response = await axios.get(`${APIBASEURL}/shipping-priorities`, {
+      headers,
+    });
     console.log("Shipping Priorities API Response:", response.data);
     if (response.data && response.data.data) {
       return response.data.data;
@@ -451,7 +594,10 @@ export const fetchShippingPriorities = async () => {
     console.warn("No shipping priorities found in response:", response.data);
     return [];
   } catch (error) {
-    console.error("Error fetching shipping priorities:", error.response?.data || error.message);
+    console.error(
+      "Error fetching shipping priorities:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 };
@@ -468,7 +614,10 @@ export const fetchCurrencies = async () => {
     console.warn("No currencies found in response:", response.data);
     return [];
   } catch (error) {
-    console.error("Error fetching currencies:", error.response?.data || error.message);
+    console.error(
+      "Error fetching currencies:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 };
@@ -478,10 +627,10 @@ export const fetchSalesOrders = async (page = 1, limit = 10) => {
   try {
     const { headers } = getAuthHeader();
     console.log(
-      `Fetching Sales Orders from: ${APIBASEURL}/sales-order?page=${page}&limit=${limit}`
+      `Fetching Sales Orders from: ${APIBASEURL}/sales-Order?page=${page}&limit=${limit}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-order?page=${page}&limit=${limit}`,
+      `${APIBASEURL}/sales-Order?page=${page}&limit=${limit}`,
       { headers }
     );
     console.log("Sales Orders API Response:", response.data);
@@ -495,7 +644,7 @@ export const fetchSalesOrders = async (page = 1, limit = 10) => {
     return { data: [], total: 0 };
   } catch (error) {
     console.error(
-      `Error fetching Sales Orders:`,
+      "Error fetching Sales Orders:",
       error.response?.data || error.message
     );
     throw error.response?.data || error;
@@ -507,10 +656,10 @@ export const deleteSalesOrder = async (salesOrderId) => {
   try {
     const { headers } = getAuthHeader();
     console.log(
-      `Deleting Sales Order ID ${salesOrderId} at: ${APIBASEURL}/sales-order/${salesOrderId}`
+      `Deleting Sales Order ID ${salesOrderId} at: ${APIBASEURL}/sales-Order/${salesOrderId}`
     );
     const response = await axios.delete(
-      `${APIBASEURL}/sales-order/${salesOrderId}`,
+      `${APIBASEURL}/sales-Order/${salesOrderId}`,
       { headers }
     );
     console.log("Delete Sales Order Response:", response.data);
@@ -527,27 +676,26 @@ export const deleteSalesOrder = async (salesOrderId) => {
 // Create a new Sales Order
 export const createSalesOrder = async (data) => {
   try {
-    const { headers, personId } = getAuthHeader();
-    console.log("Creating Sales Order with personId:", personId);
-    console.log("Headers for create request:", headers);
+    const { headers } = getAuthHeader();
+    console.log("Creating Sales Order with headers:", headers);
 
-    if (!personId) {
-      throw new Error("User not logged in. Please log in again.");
+    const salesQuotationID = parseInt(data.salesQuotationID);
+    console.log("Raw salesQuotationID:", data.salesQuotationID);
+    if (isNaN(salesQuotationID) || salesQuotationID <= 0) {
+      console.error("Invalid salesQuotationID:", data.salesQuotationID);
+      throw new Error("Invalid Sales Quotation ID provided");
     }
 
     const payload = {
-      ...data,
-      CreatedByID: Number(personId),
+      salesQuotationID: salesQuotationID,
     };
 
     console.log("Creating Sales Order with data:", payload);
-    const response = await axios.post(
-      `${APIBASEURL}/sales-order`,
-      payload,
-      { headers }
-    );
+    const response = await axios.post(`${APIBASEURL}/sales-Order`, payload, {
+      headers,
+    });
     console.log("Create Sales Order Response:", response.data);
-    return response.data; // Ensure this includes SalesOrderID
+    return response.data;
   } catch (error) {
     console.error(
       "Error creating Sales Order:",
@@ -557,35 +705,93 @@ export const createSalesOrder = async (data) => {
   }
 };
 
-// Fetch Sales Quotations for dropdown (filtered by approved status)
+// Fetch Sales Quotations for dropdown
 export const fetchSalesQuotations = async () => {
   try {
     const { headers } = getAuthHeader();
-    console.log("Fetching Sales Quotations from:", `${APIBASEURL}/sales-quotation`);
-    const salesQuotationResponse = await axios.get(`${APIBASEURL}/sales-quotation`, {
-      headers,
-    });
-    console.log("Sales Quotations API Response:", salesQuotationResponse.data);
+    console.log(
+      "=== FETCHING SALES QUOTATIONS ===",
+      `${APIBASEURL}/sales-Quotation`
+    );
+    const salesQuotationResponse = await axios.get(
+      `${APIBASEURL}/sales-Quotation`,
+      { headers }
+    );
+    console.log(
+      "Sales Quotations API Raw Response:",
+      salesQuotationResponse.data
+    );
 
     if (salesQuotationResponse.data && salesQuotationResponse.data.data) {
       const quotations = salesQuotationResponse.data.data;
+      console.log("Raw Sales Quotations (all):", quotations);
+      console.log("Total quotations received:", quotations.length);
 
-      // Filter for approved quotations (Status === "Approved")
-      const approvedQuotations = quotations.filter(
-        (quotation) => quotation.Status === "Approved"
-      );
-
-      console.log("Approved Sales Quotations:", approvedQuotations);
-
-      const formattedQuotations = approvedQuotations.map((quotation) => {
-        const formatted = {
-          value: String(quotation.SalesQuotationID || quotation.id),
-          label: quotation.Series || `Quotation #${quotation.SalesQuotationID || quotation.id}`,
-        };
-        console.log("Formatted Quotation:", formatted);
-        return formatted;
+      quotations.forEach((q, index) => {
+        console.log(`Quotation ${index + 1}:`, {
+          id: q.SalesQuotationID,
+          series: q.Series,
+          status: q.Status,
+          isApproved: q.Status === "Approved",
+        });
       });
-      console.log("Formatted Sales Quotations:", formattedQuotations);
+
+      let usedQuotationIds = [];
+      try {
+        const salesOrdersResponse = await axios.get(
+          `${APIBASEURL}/sales-Order?page=1&limit=1000`,
+          { headers }
+        );
+        console.log(
+          "Sales Orders for Quotation Filter:",
+          salesOrdersResponse.data
+        );
+        if (salesOrdersResponse.data && salesOrdersResponse.data.data) {
+          usedQuotationIds = salesOrdersResponse.data.data
+            .map((order) => order.SalesQuotationID)
+            .filter((id) => id);
+          console.log("Used SalesQuotationIDs:", usedQuotationIds);
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching Sales Orders for quotation filter:",
+          error.response?.data || error.message
+        );
+      }
+
+      const approvedQuotations = quotations.filter(
+        (quotation) =>
+          quotation.Status === "Approved" &&
+          !usedQuotationIds.includes(quotation.SalesQuotationID)
+      );
+      console.log("Approved and Unused Sales Quotations:", approvedQuotations);
+      console.log("Approved and unused count:", approvedQuotations.length);
+
+      const formattedQuotations = approvedQuotations
+        .map((quotation) => {
+          const id = quotation.SalesQuotationID || quotation.id;
+          if (!id || isNaN(parseInt(id))) {
+            console.warn("Invalid SalesQuotationID in quotation:", quotation);
+            return null;
+          }
+          const formatted = {
+            value: String(id),
+            label: quotation.Series || `Quotation #${id}`,
+          };
+          console.log("Formatted Quotation:", formatted);
+          return formatted;
+        })
+        .filter(Boolean);
+
+      console.log("Final Formatted Sales Quotations:", formattedQuotations);
+      console.log("Final formatted count:", formattedQuotations.length);
+
+      if (!formattedQuotations.length) {
+        console.warn("No valid approved and unused Sales Quotations found");
+        console.log(
+          "Check if quotations have Status === 'Approved' and are not used in Sales Orders"
+        );
+      }
 
       return formattedQuotations;
     } else {
@@ -599,6 +805,10 @@ export const fetchSalesQuotations = async () => {
     console.error(
       "Error fetching Sales Quotations:",
       error.response?.data || error.message
+    );
+    toast.error(
+      "Failed to load Sales Quotations: " +
+        (error.response?.data?.message || error.message)
     );
     return [];
   }
