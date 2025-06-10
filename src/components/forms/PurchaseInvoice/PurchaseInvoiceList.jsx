@@ -59,12 +59,12 @@ const PurchaseInvoiceList = () => {
           name: supplier.SupplierName || "Unknown Supplier",
         }));
         setSuppliers(mappedSuppliers);
-        console.log("Fetched Suppliers:", mappedSuppliers);
+        console.log("Fetched Suppliers (Detailed):", mappedSuppliers);
         setSuppliersLoaded(true);
       } catch (error) {
         console.error("Error fetching suppliers:", error);
         toast.error("Failed to fetch suppliers: " + error.message);
-        setSuppliersLoaded(true); // Still set to true to allow invoices to load with fallback
+        setSuppliersLoaded(true);
       }
     };
 
@@ -90,12 +90,15 @@ const PurchaseInvoiceList = () => {
           const supplier = suppliers.find(
             (s) => String(s.id) === String(invoice.SupplierID)
           );
+          const invoiceId = invoice.PInvoiceID !== undefined && invoice.PInvoiceID !== null
+            ? invoice.PInvoiceID
+            : `fallback-${index}`; // Fallback if PInvoiceID is missing
           return {
-            id: String(invoice.PurchaseInvoiceID || invoice.id || `invoice-${index}`), // Use index as a unique fallback
+            id: `${invoiceId}`, // Ensure unique ID for DataTable keys
             Series: invoice.Series || "-",
             SupplierID: String(invoice.SupplierID) || "N/A",
             SupplierName: supplier?.name || `Supplier ID: ${invoice.SupplierID} (Not Found)`,
-            CustomerName: invoice.Customer?.CustomerName || "Unknown Customer",
+            CustomerName: invoice.CustomerName || "Unknown Customer", // Use CustomerName directly from sample
             ServiceType: invoice.ServiceType?.ServiceType || "Unknown Service",
             Status: invoice.Status || "Pending",
             IsPaid: invoice.IsPaid || false,
@@ -260,11 +263,14 @@ const PurchaseInvoiceList = () => {
             field: "id",
             headerName: "ID",
             width: 100,
-            valueGetter: (params) => params.row.id || "No ID",
+            valueGetter: (params) => {
+              const idParts = params.row.id.split('-');
+              return idParts[0]; // Display only the PInvoiceID part (e.g., "2252")
+            },
           },
         ]}
         loading={loading}
-        getRowId={(row) => row.id} // Rely on unique id
+        getRowId={(row) => row.id} // Use the unique id with index
         page={page}
         rowsPerPage={rowsPerPage}
         totalRows={totalRows}
