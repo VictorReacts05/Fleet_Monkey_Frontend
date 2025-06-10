@@ -1,62 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   Box,
   Button,
   Typography,
   CircularProgress,
   useTheme,
-  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../Common/DataTable";
 import FormSelect from "../../Common/FormSelect";
 import FormInput from "../../Common/FormInput";
 import { toast } from "react-toastify";
-import axios from "axios";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
-import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from "./PurchaseOrderAPI";
 import { useNavigate } from "react-router-dom";
-
-// Function to fetch items from API
-const fetchItems = async () => {
-  try {
-    const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/items`, { headers });
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching items:", error);
-    throw error;
-  }
-};
-
-// Function to fetch UOMs from API
-const fetchUOMs = async () => {
-  try {
-    const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/uoms`, { headers });
-    if (response.data && response.data.data) {
-      return response.data.data;
-    } else if (Array.isArray(response.data)) {
-      return response.data;
-    } else {
-      console.warn("Unexpected UOM API response format:", response.data);
-      return [];
-    }
-  } catch (error) {
-    console.error("Error fetching UOMs:", error);
-    throw error;
-  }
-};
+import axios from "axios";
+import {
+  fetchPurchaseOrderParcels,
+  fetchItems,
+  fetchUOMs,
+} from "./PurchaseOrderAPI";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const PurchaseOrderParcelsTab = ({
   purchaseOrderId,
   onParcelsChange,
-  readOnly = false,
+  user,
+  readOnly = !user,
 }) => {
   const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
@@ -69,10 +48,17 @@ const PurchaseOrderParcelsTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
-  const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
   const [activeTab] = useState("parcels");
 
   const theme = useTheme();
+
+  // Track if dropdown data and parcels have been loaded
+  const isDropdownLoaded = useRef(false);
+  const isParcelsLoaded = useRef(false);
+
+  // Memoize items and uoms to prevent reference changes
+  const memoizedItems = useMemo(() => items, [items]);
+  const memoizedUOMs = useMemo(() => uoms, [uoms]);
 
   // Define columns for DataTable
   const columns = [
@@ -83,198 +69,118 @@ const PurchaseOrderParcelsTab = ({
     { field: "amount", headerName: "Amount", flex: 1 },
   ];
 
-  // Load dropdown data when component mounts
-  useEffect(() => {
-    const loadDropdownData = async () => {
-      try {
-        setLoading(true);
-        const [itemsData, uomsData] = await Promise.all([
-          fetchItems().catch((err) => {
-            console.error("Failed to fetch items:", err);
-            toast.error("Failed to load items");
-            return [];
-          }),
-          fetchUOMs().catch((err) => {
-            console.error("Failed to fetch UOMs:", err);
-            toast.error("Failed to load UOMs");
-            return [];
-          }),
-        ]);
+  const loadDropdownData = useCallback(async () => {
+    if (!user) {
+      toast.error("Please log in to access this page");
+      navigate("/login");
+      return;
+    }
+    if (isDropdownLoaded.current) {
+      return;
+    }
 
-        const itemOptions = [
-          { value: "", label: "Select an item" },
-          ...itemsData.map((item) => ({
-            value: String(item.ItemID),
-            label: item.ItemName,
-          })),
-        ];
+    try {
+      setLoading(true);
+      const [itemsData, uomsData] = await Promise.all([
+        fetchItems(user).catch((err) => {
+          console.error("Failed to fetch items:", err);
+          toast.error("Failed to load items");
+          return [];
+        }),
+        fetchUOMs(user).catch((err) => {
+          console.error("Failed to fetch UOMs:", err);
+          toast.error("Failed to load UOMs");
+          return [];
+        }),
+      ]);
 
-        const uomOptions = [
-          { value: "", label: "Select a UOM" },
-          ...uomsData.map((uom) => ({
-            value: String(
-              uom.UOMID ||
-                uom.UOMId ||
-                uom.uomID ||
-                uom.uomId ||
-                uom.id ||
-                uom.ID
-            ),
-            label:
-              uom.UOM ||
-              uom.UOMName ||
-              uom.uomName ||
-              uom.Name ||
-              uom.name ||
-              String(uom.UOMDescription || uom.Description || "Unknown UOM"),
-          })),
-        ];
+      const itemOptions = [
+        { value: "", label: "Select an item" },
+        ...itemsData.map((item) => ({
+          value: String(item.ItemID),
+          label: item.ItemName || "Unknown Item",
+        })),
+      ];
 
-        setItems(itemOptions);
-        setUOMs(uomOptions);
-      } catch (error) {
-        console.error("Error loading dropdown data:", error);
-        toast.error("Failed to load form data: " + error.message);
-      } finally {
-        setLoading(false);
+      const uomOptions = [
+        { value: "", label: "Select a UOM" },
+        ...uomsData.map((uom) => ({
+          value: String(uom.UOMID),
+          label:
+            uom.UOM ||
+            uom.UOMName ||
+            uom.Name ||
+            uom.Description ||
+            "Unknown UOM",
+        })),
+      ];
+
+      setItems(itemOptions);
+      setUOMs(uomOptions);
+      isDropdownLoaded.current = true;
+    } catch (error) {
+      console.error("Error loading dropdown data:", error);
+      toast.error("Failed to load form data");
+    } finally {
+      setLoading(false);
+    }
+  }, [user, navigate]);
+
+  const loadExistingParcels = useCallback(async () => {
+    if (!purchaseOrderId || !user || isParcelsLoaded.current) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const parcelData = await fetchPurchaseOrderParcels(purchaseOrderId, user);
+
+      const formattedParcels = parcelData.map((parcel, index) => {
+        const itemId = String(parcel.ItemID || "");
+        const uomId = String(parcel.UOMID || "");
+
+        const item = memoizedItems.find((i) => i.value === itemId);
+        const uom = memoizedUOMs.find((u) => u.value === uomId);
+
+        return {
+          id: parcel.PurchaseOrderParcelID || `Parcel-${index + 1}`,
+          itemId,
+          uomId,
+          quantity: String(parseFloat(parcel.ItemQuantity) || 0),
+          rate: String(parseFloat(parcel.Rate) || 0),
+          amount: String(parseFloat(parcel.Amount) || 0),
+          itemName: item?.label || parcel.ItemName || `Item #${itemId}`,
+          uomName: uom?.label || parcel.UOM || `UOM #${uomId}`,
+          srNo: index + 1,
+          PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
+          POID: purchaseOrderId,
+        };
+      });
+
+      setParcels(formattedParcels);
+      if (onParcelsChange) {
+        onParcelsChange(formattedParcels);
       }
-    };
+      isParcelsLoaded.current = true;
+    } catch (error) {
+      console.error("Error loading parcels:", error);
+      toast.error("Failed to load parcels");
+      setParcels([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [purchaseOrderId, user, memoizedItems, memoizedUOMs, onParcelsChange]);
 
+  useEffect(() => {
     loadDropdownData();
-  }, []);
+  }, [loadDropdownData]);
 
-  // Load existing parcels when purchaseOrderId is provided
   useEffect(() => {
-    const loadExistingParcels = async () => {
-      if (!purchaseOrderId) {
-        setParcels([]);
-        return;
-      }
+    if (isDropdownLoaded.current && !isParcelsLoaded.current) {
+      loadExistingParcels();
+    }
+  }, [loadExistingParcels]);
 
-      try {
-        setLoadingExistingParcels(true);
-        const { headers } = getAuthHeader();
-        const response = await axios.get(
-          `${APIBASEURL}/po-Parcel?poId=${purchaseOrderId}`,
-          { headers }
-        );
-
-        let parcelData = [];
-        if (response.data.data && Array.isArray(response.data.data)) {
-          parcelData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          parcelData = response.data;
-        } else {
-          console.warn("Unexpected response format:", response.data);
-        }
-
-        const filteredParcels = parcelData.filter((parcel) => {
-          const parcelPOID =
-            parcel.POID || parcel.PoId || parcel.poId || parcel.PoID;
-          return String(parcelPOID) === String(purchaseOrderId);
-        });
-
-        if (filteredParcels.length === 0) {
-          setParcels([]);
-          return;
-        }
-
-        let itemsToUse = items;
-        let uomsToUse = uoms;
-
-        if (items.length <= 1) {
-          try {
-            const itemsResponse = await fetchItems();
-            itemsData = [];
-            itemsToUse = [
-              { value: "", label: "Select an item" },
-              ...itemsData.map((item) => ({
-                value: String(item.ItemID),
-                label: item.ItemName,
-              })),
-            ];
-          } catch (err) {
-            console.error("Failed to fetch items directly:", err);
-          }
-        }
-
-        if (uoms.length <= 1) {
-          try {
-            const uomsResponse = await fetchUOMs();
-            uomsData = [];
-            itemsToUse = [
-              { value: "", label: "Select an item" },
-              ...itemsData.map((item) => ({
-                value: String(item.ItemID),
-                label: item.ItemName,
-              })),
-            ];
-          } catch (err) {
-            console.error("Failed to fetch UOMs directly:", err);
-          }
-        }
-
-        const formattedParcels = filteredParcels.map((parcel, index) => {
-          let itemName = "Unknown Item";
-          let uomName = "Unknown UOM";
-
-          try {
-            const itemId = String(parcel.ItemID || "");
-            const uomId = String(parcel.UOMID || "");
-
-            const item = itemsToUse.find((i) => i.value === itemId);
-            if (item) {
-              itemName = item.label;
-            } else if (parcel.ItemName) {
-              itemName = parcel.ItemName;
-            } else {
-              itemName = `Item #${itemId}`;
-            }
-
-            const uom = uomsToUse.find((u) => u.value === uomId);
-            if (uom) {
-              uomName = uom.label;
-            } else if (parcel.UOMName) {
-              uomName = parcel.UOMName;
-            } else {
-              uomName = `UOM #${uomId}`;
-            }
-          } catch (err) {
-            console.error("Error formatting parcel data:", err);
-          }
-
-          return {
-            id: parcel.PurchaseOrderParcelID || parcel.id || Date.now() + index,
-            itemId: String(parcel.ItemID || ""),
-            uomId: String(parcel.UOMID || ""),
-            quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
-            rate: String(parcel.Rate || "0"),
-            amount: String(parcel.Amount || "0"),
-            itemName,
-            uomName,
-            srNo: index + 1,
-            PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
-            POID: purchaseOrderId,
-          };
-        });
-
-        setParcels(formattedParcels);
-        if (onParcelsChange) {
-          onParcelsChange(formattedParcels);
-        }
-      } catch (error) {
-        console.error("Error loading existing parcels:", error);
-        setParcels([]);
-      } finally {
-        setLoadingExistingParcels(false);
-      }
-    };
-
-    setParcels([]);
-    loadExistingParcels();
-  }, [purchaseOrderId, items, uoms]);
-
-  // Handle adding a new parcel form
   const handleAddParcel = () => {
     const newFormId = Date.now();
     setParcelForms((prev) => [
@@ -290,11 +196,10 @@ const PurchaseOrderParcelsTab = ({
     ]);
   };
 
-  // Handle editing an existing parcel
   const handleEditParcel = (id) => {
     const parcelToEdit = parcels.find((p) => p.id === id);
     if (!parcelToEdit) {
-      console.error("Parcel not found for editing:", id);
+      toast.error("Parcel not found");
       return;
     }
 
@@ -314,14 +219,14 @@ const PurchaseOrderParcelsTab = ({
     ]);
   };
 
-  // Handle form field changes
   const handleChange = (e, formId) => {
     const { name, value } = e.target;
     setParcelForms((prev) =>
       prev.map((form) => {
-        if (form.id !== formId) return form;
+        if (form.id !== formId) {
+          return form;
+        }
         const updatedForm = { ...form, [name]: value };
-        // Auto-calculate Amount when Quantity or Rate changes
         if (name === "quantity" || name === "rate") {
           const qty = name === "quantity" ? value : form.quantity;
           const rate = name === "rate" ? value : form.rate;
@@ -331,44 +236,44 @@ const PurchaseOrderParcelsTab = ({
       })
     );
 
-    // Clear errors when field is changed
-    if (errors[formId]?.[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [formId]: {
-          ...prev[formId],
-          [name]: undefined,
-        },
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [formId]: {
+        ...prev[formId],
+        [name]: undefined,
+      },
+    }));
   };
 
-  // Validate a parcel form
   const validateParcelForm = (form) => {
     const formErrors = {};
-    if (!form.itemId) formErrors.itemId = "Item is required";
-    if (!form.uomId) formErrors.uomId = "UOM is required";
-    if (!form.quantity) {
-      formErrors.quantity = "Quantity is required";
-    } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
+    if (!form.itemId) {
+      formErrors.itemId = "Item is required";
+    }
+    if (!form.uomId) {
+      formErrors.uomId = "UOM is required";
+    }
+    if (
+      !form.quantity ||
+      isNaN(Number(form.quantity)) ||
+      Number(form.quantity) <= 0
+    ) {
       formErrors.quantity = "Quantity must be a positive number";
     }
-    if (!form.rate) {
-      formErrors.rate = "Rate is required";
-    } else if (isNaN(Number(form.rate)) || Number(form.rate) < 0) {
+    if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0) {
       formErrors.rate = "Rate must be a non-negative number";
     }
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) < 0) {
-      formErrors.amount = "Invalid Amount";
+      formErrors.amount = "Amount must be a non-negative number";
     }
-
     return formErrors;
   };
 
-  // Handle saving a parcel form
-  const handleSave = (formId) => {
+  const handleSave = async (formId) => {
     const form = parcelForms.find((f) => f.id === formId);
-    if (!form) return;
+    if (!form) {
+      return;
+    }
 
     const formErrors = validateParcelForm(form);
     if (Object.keys(formErrors).length > 0) {
@@ -379,9 +284,8 @@ const PurchaseOrderParcelsTab = ({
       return;
     }
 
-    const { personId } = getAuthHeader();
-    if (!personId) {
-      toast.error("User authentication data missing. Please log in again.");
+    if (!user?.personId) {
+      toast.error("User authentication data missing. Please log in");
       navigate("/login");
       return;
     }
@@ -394,68 +298,102 @@ const PurchaseOrderParcelsTab = ({
 
     const newParcel = {
       id: form.originalId || form.id,
-      PurchaseOrderParcelID:
-        originalParcel?.PurchaseOrderParcelID || originalParcel?.id,
-      POID: purchaseOrderId,
+      PurchaseOrderParcelID: originalParcel?.id || form.id,
+      POID: parseInt(purchaseOrderId, 10),
       ItemID: parseInt(form.itemId, 10),
-      itemId: form.itemId,
+      itemId: parseInt(form.itemId, 10),
       UOMID: parseInt(form.uomId, 10),
-      uomId: form.uomId,
-      ItemQuantity: parseInt(form.quantity, 10),
-      Quantity: parseInt(form.quantity, 10),
-      quantity: form.quantity,
+      uomId: parseInt(form.uomId, 10),
+      ItemQuantity: parseFloat(form.quantity),
+      Quantity: parseFloat(form.quantity),
+      quantity: parseFloat(form.quantity),
       Rate: parseFloat(form.rate),
-      rate: form.rate,
+      rate: parseFloat(form.rate),
       Amount: parseFloat(form.amount),
-      amount: form.amount,
-      itemName: selectedItem ? selectedItem.label : "Unknown Item",
-      uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+      amount: parseFloat(form.amount),
+      itemName: selectedItem?.label || "Unknown Item",
+      uomName: selectedUOM?.label || "Unknown UOM",
       srNo: originalParcel?.srNo || parcels.length + 1,
       isModified: true,
-      CreatedByID: personId ? parseInt(personId, 10) : null,
+      CreatedByID: user?.personId ? parseInt(user.personId, 10) : null,
       PurchaseOrderParcel: {
-        PurchaseOrderParcelID:
-          originalParcel?.PurchaseOrderParcelID || originalParcel?.id,
-        POID: purchaseOrderId,
+        PurchaseOrderParcelID: originalParcel?.PurchaseOrderParcelID || null,
+        POID: parseInt(purchaseOrderId, 10),
         ItemID: parseInt(form.itemId, 10),
         UOMID: parseInt(form.uomId, 10),
-        ItemQuantity: parseInt(form.quantity, 10),
+        ItemQuantity: parseFloat(form.quantity),
         Rate: parseFloat(form.rate),
         Amount: parseFloat(form.amount),
-        CreatedByID: personId ? parseInt(personId, 10) : null,
+        CreatedByID: user?.personId ? parseInt(user.personId, 10) : null,
       },
     };
 
-    let updatedParcels;
-    if (form.editIndex !== undefined) {
-      updatedParcels = [...parcels];
-      updatedParcels[form.editIndex] = newParcel;
-    } else {
-      updatedParcels = [...parcels, newParcel];
-    }
-
-    setParcels(updatedParcels);
-    if (onParcelsChange) {
-      onParcelsChange(updatedParcels);
+    try {
+      const { headers } = getAuthHeader(user);
+      if (originalParcel) {
+        await axios.put(
+          `${APIBASEURL}/PO-Parcel/${newParcel.PurchaseOrderParcelID}`,
+          newParcel.PurchaseOrderParcel,
+          { headers }
+        );
+      } else {
+        await axios.post(
+          `${APIBASEURL}/PO-Parcel`,
+          newParcel.PurchaseOrderParcel,
+          { headers }
+        );
+      }
+      setParcels((prev) => {
+        let updatedParcels;
+        if (form.editIndex !== undefined) {
+          updatedParcels = [...prev];
+          updatedParcels[form.editIndex] = newParcel;
+        } else {
+          updatedParcels = [...prev, newParcel];
+        }
+        if (onParcelsChange) {
+          onParcelsChange(updatedParcels);
+        }
+        return updatedParcels;
+      });
+      toast.success("Parcel saved successfully");
+    } catch (error) {
+      console.error("Error saving parcel:", error);
+      toast.error("Failed to save parcel");
     }
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
   };
 
-  // Handle deleting a parcel
   const handleDeleteParcel = (id) => {
-    setDeleteParcelId(id);
     setDeleteConfirmOpen(true);
+    setDeleteParcelId(id);
   };
 
-  const handleConfirmDelete = () => {
-    const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
-    setParcels(updatedParcels);
-    if (onParcelsChange) {
-      onParcelsChange(updatedParcels);
+  const handleConfirmDelete = async () => {
+    try {
+      const parcelToDelete = parcels.find((p) => p.id === deleteParcelId);
+      if (parcelToDelete?.PurchaseOrderParcelID) {
+        const { headers } = getAuthHeader(user);
+        await axios.delete(
+          `${APIBASEURL}/PO-Parcel/${parcelToDelete.PurchaseOrderParcelID}`,
+          { headers }
+        );
+      }
+
+      const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
+      setParcels(updatedParcels);
+      if (onParcelsChange) {
+        onParcelsChange(updatedParcels);
+      }
+      toast.success("Parcel deleted successfully");
+    } catch (error) {
+      console.error("Error deleting parcel:", error);
+      toast.error("Failed to delete parcel");
+    } finally {
+      setDeleteConfirmOpen(false);
+      setDeleteParcelId(null);
     }
-    setDeleteConfirmOpen(false);
-    setDeleteParcelId(null);
   };
 
   const handleCancelDelete = () => {
@@ -469,52 +407,47 @@ const PurchaseOrderParcelsTab = ({
         mt: 2,
         display: "flex",
         flexDirection: "column",
-        borderRadius: 1,
+        borderRadius: "8px",
       }}
     >
-      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
-          borderTopLeftRadius: 4,
-          borderTopRightRadius: 4,
+          borderTopLeftRadius: "8px",
+          borderTopRightRadius: "8px",
         }}
       >
         <Box
           sx={{
-            py: 1.5,
-            px: 3,
-            fontWeight: "bold",
-            borderTop: "1px solid #e0e0e0",
-            borderRight: "1px solid #e0e0e0",
-            borderLeft: "1px solid #e0e0e0",
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
+            py: "12px",
+            px: "24px",
+            fontWeight: "600",
+            border: "1px solid #e0e0e0",
+            borderBottom: "0",
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              theme.palette.mode === "light" ? "#f5f8fc" : "#1e293b",
             color: theme.palette.text.primary,
-            cursor: "pointer",
           }}
         >
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="p">
             Items
           </Typography>
         </Box>
       </Box>
 
-      {/* Content area */}
       <Box
         sx={{
-          p: 2,
+          p: "16px",
           border: "1px solid #e0e0e0",
-          borderBottomLeftRadius: 4,
-          borderBottomRightRadius: 4,
-          borderTopRightRadius: 4,
+          borderTop: "none",
+          borderRadius: "0 8px 8px 8px",
         }}
       >
-        {loading || loadingExistingParcels ? (
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
+            <CircularProgress size={24} />
           </Box>
         ) : (
           <>
@@ -523,17 +456,27 @@ const PurchaseOrderParcelsTab = ({
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleAddParcel}
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  bgcolor: "#1976d2",
+                  "&:hover": { bgcolor: "#1565c0" },
+                }}
               >
                 Add Parcel
               </Button>
             )}
 
             {parcels.length === 0 && parcelForms.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: "12px",
+                  color: "text.secondary",
+                }}
+              >
                 <Typography variant="body1">
-                  No parcels added yet.{" "}
-                  {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                  No delivery items added yet.{" "}
+                  {!readOnly && 'Click "Add Parcel" to start.'}
                 </Typography>
               </Box>
             )}
@@ -542,15 +485,18 @@ const PurchaseOrderParcelsTab = ({
               <Box
                 key={form.id}
                 sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
+                  mt: "8px",
+                  mb: "16px",
+                  p: "16px",
                   border: "1px solid #e0e0e0",
-                  borderRadius: 1,
+                  borderRadius: "4px",
+                  bgcolor: "background.paper",
                 }}
               >
                 <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                  {form.editIndex !== undefined
+                    ? "Edit Delivery Item"
+                    : "New Delivery Item"}
                 </Typography>
 
                 <Box
@@ -558,11 +504,11 @@ const PurchaseOrderParcelsTab = ({
                     display: "flex",
                     flexDirection: "row",
                     flexWrap: "wrap",
-                    gap: 2,
-                    mb: 2,
+                    gap: "16px",
+                    mb: "16px",
                   }}
                 >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                  <Box sx={{ flex: "1 1 250px", minWidth: "200px" }}>
                     <FormSelect
                       name="itemId"
                       label="Item"
@@ -574,7 +520,7 @@ const PurchaseOrderParcelsTab = ({
                     />
                   </Box>
 
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                  <Box sx={{ flex: "1 1 250px", minWidth: "200px" }}>
                     <FormSelect
                       name="uomId"
                       label="UOM"
@@ -586,7 +532,7 @@ const PurchaseOrderParcelsTab = ({
                     />
                   </Box>
 
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                  <Box sx={{ flex: "1 1 250px", minWidth: "200px" }}>
                     <FormInput
                       name="quantity"
                       label="Quantity"
@@ -595,10 +541,11 @@ const PurchaseOrderParcelsTab = ({
                       error={!!errors[form.id]?.quantity}
                       helperText={errors[form.id]?.quantity}
                       type="number"
+                      inputProps={{ min: 0 }}
                     />
                   </Box>
 
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                  <Box sx={{ flex: "1 1 250px", minWidth: "200px" }}>
                     <FormInput
                       name="rate"
                       label="Rate"
@@ -607,10 +554,11 @@ const PurchaseOrderParcelsTab = ({
                       error={!!errors[form.id]?.rate}
                       helperText={errors[form.id]?.rate}
                       type="number"
+                      inputProps={{ min: 0 }}
                     />
                   </Box>
 
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                  <Box sx={{ flex: "1 1 250px", minWidth: "200px" }}>
                     <FormInput
                       name="amount"
                       label="Amount"
@@ -619,6 +567,7 @@ const PurchaseOrderParcelsTab = ({
                       helperText={errors[form.id]?.amount}
                       type="number"
                       disabled
+                      inputProps={{ min: 0 }}
                     />
                   </Box>
                 </Box>
@@ -627,7 +576,7 @@ const PurchaseOrderParcelsTab = ({
                   sx={{
                     display: "flex",
                     justifyContent: "flex-end",
-                    gap: 1,
+                    gap: "8px",
                   }}
                 >
                   <Button
@@ -637,14 +586,23 @@ const PurchaseOrderParcelsTab = ({
                         prev.filter((f) => f.id !== form.id)
                       )
                     }
+                    sx={{
+                      color: "#1976d2",
+                      borderColor: "#1976d2",
+                      "&:hover": { borderColor: "#1565c0", bgcolor: "#f0f7ff" },
+                    }}
                   >
                     Cancel
                   </Button>
                   <Button
                     variant="contained"
                     onClick={() => handleSave(form.id)}
+                    sx={{
+                      bgcolor: "#1976d2",
+                      "&:hover": { bgcolor: "#1565c0" },
+                    }}
                   >
-                    Save Items
+                    Save Item
                   </Button>
                 </Box>
               </Box>
@@ -657,8 +615,8 @@ const PurchaseOrderParcelsTab = ({
                 page={page}
                 rowsPerPage={rowsPerPage}
                 onPageChange={(newPage) => setPage(newPage)}
-                onRowsPerPageChange={(newPageSize) =>
-                  setRowsPerPage(newPageSize)
+                onRowsPerPageChange={(newRowsPerPage) =>
+                  setRowsPerPage(newRowsPerPage)
                 }
                 rowsPerPageOptions={[5, 10, 25]}
                 checkboxSelection={false}
@@ -668,7 +626,12 @@ const PurchaseOrderParcelsTab = ({
                 onEdit={!readOnly ? handleEditParcel : undefined}
                 onDelete={!readOnly ? handleDeleteParcel : undefined}
                 totalRows={parcels.length}
-                isPagination={true}
+                isPagination
+                sx={{
+                  bgcolor: "background.paper",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                }}
               />
             )}
           </>
@@ -678,20 +641,30 @@ const PurchaseOrderParcelsTab = ({
       <Dialog
         open={deleteConfirmOpen}
         onClose={handleCancelDelete}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
+        aria-labelledby="delete-confirm-dialog-title"
+        aria-describedby="delete-confirm-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">{"Confirm Deletion"}</DialogTitle>
+        <DialogTitle id="delete-confirm-dialog-title">
+          {"Confirm Item Deletion"}
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Are you sure you want to remove this parcel? This action cannot be
-            undone.
+          <DialogContentText id="delete-confirm-dialog-description">
+            Are you sure you want to delete this delivery item? This action is
+            permanent.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancelDelete}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus>
-            Delete
+          <Button onClick={handleCancelDelete} sx={{ color: "#1976d2" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            autoFocus
+            sx={{ bgcolor: "#d32f2f", "&:hover": { bgcolor: "#b71c1c" } }}
+          >
+            Delete Item
           </Button>
         </DialogActions>
       </Dialog>

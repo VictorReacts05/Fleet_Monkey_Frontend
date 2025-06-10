@@ -10,14 +10,17 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import FormPage from "../../Common/FormPage";
-import StatusIndicator from "./StatusIndicator";
+import PurchaseOrderStatusIndicator from "./PurchaseOrderStatusIndicator";
 import PurchaseOrderParcelsTab from "./PurchaseOrderParcelsTab";
 import { toast } from "react-toastify";
 import {
   fetchPurchaseOrder,
   fetchPurchaseOrderParcels,
+  fetchPurchaseOrderApprovalStatus,
 } from "./PurchaseOrderAPI";
+import { useAuth } from "../../../context/AuthContext";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -53,18 +56,29 @@ const PurchaseOrderForm = ({
   const theme = useTheme();
   const navigate = useNavigate();
   const purchaseOrderId = propPurchaseOrderId || id;
+  const { isAuthenticated } = useAuth();
+  const user = useSelector((state) => state.loginReducer?.loginDetails?.user);
 
   const [formData, setFormData] = useState(null);
   const [parcels, setParcels] = useState([]);
   const [status, setStatus] = useState("Pending");
+  const [approvalStatus, setApprovalStatus] = useState(null);
+  const [approvalRecord, setApprovalRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
+    if (!isAuthenticated || !user) {
+      setError("Please log in to view this Purchase Order");
+      setLoading(false);
+      navigate("/");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const po = await fetchPurchaseOrder(purchaseOrderId);
+      const po = await fetchPurchaseOrder(purchaseOrderId, user);
       if (po) {
         const formData = {
           Series: po.Series || "-",
@@ -100,23 +114,14 @@ const PurchaseOrderForm = ({
           SalesAmount: parseFloat(po.SalesAmount) || 0,
           TaxesAndOtherCharges: parseFloat(po.TaxesAndOtherCharges) || 0,
           Total: parseFloat(po.Total) || 0,
+          Status: po.Status || "Pending",
         };
-        console.log("Form Data:", {
-          CurrencyID: formData.CurrencyID,
-          CurrencyName: formData.CurrencyName,
-          SupplierID: formData.SupplierID,
-          SupplierName: formData.SupplierName,
-          ServiceType: formData.ServiceType,
-          CompanyName: formData.CompanyName,
-          CustomerName: formData.CustomerName,
-          CollectionAddress: formData.CollectionAddress,
-          DestinationAddress: formData.DestinationAddress,
-        });
         setFormData(formData);
 
         try {
           const fetchedParcels = await fetchPurchaseOrderParcels(
-            purchaseOrderId
+            purchaseOrderId,
+            user
           );
           const mappedParcels = fetchedParcels.map((parcel, index) => ({
             id: parcel.PurchaseOrderParcelID || `Parcel-${index + 1}`,
@@ -158,8 +163,34 @@ const PurchaseOrderForm = ({
   };
 
   const loadPurchaseOrderStatus = useCallback(async () => {
-    setStatus("Pending");
-  }, [purchaseOrderId]);
+    if (!isAuthenticated || !user || !purchaseOrderId) return;
+    try {
+      const approvalData = await fetchPurchaseOrderApprovalStatus(
+        purchaseOrderId,
+        user
+      );
+      setApprovalRecord(approvalData);
+
+      if (
+        approvalData.success &&
+        approvalData.data &&
+        approvalData.data.length > 0
+      ) {
+        const approved =
+          approvalData.data[0].ApprovedYN === 1 ||
+          approvalData.data[0].ApprovedYN === "true";
+        setApprovalStatus(approved ? "Approved" : "Pending");
+        setStatus(approved ? "Approved" : "Pending");
+      } else {
+        setApprovalStatus("Pending");
+        setStatus("Pending");
+      }
+    } catch (error) {
+      console.error("Failed to load approval status:", error);
+      setApprovalStatus("Pending");
+      setStatus("Pending");
+    }
+  }, [purchaseOrderId, user, isAuthenticated]);
 
   useEffect(() => {
     if (purchaseOrderId) {
@@ -186,6 +217,7 @@ const PurchaseOrderForm = ({
   const handleStatusChange = (newStatus) => {
     console.log("Status changed to:", newStatus);
     setStatus(newStatus);
+    setFormData((prev) => ({ ...prev, Status: newStatus }));
   };
 
   if (loading) {
@@ -263,12 +295,12 @@ const PurchaseOrderForm = ({
                 }
                 sx={{ backgroundColor: "transparent" }}
               />
-              <StatusIndicator
+              <PurchaseOrderStatusIndicator
                 status={status}
                 purchaseOrderId={purchaseOrderId}
                 onStatusChange={handleStatusChange}
-                readOnly={false}
-                approverID={formData.ApproverID}
+                readOnly={formData.Status === "Approved"}
+                user={user}
               />
             </Box>
           </Fade>
@@ -383,6 +415,7 @@ const PurchaseOrderForm = ({
         purchaseOrderId={purchaseOrderId}
         onParcelsChange={handleParcelsChange}
         readOnly={readOnly}
+        user={user}
       />
     </FormPage>
   );

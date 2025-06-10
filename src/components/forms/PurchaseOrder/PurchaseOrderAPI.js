@@ -1,47 +1,69 @@
 import axios from "axios";
-import APIBASEURL from './../../../utils/apiBaseUrl';
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
-export const getAuthHeader = () => {
+export const getAuthHeader = (user = null) => {
   try {
-    const user = JSON.parse(localStorage.getItem("User"));
-    console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("User")
-    );
-    console.log("Parsed user data:", user);
-    const personId = user?.PersonID || user?.id || user?.UserID || null;
-    console.log("PersonID:", personId);
+    if (!user) {
+      console.warn("No user data provided, proceeding without login token");
+      return { headers: {}, personId: "" };
+    }
 
-    if (!user || !personId) {
-      console.warn("No user data or personId, proceeding without login token");
+    const personId = user?.personId || user?.PersonID || user?.id || user?.UserID || user?.ID || null;
+
+    if (!personId) {
+      console.warn("No valid personId found in user data");
       return { headers: {}, personId: "" };
     }
 
     const headers = {
       "Content-Type": "application/json",
     };
-    const token = user?.Token || user?.token;
+    const token = user?.token || user?.Token;
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log("Using token for Authorization:", token.slice(0, 20) + "...");
     } else {
       console.warn("No token found, proceeding without Authorization header");
     }
 
     return { headers, personId };
   } catch (error) {
-    console.error("Error parsing user data from localStorage:", error);
+    console.error("Error processing user data:", error);
     return { headers: {}, personId: "" };
   }
 };
 
-export const fetchPurchaseOrders = async (page = 1, limit = 10) => {
+export const fetchItems = async (user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
+    const response = await axios.get(`${APIBASEURL}/Items`, { headers });
+    console.log("Items API Raw Response:", response.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching items:", error);
+    throw error;
+  }
+};
+
+export const fetchUOMs = async (user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    const response = await axios.get(`${APIBASEURL}/UOMs`, { headers });
+    console.log("UOMs API Raw Response:", response.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching UOMs:", error);
+    throw error;
+  }
+};
+
+// Existing functions (updated to use user prop)
+export const fetchPurchaseOrders = async (page = 1, limit = 10, user) => {
+  try {
+    const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching POs page ${page}, limit ${limit} from: ${APIBASEURL}/PO`
+      `Fetching POs page ${page}, limit ${limit} from: ${APIBASEURL}/po`
     );
-    const response = await axios.get(`${APIBASEURL}/PO`, {
+    const response = await axios.get(`${APIBASEURL}/po`, {
       params: { page, limit },
       headers,
     });
@@ -58,13 +80,13 @@ export const fetchPurchaseOrders = async (page = 1, limit = 10) => {
   }
 };
 
-export const fetchPurchaseOrder = async (purchaseOrderId) => {
+export const fetchPurchaseOrder = async (purchaseOrderId, user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching PO ID ${purchaseOrderId} from: ${APIBASEURL}/PO/${purchaseOrderId}`
+      `Fetching PO ID ${purchaseOrderId} from: ${APIBASEURL}/po/${purchaseOrderId}`
     );
-    const response = await axios.get(`${APIBASEURL}/PO/${purchaseOrderId}`, {
+    const response = await axios.get(`${APIBASEURL}/po/${purchaseOrderId}`, {
       headers,
     });
     console.log("PO API Response:", response.data);
@@ -83,13 +105,10 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
       let serviceTypeMap = {};
       let companyMap = {};
 
-      // Fetch addresses
       try {
-        // console.log(`Fetching addresses from: ${APIBASEURL}/Addresses`);
         const addressResponse = await axios.get(`${APIBASEURL}/Addresses`, {
           headers,
         });
-        // console.log("Addresses API Raw Response:", addressResponse.data);
         if (addressResponse.data?.data) {
           addressMap = (
             Array.isArray(addressResponse.data.data)
@@ -113,20 +132,16 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
             }
             return acc;
           }, {});
-          // console.log("Address Map:", addressMap);
         } else {
           console.warn("No address data found:", addressResponse.data);
         }
       } catch (err) {
         console.error(
           "Could not fetch addresses:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Fetch currencies
       try {
         console.log(`Fetching currencies from: ${APIBASEURL}/Currencies`);
         const currencyResponse = await axios.get(`${APIBASEURL}/Currencies`, {
@@ -146,20 +161,13 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
           return acc;
         }, {});
         console.log("Currency Map:", currencyMap);
-        console.log(
-          `CurrencyID ${po.CurrencyID} mapped to:`,
-          currencyMap[po.CurrencyID] || "Not found"
-        );
       } catch (err) {
         console.error(
           "Could not fetch currencies:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Fetch customers
       try {
         console.log(`Fetching customers from: ${APIBASEURL}/Customers`);
         const customerResponse = await axios.get(`${APIBASEURL}/Customers`, {
@@ -185,13 +193,10 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
       } catch (err) {
         console.error(
           "Could not fetch customers:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Fetch suppliers
       try {
         console.log(`Fetching suppliers from: ${APIBASEURL}/Suppliers`);
         const supplierResponse = await axios.get(`${APIBASEURL}/Suppliers`, {
@@ -211,20 +216,13 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
           return acc;
         }, {});
         console.log("Supplier Map:", supplierMap);
-        console.log(
-          `SupplierID ${po.SupplierID} mapped to:`,
-          supplierMap[po.SupplierID] || "Not found"
-        );
       } catch (err) {
         console.error(
           "Could not fetch suppliers:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Fetch service types
       try {
         console.log(`Fetching service types from: ${APIBASEURL}/Service-Types`);
         const serviceTypeResponse = await axios.get(
@@ -254,13 +252,10 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
       } catch (err) {
         console.error(
           "Could not fetch service types:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Fetch companies
       try {
         console.log(`Fetching companies from: ${APIBASEURL}/Companies`);
         const companyResponse = await axios.get(`${APIBASEURL}/Companies`, {
@@ -286,13 +281,10 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
       } catch (err) {
         console.error(
           "Could not fetch companies:",
-          err.response?.data || err.message,
-          "Status:",
-          err.response?.status
+          err.response?.data || err.message
         );
       }
 
-      // Map values to names
       po.CollectionAddressTitle = po.CollectionAddressID
         ? addressMap[po.CollectionAddressID] || "Unknown Address"
         : "-";
@@ -340,9 +332,9 @@ export const fetchPurchaseOrder = async (purchaseOrderId) => {
   }
 };
 
-export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
+export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     if (!purchaseOrderId) {
       console.warn("No purchaseOrderId provided, returning empty parcels");
       return [];
@@ -375,8 +367,8 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
               : [uomResponse.data.data]
           ).reduce((acc, uom) => {
             const uomName =
-              uom.UOM || uom.UOMName || uom.Name || uom.Description;
-            if (uom.UOMID && uomName) {
+              uom.UOM || uom.UOMName || uom.Name || uom.Description || "Unknown UOM";
+            if (uom.UOMID) {
               acc[uom.UOMID] = uomName;
               acc[String(uom.UOMID)] = uomName;
             }
@@ -422,9 +414,11 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
         parcel.ItemName =
           parcel.ItemID && itemMap[parcel.ItemID]
             ? itemMap[parcel.ItemID]
-            : "Unknown Item";
+            : parcel.ItemName || `Item #${parcel.ItemID}`;
         parcel.UOMName =
-          parcel.UOMID && uomMap[parcel.UOMID] ? uomMap[parcel.UOMID] : "-";
+          parcel.UOMID && uomMap[parcel.UOMID]
+            ? uomMap[parcel.UOMID]
+            : parcel.UOM || `UOM #${parcel.UOMID}`;
         return parcel;
       });
 
@@ -443,18 +437,14 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId) => {
   }
 };
 
-
-
-
-export const fetchPurchaseOrderApprovalStatus = async (purchaseOrderId) => {
+export const fetchPurchaseOrderApprovalStatus = async (purchaseOrderId, user) => {
   try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user?.personId) {
-      throw new Error("No valid personId found in localStorage");
+    const { headers, personId } = getAuthHeader(user);
+    if (!personId) {
+      throw new Error("No valid personId found in user data");
     }
-    const headers = getAuthHeader().headers;
     const response = await axios.get(
-      `${APIBASEURL}/purchase-order-approvals/${purchaseOrderId}/${user.personId}`,
+      `${APIBASEURL}/po-Approval/${purchaseOrderId}/${personId}`,
       { headers }
     );
     console.log(
@@ -472,16 +462,16 @@ export const fetchPurchaseOrderApprovalStatus = async (purchaseOrderId) => {
   }
 };
 
-export const approvePurchaseOrder = async (purchaseOrderId, isApproved = true) => {
+export const approvePurchaseOrder = async (purchaseOrderId, isApproved = true, user) => {
   try {
-    const headers = getAuthHeader().headers;
+    const { headers } = getAuthHeader(user);
     const endpoint = isApproved
-      ? `${APIBASEURL}/pO/approve`
-      : `${APIBASEURL}/purchase-order/disapprove`;
+      ? `${APIBASEURL}/po/approve`
+      : `${APIBASEURL}/po/disapprove`;
 
     const response = await axios.post(
       endpoint,
-      { purchaseOrderId: parseInt(purchaseOrderId, 10) },
+      { POID: parseInt(purchaseOrderId, 10) },
       { headers }
     );
 
@@ -500,19 +490,17 @@ export const approvePurchaseOrder = async (purchaseOrderId, isApproved = true) =
   }
 };
 
-export const deletePurchaseOrder = async (id) => {
+export const deletePurchaseOrder = async (id, user) => {
   try {
-    const { headers } = getAuthHeader();
-    console.log(`Deleting PO ${id} at: ${APIBASEURL}/PO/${id}`);
-    const response = await axios.delete(`${APIBASEURL}/PO/${id}`, { headers });
-    console.log("Delete PO Response:", response.data);
+    const { headers } = getAuthHeader(user);
+    console.log(`Deleting PO ${id} at: ${APIBASEURL}}/po/}/${id}`);
+    const response = await axios.delete(`${APIBASEURL}/po/${id}`, { headers });
+    console.log("Delete PO:", response, response.data);
     return response.data;
   } catch (error) {
     console.error(
       "Error deleting PO:",
-      error.response?.data || error.message,
-      "Status:",
-      error.response?.status
+      error.response?.data || error.message
     );
     throw error.response?.data || error;
   }
