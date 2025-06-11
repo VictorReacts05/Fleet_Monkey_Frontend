@@ -78,9 +78,9 @@ const PurchaseInvoiceParcelsTab = ({
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1 },
-    { field: "rate", headerName: "Rate", flex: 1 },
-    { field: "amount", headerName: "Amount", flex: 1 },
+    { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
+    { field: "Rate", headerName: "Rate", flex: 1 },
+    { field: "Amount", headerName: "Amount", flex: 1 },
   ];
 
   // Load dropdown data when component mounts

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import APIBASEURL from './../../../utils/apiBaseUrl';
 
-
 export const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("User"));
@@ -35,7 +34,6 @@ export const getAuthHeader = () => {
     return { headers: {}, personId: "" };
   }
 };
-
 
 export const fetchPurchaseInvoices = async (page = 1, limit = 10) => {
   try {
@@ -71,12 +69,14 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
     });
     console.log("Purchase Invoice API Response:", response.data);
 
-    if (response.data?.data?.length > 0) {
-      const invoice = response.data.data[0];
-      console.log("Purchase Invoice IDs:", {
-        CurrencyID: invoice.CurrencyID,
-        SupplierID: invoice.SupplierID,
-      });
+    if (response.data?.data) {
+      const invoice = response.data.data; // Directly use the object, no array check
+      console.log("Processed Purchase Invoice:", invoice);
+
+      if (!invoice.PInvoiceID) {
+        console.warn("No PInvoiceID found in response data:", invoice);
+        return null;
+      }
 
       let addressMap = {};
       let currencyMap = {};
@@ -354,10 +354,17 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
     }
 
     console.log(
-      `Fetching items for Purchase Invoice ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-Item?PIID=${purchaseInvoiceId}`
+      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`
     );
+    if (isNaN(parseInt(purchaseInvoiceId, 10))) {
+      console.warn( 
+        `Invalid Purchase Invoice ID: ${purchaseInvoiceId}, must be a number`
+      );
+      return [];
+    }
+    
     const response = await axios.get(
-      `${APIBASEURL}/pInvoice-Item?PIID=${purchaseInvoiceId}`,
+      `${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
