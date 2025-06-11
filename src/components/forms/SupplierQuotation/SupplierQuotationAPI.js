@@ -251,7 +251,7 @@ export const fetchUserApprovalStatus = async (
       approverId,
     });
     const response = await axios.get(
-      `${APIBASEURL}/supplier-quotation-approvals/${supplierQuotationId}/${approverId}`,
+      `${APIBASEURL}/supplier-Quotation-Approvals/${supplierQuotationId}/${approverId}`,
       { headers }
     );
 
