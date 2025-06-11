@@ -52,7 +52,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
 
       const approverID = 2; 
       const response = await axios.get( 
-        `${APIBASEURL}/purchase-invoice-approvals?purchaseInvoiceId=${purchaseInvoiceId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/pInvoice?purchaseInvoiceId=${purchaseInvoiceId}&ApproverID=${approverID}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 

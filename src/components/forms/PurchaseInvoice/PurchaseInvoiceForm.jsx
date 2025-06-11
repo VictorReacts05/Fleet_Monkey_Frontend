@@ -12,7 +12,7 @@ import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
 import FormPage from "../../Common/FormPage";
 import StatusIndicator from "./StatusIndicator";
-import PurchaseInvoiceItemsTab from "./PurchaseInvoiceParcelsTab"; // New component for items
+import PurchaseInvoiceItemsTab from "./PurchaseInvoiceParcelsTab";
 import { toast } from "react-toastify";
 import {
   fetchPurchaseInvoice,
@@ -64,8 +64,11 @@ const PurchaseInvoiceForm = ({
     setLoading(true);
     setError(null);
     try {
+      console.log(`Fetching Purchase Invoice with ID: ${purchaseInvoiceId}`);
       const invoice = await fetchPurchaseInvoice(purchaseInvoiceId);
-      if (invoice) {
+      console.log("Fetched Invoice:", invoice);
+
+      if (invoice && invoice.PInvoiceID) {
         const formData = {
           Series: invoice.Series || "-",
           CompanyID: invoice.CompanyID || "-",
@@ -90,9 +93,7 @@ const PurchaseInvoiceForm = ({
           BillingAddressID: invoice.BillingAddressID || "-",
           BillingAddress: invoice.BillingAddressTitle || "-",
           ShippingPriorityID: invoice.ShippingPriorityID || "-",
-          ShippingPriorityName: invoice.ShippingPriorityID
-            ? `Priority ID: ${invoice.ShippingPriorityID}`
-            : "-",
+          ShippingPriorityName: invoice.ShippingPriorityName || "-",
           Terms: invoice.Terms || "-",
           CurrencyID: invoice.CurrencyID || "-",
           CurrencyName: invoice.CurrencyName || "-",
@@ -101,7 +102,7 @@ const PurchaseInvoiceForm = ({
           FormCompletedYN: !!invoice.FormCompletedYN,
           IsPaid: !!invoice.IsPaid,
           SubTotal: parseFloat(invoice.SubTotal) || 0,
-          TaxAmount: parseFloat(invoice.TaxAmount) || 0,
+          TaxAmount: parseFloat(invoice.TaxesAndOtherCharges) || 0,
           Total: parseFloat(invoice.Total) || 0,
         };
         console.log("Form Data:", {
@@ -115,6 +116,7 @@ const PurchaseInvoiceForm = ({
           CollectionAddress: formData.CollectionAddress,
           DestinationAddress: formData.DestinationAddress,
           BillingAddress: formData.BillingAddress,
+          ShippingPriorityName: formData.ShippingPriorityName,
         });
         setFormData(formData);
 
@@ -143,7 +145,10 @@ const PurchaseInvoiceForm = ({
           toast.error(itemErrorMessage);
         }
       } else {
-        throw new Error("No Purchase Invoice data returned");
+        const errorMessage = "No Purchase Invoice data returned for the given ID";
+        console.error(errorMessage);
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error) {
       const errorMessage = error.response
