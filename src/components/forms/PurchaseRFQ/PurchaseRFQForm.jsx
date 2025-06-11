@@ -168,7 +168,8 @@ const PurchaseRFQForm = ({
               const addressData = collectionAddressResponse.data.data;
               formattedData.CollectionAddress = `${
                 addressData.AddressLine1 || ""
-              }, ${addressData.City || ""}`;
+              },
+            ${addressData.City || ""}`;
             }
           }
 
