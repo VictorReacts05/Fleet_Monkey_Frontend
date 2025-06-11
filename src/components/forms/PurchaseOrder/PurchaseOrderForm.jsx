@@ -19,6 +19,7 @@ import {
   fetchPurchaseOrder,
   fetchPurchaseOrderParcels,
   fetchPurchaseOrderApprovalStatus,
+  sendPurchaseOrderEmail,
 } from "./PurchaseOrderAPI";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -68,8 +69,16 @@ const PurchaseOrderForm = ({
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
+    console.log("fetchData called", { purchaseOrderId, isAuthenticated, user });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     if (!isAuthenticated || !user) {
-      setError("Please log in to view this Purchase Order");
+      console.warn("Not authenticated or no user data", {
+        isAuthenticated,
+        user,
+      });
+      setError("Please log in to view");
+      toast.error("Please log in");
       setLoading(false);
       navigate("/");
       return;
@@ -79,6 +88,7 @@ const PurchaseOrderForm = ({
     setError(null);
     try {
       const po = await fetchPurchaseOrder(purchaseOrderId, user);
+      console.log("Fetched PO:", po);
       if (po) {
         const formData = {
           Series: po.Series || "-",
@@ -110,12 +120,16 @@ const PurchaseOrderForm = ({
           CurrencyName: po.CurrencyName || "-",
           CollectFromSupplierYN: !!po.CollectFromSupplierYN,
           PackagingRequiredYN: !!po.PackagingRequiredYN,
-          FormCompletedYN: !!po.FormCompletedYN,
+          FormCompletedYN: !!po.FormStatus,
           SalesAmount: parseFloat(po.SalesAmount) || 0,
           TaxesAndOtherCharges: parseFloat(po.TaxesAndOtherCharges) || 0,
           Total: parseFloat(po.Total) || 0,
           Status: po.Status || "Pending",
         };
+        console.log("Set formData:", {
+          ...formData,
+          SupplierID: formData.SupplierID,
+        });
         setFormData(formData);
 
         try {
@@ -136,17 +150,16 @@ const PurchaseOrderForm = ({
             POID: purchaseOrderId,
           }));
           setParcels(mappedParcels);
-        } catch (parcelErr) {
-          const parcelErrorMessage = parcelErr.response
-            ? `Server error: ${parcelErr.response.status} - ${
-                parcelErr.response.data?.message || parcelErr.message
+        } catch (err) {
+          const parcelErrorMessage = err.response
+            ? `Server error: ${err.response.status} - ${
+                err.response.data?.message || err.message
               }`
-            : `Failed to fetch parcels: ${parcelErr.message}`;
+            : `Failed to fetch parcels: ${err.message}`;
           console.error("Parcel fetch error:", parcelErrorMessage);
-          toast.error(parcelErrorMessage);
         }
       } else {
-        throw new Error("No Purchase Order data returned");
+        throw new Error("No purchase order data returned");
       }
     } catch (error) {
       const errorMessage = error.response
@@ -162,7 +175,7 @@ const PurchaseOrderForm = ({
     }
   };
 
-  const loadPurchaseOrderStatus = useCallback(async () => {
+  const loadPurchaseOrderStatus = async () => {
     if (!isAuthenticated || !user || !purchaseOrderId) return;
     try {
       const approvalData = await fetchPurchaseOrderApprovalStatus(
@@ -171,16 +184,12 @@ const PurchaseOrderForm = ({
       );
       setApprovalRecord(approvalData);
 
-      if (
-        approvalData.success &&
-        approvalData.data &&
-        approvalData.data.length > 0
-      ) {
+      if (approvalData.data && approvalData.data.length > 0) {
         const approved =
           approvalData.data[0].ApprovedYN === 1 ||
           approvalData.data[0].ApprovedYN === "true";
-        setApprovalStatus(approved ? "Approved" : "Pending");
-        setStatus(approved ? "Approved" : "Pending");
+        setApprovalStatus(approved ? "Accepted" : "Pending");
+        setStatus(approved ? "Accepted" : "Pending");
       } else {
         setApprovalStatus("Pending");
         setStatus("Pending");
@@ -190,17 +199,44 @@ const PurchaseOrderForm = ({
       setApprovalStatus("Pending");
       setStatus("Pending");
     }
-  }, [purchaseOrderId, user, isAuthenticated]);
+  };
+
+  const handleSendToSupplier = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to send the purchase order");
+      navigate("/");
+      return;
+    }
+
+    try {
+      await sendPurchaseOrderEmail(purchaseOrderId, user);
+      toast.success("Purchase order sent to supplier successfully");
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        : `Failed to send purchase order: ${error.message}`;
+      console.error("Error sending purchase order email:", error);
+      toast.error(errorMessage);
+    }
+  };
 
   useEffect(() => {
+    console.log("useEffect triggered", {
+      purchaseOrderId,
+      readOnly,
+      isAuthenticated,
+      user,
+    });
     if (purchaseOrderId) {
       fetchData();
       loadPurchaseOrderStatus();
     } else {
-      setError("No Purchase Order ID provided");
+      setError("No purchase order ID provided");
       setLoading(false);
     }
-  }, [purchaseOrderId, loadPurchaseOrderStatus]);
+  }, [purchaseOrderId]);
 
   const handleParcelsChange = (updatedParcels) => {
     setParcels(updatedParcels);
@@ -210,7 +246,7 @@ const PurchaseOrderForm = ({
     if (onClose) {
       onClose();
     } else {
-      navigate("/Purchase-Order");
+      navigate("/purchase-order");
     }
   };
 
@@ -219,6 +255,16 @@ const PurchaseOrderForm = ({
     setStatus(newStatus);
     setFormData((prev) => ({ ...prev, Status: newStatus }));
   };
+
+  // Debug button rendering conditions
+  console.log("Button rendering conditions:", {
+    hasFormData: !!formData,
+    hasSupplierID: !!formData?.SupplierID,
+    supplierIDNotDash: formData?.SupplierID !== "-",
+    supplierIDValue: formData?.SupplierID,
+    isAuthenticated,
+    readOnly,
+  });
 
   if (loading) {
     return (
@@ -244,7 +290,7 @@ const PurchaseOrderForm = ({
   if (!formData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant="h6">No Purchase Order data available</Typography>
+        <Typography variant="h6">No purchase order data available</Typography>
       </Box>
     );
   }
@@ -299,11 +345,30 @@ const PurchaseOrderForm = ({
                 status={status}
                 purchaseOrderId={purchaseOrderId}
                 onStatusChange={handleStatusChange}
-                readOnly={formData.Status === "Approved"}
+                readOnly={formData.Status === "Accepted"}
                 user={user}
               />
             </Box>
           </Fade>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", ml: 2 }}>
+            {formData.SupplierID &&
+            formData.SupplierID !== "-" &&
+            isAuthenticated ? (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSendToSupplier}
+                sx={{ mr: 2 }}
+              >
+                Send to Supplier
+              </Button>
+            ) : (
+              console.log("Send to Supplier button not rendered:", {
+                supplierID: formData?.SupplierID,
+                isAuthenticated,
+              })
+            )}
+          </Box>
         </Box>
       }
       onCancel={handleCancel}

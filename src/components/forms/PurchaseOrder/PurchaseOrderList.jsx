@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
@@ -18,6 +19,7 @@ import { Add } from "@mui/icons-material";
 import PurchaseOrderForm from "./PurchaseOrderForm";
 import { Chip } from "@mui/material";
 import { fetchPurchaseOrders, deletePurchaseOrder } from "./PurchaseOrderAPI";
+import { useAuth } from "../../../context/AuthContext";
 
 const PurchaseOrderList = () => {
   const [loading, setLoading] = useState(false);
@@ -29,6 +31,18 @@ const PurchaseOrderList = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [totalRows, setTotalRows] = useState(0);
+
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const user = useSelector((state) => state.loginReducer?.loginDetails?.user);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to view purchase orders");
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Filter purchase orders based on search term
   const filteredPurchaseOrders = purchaseOrders.filter((order) => {
@@ -78,23 +92,21 @@ const PurchaseOrderList = () => {
     },
   ];
 
-  const navigate = useNavigate();
-
-  // Fetch purchase orders on component mount
+  // Fetch purchase orders
   useEffect(() => {
     const loadPurchaseOrders = async () => {
+      if (!isAuthenticated || !user) return;
       setLoading(true);
       try {
-        const response = await fetchPurchaseOrders(page + 1, rowsPerPage);
-        console.log("Fetched Purchase Orders:", response.data);
-        // Map data to include id field for DataTable
+        const response = await fetchPurchaseOrders(page + 1, rowsPerPage, user);
+        console.log("Fetched Purchase Orders:", response);
         const mappedData = (response.data || []).map((order) => ({
           ...order,
           id: order.POID,
         }));
         console.log("Mapped Purchase Orders:", mappedData);
         setPurchaseOrders(mappedData);
-        setTotalRows(response.total || 0);
+        setTotalRows(response.total || mappedData.length);
       } catch (error) {
         console.error("Error fetching purchase orders:", error);
         toast.error("Failed to fetch purchase orders");
@@ -104,7 +116,7 @@ const PurchaseOrderList = () => {
     };
 
     loadPurchaseOrders();
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, user, isAuthenticated]);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -145,7 +157,7 @@ const PurchaseOrderList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      await deletePurchaseOrder(selectedOrder);
+      await deletePurchaseOrder(selectedOrder, user);
       setPurchaseOrders(
         purchaseOrders.filter((order) => order.POID !== selectedOrder)
       );
@@ -164,9 +176,9 @@ const PurchaseOrderList = () => {
     setPage(0);
   };
 
-  /* const handleAdd = () => {
+  const handleAdd = () => {
     navigate("/purchase-order/add");
-  }; */
+  };
 
   return (
     <Box>
@@ -184,14 +196,14 @@ const PurchaseOrderList = () => {
             onSearch={handleSearch}
             placeholder="Search Purchase Orders..."
           />
-          {/* <Button
+          <Button
             variant="contained"
             startIcon={<Add />}
             onClick={handleAdd}
             sx={{ height: "40px" }}
           >
             Add
-          </Button> */}
+          </Button>
         </Stack>
       </Box>
 

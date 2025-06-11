@@ -529,9 +529,9 @@ const SalesQuotationForm = ({
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Customer" value={formData.CustomerName} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          {/* <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Supplier" value={formData.SupplierName} />
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField
               label="External Ref No."

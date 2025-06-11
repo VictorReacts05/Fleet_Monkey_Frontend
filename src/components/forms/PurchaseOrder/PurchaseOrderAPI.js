@@ -56,7 +56,50 @@ export const fetchUOMs = async (user) => {
   }
 };
 
-// Existing functions (updated to use user prop)
+export const fetchSupplier = async (supplierId, user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    console.log(`Fetching supplier ID ${supplierId} from: ${APIBASEURL}/Suppliers/${supplierId}`);
+    const response = await axios.get(`${APIBASEURL}/Suppliers/${supplierId}`, { headers });
+    console.log("Supplier API Response:", response.data);
+    if (response.data?.data) {
+      return response.data.data;
+    }
+    console.warn("No supplier data found:", response.data);
+    return null;
+  } catch (error) {
+    console.error(
+      `Error fetching supplier ${supplierId}:`,
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
+
+export const sendPurchaseOrderEmail = async (purchaseOrderId, user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    console.log(`Sending purchase order email for PO ${purchaseOrderId} to: ${APIBASEURL}/sendPurchaseOrder/send-purchase-order`);
+    const response = await axios.post(
+      `${APIBASEURL}/sendPurchaseOrder/send-purchase-order`,
+      { poId: parseInt(purchaseOrderId, 10) },
+      { headers }
+    );
+    console.log("Send Purchase Order Email Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      `Error sending purchase order email for PO ${purchaseOrderId}:`,
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
+
 export const fetchPurchaseOrders = async (page = 1, limit = 10, user) => {
   try {
     const { headers } = getAuthHeader(user);
@@ -229,10 +272,7 @@ export const fetchPurchaseOrder = async (purchaseOrderId, user) => {
           `${APIBASEURL}/Service-Types`,
           { headers }
         );
-        console.log(
-          "Service Types API Raw Response:",
-          serviceTypeResponse.data
-        );
+        console.log("Service Types API Raw Response:", serviceTypeResponse.data);
         if (serviceTypeResponse.data?.data) {
           serviceTypeMap = (
             Array.isArray(serviceTypeResponse.data.data)
@@ -384,9 +424,7 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
       }
 
       try {
-        const itemResponse = await axios.get(`${APIBASEURL}/Items`, {
-          headers,
-        });
+        const itemResponse = await axios.get(`${APIBASEURL}/Items`, { headers });
         console.log("Items API Raw Response:", itemResponse.data);
         if (itemResponse.data?.data) {
           itemMap = (
@@ -493,9 +531,9 @@ export const approvePurchaseOrder = async (purchaseOrderId, isApproved = true, u
 export const deletePurchaseOrder = async (id, user) => {
   try {
     const { headers } = getAuthHeader(user);
-    console.log(`Deleting PO ${id} at: ${APIBASEURL}}/po/}/${id}`);
+    console.log(`Deleting PO ${id} at: ${APIBASEURL}/po/${id}`);
     const response = await axios.delete(`${APIBASEURL}/po/${id}`, { headers });
-    console.log("Delete PO:", response, response.data);
+    console.log("Delete PO:", response.data);
     return response.data;
   } catch (error) {
     console.error(
