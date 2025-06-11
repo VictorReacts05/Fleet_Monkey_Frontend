@@ -85,174 +85,149 @@ const SalesQuotationForm = ({
     customerEmail,
   });
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    setParcelError(null);
-    try {
-      const quotation = await fetchSalesQuotation(salesQuotationId);
-      console.log("Fetched Quotation:", quotation);
-      if (quotation) {
-        let fetchedParcels = [];
-        try {
-          fetchedParcels = await fetchSalesQuotationParcels(salesQuotationId);
-          const mappedParcels = fetchedParcels.map((parcel, index) => {
-            const mappedParcel = {
-              SalesQuotationParcelID:
-                parcel.SalesQuotationParcelID || `Unknown-${index}`,
-              ParcelID: parcel.SalesQuotationParcelID || `Unknown-${index}`,
-              SupplierQuotationParcelID:
-                parcel.SupplierQuotationParcelID || null,
-              itemName:
-                typeof parcel.ItemName === "string"
-                  ? parcel.ItemName
-                  : "Unknown Item",
-              uomName: parcel.UOMName || parcel.UOM || "-",
-              quantity: parseFloat(parcel.ItemQuantity) || 0,
-              rate: parseFloat(parcel.SupplierRate) || 0,
-              amount: parseFloat(parcel.SupplierAmount) || 0,
-              salesRate: parseFloat(parcel.SalesRate) || 0,
-              salesAmount: parseFloat(parcel.SalesAmount) || 0,
-            };
-            console.log("Mapped Parcel:", mappedParcel);
-            return mappedParcel;
-          });
-          console.log("Mapped Parcels:", mappedParcels);
-          setParcels(mappedParcels);
-
-          const formData = {
-            Series: quotation.Series,
-            CompanyID: quotation.CompanyID || "-",
-            CompanyName: "Dung Beetle Logistics",
-            CustomerID: quotation.CustomerID || "-",
-            CustomerName: quotation.CustomerName || "-",
-            SupplierID: quotation.SupplierID || "-",
-            SupplierName: quotation.SupplierName || "-",
-            ExternalRefNo: quotation.ExternalRefNo || "-",
-            DeliveryDate: quotation.DeliveryDate
-              ? new Date(quotation.DeliveryDate)
-              : null,
-            PostingDate: quotation.PostingDate
-              ? new Date(quotation.PostingDate)
-              : null,
-            RequiredByDate: quotation.RequiredByDate
-              ? new Date(quotation.RequiredByDate)
-              : null,
-            DateReceived: quotation.DateReceived
-              ? new Date(quotation.DateReceived)
-              : null,
-            ServiceTypeID: quotation.ServiceTypeID || "-",
-            ServiceType: quotation.ServiceType || "-",
-            CollectionAddressID: quotation.CollectionAddressID || "-",
-            CollectionAddress: quotation.CollectionAddressTitle || "-",
-            DestinationAddressID: quotation.DestinationAddressID || "-",
-            DestinationAddress: quotation.DestinationAddressTitle || "-",
-            ShippingPriorityID: quotation.ShippingPriorityID || "-",
-            ShippingPriorityName: quotation.ShippingPriorityID
-              ? `Priority ID: ${quotation.ShippingPriorityID}`
-              : "-",
-            Terms: quotation.Terms || "-",
-            CurrencyID: quotation.CurrencyID || "-",
-            CurrencyName: quotation.CurrencyName || "-",
-            CollectFromCustomerYN: !!quotation.CollectFromSupplierYN,
-            PackagingRequiredYN: !!quotation.PackagingRequiredYN,
-            FormCompletedYN: !!quotation.SalesQuotationCompletedYN,
-            SalesAmount: parseFloat(quotation.SalesAmount) || 0,
-            TaxAmount: parseFloat(quotation.TaxesAndOtherCharges) || 0,
-            Total: parseFloat(quotation.Total) || 0,
-            Profit: parseFloat(quotation.Profit) || 0,
-            CustomerEmail: quotation.CustomerEmail || null,
+ const fetchData = async () => {
+  setLoading(true);
+  setError(null);
+  setParcelError(null);
+  try {
+    const quotation = await fetchSalesQuotation(salesQuotationId);
+    console.log("Fetched Quotation:", quotation);
+    if (quotation) {
+      let fetchedParcels = [];
+      try {
+        fetchedParcels = await fetchSalesQuotationParcels(salesQuotationId);
+        const mappedParcels = fetchedParcels.map((parcel, index) => {
+          const mappedParcel = {
+            SalesQuotationParcelID: parcel.SalesQuotationParcelID || `Unknown-${index}`,
+            ParcelID: parcel.SalesQuotationParcelID || `Unknown-${index}`,
+            SupplierQuotationParcelID: parcel.SupplierQuotationParcelID || null,
+            itemName: typeof parcel.ItemName === "string" ? parcel.ItemName : "Unknown Item",
+            uomName: parcel.UOMName || parcel.UOM || "-",
+            quantity: parseFloat(parcel.ItemQuantity) || 0,
+            rate: parseFloat(parcel.SupplierRate) || 0,
+            amount: parseFloat(parcel.SupplierAmount) || 0,
+            salesRate: parseFloat(parcel.SalesRate) || 0,
+            salesAmount: parseFloat(parcel.SalesAmount) || 0,
           };
-          setFormData(formData);
+          console.log("Mapped Parcel:", mappedParcel);
+          return mappedParcel;
+        });
+        console.log("Mapped Parcels:", mappedParcels);
+        setParcels(mappedParcels);
 
-          console.log("CustomerEmail from quotation:", quotation.CustomerEmail);
-          console.log("CustomerID:", formData.CustomerID);
+        const formData = {
+          Series: quotation.Series,
+          CompanyID: quotation.CompanyID || "-",
+          CompanyName: "Dung Beetle Logistics",
+          CustomerID: quotation.CustomerID || "-",
+          CustomerName: quotation.CustomerName || "-",
+          SupplierID: quotation.SupplierID || "-",
+          SupplierName: quotation.SupplierName || "-",
+          ExternalRefNo: quotation.ExternalRefNo || "-",
+          DeliveryDate: quotation.DeliveryDate ? new Date(quotation.DeliveryDate) : null,
+          PostingDate: quotation.PostingDate ? new Date(quotation.PostingDate) : null,
+          RequiredByDate: quotation.RequiredByDate ? new Date(quotation.RequiredByDate) : null,
+          DateReceived: quotation.DateReceived ? new Date(quotation.DateReceived) : null,
+          ServiceTypeID: quotation.ServiceTypeID || "-",
+          ServiceType: quotation.ServiceType || "-",
+          CollectionAddressID: quotation.CollectionAddressID || "-",
+          CollectionAddress: quotation.CollectionAddress || "-", // Now AddressLine1 + City
+          DestinationAddressID: quotation.DestinationAddressID || "-",
+          DestinationAddress: quotation.DestinationAddress || "-", // Now AddressLine1 + City
+          ShippingPriorityID: quotation.ShippingPriorityID || "-",
+          ShippingPriorityName: quotation.ShippingPriorityName || "-", // Now PriorityName
+          Terms: quotation.Terms || "-",
+          CurrencyID: quotation.CurrencyID || "-",
+          CurrencyName: quotation.CurrencyName || "-",
+          CollectFromCustomerYN: !!quotation.CollectFromSupplierYN,
+          PackagingRequiredYN: !!quotation.PackagingRequiredYN,
+          FormCompletedYN: !!quotation.SalesQuotationCompletedYN,
+          SalesAmount: parseFloat(quotation.SalesAmount) || 0,
+          TaxAmount: parseFloat(quotation.TaxesAndOtherCharges) || 0,
+          Total: parseFloat(quotation.Total) || 0,
+          Profit: parseFloat(quotation.Profit) || 0,
+          CustomerEmail: quotation.CustomerEmail || null,
+        };
+        setFormData(formData);
 
-          if (!formData.CustomerEmail && formData.CustomerID !== "-") {
-            try {
-              const customer = await fetchCustomerById(formData.CustomerID);
-              console.log("Raw fetchCustomerById response:", customer);
-              const email = customer.data?.CustomerEmail || null;
-              console.log("Extracted CustomerEmail:", email);
-              setCustomerEmail(email);
-            } catch (err) {
-              console.error("Error fetching customer email:", err);
-              setCustomerEmail(null);
-            }
-          } else {
-            setCustomerEmail(formData.CustomerEmail);
+        console.log("CustomerEmail from quotation:", quotation.CustomerEmail);
+        console.log("CustomerID:", formData.CustomerID);
+
+        if (!formData.CustomerEmail && formData.CustomerID !== "-") {
+          try {
+            const customer = await fetchCustomerById(formData.CustomerID);
+            console.log("Raw fetchCustomerById response:", customer);
+            const email = customer.data?.CustomerEmail || null;
+            console.log("Extracted CustomerEmail:", email);
+            setCustomerEmail(email);
+          } catch (err) {
+            console.error("Error fetching customer email:", err);
+            setCustomerEmail(null);
           }
-          console.log("Final customerEmail:", customerEmail);
-        } catch (parcelErr) {
-          const parcelErrorMessage = parcelErr.response
-            ? `Server error: ${parcelErr.response.status} - ${
-                parcelErr.response.data?.message || parcelErr.message
-              }`
-            : `Failed to fetch parcels: ${parcelErr.message}`;
-          console.error("Parcel fetch error:", parcelErrorMessage);
-          setParcelError(parcelErrorMessage);
-          toast.error(parcelErrorMessage);
-
-          setFormData({
-            Series: quotation.Series,
-            CompanyID: quotation.CompanyID || "-",
-            CompanyName: "Dung Beetle Logistics",
-            CustomerID: quotation.CustomerID || "-",
-            CustomerName: quotation.CustomerName || "-",
-            SupplierID: quotation.SupplierID || "-",
-            SupplierName: quotation.SupplierName || "-",
-            ExternalRefNo: quotation.ExternalRefNo || "-",
-            DeliveryDate: quotation.DeliveryDate
-              ? new Date(quotation.DeliveryDate)
-              : null,
-            PostingDate: quotation.PostingDate
-              ? new Date(quotation.PostingDate)
-              : null,
-            RequiredByDate: quotation.RequiredByDate
-              ? new Date(quotation.RequiredByDate)
-              : null,
-            DateReceived: quotation.DateReceived
-              ? new Date(quotation.DateReceived)
-              : null,
-            ServiceTypeID: quotation.ServiceTypeID || "-",
-            ServiceType: quotation.ServiceType || "-",
-            CollectionAddressID: quotation.CollectionAddressID || "-",
-            CollectionAddress: quotation.CollectionAddressTitle || "-",
-            DestinationAddressID: quotation.DestinationAddressID || "-",
-            DestinationAddress: quotation.DestinationAddressTitle || "-",
-            ShippingPriorityID: quotation.ShippingPriorityID || "-",
-            ShippingPriorityName: quotation.ShippingPriorityID
-              ? `Priority ID: ${quotation.ShippingPriorityID}`
-              : "-",
-            Terms: quotation.Terms || "-",
-            CurrencyID: quotation.CurrencyID || "-",
-            CurrencyName: quotation.CurrencyName || "-",
-            CollectFromCustomerYN: !!quotation.CollectFromSupplierYN,
-            PackagingRequiredYN: !!quotation.PackagingRequiredYN,
-            FormCompletedYN: !!quotation.SalesQuotationCompletedYN,
-            SalesAmount: parseFloat(quotation.SalesAmount) || 0,
-            TaxAmount: parseFloat(quotation.TaxesAndOtherCharges) || 0,
-            Total: parseFloat(quotation.Total) || 0,
-            Profit: parseFloat(quotation.Profit) || 0,
-            CustomerEmail: quotation.CustomerEmail || null,
-          });
+        } else {
+          setCustomerEmail(formData.CustomerEmail);
         }
-      } else {
-        throw new Error("No sales quotation data returned");
+        console.log("Final customerEmail:", customerEmail);
+      } catch (parcelErr) {
+        const parcelErrorMessage = parcelErr.response
+          ? `Server error: ${parcelErr.response.status} - ${
+              parcelErr.response.data?.message || parcelErr.message
+            }`
+          : `Failed to fetch parcels: ${parcelErr.message}`;
+        console.error("Parcel fetch error:", parcelErrorMessage);
+        setParcelError(parcelErrorMessage);
+        toast.error(parcelErrorMessage);
+
+        setFormData({
+          Series: quotation.Series,
+          CompanyID: quotation.CompanyID || "-",
+          CompanyName: "Dung Beetle Logistics",
+          CustomerID: quotation.CustomerID || "-",
+          CustomerName: quotation.CustomerName || "-",
+          SupplierID: quotation.SupplierID || "-",
+          SupplierName: quotation.SupplierName || "-",
+          ExternalRefNo: quotation.ExternalRefNo || "-",
+          DeliveryDate: quotation.DeliveryDate ? new Date(quotation.DeliveryDate) : null,
+          PostingDate: quotation.PostingDate ? new Date(quotation.PostingDate) : null,
+          RequiredByDate: quotation.RequiredByDate ? new Date(quotation.RequiredByDate) : null,
+          DateReceived: quotation.DateReceived ? new Date(quotation.DateReceived) : null,
+          ServiceTypeID: quotation.ServiceTypeID || "-",
+          ServiceType: quotation.ServiceType || "-",
+          CollectionAddressID: quotation.CollectionAddressID || "-",
+          CollectionAddress: quotation.CollectionAddress || "-", // Now AddressLine1 + City
+          DestinationAddressID: quotation.DestinationAddressID || "-",
+          DestinationAddress: quotation.DestinationAddress || "-", // Now AddressLine1 + City
+          ShippingPriorityID: quotation.ShippingPriorityID || "-",
+          ShippingPriorityName: quotation.ShippingPriorityName || "-", // Now PriorityName
+          Terms: quotation.Terms || "-",
+          CurrencyID: quotation.CurrencyID || "-",
+          CurrencyName: quotation.CurrencyName || "-",
+          CollectFromCustomerYN: !!quotation.CollectFromSupplierYN,
+          PackagingRequiredYN: !!quotation.PackagingRequiredYN,
+          FormCompletedYN: !!quotation.SalesQuotationCompletedYN,
+          SalesAmount: parseFloat(quotation.SalesAmount) || 0,
+          TaxAmount: parseFloat(quotation.TaxesAndOtherCharges) || 0,
+          Total: parseFloat(quotation.Total) || 0,
+          Profit: parseFloat(quotation.Profit) || 0,
+          CustomerEmail: quotation.CustomerEmail || null,
+        });
       }
-    } catch (error) {
-      const errorMessage = error.response
-        ? `Server error: ${error.response.status} - ${
-            error.response?.data?.message || error.message
-          }`
-        : `Failed to fetch data: ${error.message}`;
-      console.error("Error in fetchData:", error);
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error("No sales quotation data returned");
     }
-  };
+  } catch (error) {
+    const errorMessage = error.response
+      ? `Server error: ${error.response.status} - ${
+          error.response?.data?.message || error.message
+        }`
+      : `Failed to fetch data: ${error.message}`;
+    console.error("Error in fetchData:", error);
+    setError(errorMessage);
+    toast.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSalesRateChange = (parcelId, salesRateValue) => {
     console.log("handleSalesRateChange:", { parcelId, salesRateValue });

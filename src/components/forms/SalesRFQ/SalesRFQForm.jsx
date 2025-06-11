@@ -223,7 +223,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           { value: "", label: "Select an option" },
           ...addressesData.map((address) => ({
             value: String(address.AddressID),
-            label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+            label: `${address.AddressLine1 || "Unknown Address"}, ${address.City || "Unknown City"}`,
             title: address.AddressTitle || address.Title || "",
           })),
         ];
@@ -308,13 +308,17 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         )
           ? String(data.CollectionAddressID)
           : "",
-        CollectionAddressTitle: displayValue(data.CollectionAddressTitle),
+        CollectionAddressTitle: addresses.find(
+          (a) => String(a.value) === String(data.CollectionAddressID)
+        )?.label || displayValue(data.AddressLine1) || "-",
         DestinationAddressID: addresses.find(
           (a) => String(a.value) === String(data.DestinationAddressID)
         )
           ? String(data.DestinationAddressID)
           : "",
-        DestinationAddressTitle: displayValue(data.DestinationAddressTitle),
+        DestinationAddressTitle: addresses.find(
+          (a) => String(a.value) === String(data.DestinationAddressID)
+        )?.label || displayValue(data.DestinationAddressLine1) || "-",
         ShippingPriorityID: mailingPriorities.find(
           (p) => String(p.value) === String(data.ShippingPriorityID)
         )
@@ -419,9 +423,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     if (!formData.DestinationAddressID) {
       newErrors.DestinationAddressID = "Destination Address is required";
     }
-    /* if (!formData.ShippingPriorityID) {
-      newErrors.ShippingPriorityID = "Shipping Priority is required";
-    } */
     if (!formData.CurrencyID) {
       newErrors.CurrencyID = "Currency is required";
     }
@@ -644,14 +645,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const handleConfirmCreatePurchaseRFQ = async () => {
     try {
       setCreatingPurchaseRFQ(true);
-  
+
       if (!salesRFQId || isNaN(parseInt(salesRFQId, 10))) {
         throw new Error("Invalid Sales RFQ ID");
       }
-  
+
       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
       console.log("Create Purchase RFQ response:", response);
-  
+
       let purchaseRFQId = null;
       if (response?.data?.data) {
         purchaseRFQId =
@@ -661,7 +662,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       } else if (response?.purchaseRFQId) {
         purchaseRFQId = response.purchaseRFQId;
       }
-  
+
       if (purchaseRFQId) {
         toast.info(
           <div>
@@ -691,14 +692,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
         message: error.message,
-        responseData: error.response?.data, // Log full response
+        responseData: error.response?.data,
         salesRFQId,
       });
       toast.error(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
-      setCreatingPurchaseRFQ(false);
-      setPurchaseRFQDialogOpen(false);
       setPurchaseRFQDialogOpen(false);
     }
   };
@@ -706,12 +705,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   useEffect(() => {
     const loadStatuses = async () => {
       try {
-        // Fetch global status
         const globalStatus = await fetchSalesRFQStatus(salesRFQId);
         console.log("Global status for SalesRFQID:", salesRFQId, globalStatus);
         setStatus(globalStatus || "Pending");
 
-        // Log user for debugging
         const rawUser = localStorage.getItem("user");
         const user = rawUser ? JSON.parse(rawUser) : null;
         console.log("Current user in loadStatuses:", { rawUser, user });
@@ -734,7 +731,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const handleStatusChange = async (newStatus) => {
     console.log("User approval status changed to:", newStatus);
     setUserStatus(newStatus);
-    // Refresh SalesRFQ status from API to check if all approvals are complete
     await loadSalesRFQStatus();
   };
 
@@ -802,12 +798,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                       backgroundColor: "transparent",
                     }}
                   />
-                  {console.log(
-                    "Global status:",
-                    status,
-                    "SalesRFQId:",
-                    salesRFQId
-                  )}
                   <StatusIndicator
                     salesRFQId={salesRFQId}
                     onStatusChange={handleStatusChange}
@@ -1056,7 +1046,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Collection Address"
-                value={formData.CollectionAddressTitle || "-"}
+                value={
+                  addresses.find((a) => a.value === formData.CollectionAddressID)
+                    ?.label || "-"
+                }
               />
             )}
           </Grid>
@@ -1075,7 +1068,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Destination Address"
-                value={formData.DestinationAddressTitle || "-"}
+                value={
+                  addresses.find((a) => a.value === formData.DestinationAddressID)
+                    ?.label || "-"
+                }
               />
             )}
           </Grid>

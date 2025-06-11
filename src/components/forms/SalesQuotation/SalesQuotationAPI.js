@@ -88,39 +88,35 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
 
       let addressMap = {};
       let currencyMap = {};
+      let priorityMap = {};
 
+      // Fetch addresses
       try {
-        console.log(
-          `Fetching addresses from: ${APIBASEURL}/addresses`
-        );
-        const addressResponse = await axios.get(`${APIBASEURL}/addresses`, {
-          headers,
-        });
+        console.log(`Fetching addresses from: ${APIBASEURL}/addresses`);
+        const addressResponse = await axios.get(`${APIBASEURL}/addresses`, { headers });
         console.log("Address API Raw Response:", addressResponse.data);
         if (addressResponse.data && addressResponse.data.data) {
           addressMap = addressResponse.data.data.reduce((acc, address) => {
-            if (address.AddressID && address.AddressTitle) {
-              acc[address.AddressID] = address.AddressTitle;
-              acc[String(address.AddressID)] = address.AddressTitle;
+            if (address.AddressID) {
+              acc[address.AddressID] = {
+                AddressLine1: address.AddressLine1 || "Unknown",
+                City: address.City || "Unknown",
+                AddressTitle: address.AddressTitle || "Unknown",
+              };
+              acc[String(address.AddressID)] = acc[address.AddressID];
             }
             return acc;
           }, {});
           console.log("Address Map:", addressMap);
         }
       } catch (err) {
-        console.error(
-          "Could not fetch addresses:",
-          err.response?.data || err.message
-        );
+        console.error("Could not fetch addresses:", err.response?.data || err.message);
       }
 
+      // Fetch currencies
       try {
-        console.log(
-          `Fetching currencies from: ${APIBASEURL}/api/currencies`
-        );
-        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`, {
-          headers,
-        });
+        console.log(`Fetching currencies from: ${APIBASEURL}/currencies`);
+        const currencyResponse = await axios.get(`${APIBASEURL}/currencies`, { headers });
         console.log("Currency API Raw Response:", currencyResponse.data);
         if (currencyResponse.data && currencyResponse.data.data) {
           currencyMap = currencyResponse.data.data.reduce((acc, currency) => {
@@ -128,28 +124,49 @@ export const fetchSalesQuotation = async (SalesQuotationID) => {
               acc[currency.CurrencyID] = currency.CurrencyName;
               acc[String(currency.CurrencyID)] = currency.CurrencyName;
             }
-            return acc;
+            return acc[String(key)]
           }, {});
           console.log("Currency Map:", currencyMap);
         }
       } catch (err) {
-        console.error(
-          "Could not fetch currencies:",
-          err.response?.data || err.message
-        );
+        console.error("Could not fetch currencies:", err.response?.data || err.message);
       }
 
-      quotation.CollectionAddressTitle = quotation.CollectionAddressID
-        ? addressMap[quotation.CollectionAddressID] ||
-          `Address ID: ${quotation.CollectionAddressID}`
+      // Fetch mailing priorities
+      try {
+        console.log(`Fetching mailing priorities from: ${APIBASEURL}/mailing-priorities`);
+        const priorityResponse = await axios.get(`${APIBASEURL}/mailing-priorities`, { headers });
+        console.log("Mailing Priorities API Raw Response:", priorityResponse.data);
+        if (priorityResponse.data && priorityResponse.data.data) {
+          priorityMap = priorityResponse.data.data.reduce((acc, priority) => {
+            if (priority.MailingPriorityID) {
+              acc[priority.MailingPriorityID] = priority.PriorityName || priority.MailingPriorityName || "Unknown";
+              acc[String(priority.MailingPriorityID)] = acc[priority.MailingPriorityID];
+            }
+            return acc;
+          }, {});
+          console.log("Priority Map:", priorityMap);
+        }
+      } catch (err) {
+        console.error("Could not fetch mailing priorities:", err.response?.data || err.message);
+      }
+
+      // Map CollectionAddress and DestinationAddress as AddressLine1 + City
+      quotation.CollectionAddress = quotation.CollectionAddressID
+        ? addressMap[quotation.CollectionAddressID]
+          ? `${addressMap[quotation.CollectionAddressID].AddressLine1}, ${addressMap[quotation.CollectionAddressID].City}`
+          : `Address ID: ${quotation.CollectionAddressID}`
         : "-";
-      quotation.DestinationAddressTitle = quotation.DestinationAddressID
-        ? addressMap[quotation.DestinationAddressID] ||
-          `Address ID: ${quotation.DestinationAddressID}`
+      quotation.DestinationAddress = quotation.DestinationAddressID
+        ? addressMap[quotation.DestinationAddressID]
+          ? `${addressMap[quotation.DestinationAddressID].AddressLine1}, ${addressMap[quotation.DestinationAddressID].City}`
+          : `Address ID: ${quotation.DestinationAddressID}`
         : "-";
       quotation.CurrencyName = quotation.CurrencyID
-        ? currencyMap[quotation.CurrencyID] ||
-          `Currency ID: ${quotation.CurrencyID}`
+        ? currencyMap[quotation.CurrencyID] || `Currency ID: ${quotation.CurrencyID}`
+        : "-";
+      quotation.ShippingPriorityName = quotation.ShippingPriorityID
+        ? priorityMap[quotation.ShippingPriorityID] || `Priority ID: ${quotation.ShippingPriorityID}`
         : "-";
 
       return quotation;
