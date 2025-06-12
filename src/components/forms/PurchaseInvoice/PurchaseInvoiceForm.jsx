@@ -47,7 +47,7 @@ const ReadOnlyField = ({ label, value }) => {
 const PurchaseInvoiceForm = ({
   purchaseInvoiceId: propPurchaseInvoiceId,
   onClose,
-  readOnly = true,
+  readOnly = false, // Changed default to false for testing
 }) => {
   const { id } = useParams();
   const theme = useTheme();
@@ -196,6 +196,9 @@ const PurchaseInvoiceForm = ({
     setStatus(newStatus);
   };
 
+  // Log the readOnly prop to confirm its value
+  console.log("PurchaseInvoiceForm - readOnly prop:", readOnly);
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
@@ -274,6 +277,7 @@ const PurchaseInvoiceForm = ({
                 sx={{ backgroundColor: "transparent" }}
               />
               <StatusIndicator
+                status={status}
                 purchaseInvoiceId={purchaseInvoiceId}
                 onStatusChange={handleStatusChange}
                 readOnly={readOnly}
@@ -290,7 +294,7 @@ const PurchaseInvoiceForm = ({
         spacing={1}
         sx={{
           width: "100%",
-          margin: 0,
+          margin: "0 auto",
           overflow: "hidden",
           border: "1px solid #ccc",
           borderRadius: "8px",

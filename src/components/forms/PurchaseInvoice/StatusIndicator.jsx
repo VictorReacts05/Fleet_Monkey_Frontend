@@ -1,4 +1,3 @@
-
 import { 
   Box, 
   Typography, 
@@ -19,14 +18,13 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
   const [anchorEl, setAnchorEl] = useState(null); 
   const [loading, setLoading] = useState(false); 
   const [approvalRecord, setApprovalRecord] = useState(null); 
-  const [localStatus, setLocalStatus] = useState(status || "Unknown"); // Local status state
+  const [localStatus, setLocalStatus] = useState(status || "Pending");
 
   useEffect(() => { 
-    setLocalStatus(status || "Unknown"); // Sync with prop
     if (purchaseInvoiceId) { 
       fetchApprovalRecord(); 
     } 
-  }, [purchaseInvoiceId, status]); 
+  }, [purchaseInvoiceId]); 
 
   const fetchApprovalRecord = async () => { 
     try { 
@@ -34,6 +32,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
       if (!userData) { 
         console.warn("No user data found in localStorage"); 
         setApprovalRecord(null); 
+        setLocalStatus("Pending");
         return; 
       } 
 
@@ -43,6 +42,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
       } catch (error) { 
         console.error("Error parsing user data:", error); 
         setApprovalRecord(null); 
+        setLocalStatus("Pending"); 
         return; 
       } 
 
@@ -52,7 +52,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
 
       const approverID = 2; 
       const response = await axios.get( 
-        `${APIBASEURL}/pInvoice?purchaseInvoiceId=${purchaseInvoiceId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/pInvoice-approval/${purchaseInvoiceId}/${approverID}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 
@@ -62,17 +62,22 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         response.data.data && 
         response.data.data.length > 0 
       ) { 
-        setApprovalRecord(response.data.data[0]); 
+        const record = response.data.data[0];
+        setApprovalRecord(record); 
+        setLocalStatus(record.ApprovedYN === 1 ? "Approved" : "Pending");
       } else { 
         setApprovalRecord(null); 
+        setLocalStatus("Pending");
       } 
     } catch (error) { 
       if (error.response && error.response.status === 404) { 
         console.log("No approval record exists yet for this Purchase Invoice"); 
         setApprovalRecord(null); 
+        setLocalStatus("Pending"); 
       } else { 
         console.error("Error fetching approval record:", error); 
         setApprovalRecord(null); 
+        setLocalStatus("Pending"); 
       } 
     } 
   }; 
@@ -105,7 +110,6 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         ? { Authorization: `Bearer ${user.token}` } 
         : {}; 
 
-      // Use different endpoints for approve and disapprove
       const endpoint = newStatus === "Approved" 
         ? `${APIBASEURL}/purchase-invoice/approve/` 
         : `${APIBASEURL}/purchase-invoice/disapprove/`; 
@@ -123,7 +127,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
 
       console.log(`Purchase Invoice ${newStatus} response:`, statusResponse.data); 
 
-      setLocalStatus(newStatus); // Update local status
+      setLocalStatus(newStatus); 
       if (onStatusChange) { 
         onStatusChange(newStatus); 
       } 
@@ -147,23 +151,25 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
   }; 
 
   const handleClick = (event) => { 
-    console.log("Chip clicked, readOnly:", readOnly); // Debug log
+    console.log("Chip clicked, readOnly:", readOnly); 
     if (!readOnly) { 
       setAnchorEl(event.currentTarget); 
+      console.log("AnchorEl set to:", event.currentTarget); 
     } 
   }; 
 
   const handleClose = () => { 
+    console.log("Closing menu"); 
     setAnchorEl(null); 
   }; 
 
   const handleApprove = () => { 
-    console.log("Approve clicked"); // Debug log
+    console.log("Approve clicked"); 
     updateStatus("Approved"); 
   }; 
 
   const handleDisapprove = () => { 
-    console.log("Disapprove clicked"); // Debug log
+    console.log("Disapprove clicked"); 
     updateStatus("Pending"); 
   }; 
 
@@ -173,13 +179,16 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         return { 
           color: "success", 
           icon: <CheckCircle />, 
-          clickable: !readOnly, 
         }; 
-      default: // Handle "Pending" and "Unknown"
+      case "Pending": 
         return { 
-          color: "error", // Use error for non-approved states
-          icon: <Cancel />, // Show cross icon
-          clickable: !readOnly, 
+          color: "warning", 
+          icon: <Cancel />, 
+        }; 
+      default: 
+        return { 
+          color: "error", 
+          icon: <Cancel />, 
         }; 
     } 
   }; 
@@ -187,16 +196,18 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
   const chipProps = getChipProps(); 
   const validStatus = localStatus; 
 
+  // Log the Menu open state
+  console.log("Menu open state:", Boolean(anchorEl));
+
   return ( 
     <Box 
       sx={{ 
         display: "flex", 
         alignItems: "center", 
         gap: 1, 
-        justifyContent: "center" // Match sample alignment
+        justifyContent: "center" 
       }}
     >
-     
       <Chip
         label={
           <Typography variant="body2">
@@ -212,14 +223,14 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
           )
         }
         onClick={handleClick}
-        clickable={chipProps.clickable}
+        // Removed clickable prop, control cursor via sx
         sx={{
           height: 28,
           minWidth: 80,
           padding: "2px 0px",
           borderRadius: "12px",
           position: "relative",
-          cursor: chipProps.clickable ? "pointer" : "default",
+          cursor: readOnly ? "default" : "pointer",
           "& .MuiChip-label": {
             display: "flex",
             alignItems: "center",
@@ -233,10 +244,11 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         onClose={handleClose}
         sx={{
           "& .MuiMenu-paper": {
-            minWidth: 200, // Set a minimum width for the menu
-            borderRadius: "8px", // Rounded corners for the menu
-            boxShadow: theme.shadows[3], // Use theme shadows for consistency
-            backgroundColor: theme.palette.background.paper, // Match theme background
+            minWidth: 200,
+            borderRadius: "8px",
+            boxShadow: theme.shadows[3],
+            backgroundColor: theme.palette.background.paper,
+            zIndex: 1500, // Ensure menu appears above other elements
           },
         }}
       >
