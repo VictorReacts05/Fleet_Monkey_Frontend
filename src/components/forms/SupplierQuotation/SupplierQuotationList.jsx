@@ -36,13 +36,13 @@ const SupplierQuotationList = () => {
   // Define columns for the data table
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
-    /* { 
-      field: "SupplierName", 
-      headerName: "Supplier", 
+    {
+      field: "PurchaseRFQID",
+      headerName: "Purchase RFQ ID",
       flex: 1,
       valueGetter: (params) => params.row.SupplierName || "-",
     },
-    { 
+    /* { 
       field: "CustomerName", 
       headerName: "Customer", 
       flex: 1,

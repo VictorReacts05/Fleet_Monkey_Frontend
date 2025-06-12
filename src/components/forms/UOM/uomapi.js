@@ -1,7 +1,6 @@
 import axios from 'axios';
-import APIBASEURL from '../../../utils/apiBaseUrl';
 
-const API_URL = `${APIBASEURL}/uoms`;
+const API_URL = 'http://localhost:7000/api/uoms';
 
 export const fetchUOMs = async () => {
   try {

@@ -543,3 +543,50 @@ export const deletePurchaseOrder = async (id, user) => {
     throw error.response?.data || error;
   }
 };
+
+export const fetchSalesOrders = async (user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    console.log(`Fetching sales orders from: ${APIBASEURL}/sales-Order`);
+    const response = await axios.get(`${APIBASEURL}/sales-Order`, { headers });
+    console.log("Sales Orders API Response:", response.data);
+    const salesOrders = Array.isArray(response.data.data)
+      ? response.data.data
+      : response.data.data
+      ? [response.data.data]
+      : [];
+    return salesOrders.filter((order) => order.Status === "Approved");
+  } catch (error) {
+    console.error(
+      "Error fetching sales orders:",
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
+
+export const createPurchaseOrder = async (salesOrderID, user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    console.log(
+      `Creating PO with sales order ID ${salesOrderID} at: ${APIBASEURL}/po`
+    );
+    const response = await axios.post(
+      `${APIBASEURL}/po`,
+      { salesOrderID: parseInt(salesOrderID, 10) },
+      { headers }
+    );
+    console.log("Create PO Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error creating PO:",
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
