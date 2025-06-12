@@ -333,7 +333,7 @@ const PurchaseOrderList = () => {
             onSearch={handleSearch}
             placeholder="Search Purchase Orders..."
           />
-          <Tooltip title="Add New Purchase Order">
+          {/* <Tooltip title="Add New Purchase Order">
             <IconButton
               color="primary"
               onClick={() => setCreateDialogOpen(true)}
@@ -349,7 +349,7 @@ const PurchaseOrderList = () => {
             >
               <Add />
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
         </Stack>
       </Box>
 
