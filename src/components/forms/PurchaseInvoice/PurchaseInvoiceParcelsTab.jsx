@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -7,9 +7,9 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import DataTable from "../../Common/DataTable";
-import FormSelect from "../../Common/FormSelect";
-import FormInput from "../../Common/FormInput";
+import DataTable from "../../common/DataTable";
+import FormSelect from "../../common/FormSelect";
+import FormInput from "../../common/FormInput";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";
@@ -18,40 +18,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from "./PurchaseInvoiceAPI";
+import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
 import { useNavigate } from "react-router-dom";
-import { fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
-
-// Function to fetch items from API
-const fetchItems = async () => {
-  try {
-    const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/Items`, { headers });
-    return response.data.data || [];
-  } catch (error) {
-    console.error("Error fetching items:", error);
-    throw error;
-  }
-};
-
-// Function to fetch UOMs from API
-const fetchUOMs = async () => {
-  try {
-    const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/UOMs`, { headers });
-    if (response.data && response.data.data) {
-      return response.data.data;
-    } else if (Array.isArray(response.data)) {
-      return response.data;
-    } else {
-      console.warn("Unexpected UOM API response format:", response.data);
-      return [];
-    }
-  } catch (error) {
-    console.error("Error fetching UOMs:", error);
-    throw error;
-  }
-};
 
 const PurchaseInvoiceParcelsTab = ({
   purchaseInvoiceId,
@@ -62,17 +30,16 @@ const PurchaseInvoiceParcelsTab = ({
   const [itemsList, setItemsList] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [itemForms, setItemForms] = useState([]);
   const [errors, setErrors] = useState({});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
-  const [loadingExistingItems, setLoadingExistingItems] = useState(false);
-  const [activeTab] = useState("items");
-
   const theme = useTheme();
+  const isMounted = useRef(true);
 
   // Define columns for DataTable
   const columns = [
@@ -83,204 +50,106 @@ const PurchaseInvoiceParcelsTab = ({
     { field: "Amount", headerName: "Amount", flex: 1 },
   ];
 
-  // Load dropdown data when component mounts
-  useEffect(() => {
-    const loadDropdownData = async () => {
-      try {
-        setLoading(true);
-        const [itemsData, uomsData] = await Promise.all([
-          fetchItems().catch((err) => {
-            console.error("Failed to fetch items:", err);
-            toast.error("Failed to load items");
-            return [];
-          }),
-          fetchUOMs().catch((err) => {
-            console.error("Failed to fetch UOMs:", err);
-            toast.error("Failed to load UOMs");
-            return [];
-          }),
-        ]);
+  // Load data with caching
+  const loadData = useCallback(async () => {
+    console.log("loadData called with purchaseInvoiceId:", purchaseInvoiceId);
 
-        const itemOptions = [
+    if (!purchaseInvoiceId) {
+      setError("No Purchase Invoice ID provided");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch items and UOMs only if not loaded
+      let itemsData = items.length > 1 ? items : [];
+      let uomsData = uoms.length > 1 ? uoms : [];
+
+      if (!itemsData.length) {
+        const rawItems = await fetchItems();
+        itemsData = [
           { value: "", label: "Select an item" },
-          ...itemsData.map((item) => ({
+          ...rawItems.map((item) => ({
             value: String(item.ItemID),
-            label: item.ItemName,
+            label: item.ItemName || "Unknown Item",
           })),
         ];
+        setItems(itemsData);
+      }
 
-        const uomOptions = [
+      if (!uomsData.length) {
+        const rawUoms = await fetchUOMs();
+        uomsData = [
           { value: "", label: "Select a UOM" },
-          ...uomsData.map((uom) => ({
-            value: String(
-              uom.UOMID ||
-                uom.UOMId ||
-                uom.uomID ||
-                uom.uomId ||
-                uom.id ||
-                uom.ID
-            ),
-            label:
-              uom.UOM ||
-              uom.UOMName ||
-              uom.uomName ||
-              uom.Name ||
-              uom.name ||
-              String(uom.UOMDescription || uom.Description || "Unknown UOM"),
+          ...rawUoms.map((uom) => ({
+            value: String(uom.UOMID),
+            label: uom.UOM || uom.UOMName || "Unknown UOM",
           })),
         ];
-
-        setItems(itemOptions);
-        setUOMs(uomOptions);
-      } catch (error) {
-        console.error("Error loading dropdown data:", error);
-        toast.error("Failed to load form data: " + error.message);
-      } finally {
-        setLoading(false);
+        setUOMs(uomsData);
       }
-    };
 
-    loadDropdownData();
-  }, []);
+      // Fetch parcels
+      const parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+      console.log("Parcel data after fetch:", parcelData);
 
-  // Load existing items when purchaseInvoiceId is provided
+      // No need to filter since fetchPurchaseInvoiceItems ensures the data matches purchaseInvoiceId
+      const formattedItems = parcelData.map((item, index) => {
+        const itemId = String(item.ItemID || "");
+        const uomId = String(item.UOMID || "");
+        const itemOption = itemsData.find((i) => i.value === itemId);
+        const uomOption = uomsData.find((u) => u.value === uomId);
+
+        return {
+          id: item.PInvoiceParcelID || Date.now() + index,
+          itemId,
+          uomId,
+          quantity: String(item.ItemQuantity || item.Quantity || "0"),
+          ItemQuantity: String(item.ItemQuantity || item.Quantity || "0"),
+          rate: String(item.Rate || "0"),
+          Rate: String(item.Rate || "0"),
+          amount: String(item.Amount || "0"),
+          Amount: String(item.Amount || "0"),
+          itemName: item.ItemName || itemOption?.label || `Item ${itemId}`,
+          uomName: item.UOMName || uomOption?.label || `UOM ${uomId}`,
+          srNo: index + 1,
+          PurchaseInvoiceItemID: item.PInvoiceParcelID,
+          PInvoiceID: purchaseInvoiceId,
+        };
+      });
+
+      console.log("Formatted items for DataTable:", formattedItems);
+      setItemsList(formattedItems);
+      if (onItemsChange) {
+        onItemsChange(formattedItems);
+      }
+    } catch (error) {
+      console.error("loadData error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      if (error.message.includes("personId")) {
+        setError("Please log in to view items. Click below to log in.");
+      } else {
+        setError("Failed to load items. Please try again.");
+        toast.error("Failed to load items");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [purchaseInvoiceId, onItemsChange, items.length, uoms.length]);
+
   useEffect(() => {
-    const loadExistingItems = async () => {
-      if (!purchaseInvoiceId) {
-        setItemsList([]);
-        return;
-      }
-
-      try {
-        setLoadingExistingItems(true);
-        const response = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
-
-        let itemData = [];
-        if (response && Array.isArray(response)) {
-          itemData = response;
-        } else if (response?.data && Array.isArray(response.data)) {
-          itemData = response.data;
-        } else {
-          console.warn("Unexpected response format:", response);
-        }
-
-        const filteredItems = itemData.filter((item) => {
-          const itemPIID =
-            item.PIID || item.PiId || item.piId || item.PurchaseInvoiceID;
-          return String(itemPIID) === String(purchaseInvoiceId);
-        });
-
-        if (filteredItems.length === 0) {
-          setItemsList([]);
-          return;
-        }
-
-        let itemsToUse = items;
-        let uomsToUse = uoms;
-
-        if (items.length <= 1) {
-          try {
-            const itemsResponse = await fetchItems();
-            itemsToUse = [
-              { value: "", label: "Select an item" },
-              ...itemsResponse.map((item) => ({
-                value: String(item.ItemID),
-                label: item.ItemName,
-              })),
-            ];
-          } catch (err) {
-            console.error("Failed to fetch items directly:", err);
-          }
-        }
-
-        if (uoms.length <= 1) {
-          try {
-            const uomsResponse = await fetchUOMs();
-            uomsToUse = [
-              { value: "", label: "Select a UOM" },
-              ...uomsResponse.map((uom) => ({
-                value: String(
-                  uom.UOMID ||
-                    uom.UOMId ||
-                    uom.uomID ||
-                    uom.uomId ||
-                    uom.id ||
-                    uom.ID
-                ),
-                label:
-                  uom.UOM ||
-                  uom.UOMName ||
-                  uom.uomName ||
-                  uom.Name ||
-                  uom.name ||
-                  String(uom.UOMDescription || uom.Description || "Unknown UOM"),
-              })),
-            ];
-          } catch (err) {
-            console.error("Failed to fetch UOMs directly:", err);
-          }
-        }
-
-        const formattedItems = filteredItems.map((item, index) => {
-          let itemName = "Unknown Item";
-          let uomName = "Unknown UOM";
-
-          try {
-            const itemId = String(item.ItemID || "");
-            const uomId = String(item.UOMID || "");
-
-            const itemOption = itemsToUse.find((i) => i.value === itemId);
-            if (itemOption) {
-              itemName = itemOption.label;
-            } else if (item.ItemName) {
-              itemName = item.ItemName;
-            } else {
-              itemName = `Item #${itemId}`;
-            }
-
-            const uomOption = uomsToUse.find((u) => u.value === uomId);
-            if (uomOption) {
-              uomName = uomOption.label;
-            } else if (item.UOMName) {
-              uomName = item.UOMName;
-            } else {
-              uomName = `UOM #${uomId}`;
-            }
-          } catch (err) {
-            console.error("Error formatting item data:", err);
-          }
-
-          return {
-            id: item.PurchaseInvoiceItemID || item.id || Date.now() + index,
-            itemId: String(item.ItemID || ""),
-            uomId: String(item.UOMID || ""),
-            quantity: String(item.ItemQuantity || item.Quantity || "0"),
-            rate: String(item.Rate || "0"),
-            amount: String(item.Amount || "0"),
-            itemName,
-            uomName,
-            srNo: index + 1,
-            PurchaseInvoiceItemID: item.PurchaseInvoiceItemID,
-            PIID: purchaseInvoiceId,
-          };
-        });
-
-        setItemsList(formattedItems);
-        if (onItemsChange) {
-          onItemsChange(formattedItems);
-        }
-      } catch (error) {
-        console.error("Error loading existing items:", error);
-        setItemsList([]);
-        toast.error("Failed to load items: " + (error.message || "Unknown error"));
-      } finally {
-        setLoadingExistingItems(false);
-      }
+    if (!isMounted.current) return;
+    loadData();
+    return () => {
+      isMounted.current = false;
     };
-
-    setItemsList([]);
-    loadExistingItems();
-  }, [purchaseInvoiceId, items, uoms, onItemsChange]);
+  }, [loadData]);
 
   // Handle adding a new item form
   const handleAddItem = () => {
@@ -319,7 +188,7 @@ const PurchaseInvoiceParcelsTab = ({
         editIndex: itemsList.findIndex((p) => p.id === id),
         originalId: id,
       },
-      ]);
+    ]);
   };
 
   // Handle form field changes
@@ -329,7 +198,6 @@ const PurchaseInvoiceParcelsTab = ({
       prev.map((form) => {
         if (form.id !== formId) return form;
         const updatedForm = { ...form, [name]: value };
-        // Auto-calculate Amount when Quantity or Rate changes
         if (name === "quantity" || name === "rate") {
           const qty = name === "quantity" ? value : form.quantity;
           const rate = name === "rate" ? value : form.rate;
@@ -339,7 +207,6 @@ const PurchaseInvoiceParcelsTab = ({
       })
     );
 
-    // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -374,7 +241,7 @@ const PurchaseInvoiceParcelsTab = ({
   };
 
   // Handle saving an item form
-  const handleSave = (formId) => {
+  const handleSave = async (formId) => {
     const form = itemForms.find((f) => f.id === formId);
     if (!form) return;
 
@@ -387,67 +254,90 @@ const PurchaseInvoiceParcelsTab = ({
       return;
     }
 
-    const { personId } = getAuthHeader();
-    if (!personId) {
-      toast.error("User authentication data missing. Please log in again.");
-      navigate("/login");
-      return;
-    }
+    try {
+      const { headers, personId } = getAuthHeader();
+      const selectedItem = items.find((i) => i.value === form.itemId);
+      const selectedUOM = uoms.find((u) => u.value === form.uomId);
+      const originalItem =
+        form.editIndex !== undefined ? itemsList[form.editIndex] : null;
 
-    const selectedItem = items.find((i) => i.value === form.itemId);
-    const selectedUOM = uoms.find((u) => u.value === form.uomId);
-
-    const originalItem =
-      form.editIndex !== undefined ? itemsList[form.editIndex] : null;
-
-    const newItem = {
-      id: form.originalId || form.id,
-      PurchaseInvoiceItemID:
-        originalItem?.PurchaseInvoiceItemID || originalItem?.id,
-      PIID: purchaseInvoiceId,
-      ItemID: parseInt(form.itemId, 10),
-      itemId: form.itemId,
-      UOMID: parseInt(form.uomId, 10),
-      uomId: form.uomId,
-      ItemQuantity: parseInt(form.quantity, 10),
-      Quantity: parseInt(form.quantity, 10),
-      quantity: form.quantity,
-      Rate: parseFloat(form.rate),
-      rate: form.rate,
-      Amount: parseFloat(form.amount),
-      amount: form.amount,
-      itemName: selectedItem ? selectedItem.label : "Unknown Item",
-      uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-      srNo: originalItem?.srNo || itemsList.length + 1,
-      isModified: true,
-      CreatedByID: personId ? parseInt(personId, 10) : null,
-      PurchaseInvoiceItem: {
+      const newItem = {
+        id: form.originalId || form.id,
         PurchaseInvoiceItemID:
           originalItem?.PurchaseInvoiceItemID || originalItem?.id,
-        PIID: purchaseInvoiceId,
+        PInvoiceID: purchaseInvoiceId,
         ItemID: parseInt(form.itemId, 10),
+        itemId: form.itemId,
         UOMID: parseInt(form.uomId, 10),
+        uomId: form.uomId,
         ItemQuantity: parseInt(form.quantity, 10),
+        Quantity: parseInt(form.quantity, 10),
+        quantity: form.quantity,
         Rate: parseFloat(form.rate),
+        rate: form.rate,
         Amount: parseFloat(form.amount),
+        amount: form.amount,
+        itemName: selectedItem ? selectedItem.label : "Unknown Item",
+        uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+        srNo: originalItem?.srNo || itemsList.length + 1,
+        isModified: true,
         CreatedByID: personId ? parseInt(personId, 10) : null,
-      },
-    };
+      };
 
-    let updatedItems;
-    if (form.editIndex !== undefined) {
-      updatedItems = [...itemsList];
-      updatedItems[form.editIndex] = newItem;
-    } else {
-      updatedItems = [...itemsList, newItem];
+      // Save to backend
+      if (form.editIndex !== undefined) {
+        await axios.put(
+          `${APIBASEURL}/pInvoice-parcel/${newItem.PurchaseInvoiceItemID}`,
+          {
+            PInvoiceID: purchaseInvoiceId,
+            ItemID: newItem.ItemID,
+            UOMID: newItem.UOMID,
+            ItemQuantity: newItem.ItemQuantity,
+            Rate: newItem.Rate,
+            Amount: newItem.Amount,
+            CreatedByID: newItem.CreatedByID,
+          },
+          { headers }
+        );
+      } else {
+        await axios.post(
+          `${APIBASEURL}/pInvoice-parcel`,
+          {
+            PInvoiceID: purchaseInvoiceId,
+            ItemID: newItem.ItemID,
+            UOMID: newItem.UOMID,
+            ItemQuantity: newItem.ItemQuantity,
+            Rate: newItem.Rate,
+            Amount: newItem.Amount,
+            CreatedByID: newItem.CreatedByID,
+          },
+          { headers }
+        );
+      }
+
+      const updatedItems =
+        form.editIndex !== undefined
+          ? itemsList.map((p, i) => (i === form.editIndex ? newItem : p))
+          : [...itemsList, newItem];
+
+      setItemsList(updatedItems);
+      if (onItemsChange) {
+        onItemsChange(updatedItems);
+      }
+      setItemForms((prev) => prev.filter((f) => f.id !== formId));
+      toast.success("Item saved successfully.");
+    } catch (error) {
+      console.error("handleSave error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      if (error.message.includes("personId")) {
+        setError("Please log in to save items. Click below to log in.");
+      } else {
+        toast.error("Failed to save item.");
+      }
     }
-
-    setItemsList(updatedItems);
-    if (onItemsChange) {
-      onItemsChange(updatedItems);
-    }
-
-    setItemForms((prev) => prev.filter((f) => f.id !== formId));
   };
 
   // Handle deleting an item
@@ -456,19 +346,46 @@ const PurchaseInvoiceParcelsTab = ({
     setDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    const updatedItems = itemsList.filter((p) => p.id !== deleteItemId);
-    setItemsList(updatedItems);
-    if (onItemsChange) {
-      onItemsChange(updatedItems);
+  const handleConfirmDelete = async () => {
+    try {
+      const { headers } = getAuthHeader();
+      const itemToDelete = itemsList.find((p) => p.id === deleteItemId);
+      if (itemToDelete?.PurchaseInvoiceItemID) {
+        await axios.delete(
+          `${APIBASEURL}/pInvoice-parcel/${itemToDelete.PurchaseInvoiceItemID}`,
+          { headers }
+        );
+      }
+
+      const updatedItems = itemsList.filter((p) => p.id !== deleteItemId);
+      setItemsList(updatedItems);
+      if (onItemsChange) {
+        onItemsChange(updatedItems);
+      }
+      setDeleteConfirmOpen(false);
+      setDeleteItemId(null);
+      toast.success("Item deleted successfully.");
+    } catch (error) {
+      console.error("handleDeleteItem error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      if (error.message.includes("personId")) {
+        setError("Please log in to delete items. Click below to log in.");
+      } else {
+        toast.error("Failed to delete item.");
+      }
     }
-    setDeleteConfirmOpen(false);
-    setDeleteItemId(null);
   };
 
   const handleCancelDelete = () => {
     setDeleteConfirmOpen(false);
     setDeleteItemId(null);
+  };
+
+  const handleLoginRedirect = () => {
+    navigate("/login");
   };
 
   return (
@@ -520,9 +437,28 @@ const PurchaseInvoiceParcelsTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading || loadingExistingItems ? (
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
             <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
+            <Typography variant="body1">{error}</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={error.includes("log in") ? handleLoginRedirect : loadData}
+              sx={{ mt: 2 }}
+            >
+              {error.includes("log in") ? "Log In" : "Retry"}
+            </Button>
+          </Box>
+        ) : itemsList.length === 0 && itemForms.length === 0 ? (
+          <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+            <Typography variant="body1">
+              No items found.{" "}
+              {!readOnly && "Click 'Add Item' to add a new item."}
+            </Typography>
           </Box>
         ) : (
           <>
@@ -532,18 +468,10 @@ const PurchaseInvoiceParcelsTab = ({
                 startIcon={<AddIcon />}
                 onClick={handleAddItem}
                 sx={{ mb: 2 }}
+                disabled={items.length <= 1 || uoms.length <= 1}
               >
                 Add Item
               </Button>
-            )}
-
-            {itemsList.length === 0 && itemForms.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                <Typography variant="body1">
-                  No items added yet.{" "}
-                  {!readOnly && "Click 'Add Item' to add a new item."}
-                </Typography>
-              </Box>
             )}
 
             {itemForms.map((form) => (

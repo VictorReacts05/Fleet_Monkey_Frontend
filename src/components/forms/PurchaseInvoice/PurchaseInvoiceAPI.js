@@ -3,38 +3,58 @@ import APIBASEURL from './../../../utils/apiBaseUrl';
 
 export const getAuthHeader = () => {
   try {
-    const user = JSON.parse(localStorage.getItem("User"));
-    console.log(
-      "Raw user data from localStorage:",
-      localStorage.getItem("User")
-    );
-    console.log("Parsed user data:", user);
-    const personId = user?.PersonID || user?.id || user?.UserID || null;
-    console.log("PersonID:", personId);
-
-    if (!user || !personId) {
-      console.warn("No user data or personId, proceeding without login token");
-      return { headers: {}, personId: "" };
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.personId) {
+      throw new Error("No valid personId found in localStorage");
     }
-
-    const headers = {
-      "Content-Type": "application/json",
+    return {
+      headers: {
+        Authorization: `Bearer ${user.personId}`,
+      },
     };
-    const token = user?.Token || user?.token;
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-      console.log("Using token for Authorization:", token.slice(0, 20) + "...");
-    } else {
-      console.warn("No token found, proceeding without Authorization header");
-    }
-
-    return { headers, personId };
-  } catch (error) {
-    console.error("Error parsing user data from localStorage:", error);
-    return { headers: {}, personId: "" };
+  } catch (err) {
+    console.error("getAuthHeader error:", err.message);
+    throw err;
   }
 };
 
+
+// Function to fetch items
+export const fetchItems = async () => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.get(`${APIBASEURL}/items`, { headers });
+    console.log("fetchItems response:", response.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("fetchItems error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+// Function to fetch UOMs
+export const fetchUOMs = async () => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.get(`${APIBASEURL}/uoms`, { headers });
+    console.log("fetchUOMs response:", response.data);
+    const data = response.data.data || [];
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("fetchUOMs error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+  
 export const fetchPurchaseInvoices = async (page = 1, limit = 10) => {
   try {
     const { headers } = getAuthHeader();
@@ -357,93 +377,96 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
       `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`
     );
     if (isNaN(parseInt(purchaseInvoiceId, 10))) {
-      console.warn( 
+      console.warn(
         `Invalid Purchase Invoice ID: ${purchaseInvoiceId}, must be a number`
       );
       return [];
     }
-    
+
     const response = await axios.get(
       `${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
 
+    let items = [];
     if (response.data?.data) {
-      const items = Array.isArray(response.data.data)
+      // Handle both single object and array responses
+      items = Array.isArray(response.data.data)
         ? response.data.data
         : [response.data.data];
-
-      let uomMap = {};
-      let itemMap = {};
-
-      try {
-        const uomResponse = await axios.get(`${APIBASEURL}/UOMs`, { headers });
-        console.log("UOMs API Raw Response:", uomResponse.data);
-        if (uomResponse.data?.data) {
-          uomMap = (
-            Array.isArray(uomResponse.data.data)
-              ? uomResponse.data.data
-              : [uomResponse.data.data]
-          ).reduce((acc, uom) => {
-            const uomName =
-              uom.UOM || uom.UOMName || uom.Name || uom.Description;
-            if (uom.UOMID && uomName) {
-              acc[uom.UOMID] = uomName;
-              acc[String(uom.UOMID)] = uomName;
-            }
-            return acc;
-          }, {});
-          console.log("UOM Map:", uomMap);
-        }
-      } catch (err) {
-        console.error(
-          "Could not fetch UOMs:",
-          err.response?.data || err.message
-        );
-      }
-
-      try {
-        const itemResponse = await axios.get(`${APIBASEURL}/Items`, {
-          headers,
-        });
-        console.log("Items API Raw Response:", itemResponse.data);
-        if (itemResponse.data?.data) {
-          itemMap = (
-            Array.isArray(itemResponse.data.data)
-              ? itemResponse.data.data
-              : [itemResponse.data.data]
-          ).reduce((acc, item) => {
-            if (item.ItemID && item.ItemName) {
-              acc[item.ItemID] = item.ItemName;
-              acc[String(item.ItemID)] = item.ItemName;
-            }
-            return acc;
-          }, {});
-          console.log("Item Map:", itemMap);
-        }
-      } catch (err) {
-        console.error(
-          "Could not fetch items:",
-          err.response?.data || err.message
-        );
-      }
-
-      const enhancedItems = items.map((item) => {
-        console.log("Processing item:", item);
-        item.ItemName =
-          item.ItemID && itemMap[item.ItemID]
-            ? itemMap[item.ItemID]
-            : "Unknown Item";
-        item.UOMName =
-          item.UOMID && uomMap[item.UOMID] ? uomMap[item.UOMID] : "-";
-        return item;
-      });
-
-      return enhancedItems;
+    } else {
+      console.warn("No items found in response:", response.data);
+      return [];
     }
-    console.warn("No items found:", response.data);
-    return [];
+
+    // Fetch UOMs and Items for mapping names
+    let uomMap = {};
+    let itemMap = {};
+
+    try {
+      const uomResponse = await axios.get(`${APIBASEURL}/UOMs`, { headers });
+      console.log("UOMs API Raw Response:", uomResponse.data);
+      if (uomResponse.data?.data) {
+        const uoms = Array.isArray(uomResponse.data.data)
+          ? uomResponse.data.data
+          : [uomResponse.data.data];
+        uomMap = uoms.reduce((acc, uom) => {
+          const uomName =
+            uom.UOM || uom.UOMName || uom.Name || uom.Description || "Unknown UOM";
+          const uomId =
+            uom.UOMID || uom.UOMId || uom.uomID || uom.uomId || uom.id || uom.ID;
+          if (uomId && uomName) {
+            acc[uomId] = uomName;
+            acc[String(uomId)] = uomName;
+          }
+          return acc;
+        }, {});
+        console.log("UOM Map:", uomMap);
+      }
+    } catch (err) {
+      console.error("Could not fetch UOMs:", err.response?.data || err.message);
+    }
+
+    try {
+      const itemResponse = await axios.get(`${APIBASEURL}/Items`, { headers });
+      console.log("Items API Raw Response:", itemResponse.data);
+      if (itemResponse.data?.data) {
+        const itemData = Array.isArray(itemResponse.data.data)
+          ? itemResponse.data.data
+          : [itemResponse.data.data];
+        itemMap = itemData.reduce((acc, item) => {
+          if (item.ItemID && item.ItemName) {
+            acc[item.ItemID] = item.ItemName;
+            acc[String(item.ItemID)] = item.ItemName;
+          }
+          return acc;
+        }, {});
+        console.log("Item Map:", itemMap);
+      }
+    } catch (err) {
+      console.error("Could not fetch items:", err.response?.data || err.message);
+    }
+
+    // Enhance items with ItemName and UOMName
+    const enhancedItems = items.map((item, index) => {
+      console.log("Processing item:", item);
+      const itemId = String(item.ItemID || "");
+      const uomId = String(item.UOMID || "");
+      return {
+        ...item,
+        PurchaseInvoiceItemID: item.PInvoiceParcelID || item.id || Date.now() + index,
+        PIID: item.PInvoiceID || purchaseInvoiceId,
+        ItemName: itemId && itemMap[itemId] ? itemMap[itemId] : "Unknown Item",
+        UOMName: uomId && uomMap[uomId] ? uomMap[uomId] : "Unknown UOM",
+        ItemQuantity: String(item.ItemQuantity || item.Quantity || "0"),
+        Rate: String(item.Rate || "0"),
+        Amount: String(item.Amount || "0"),
+      };
+    });
+
+    console.log("Enhanced Items:", enhancedItems);
+    return enhancedItems;
   } catch (error) {
     console.error(
       `Error fetching items for Purchase Invoice ${purchaseInvoiceId}:`,
