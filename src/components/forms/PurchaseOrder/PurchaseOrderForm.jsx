@@ -21,6 +21,7 @@ import {
   fetchPurchaseOrderApprovalStatus,
   sendPurchaseOrderEmail,
 } from "./PurchaseOrderAPI";
+import { createPurchaseInvoice } from "../PurchaseInvoice/PurchaseInvoiceAPI";
 import { useAuth } from "../../../context/AuthContext";
 
 const ReadOnlyField = ({ label, value }) => {
@@ -68,7 +69,7 @@ const PurchaseOrderForm = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     console.log("fetchData called", { purchaseOrderId, isAuthenticated, user });
     await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -173,9 +174,9 @@ const PurchaseOrderForm = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [purchaseOrderId, isAuthenticated, user, navigate]);
 
-  const loadPurchaseOrderStatus = async () => {
+  const loadPurchaseOrderStatus = useCallback(async () => {
     if (!isAuthenticated || !user || !purchaseOrderId) return;
     try {
       const approvalData = await fetchPurchaseOrderApprovalStatus(
@@ -199,7 +200,7 @@ const PurchaseOrderForm = ({
       setApprovalStatus("Pending");
       setStatus("Pending");
     }
-  };
+  }, [isAuthenticated, user, purchaseOrderId]);
 
   const handleSendToSupplier = async () => {
     if (!isAuthenticated || !user) {
@@ -217,13 +218,53 @@ const PurchaseOrderForm = ({
             error.response.data?.message || error.message
           }`
         : `Failed to send purchase order: ${error.message}`;
-      console.error("Error sending purchase order email:", error);
+      console.error("Error sending purchase order:", error);
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleCreatePurchaseInvoice = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to create a purchase invoice");
+      navigate("/");
+      return;
+    }
+
+    try {
+      console.log("Creating Purchase Invoice for PO:", purchaseOrderId);
+      const response = await createPurchaseInvoice(purchaseOrderId, user);
+      console.log("Create Purchase Invoice response:", response);
+      console.log(
+        "Full response structure:",
+        JSON.stringify(response, null, 2)
+      );
+      const newPInvoiceID =
+        response?.data?.PInvoiceID ||
+        response?.data?.pInvoiceId ||
+        response?.data?.id ||
+        response?.data?.data?.id ||
+        response?.data?.newPurchaseInvoiceId ||
+        response?.newPInvoiceId ||
+        response?.data?.PurchaseInvoiceID;
+      if (newPInvoiceID) {
+        toast.success("Purchase Invoice created successfully");
+        navigate(`/purchase-invoice/view/${newPInvoiceID}`);
+      } else {
+        throw new Error("No Purchase Invoice ID returned");
+      }
+    } catch (error) {
+      const errorMessage = error.response
+        ? `Server error: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        : `Error creating purchase invoice: ${error.message}`;
+      console.error("Error creating purchase invoice:", errorMessage);
       toast.error(errorMessage);
     }
   };
 
   useEffect(() => {
-    console.log("useEffect triggered", {
+    console.log("useEffect triggered:", {
       purchaseOrderId,
       readOnly,
       isAuthenticated,
@@ -235,8 +276,10 @@ const PurchaseOrderForm = ({
     } else {
       setError("No purchase order ID provided");
       setLoading(false);
+      toast.error("No purchase order ID provided");
+      navigate("/");
     }
-  }, [purchaseOrderId]);
+  }, [purchaseOrderId, isAuthenticated, user, navigate]);
 
   const handleParcelsChange = (updatedParcels) => {
     setParcels(updatedParcels);
@@ -264,6 +307,7 @@ const PurchaseOrderForm = ({
     supplierIDValue: formData?.SupplierID,
     isAuthenticated,
     readOnly,
+    user,
   });
 
   if (loading) {
@@ -278,7 +322,7 @@ const PurchaseOrderForm = ({
     return (
       <Box sx={{ p: 3 }}>
         <Typography color="error" variant="h6">
-          An error occurred: {error}
+          {error}
         </Typography>
         <Button variant="contained" onClick={fetchData} sx={{ mt: 2 }}>
           Retry
@@ -290,7 +334,7 @@ const PurchaseOrderForm = ({
   if (!formData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography variant="h6">No purchase order data available</Typography>
+        <Typography variant="h6">No purchase order data found</Typography>
       </Box>
     );
   }
@@ -307,7 +351,7 @@ const PurchaseOrderForm = ({
           }}
         >
           <Typography variant="h6">View Purchase Order</Typography>
-          <Fade in={true} timeout={500}>
+          <Fade in timeout={500}>
             <Box
               sx={{
                 display: "flex",
@@ -315,9 +359,9 @@ const PurchaseOrderForm = ({
                 background:
                   theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                 borderRadius: "4px",
-                paddingRight: "10px",
+                paddingRight: "8px",
                 height: "37px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 transition: "all 0.3s ease-in-out",
                 marginLeft: "16px",
                 "&:hover": {
@@ -331,7 +375,7 @@ const PurchaseOrderForm = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      fontWeight: "700",
+                      fontWeight: "bold",
                       color: theme.palette.mode === "light" ? "white" : "black",
                       fontSize: "0.9rem",
                     }}
@@ -352,21 +396,25 @@ const PurchaseOrderForm = ({
           </Fade>
           <Box sx={{ display: "flex", justifyContent: "flex-end", ml: 2 }}>
             {formData.SupplierID &&
-            formData.SupplierID !== "-" &&
-            isAuthenticated ? (
+              formData.SupplierID !== "-" &&
+              isAuthenticated && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSendToSupplier}
+                  sx={{ mr: 2 }}
+                >
+                  Send to Supplier
+                </Button>
+              )}
+            {formData && isAuthenticated && (
               <Button
                 variant="contained"
-                color="primary"
-                onClick={handleSendToSupplier}
-                sx={{ mr: 2 }}
+                color="secondary"
+                onClick={handleCreatePurchaseInvoice}
               >
-                Send to Supplier
+                Create Purchase Invoice
               </Button>
-            ) : (
-              console.log("Send to Supplier button not rendered:", {
-                supplierID: formData?.SupplierID,
-                isAuthenticated,
-              })
             )}
           </Box>
         </Box>
@@ -376,7 +424,7 @@ const PurchaseOrderForm = ({
     >
       <Grid
         container
-        spacing={1}
+        spacing={2}
         sx={{
           width: "100%",
           margin: 0,
@@ -387,88 +435,88 @@ const PurchaseOrderForm = ({
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Series" value={formData.Series} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Customers" value={formData.CustomerName} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Suppliers" value={formData.SupplierName} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="External Ref" value={formData.ExternalRefNo} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Required By Date"
             value={formData.RequiredByDate}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
-        <Grid item xs={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={12} md={6} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collection Address"
             value={formData.CollectionAddress}
           />
         </Grid>
-        <Grid item xs={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={12} md={6} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
-            label="Shipment Priority"
+            label="Shipping Priority"
             value={formData.ShippingPriorityName}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Currencies" value={formData.CurrencyName} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Sales Amounts" value={formData.SalesAmount} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Taxes/Other Charges"
             value={formData.TaxesAndOtherCharges}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Totals" value={formData.Total} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collect From Supplier"
             value={formData.CollectFromSupplierYN}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Packaging Required"
             value={formData.PackagingRequiredYN}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Form Completed"
             value={formData.FormCompletedYN}

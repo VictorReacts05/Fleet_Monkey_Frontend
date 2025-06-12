@@ -46,7 +46,7 @@ export const fetchSalesRFQs = async (
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `${APIBASEURL}/sales-rfq?page=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/sales-rfq?pageNumber=${page}&pageSize=${pageSize}`;
 
     if (fromDate) {
       url += `&fromDate=${fromDate}`;

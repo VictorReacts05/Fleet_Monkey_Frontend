@@ -76,6 +76,7 @@ const PurchaseOrderParcelsTab = ({
       return;
     }
     if (isDropdownLoaded.current) {
+      console.log("Dropdown data already loaded");
       return;
     }
 
@@ -94,18 +95,37 @@ const PurchaseOrderParcelsTab = ({
         }),
       ]);
 
+      console.log("Fetched items raw:", itemsData);
+      console.log("Fetched UOMs raw:", uomsData);
+
+      // Convert itemsData to array if it's an object (e.g., ItemMap)
+      const itemsArray = Array.isArray(itemsData)
+        ? itemsData
+        : Object.entries(itemsData || {}).map(([key, value]) => ({
+            ItemID: key,
+            ItemName: value,
+          }));
+
       const itemOptions = [
         { value: "", label: "Select an item" },
-        ...itemsData.map((item) => ({
-          value: String(item.ItemID),
+        ...itemsArray.map((item) => ({
+          value: String(item.ItemID || ""),
           label: item.ItemName || "Unknown Item",
         })),
       ];
 
+      // Convert uomsData to array if needed
+      const uomsArray = Array.isArray(uomsData)
+        ? uomsData
+        : Object.entries(uomsData || {}).map(([key, value]) => ({
+            UOMID: key,
+            UOM: value,
+          }));
+
       const uomOptions = [
         { value: "", label: "Select a UOM" },
-        ...uomsData.map((uom) => ({
-          value: String(uom.UOMID),
+        ...uomsArray.map((uom) => ({
+          value: String(uom.UOMID || ""),
           label:
             uom.UOM ||
             uom.UOMName ||
@@ -114,6 +134,9 @@ const PurchaseOrderParcelsTab = ({
             "Unknown UOM",
         })),
       ];
+
+      console.log("Item options:", itemOptions);
+      console.log("UOM options:", uomOptions);
 
       setItems(itemOptions);
       setUOMs(uomOptions);
@@ -128,12 +151,27 @@ const PurchaseOrderParcelsTab = ({
 
   const loadExistingParcels = useCallback(async () => {
     if (!purchaseOrderId || !user || isParcelsLoaded.current) {
+      console.log("Skipping parcel load:", {
+        purchaseOrderId,
+        user: !!user,
+        isParcelsLoaded: isParcelsLoaded.current,
+      });
       return;
     }
 
     try {
       setLoading(true);
-      const parcelData = await fetchPurchaseOrderParcels(purchaseOrderId, user);
+      const parcelResponse = await fetchPurchaseOrderParcels(
+        purchaseOrderId,
+        user
+      );
+      console.log("Raw parcel response:", parcelResponse);
+
+      // Handle both array and object responses
+      const parcelData = Array.isArray(parcelResponse)
+        ? parcelResponse
+        : parcelResponse?.data || [];
+      console.log("Parcel data:", parcelData);
 
       const formattedParcels = parcelData.map((parcel, index) => {
         const itemId = String(parcel.ItemID || "");
@@ -142,21 +180,25 @@ const PurchaseOrderParcelsTab = ({
         const item = memoizedItems.find((i) => i.value === itemId);
         const uom = memoizedUOMs.find((u) => u.value === uomId);
 
-        return {
-          id: parcel.PurchaseOrderParcelID || `Parcel-${index + 1}`,
+        const formattedParcel = {
+          id: parcel.POParcelID ? String(parcel.POParcelID) : `Parcel-${index}`,
           itemId,
           uomId,
           quantity: String(parseFloat(parcel.ItemQuantity) || 0),
           rate: String(parseFloat(parcel.Rate) || 0),
           amount: String(parseFloat(parcel.Amount) || 0),
-          itemName: item?.label || parcel.ItemName || `Item #${itemId}`,
-          uomName: uom?.label || parcel.UOM || `UOM #${uomId}`,
+          itemName: item?.label || parcel.ItemName || `Item-${itemId}`,
+          uomName: uom?.label || parcel.UOM || `UOM-${uomId}`,
           srNo: index + 1,
-          PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
-          POID: purchaseOrderId,
+          PurchaseOrderParcelID: parcel.POParcelID,
+          POID: parseInt(purchaseOrderId, 10),
         };
+
+        console.log("Formatted parcel:", formattedParcel);
+        return formattedParcel;
       });
 
+      console.log("Setting parcels:", formattedParcels);
       setParcels(formattedParcels);
       if (onParcelsChange) {
         onParcelsChange(formattedParcels);
@@ -166,20 +208,20 @@ const PurchaseOrderParcelsTab = ({
       console.error("Error loading parcels:", error);
       toast.error("Failed to load parcels");
       setParcels([]);
+      isParcelsLoaded.current = false; // Allow retry on error
     } finally {
       setLoading(false);
     }
   }, [purchaseOrderId, user, memoizedItems, memoizedUOMs, onParcelsChange]);
 
   useEffect(() => {
-    loadDropdownData();
-  }, [loadDropdownData]);
-
-  useEffect(() => {
-    if (isDropdownLoaded.current && !isParcelsLoaded.current) {
-      loadExistingParcels();
+    if (!purchaseOrderId || !user) {
+      console.log("Missing purchaseOrderId or user, skipping load");
+      return;
     }
-  }, [loadExistingParcels]);
+    loadDropdownData();
+    loadExistingParcels();
+  }, [purchaseOrderId, user, loadDropdownData, loadExistingParcels]);
 
   const handleAddParcel = () => {
     const newFormId = Date.now();
@@ -298,7 +340,7 @@ const PurchaseOrderParcelsTab = ({
 
     const newParcel = {
       id: form.originalId || form.id,
-      PurchaseOrderParcelID: originalParcel?.id || form.id,
+      PurchaseOrderParcelID: originalParcel?.PurchaseOrderParcelID || form.id,
       POID: parseInt(purchaseOrderId, 10),
       ItemID: parseInt(form.itemId, 10),
       itemId: parseInt(form.itemId, 10),
@@ -354,6 +396,7 @@ const PurchaseOrderParcelsTab = ({
         if (onParcelsChange) {
           onParcelsChange(updatedParcels);
         }
+        console.log("Saved parcels:", updatedParcels);
         return updatedParcels;
       });
       toast.success("Parcel saved successfully");
@@ -368,6 +411,7 @@ const PurchaseOrderParcelsTab = ({
   const handleDeleteParcel = (id) => {
     setDeleteConfirmOpen(true);
     setDeleteParcelId(id);
+    console.log("Opening delete dialog for id:", id);
   };
 
   const handleConfirmDelete = async () => {
@@ -382,6 +426,7 @@ const PurchaseOrderParcelsTab = ({
       }
 
       const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
+      console.log("Deleted parcel, updated parcels:", updatedParcels);
       setParcels(updatedParcels);
       if (onParcelsChange) {
         onParcelsChange(updatedParcels);
@@ -415,6 +460,7 @@ const PurchaseOrderParcelsTab = ({
           display: "flex",
           borderTopLeftRadius: "8px",
           borderTopRightRadius: "8px",
+          borderBottom: "1px solid #e0e0e0",
         }}
       >
         <Box

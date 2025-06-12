@@ -1,28 +1,58 @@
-import axios from 'axios';
-import APIBASEURL from './../../../utils/apiBaseUrl';
+import axios from "axios";
+import APIBASEURL from "./../../../utils/apiBaseUrl";
 
-export const getAuthHeader = () => {
+export const getAuthHeader = (user = null) => {
   try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user?.personId) {
-      throw new Error("No valid personId found in localStorage");
+    let token = null;
+    let personId = null;
+
+    // Try to get token and personId from user object
+    if (user) {
+      personId =
+        user?.personId ||
+        user?.PersonID ||
+        user?.id ||
+        user?.UserID ||
+        user?.ID ||
+        null;
+      token = user?.token || user?.Token;
     }
-    return {
-      headers: {
-        Authorization: `Bearer ${user.personId}`,
-      },
+
+    // Fall back to localStorage if token or personId is missing
+    if (!token || !personId) {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const storedToken = localStorage.getItem("token");
+      if (storedUser?.personId && storedToken) {
+        personId = storedUser.personId;
+        token = storedToken;
+      } else {
+        console.warn(
+          "No valid token or personId found in user data or localStorage"
+        );
+        return { headers: {}, personId: "" };
+      }
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
     };
-  } catch (err) {
-    console.error("getAuthHeader error:", err.message);
-    throw err;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("No token found, proceeding without Authorization header");
+    }
+
+    return { headers, personId };
+  } catch (error) {
+    console.error("Error processing auth data:", error);
+    return { headers: {}, personId: "" };
   }
 };
 
-
 // Function to fetch items
-export const fetchItems = async () => {
+export const fetchItems = async (user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     const response = await axios.get(`${APIBASEURL}/items`, { headers });
     console.log("fetchItems response:", response.data);
     return response.data.data || [];
@@ -37,9 +67,9 @@ export const fetchItems = async () => {
 };
 
 // Function to fetch UOMs
-export const fetchUOMs = async () => {
+export const fetchUOMs = async (user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     const response = await axios.get(`${APIBASEURL}/uoms`, { headers });
     console.log("fetchUOMs response:", response.data);
     const data = response.data.data || [];
@@ -54,10 +84,9 @@ export const fetchUOMs = async () => {
   }
 };
 
-  
-export const fetchPurchaseInvoices = async (page = 1, limit = 10) => {
+export const fetchPurchaseInvoices = async (page = 1, limit = 10, user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     console.log(
       `Fetching Purchase Invoices page ${page}, limit ${limit} from: ${APIBASEURL}/pInvoice`
     );
@@ -78,19 +107,22 @@ export const fetchPurchaseInvoices = async (page = 1, limit = 10) => {
   }
 };
 
-export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
+export const fetchPurchaseInvoice = async (purchaseInvoiceId, user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     console.log(
       `Fetching Purchase Invoice ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice/${purchaseInvoiceId}`
     );
-    const response = await axios.get(`${APIBASEURL}/pInvoice/${purchaseInvoiceId}`, {
-      headers,
-    });
+    const response = await axios.get(
+      `${APIBASEURL}/pInvoice/${purchaseInvoiceId}`,
+      {
+        headers,
+      }
+    );
     console.log("Purchase Invoice API Response:", response.data);
 
     if (response.data?.data) {
-      const invoice = response.data.data; // Directly use the object, no array check
+      const invoice = response.data.data;
       console.log("Processed Purchase Invoice:", invoice);
 
       if (!invoice.PInvoiceID) {
@@ -105,7 +137,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
       let serviceTypeMap = {};
       let companyMap = {};
 
-      // Fetch addresses
       try {
         console.log(`Fetching addresses from: ${APIBASEURL}/Addresses`);
         const addressResponse = await axios.get(`${APIBASEURL}/Addresses`, {
@@ -147,7 +178,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Fetch currencies
       try {
         console.log(`Fetching currencies from: ${APIBASEURL}/Currencies`);
         const currencyResponse = await axios.get(`${APIBASEURL}/Currencies`, {
@@ -180,7 +210,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Fetch customers
       try {
         console.log(`Fetching customers from: ${APIBASEURL}/Customers`);
         const customerResponse = await axios.get(`${APIBASEURL}/Customers`, {
@@ -212,7 +241,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Fetch suppliers
       try {
         console.log(`Fetching suppliers from: ${APIBASEURL}/Suppliers`);
         const supplierResponse = await axios.get(`${APIBASEURL}/Suppliers`, {
@@ -226,7 +254,7 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
           : [];
         supplierMap = suppliers.reduce((acc, supplier) => {
           if (supplier.SupplierID && supplier.SupplierName) {
-            acc[supplier.SupplierID] = supplier.SupplierName;
+            acc[supplier.SupplierID] = supplier.SupplierID;
             acc[String(supplier.SupplierID)] = supplier.SupplierName;
           }
           return acc;
@@ -245,7 +273,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Fetch service types
       try {
         console.log(`Fetching service types from: ${APIBASEURL}/Service-Types`);
         const serviceTypeResponse = await axios.get(
@@ -281,7 +308,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Fetch companies
       try {
         console.log(`Fetching companies from: ${APIBASEURL}/Companies`);
         const companyResponse = await axios.get(`${APIBASEURL}/Companies`, {
@@ -313,7 +339,6 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
         );
       }
 
-      // Map values to names
       invoice.CollectionAddressTitle = invoice.CollectionAddressID
         ? addressMap[invoice.CollectionAddressID] || "Unknown Address"
         : "-";
@@ -365,16 +390,16 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId) => {
   }
 };
 
-export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
+export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
   try {
-    const { headers } = getAuthHeader();
+    const { headers } = getAuthHeader(user);
     if (!purchaseInvoiceId) {
       console.warn("No purchaseInvoiceId provided, returning empty items");
       return [];
     }
 
     console.log(
-      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`
+      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-Parcel/${purchaseInvoiceId}`
     );
     if (isNaN(parseInt(purchaseInvoiceId, 10))) {
       console.warn(
@@ -384,14 +409,13 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/pInvoice-parcel/${purchaseInvoiceId}`,
+      `${APIBASEURL}/pInvoiceParcel?pInvoiceId=${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
 
     let items = [];
     if (response.data?.data) {
-      // Handle both single object and array responses
       items = Array.isArray(response.data.data)
         ? response.data.data
         : [response.data.data];
@@ -400,7 +424,6 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
       return [];
     }
 
-    // Fetch UOMs and Items for mapping names
     let uomMap = {};
     let itemMap = {};
 
@@ -413,9 +436,18 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
           : [uomResponse.data.data];
         uomMap = uoms.reduce((acc, uom) => {
           const uomName =
-            uom.UOM || uom.UOMName || uom.Name || uom.Description || "Unknown UOM";
+            uom.UOM ||
+            uom.UOMName ||
+            uom.Name ||
+            uom.Description ||
+            "Unknown UOM";
           const uomId =
-            uom.UOMID || uom.UOMId || uom.uomID || uom.uomId || uom.id || uom.ID;
+            uom.UOMID ||
+            uom.UOMId ||
+            uom.uomID ||
+            uom.uomId ||
+            uom.id ||
+            uom.ID;
           if (uomId && uomName) {
             acc[uomId] = uomName;
             acc[String(uomId)] = uomName;
@@ -445,17 +477,20 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
         console.log("Item Map:", itemMap);
       }
     } catch (err) {
-      console.error("Could not fetch items:", err.response?.data || err.message);
+      console.error(
+        "Could not fetch items:",
+        err.response?.data || err.message
+      );
     }
 
-    // Enhance items with ItemName and UOMName
     const enhancedItems = items.map((item, index) => {
       console.log("Processing item:", item);
       const itemId = String(item.ItemID || "");
       const uomId = String(item.UOMID || "");
       return {
         ...item,
-        PurchaseInvoiceItemID: item.PInvoiceParcelID || item.id || Date.now() + index,
+        PurchaseInvoiceItemID:
+          item.PInvoiceParcelID || item.id || Date.now() + index,
         PIID: item.PInvoiceID || purchaseInvoiceId,
         ItemName: itemId && itemMap[itemId] ? itemMap[itemId] : "Unknown Item",
         UOMName: uomId && uomMap[uomId] ? uomMap[uomId] : "Unknown UOM",
@@ -478,16 +513,44 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId) => {
   }
 };
 
-export const deletePurchaseInvoice = async (id) => {
+export const deletePurchaseInvoice = async (id, user) => {
   try {
-    const { headers } = getAuthHeader();
-    console.log(`Deleting Purchase Invoice ${id} at: ${APIBASEURL}/pInvoice/${id}`);
-    const response = await axios.delete(`${APIBASEURL}/pInvoice/${id}`, { headers });
+    const { headers } = getAuthHeader(user);
+    console.log(
+      `Deleting Purchase Invoice ${id} at: ${APIBASEURL}/pInvoice/${id}`
+    );
+    const response = await axios.delete(`${APIBASEURL}/pInvoice/${id}`, {
+      headers,
+    });
     console.log("Delete Purchase Invoice Response:", response.data);
     return response.data;
   } catch (error) {
     console.error(
       "Error deleting Purchase Invoice:",
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
+
+export const createPurchaseInvoice = async (POID, user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    console.log(
+      `Creating Purchase Invoice for PO ${POID} at: ${APIBASEURL}/pInvoice`
+    );
+    const response = await axios.post(
+      `${APIBASEURL}/pInvoice`,
+      { poid: parseInt(POID, 10) },
+      { headers }
+    );
+    console.log("Create Purchase Invoice Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error creating Purchase Invoice:",
       error.response?.data || error.message,
       "Status:",
       error.response?.status
