@@ -399,7 +399,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     console.log(
-      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice-Parcel/${purchaseInvoiceId}`
+      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}pInvoiceParcel?pInvoiceID=${purchaseInvoiceId}`
     );
     if (isNaN(parseInt(purchaseInvoiceId, 10))) {
       console.warn(
@@ -409,7 +409,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/pInvoiceParcel?pInvoiceId=${purchaseInvoiceId}`,
+      `${APIBASEURL}/pInvoiceparcel?pInvoiceID=${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
