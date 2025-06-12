@@ -111,10 +111,10 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         : {}; 
 
       const endpoint = newStatus === "Approved" 
-        ? `${APIBASEURL}/purchase-invoice/approve/` 
+        ? `${APIBASEURL}/pinvoice/approve` 
         : `${APIBASEURL}/purchase-invoice/disapprove/`; 
       const approveData = { 
-        purchaseInvoiceId: parseInt(purchaseInvoiceId, 10), 
+        PInvoiceID: parseInt(purchaseInvoiceId, 10), 
       }; 
 
       console.log(`Sending ${newStatus} request with data:`, approveData); 
@@ -255,6 +255,7 @@ const StatusIndicator = ({ status, purchaseInvoiceId, onStatusChange, readOnly }
         <MenuItem onClick={handleApprove}>Approve</MenuItem>
         <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
       </Menu>
+      <button onClick={handleApprove}>Approve</button>
     </Box>
   ); 
 }; 

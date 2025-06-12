@@ -14,16 +14,16 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification";
 import SalesInvoiceForm from "./SalesInvoiceForm";
 import { Chip } from "@mui/material";
+import { fetchSalesInvoices, deleteSalesInvoice } from "./SalesInvoiceAPI";
+import axios from "axios";
 
 const getHeaders = () => {
   return {
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${JSON.parse(localStorage.getItem("user") || "{}")?.personId}`,
     },
   };
 };
@@ -36,75 +36,102 @@ const SalesInvoiceList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [salesInvoices, setSalesInvoices] = useState([]);
+  const [totalRows, setTotalRows] = useState(0);
+  const [customers, setCustomers] = useState([]);
+  const [customersLoaded, setCustomersLoaded] = useState(false);
 
-  // Static data for the table
-  const salesInvoices = [
-    {
-      id: 1,
-      Series: "SI2025-001",
-      CustomerName: "John Smith",
-      SupplierName: "ABC Suppliers Inc",
-      PostingDate: "2025-06-10",
-      DeliveryDate: "2025-06-15",
-      ServiceType: "International Shipping",
-      Status: "Approved",
-      Total: 13750.0,
-    },
-    {
-      id: 2,
-      Series: "SI2025-002",
-      CustomerName: "Jane Doe",
-      SupplierName: "XYZ Logistics",
-      PostingDate: "2025-06-12",
-      DeliveryDate: "2025-06-18",
-      ServiceType: "Domestic Shipping",
-      Status: "Pending",
-      Total: 8500.0,
-    },
-    {
-      id: 3,
-      Series: "SI2025-003",
-      CustomerName: "Robert Johnson",
-      SupplierName: "Global Transport Co",
-      PostingDate: "2025-06-14",
-      DeliveryDate: "2025-06-20",
-      ServiceType: "Express Delivery",
-      Status: "Approved",
-      Total: 22000.0,
-    },
-    {
-      id: 4,
-      Series: "SI2025-004",
-      CustomerName: "Emily Williams",
-      SupplierName: "Fast Freight Ltd",
-      PostingDate: "2025-06-15",
-      DeliveryDate: "2025-06-22",
-      ServiceType: "International Shipping",
-      Status: "Rejected",
-      Total: 15300.0,
-    },
-    {
-      id: 5,
-      Series: "SI2025-005",
-      CustomerName: "Michael Brown",
-      SupplierName: "Reliable Shipping Inc",
-      PostingDate: "2025-06-16",
-      DeliveryDate: "2025-06-25",
-      ServiceType: "Domestic Shipping",
-      Status: "Approved",
-      Total: 9800.0,
-    },
-  ];
+  // Fetch customers list
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:7000/api/customers",
+          getHeaders()
+        );
+        const customersData = response.data.data || [];
+        if (customersData.length === 0) {
+          console.warn("No customers found in API response");
+          toast.warn("No customers found. Customer names may not display correctly.");
+        }
+        const mappedCustomers = customersData.map((customer) => ({
+          id: String(customer.CustomerID),
+          name: customer.CustomerName || "Unknown Customer",
+        }));
+        setCustomers(mappedCustomers);
+        console.log("Fetched Customers (Detailed):", mappedCustomers);
+        setCustomersLoaded(true);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+        toast.error("Failed to fetch customers: " + error.message);
+        setCustomersLoaded(true);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+  // Fetch sales invoices and map CustomerID to CustomerName
+  useEffect(() => {
+    const loadSalesInvoices = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchSalesInvoices(page + 1, rowsPerPage);
+        const invoices = response.data || [];
+        console.log("Fetched Sales Invoices:", invoices);
+
+        if (invoices.length === 0) {
+          console.warn("No sales invoices found in API response");
+          toast.warn("No sales invoices found.");
+        }
+
+        // Map invoices with CustomerName using customers list
+        const mappedInvoices = invoices.map((invoice, index) => {
+          const customer = customers.find(
+            (c) => String(c.id) === String(invoice.CustomerID)
+          );
+          const invoiceId = invoice.SalesInvoiceID !== undefined && invoice.SalesInvoiceID !== null
+            ? invoice.SalesInvoiceID
+            : `fallback-${index}`; // Fallback if SalesInvoiceID is missing
+          return {
+            id: `${invoiceId}`,
+            Series: invoice.Series || "-",
+            CustomerID: String(invoice.CustomerID) || "N/A",
+            CustomerName: customer?.name || `Customer ID: ${invoice.CustomerID} (Not Found)`,
+            SupplierName: invoice.SupplierName || "Unknown Supplier",
+            PostingDate: invoice.PostingDate || "-",
+            DeliveryDate: invoice.DeliveryDate || "-",
+            ServiceType: invoice.ServiceType?.ServiceType || "Unknown Service",
+            Status: invoice.Status || "Pending",
+            Total: invoice.Total || 0,
+          };
+        });
+
+        console.log("Mapped Sales Invoices:", mappedInvoices);
+        setSalesInvoices(mappedInvoices);
+        setTotalRows(response.total || 0);
+      } catch (error) {
+        console.error("Error fetching sales invoices:", error);
+        toast.error("Failed to fetch sales invoices: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (customersLoaded) {
+      loadSalesInvoices();
+    }
+  }, [page, rowsPerPage, customers, customersLoaded]);
 
   // Filter sales invoices based on search term
   const filteredSalesInvoices = salesInvoices.filter((invoice) => {
     const searchString = searchTerm.toLowerCase();
     return (
-      invoice.Series.toLowerCase().includes(searchString) ||
-      invoice.CustomerName.toLowerCase().includes(searchString) ||
-      invoice.SupplierName.toLowerCase().includes(searchString) ||
-      invoice.ServiceType.toLowerCase().includes(searchString) ||
-      invoice.Status.toLowerCase().includes(searchString)
+      invoice.Series?.toLowerCase().includes(searchString) ||
+      invoice.CustomerName?.toLowerCase().includes(searchString) ||
+      invoice.SupplierName?.toLowerCase().includes(searchString) ||
+      invoice.ServiceType?.toLowerCase().includes(searchString) ||
+      invoice.Status?.toLowerCase().includes(searchString)
     );
   });
 
@@ -126,21 +153,19 @@ const SalesInvoiceList = () => {
       headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
     },
     {
       field: "Total",
       headerName: "Total",
       flex: 1,
-      valueGetter: (params) => 
+      valueGetter: (params) =>
         params.row.Total ? `$${params.row.Total.toFixed(2)}` : "$0.00",
     },
   ];
@@ -157,7 +182,6 @@ const SalesInvoiceList = () => {
   };
 
   const handleView = (id) => {
-    console.log("View clicked for Sales Invoice ID:", id);
     if (id && id !== "undefined") {
       navigate(`/sales-invoice/view/${id}`);
     } else {
@@ -180,8 +204,11 @@ const SalesInvoiceList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      // In a real app, you would call an API to delete the sales invoice
-      console.log(`Deleting sales invoice with ID: ${selectedInvoice}`);
+      await deleteSalesInvoice(selectedInvoice);
+      setSalesInvoices(
+        salesInvoices.filter((invoice) => invoice.id !== selectedInvoice)
+      );
+      setTotalRows((prev) => prev - 1);
       toast.success("Sales Invoice deleted successfully");
       setDeleteDialogOpen(false);
     } catch (error) {
@@ -197,10 +224,6 @@ const SalesInvoiceList = () => {
     setPage(0);
   };
 
-  const handleAdd = () => {
-    navigate("/sales-invoice/add");
-  };
-
   return (
     <Box>
       <Box
@@ -212,7 +235,7 @@ const SalesInvoiceList = () => {
         }}
       >
         <Typography variant="h5">Sales Invoice Management</Typography>
-        <Stack direction="row" spacing={1} alignItems="center"> 
+        <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
             placeholder="Search Sales Invoices..."
@@ -224,10 +247,10 @@ const SalesInvoiceList = () => {
         rows={filteredSalesInvoices}
         columns={columns}
         loading={loading}
-        getRowId={(row) => row.id || "unknown"}
+        getRowId={(row) => row.id}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={filteredSalesInvoices.length}
+        totalRows={totalRows}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onView={handleView}
