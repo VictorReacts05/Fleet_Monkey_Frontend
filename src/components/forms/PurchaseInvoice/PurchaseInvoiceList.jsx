@@ -161,7 +161,7 @@ const PurchaseInvoiceList = () => {
         return <Chip label={status} color={color} size="small" />;
       },
     },
-    {
+    /* {
       field: "IsPaid",
       headerName: "Payment Status",
       flex: 1,
@@ -175,7 +175,7 @@ const PurchaseInvoiceList = () => {
           />
         );
       },
-    },
+    }, */
   ];
 
   const navigate = useNavigate();

@@ -223,7 +223,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           { value: "", label: "Select an option" },
           ...addressesData.map((address) => ({
             value: String(address.AddressID),
-            label: `${address.AddressLine1 || "Unknown Address"}, ${address.City || "Unknown City"}`,
+            label: `${address.AddressLine1 || "Unknown Address"}, ${
+              address.City || "Unknown City"
+            }`,
             title: address.AddressTitle || address.Title || "",
           })),
         ];
@@ -308,17 +310,23 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         )
           ? String(data.CollectionAddressID)
           : "",
-        CollectionAddressTitle: addresses.find(
-          (a) => String(a.value) === String(data.CollectionAddressID)
-        )?.label || displayValue(data.AddressLine1) || "-",
+        CollectionAddressTitle:
+          addresses.find(
+            (a) => String(a.value) === String(data.CollectionAddressID)
+          )?.label ||
+          displayValue(data.AddressLine1) ||
+          "-",
         DestinationAddressID: addresses.find(
           (a) => String(a.value) === String(data.DestinationAddressID)
         )
           ? String(data.DestinationAddressID)
           : "",
-        DestinationAddressTitle: addresses.find(
-          (a) => String(a.value) === String(data.DestinationAddressID)
-        )?.label || displayValue(data.DestinationAddressLine1) || "-",
+        DestinationAddressTitle:
+          addresses.find(
+            (a) => String(a.value) === String(data.DestinationAddressID)
+          )?.label ||
+          displayValue(data.DestinationAddressLine1) ||
+          "-",
         ShippingPriorityID: mailingPriorities.find(
           (p) => String(p.value) === String(data.ShippingPriorityID)
         )
@@ -686,7 +694,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         );
         setPurchaseRFQExists(true);
       } else {
-        console.warn("Purchase RFQ created, but ID is unavailable:", response.data);
+        console.warn(
+          "Purchase RFQ created, but ID is unavailable:",
+          response.data
+        );
         toast.error("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
@@ -760,52 +771,65 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   : "View Sales RFQ"
                 : "Create Sales RFQ"}
             </Typography>
-            {!isEditing && salesRFQId && (
-              <Fade in={true} timeout={500}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    background:
-                      theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
-                    borderRadius: "4px",
-                    paddingRight: "10px",
-                    height: "37px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    transition: "all 0.3s ease-in-out",
-                    marginLeft: "16px",
-                    "&:hover": {
-                      boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                      transform: "scale(1.02)",
-                    },
-                  }}
-                >
-                  <Chip
-                    label={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: "700",
-                          color:
-                            theme.palette.mode === "light" ? "white" : "black",
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        Status:
-                      </Typography>
-                    }
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {!isEditing && salesRFQId && (
+                <Fade in={true} timeout={500}>
+                  <Box
                     sx={{
-                      backgroundColor: "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      background:
+                        theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                      borderRadius: "4px",
+                      paddingRight: "10px",
+                      height: "37px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      transition: "all 0.3s ease-in-out",
+                      "&:hover": {
+                        boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                        transform: "scale(1.02)",
+                      },
                     }}
-                  />
-                  <StatusIndicator
-                    salesRFQId={salesRFQId}
-                    onStatusChange={handleStatusChange}
-                    readOnly={readOnly && status === "Approved"}
-                  />
-                </Box>
-              </Fade>
-            )}
+                  >
+                    <Chip
+                      label={
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: "700",
+                            color:
+                              theme.palette.mode === "light"
+                                ? "white"
+                                : "black",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          Status:
+                        </Typography>
+                      }
+                      sx={{
+                        backgroundColor: "transparent",
+                      }}
+                    />
+                    <StatusIndicator
+                      salesRFQId={salesRFQId}
+                      onStatusChange={handleStatusChange}
+                      readOnly={readOnly && status === "Approved"}
+                    />
+                  </Box>
+                </Fade>
+              )}
+              {!isEditing && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleCreatePurchaseRFQ}
+                  disabled={status !== "Approved"}
+                >
+                  Create Purchase RFQ
+                </Button>
+              )}
+            </Box>
           </Box>
         }
         onCancel={onClose}
@@ -1047,8 +1071,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               <ReadOnlyField
                 label="Collection Address"
                 value={
-                  addresses.find((a) => a.value === formData.CollectionAddressID)
-                    ?.label || "-"
+                  addresses.find(
+                    (a) => a.value === formData.CollectionAddressID
+                  )?.label || "-"
                 }
               />
             )}
@@ -1069,8 +1094,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               <ReadOnlyField
                 label="Destination Address"
                 value={
-                  addresses.find((a) => a.value === formData.DestinationAddressID)
-                    ?.label || "-"
+                  addresses.find(
+                    (a) => a.value === formData.DestinationAddressID
+                  )?.label || "-"
                 }
               />
             )}

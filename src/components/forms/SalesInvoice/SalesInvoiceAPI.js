@@ -21,7 +21,7 @@ export const getAuthHeader = () => {
 export const fetchSalesInvoices = async (page = 1, pageSize = 10) => {
   try {
     const response = await axios.get(
-      `${APIBASEURL}/salesinvoice`,
+      `${APIBASEURL}/salesInvoice`,
       getAuthHeader()
     );
     console.log("fetchSalesInvoices response:", response.data);
@@ -47,7 +47,7 @@ export const fetchSalesInvoiceById = async (id) => {
 
     console.log("Fetching Sales Invoice with ID:", id);
     const response = await axios.get(
-      `${APIBASEURL}/sales-invoice/${id}`,
+      `${APIBASEURL}/salesInvoice/${id}`,
       getAuthHeader()
     );
     console.log("fetchSalesInvoiceById response:", response.data);
@@ -165,6 +165,54 @@ export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
       status: error.response?.status,
       data: error.response?.data,
     });
+    return [];
+  }
+};
+
+export const fetchCurrencies = async () => {
+  try {
+    const response = await axios.get(
+      `${APIBASEURL}/currencies`,
+      getAuthHeader()
+    );
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching currencies:", error);
+    return [];
+  }
+};
+
+export const fetchServiceTypes = async () => {
+  try {
+    const response = await axios.get(
+      `${APIBASEURL}/service-types`,
+      getAuthHeader()
+    );
+    console.log("fetchServiceTypes response:", response.data);
+    if (response.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    console.warn("Unexpected service types response format:", response.data);
+    return [];
+  } catch (error) {
+    console.error("fetchServiceTypes error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+export const fetchShippingPriorities = async () => {
+  try {
+    const response = await axios.get(
+      `${APIBASEURL}/mailing-priorities`,
+      getAuthHeader()
+    );
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching shipping priorities:", error);
     return [];
   }
 };

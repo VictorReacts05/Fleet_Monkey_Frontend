@@ -385,22 +385,11 @@ const SupplierQuotationParcelTab = ({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            width: "100%",
           }}
         >
           <Typography variant="h6" component="div">
             Items
           </Typography>
-          {isEditing && !readOnly && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleAddParcel}
-              sx={{ ml: 2 }}
-            >
-              Add Parcel
-            </Button>
-          )}
         </Box>
       </Box>
 

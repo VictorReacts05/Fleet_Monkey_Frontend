@@ -68,19 +68,6 @@ const SalesOrderList = () => {
       },
     },
     {
-      field: "OrderDate",
-      headerName: "Order Date",
-      flex: 1,
-      valueGetter: (params) => {
-        if (params.row.OrderDate) {
-          return dayjs(params.row.OrderDate).isValid()
-            ? dayjs(params.row.OrderDate).format("YYYY-MM-DD")
-            : "Invalid Date";
-        }
-        return "-";
-      },
-    },
-    {
       field: "Total",
       headerName: "Total Amount",
       flex: 1,
@@ -91,7 +78,7 @@ const SalesOrderList = () => {
     },
     {
       field: "id",
-      headerName: "ID",
+      headerName: "Sales Order ID",
       width: 100,
       valueGetter: (params) =>
         params.row.SalesOrderID || params.row.id || "No ID",

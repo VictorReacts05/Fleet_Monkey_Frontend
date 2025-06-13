@@ -412,6 +412,7 @@ const PurchaseOrderForm = ({
                 variant="contained"
                 color="secondary"
                 onClick={handleCreatePurchaseInvoice}
+                // disabled={status !== "Approved" }
               >
                 Create Purchase Invoice
               </Button>

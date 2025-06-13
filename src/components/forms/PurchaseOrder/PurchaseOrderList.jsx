@@ -156,7 +156,7 @@ const PurchaseOrderList = () => {
     },
     {
       field: "POID",
-      headerName: "ID",
+      headerName: "Purchase Order ID",
       width: 100,
       valueGetter: (params) => params.row.POID || "No ID",
     },

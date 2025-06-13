@@ -203,8 +203,8 @@ const PurchaseRFQList = () => {
         columns={[
           ...columns,
           {
-            field: "id",
-            headerName: "ID",
+            field: "SalesRFQID",
+            headerName: "Sales RFQ ID",
             width: 100,
             valueGetter: (params) =>
               params.row.PurchaseRFQID || params.row.id || "No ID",

@@ -84,14 +84,14 @@ export const fetchUOMs = async (user) => {
   }
 };
 
-export const fetchPurchaseInvoices = async (page = 1, limit = 10, user) => {
+export const fetchPurchaseInvoices = async (pageNumber = 1, pageSize = 10, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching Purchase Invoices page ${page}, limit ${limit} from: ${APIBASEURL}/pInvoice`
+      `Fetching Purchase Invoices page ${pageSize}, limit ${pageSize} from: ${APIBASEURL}/pInvoice`
     );
     const response = await axios.get(`${APIBASEURL}/pInvoice`, {
-      params: { page, limit },
+      params: { pageNumber, pageSize },
       headers,
     });
     console.log("Purchase Invoices API Response:", response.data);
@@ -409,7 +409,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/pInvoiceparcel?pInvoiceID=${purchaseInvoiceId}`,
+      `${APIBASEURL}/pInvoiceParcel?PInvoiceID=${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
@@ -543,7 +543,7 @@ export const createPurchaseInvoice = async (POID, user) => {
     );
     const response = await axios.post(
       `${APIBASEURL}/pInvoice`,
-      { poid: parseInt(POID, 10) },
+      { POID: parseInt(POID, 10) },
       { headers }
     );
     console.log("Create Purchase Invoice Response:", response.data);

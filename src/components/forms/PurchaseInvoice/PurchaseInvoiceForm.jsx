@@ -17,7 +17,10 @@ import { toast } from "react-toastify";
 import {
   fetchPurchaseInvoice,
   fetchPurchaseInvoiceItems,
+  getAuthHeader,
 } from "./PurchaseInvoiceAPI";
+import APIBASEURL from "../../../utils/apiBaseUrl";
+import axios from "axios";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -78,12 +81,18 @@ const PurchaseInvoiceForm = ({
           CustomerID: invoice.CustomerID || "-",
           CustomerName: invoice.CustomerName || "-",
           ExternalRefNo: invoice.ExternalRefNo || "-",
-          DeliveryDate: invoice.DeliveryDate ? new Date(invoice.DeliveryDate) : null,
-          PostingDate: invoice.PostingDate ? new Date(invoice.PostingDate) : null,
+          DeliveryDate: invoice.DeliveryDate
+            ? new Date(invoice.DeliveryDate)
+            : null,
+          PostingDate: invoice.PostingDate
+            ? new Date(invoice.PostingDate)
+            : null,
           RequiredByDate: invoice.RequiredByDate
             ? new Date(invoice.RequiredByDate)
             : null,
-          DateReceived: invoice.DateReceived ? new Date(invoice.DateReceived) : null,
+          DateReceived: invoice.DateReceived
+            ? new Date(invoice.DateReceived)
+            : null,
           ServiceTypeID: invoice.ServiceTypeID || "-",
           ServiceType: invoice.ServiceTypeName || "-",
           CollectionAddressID: invoice.CollectionAddressID || "-",
@@ -121,7 +130,9 @@ const PurchaseInvoiceForm = ({
         setFormData(formData);
 
         try {
-          const fetchedItems = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+          const fetchedItems = await fetchPurchaseInvoiceItems(
+            purchaseInvoiceId
+          );
           const mappedItems = fetchedItems.map((item, index) => ({
             id: item.PurchaseInvoiceItemID || `Item-${index + 1}`,
             itemName: item.ItemName || "Unknown Item",
@@ -145,7 +156,8 @@ const PurchaseInvoiceForm = ({
           toast.error(itemErrorMessage);
         }
       } else {
-        const errorMessage = "No Purchase Invoice data returned for the given ID";
+        const errorMessage =
+          "No Purchase Invoice data returned for the given ID";
         console.error(errorMessage);
         setError(errorMessage);
         toast.error(errorMessage);
@@ -228,6 +240,70 @@ const PurchaseInvoiceForm = ({
     );
   }
 
+  const updateStatus = async (newStatus) => {
+    if (!purchaseInvoiceId || isNaN(parseInt(purchaseInvoiceId, 10))) {
+      toast.error("Invalid Purchase Invoice ID");
+      setAnchorEl(null);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { headers, personId } = getAuthHeader();
+      if (!personId) {
+        throw new Error("User not authenticated: No personId found");
+      }
+
+      const endpoint =
+        newStatus === "Approved"
+          ? `${APIBASEURL}/pinvoice/approve`
+          : `${APIBASEURL}/purchase-invoice/disapprove/`;
+      const approveData = {
+        pInvoiceID: parseInt(purchaseInvoiceId, 10),
+        ApproverID: parseInt(personId, 10), // Include ApproverID
+      };
+
+      console.log(`Sending ${newStatus} request with data:`, approveData);
+
+      const statusResponse = await axios.post(endpoint, approveData, {
+        headers,
+      });
+
+      console.log(
+        `Purchase Invoice ${newStatus} response:`,
+        statusResponse.data
+      );
+
+      setLocalStatus(newStatus);
+      if (onStatusChange) {
+        onStatusChange(newStatus);
+      }
+
+      await fetchApprovalRecord(); // Refresh approval status
+
+      toast.success(`Purchase Invoice ${newStatus.toLowerCase()} successfully`);
+    } catch (error) {
+      console.error(`Error updating status to ${newStatus}:`, {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      toast.error(
+        `Failed to update status: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    } finally {
+      setLoading(false);
+      setAnchorEl(null);
+    }
+  };
+
+  const handleApprove = () => {
+    console.log("Approve clicked");
+    updateStatus("Approved");
+  };
+
   return (
     <FormPage
       title={
@@ -284,6 +360,9 @@ const PurchaseInvoiceForm = ({
               />
             </Box>
           </Fade>
+          <Button onClick={handleApprove} sx={{ background: "#66bb6a", color: "black", fontWeight: "bold" }}>
+            Approve
+          </Button>
         </Box>
       }
       onCancel={handleCancel}
@@ -318,7 +397,10 @@ const PurchaseInvoiceForm = ({
           <ReadOnlyField label="Supplier" value={formData.SupplierName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="External Ref No" value={formData.ExternalRefNo} />
+          <ReadOnlyField
+            label="External Ref No"
+            value={formData.ExternalRefNo}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
@@ -327,22 +409,37 @@ const PurchaseInvoiceForm = ({
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
+          <ReadOnlyField
+            label="Required By Date"
+            value={formData.RequiredByDate}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
         <Grid item xs={12} md={4} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
+          <ReadOnlyField
+            label="Collection Address"
+            value={formData.CollectionAddress}
+          />
         </Grid>
         <Grid item xs={12} md={4} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
+          <ReadOnlyField
+            label="Destination Address"
+            value={formData.DestinationAddress}
+          />
         </Grid>
         <Grid item xs={12} md={4} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Billing Address" value={formData.BillingAddress} />
+          <ReadOnlyField
+            label="Billing Address"
+            value={formData.BillingAddress}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName} />
+          <ReadOnlyField
+            label="Shipping Priority"
+            value={formData.ShippingPriorityName}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms} />
@@ -363,13 +460,22 @@ const PurchaseInvoiceForm = ({
           <ReadOnlyField label="Total" value={formData.Total} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
+          <ReadOnlyField
+            label="Collect From Supplier"
+            value={formData.CollectFromSupplierYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
+          <ReadOnlyField
+            label="Packaging Required"
+            value={formData.PackagingRequiredYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN} />
+          <ReadOnlyField
+            label="Form Completed"
+            value={formData.FormCompletedYN}
+          />
         </Grid>
       </Grid>
 
