@@ -18,6 +18,7 @@ import SalesInvoiceForm from "./SalesInvoiceForm";
 import { Chip } from "@mui/material";
 import { fetchSalesInvoices, deleteSalesInvoice } from "./SalesInvoiceAPI";
 import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -46,7 +47,7 @@ const SalesInvoiceList = () => {
     const fetchCustomers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:7000/api/customers",
+          `${APIBASEURL}/customers`,
           getHeaders()
         );
         const customersData = response.data.data || [];

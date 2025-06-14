@@ -19,6 +19,7 @@ import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 import { Chip } from "@mui/material";
 import { fetchPurchaseInvoices, deletePurchaseInvoice } from "./PurchaseInvoiceAPI";
 import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => {
   return {
@@ -45,10 +46,7 @@ const PurchaseInvoiceList = () => {
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:7000/api/suppliers",
-          getHeaders()
-        );
+        const response = await axios.get(`${APIBASEURL}/suppliers`, getHeaders());
         const suppliersData = response.data.data || [];
         if (suppliersData.length === 0) {
           console.warn("No suppliers found in API response");

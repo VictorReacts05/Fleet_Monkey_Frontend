@@ -58,6 +58,7 @@ import PurchaseInvoicePage from "./components/forms/PurchaseInvoice/PurchaseInvo
 import SalesInvoiceList from "./components/forms/SalesInvoice/SalesInvoiceList";
 import SalesInvoiceForm from "./components/forms/SalesInvoice/SalesInvoiceForm";
 import SalesInvoicePage from "./components/forms/SalesInvoice/SalesInvoicePage";
+import AddressList from "./components/forms/Address/AddressList";
 
 // Wrapper for Create Sales RFQ
 const CreateSalesRFQWrapper = () => {
