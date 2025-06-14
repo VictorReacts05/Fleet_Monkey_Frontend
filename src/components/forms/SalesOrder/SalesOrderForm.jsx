@@ -633,7 +633,7 @@ const SalesOrderForm = ({ onClose }) => {
               onClick={handleCreatePurchaseOrder}
               disabled={
                 isCreatingPO ||
-                status !== "Approved" ||
+                // status !== "Approved" ||
                 !salesOrderId ||
                 isNaN(parseInt(salesOrderId, 10))
               }
