@@ -98,7 +98,7 @@ const SalesInvoiceList = () => {
             id: `${invoiceId}`,
             Series: invoice.Series || "-",
             CustomerID: String(invoice.CustomerID) || "N/A",
-            CustomerName: customer?.name || `Customer ID: ${invoice.CustomerID} (Not Found)`,
+            CustomerName: customer?.name || "-",
             SupplierName: invoice.SupplierName || "Unknown Supplier",
             PostingDate: invoice.PostingDate || "-",
             DeliveryDate: invoice.DeliveryDate || "-",

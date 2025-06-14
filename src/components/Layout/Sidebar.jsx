@@ -40,6 +40,10 @@ import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
+import PendingIcon from '@mui/icons-material/Pending';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
 
 const drawerWidth = 240;
 
@@ -72,7 +76,15 @@ const menuItems = [
     icon: <ReceiptIcon />,
     path: "/purchase-invoice",
   },
-  { text: "Bill", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
+  { text: "Bill", 
+    icon: <ReceiptLongIcon />, 
+    path: "/sales-invoice" 
+  },
+  {
+    text: "Pending",
+    icon: <HourglassTopIcon />,
+    path: "/pending-approvals",
+  },
 
   { text: "Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
@@ -163,7 +175,8 @@ const Sidebar = ({ open, variant, onClose }) => {
         item.text === "Approved Estimate" ||
         item.text === "Purchase Order" ||
         item.text === "Invoice" ||
-        item.text === "Bill"
+        item.text === "Bill" ||
+        item.text==="Pending"
     ),
   ];
 
@@ -178,7 +191,8 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Approved Estimate" &&
       item.text !== "Purchase Order" &&
       item.text !== "Invoice" &&
-      item.text !== "Sales Invoice"
+      item.text !== "Sales Invoice" &&
+      item.text !== "Pending" 
   );
 
   // Update the mainMenuItems to include Masters as second item
@@ -194,7 +208,8 @@ const Sidebar = ({ open, variant, onClose }) => {
         item.text === "Approved Estimate" ||
         item.text === "Purchase Order" ||
         item.text === "Invoice" ||
-        item.text === "Bill"
+        item.text === "Bill" ||
+        item.text === "Pending" 
     ),
     { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
   ];
