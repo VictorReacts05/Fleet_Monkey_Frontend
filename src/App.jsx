@@ -1,55 +1,46 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useLocation,
-  Navigate,
-} from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Box, CssBaseline } from "@mui/material";
-import React from "react";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import Sidebar from "./components/Layout/Sidebar";
-import Header from "./components/Layout/Header";
-import SalesRFQForm from "./components/forms/SalesRFQ/SalesRFQForm";
-import SalesRFQList from "./components/forms/SalesRFQ/SalesRFQList";
-import SalesRFQPage from "./components/forms/SalesRFQ/SalesRFQPage";
-import Dashboard from "./components/Dashboard/Dashboard";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import RolesList from "./components/forms/Role/RolesList";
-import { FormRoleApproverList } from "./components/forms/FormRoleApprover";
-import FormList from "./components/forms/Form/FormList";
-import { FormRoleList } from "./components/forms/FormRole";
-import PurchaseRFQList from "./components/forms/PurchaseRFQ/PurchaseRFQList";
-import PurchaseRFQPage from "./components/forms/PurchaseRFQ/PurchaseRFQPage";
-import PurchaseRFQForm from "./components/forms/PurchaseRFQ/PurchaseRFQForm";
-import {
-  SupplierQuotationList,
-  SupplierQuotationForm,
-} from "./components/forms/SupplierQuotation";
-import CustomerList from "./components/forms/Customer/CustomerList";
-import CompanyList from "./components/forms/Company/CompanyList";
-import SupplierList from "./components/forms/Supplier/SupplierList";
-import SubscriptionList from "./components/forms/Subscription/SubscriptionList";
-import CountryList from "./components/forms/Country/CountryList";
-import CityList from "./components/forms/City/CityList";
-import CurrencyList from "./components/forms/Currency/CurrencyList";
-import CertificationList from "./components/forms/Certification/CertificationList";
-import BankList from "./components/forms/Bank/BankList";
-import ProjectParameterList from "./components/forms/ProjectParameter/ProjectParameterList";
-import PersonList from "./components/forms/Person/PersonList";
-import VehicleList from "./components/forms/Vehicle/VehicleList";
-import WarehouseList from "./components/forms/Warehouse/WarehouseList";
-import AddressTypeList from "./components/forms/AddressType/AddressTypeList";
-import UOMList from "./components/forms/UOM/UOMList";
-import AddressList from "./components/forms/Address/AddressList";
-import Login from "./pages/Login";
-import ProtectedRoute from "./components/Common/ProtectedRoute";
-import { ThemeProvider } from "./context/ThemeContext";
-import { useParams, useNavigate } from "react-router-dom";
-import ToastNotification from "./components/toastNotification";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Box, CssBaseline } from '@mui/material';
+import React from 'react';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Sidebar from './components/Layout/Sidebar';
+import Header from './components/Layout/Header';
+import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
+import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
+import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
+import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboard component
+import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
+import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
+import RolesList from './components/forms/Role/RolesList';
+import { FormRoleApproverList } from './components/forms/FormRoleApprover';
+import FormList from './components/forms/Form/FormList';
+import { FormRoleList } from './components/forms/FormRole';
+import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
+import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
+import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
+// Import Supplier Quotation components
+import { SupplierQuotationList, SupplierQuotationForm } from './components/forms/SupplierQuotation';
+import CustomerList from './components/forms/Customer/CustomerList';
+import CompanyList from './components/forms/Company/CompanyList';
+import SupplierList from './components/forms/Supplier/SupplierList';
+import SubscriptionList from './components/forms/Subscription/SubscriptionList';
+import CountryList from './components/forms/Country/CountryList';
+import CityList from './components/forms/City/CityList';
+import CurrencyList from './components/forms/Currency/CurrencyList';
+import CertificationList from './components/forms/Certification/CertificationList';
+import BankList from './components/forms/Bank/BankList';
+import ProjectParameterList from './components/forms/ProjectParameter/ProjectParameterList';
+import PersonList from './components/forms/Person/PersonList';
+import VehicleList from './components/forms/Vehicle/VehicleList';
+import WarehouseList from './components/forms/Warehouse/WarehouseList';
+import AddressTypeList from './components/forms/AddressType/AddressTypeList';
+import UOMList from './components/forms/UOM/uomlist';
+import Login from './pages/Login';
+import ProtectedRoute from './components/Common/ProtectedRoute';
+import { ThemeProvider } from './context/ThemeContext';
+import { useParams, useNavigate } from 'react-router-dom';
+import ToastNotification from './components/toastNotification';
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
