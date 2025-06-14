@@ -1,236 +1,134 @@
-import { 
-  Box, 
-  Typography, 
-  Chip, 
-  Menu, 
-  MenuItem, 
-  CircularProgress, 
-  useTheme, 
-} from "@mui/material"; 
-import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material"; 
-import axios from "axios"; 
-import { toast } from "react-toastify"; 
-import { useState, useEffect } from "react";
-import APIBASEURL from "../../../utils/apiBaseUrl";
+import React, { useState, useEffect } from "react";
+import {
+  Chip,
+  CircularProgress,
+  Menu,
+  MenuItem,
+  Typography,
+} from "@mui/material";
+import { CheckCircle, PendingActions } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import {
+  approveSalesQuotation,
+  fetchUserApprovalStatus,
+} from "./SalesQuotationAPI";
 
-const StatusIndicator = ({ status, salesQuotationId, onStatusChange, readOnly }) => { 
-  const theme = useTheme(); 
-  const [anchorEl, setAnchorEl] = useState(null); 
-  const [loading, setLoading] = useState(false); 
-  const [approvalRecord, setApprovalRecord] = useState(null); 
+const StatusIndicator = ({ salesQuotationId, onStatusChange, readOnly }) => {
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  useEffect(() => { 
-    if (salesQuotationId) { 
-      fetchApprovalRecord(); 
-    } 
-  }, [salesQuotationId]); 
+  useEffect(() => {
+    const loadStatus = async () => {
+      if (!salesQuotationId) return;
 
-  const fetchApprovalRecord = async () => { 
-    try { 
-      const userData = localStorage.getItem("user"); 
-      if (!userData) { 
-        console.warn("No user data found in localStorage"); 
-        setApprovalRecord(null); 
-        return; 
-      } 
+      setLoading(true);
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const approverId = user?.personId;
 
-      let user; 
-      try { 
-        user = JSON.parse(userData); 
-      } catch (error) { 
-        console.error("Error parsing user data:", error); 
-        setApprovalRecord(null); 
-        return; 
-      } 
+        if (!approverId) {
+          console.error("No personId found in localStorage");
+          throw new Error("User not authenticated");
+        }
 
-      const headers = user?.token 
-        ? { Authorization: `Bearer ${user.token}` } 
-        : {}; 
+        console.log("Fetching user approval status", {
+          salesQuotationId,
+          approverId,
+        });
+        const userStatus = await fetchUserApprovalStatus(
+          salesQuotationId,
+          approverId
+        );
+        console.log("Fetched user status:", userStatus);
+        setStatus(userStatus);
+      } catch (error) {
+        console.error("Failed to fetch user approval status:", error);
+        toast.error("Unable to load approval status");
+        setStatus("Pending");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const approverID = 2; 
-      const response = await axios.get( 
-        `${APIBASEURL}/sales-quotation-approvals?SalesQuotationID=${salesQuotationId}&ApproverID=${approverID}`, 
-        { headers } 
-      ); 
-      console.log("Fetched approval record:", response.data); 
+    loadStatus();
+  }, [salesQuotationId]);
 
-      if ( 
-        response.data.success && 
-        response.data.data && 
-        response.data.data.length > 0 
-      ) { 
-        setApprovalRecord(response.data.data[0]); 
-      } else { 
-        setApprovalRecord(null); 
-      } 
-    } catch (error) { 
-      if (error.response && error.response.status === 404) { 
-        console.log("No approval record exists yet for this Sales Quotation"); 
-        setApprovalRecord(null); 
-      } else { 
-        console.error("Error fetching approval record:", error); 
-        setApprovalRecord(null); 
-      } 
-    } 
-  }; 
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      console.log(
+        `Initiating approval for Sales Quotation ID: ${salesQuotationId}`
+      );
+      const response = await approveSalesQuotation(salesQuotationId);
+      console.log("Approval response:", response);
 
-  const updateStatus = async (newStatus) => { 
-    if (!salesQuotationId || isNaN(parseInt(salesQuotationId, 10))) { 
-      toast.error("Invalid Sales Quotation ID"); 
-      setAnchorEl(null); 
-      return; 
-    } 
+      if (response.success) {
+        toast.success("Approval recorded successfully");
+        setStatus("Approved");
+        onStatusChange?.("Approved");
+      } else {
+        throw new Error(response.message || "Approval failed");
+      }
+    } catch (error) {
+      console.error("Approval error:", error);
+      toast.error(`Failed to approve: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setAnchorEl(null);
+    }
+  };
 
-    try { 
-      setLoading(true); 
-      console.log(`Updating Sales Quotation status to: ${newStatus}`); 
-      console.log(`Sales Quotation ID: ${salesQuotationId}, Type: ${typeof salesQuotationId}`); 
+  const handleChipClick = (event) => {
+    if (!readOnly && status !== "Approved") {
+      console.log("Opening approval menu");
+      setAnchorEl(event.currentTarget);
+    }
+  };
 
-      const userData = localStorage.getItem("user"); 
-      if (!userData) { 
-        throw new Error("User data not found in localStorage"); 
-      } 
+  const handleMenuClose = () => {
+    console.log("Closing approval menu");
+    setAnchorEl(null);
+  };
 
-      let user; 
-      try { 
-        user = JSON.parse(userData); 
-      } catch (error) { 
-        throw new Error("Invalid user data format"); 
-      } 
+  const chipProps = {
+    label: (
+      <Typography variant="body2">
+        {loading ? "Processing..." : status}
+      </Typography>
+    ),
+    icon: loading ? (
+      <CircularProgress size={16} />
+    ) : status === "Approved" ? (
+      <CheckCircle />
+    ) : (
+      <PendingActions />
+    ),
+    color: status === "Approved" ? "success" : "warning",
+    onClick: readOnly || status === "Approved" ? undefined : handleChipClick,
+    sx: {
+      height: 28,
+      minWidth: 80,
+      cursor: readOnly || status === "Approved" ? "default" : "pointer",
+    },
+  };
 
-      const headers = user?.token 
-        ? { Authorization: `Bearer ${user.token}` } 
-        : {}; 
-
-      const approveEndpoint = `${APIBASEURL}/sales-quotation/approve/`; 
-      const approveData = { 
-        salesQuotationID: parseInt(salesQuotationId, 10), 
-      }; 
-
-      console.log("Sending approval request with data:", approveData); 
-
-      const statusResponse = await axios.post( 
-        approveEndpoint, 
-        approveData, 
-        { headers } 
-      ); 
-
-      console.log("Sales Quotation status update response:", statusResponse.data); 
-
-      if (onStatusChange) { 
-        onStatusChange(newStatus); 
-      } 
-
-      await fetchApprovalRecord(); 
-
-      const isApproved = newStatus === "Approved"; 
-      toast.success(`Sales Quotation ${isApproved ? "approved" : "disapproved"} successfully`); 
-    } catch (error) { 
-      console.error("Error updating status:", error); 
-      console.error("Error details:", { 
-        message: error.message, 
-        response: error.response?.data, 
-        status: error.response?.status, 
-      }); 
-      toast.error(`Failed to update status: ${error.response?.data?.message || error.message}`); 
-    } finally { 
-      setLoading(false); 
-      setAnchorEl(null); 
-    } 
-  }; 
-
-  const handleClick = (event) => { 
-    if (!readOnly) { 
-      setAnchorEl(event.currentTarget); 
-    } 
-  }; 
-
-  const handleClose = () => { 
-    setAnchorEl(null); 
-  }; 
-
-  const handleApprove = () => { 
-    updateStatus("Approved"); 
-  }; 
-
-  const handleDisapprove = () => { 
-    updateStatus("Pending"); 
-  }; 
-
-  const getChipProps = () => { 
-    switch (status) { 
-      case "Approved": 
-        return { 
-          color: "success", 
-          icon: <CheckCircle />, 
-          clickable: !readOnly, 
-        }; 
-      case "Pending": 
-        return { 
-          color: "warning", 
-          icon: <PendingActions />, 
-          clickable: !readOnly, 
-        }; 
-      default: 
-        return { 
-          color: "default", 
-          icon: null, 
-          clickable: !readOnly, 
-        }; 
-    } 
-  }; 
-
-  const chipProps = getChipProps(); 
-  const validStatus = status || "Unknown"; 
-
-  return ( 
-    <Box 
-      sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center"
-      }} 
-    > 
-      <Chip 
-        label={ 
-          <Typography variant="body2"> 
-            {loading ? "Processing..." : validStatus} 
-          </Typography> 
-        } 
-        color={chipProps.color} 
-        icon={ 
-          loading ? ( 
-            <CircularProgress size={16} color="inherit" /> 
-          ) : ( 
-            chipProps.icon 
-          ) 
-        } 
-        onClick={handleClick} 
-        clickable={chipProps.clickable} 
-        sx={{ 
-          height: 28, 
-          minWidth: 80, 
-          padding: "2px 0px", 
-          borderRadius: "12px", 
-          position: "relative", 
-          cursor: chipProps.clickable ? "pointer" : "default", 
-          "& .MuiChip-label": { 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center"
-          } 
-        }} 
-      /> 
-      <Menu 
-        anchorEl={anchorEl} 
-        open={Boolean(anchorEl)} 
-        onClose={handleClose} 
-      > 
-        <MenuItem onClick={handleApprove}>Approve</MenuItem> 
-        <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem> 
-      </Menu> 
-    </Box> 
-  ); 
-}; 
+  return (
+    <>
+      <Chip {...chipProps} />
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MenuItem onClick={handleApprove} disabled={loading}>
+          Approve
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
 
 export default StatusIndicator;

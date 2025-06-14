@@ -130,7 +130,7 @@ const Dashboard = () => {
     { id: 1, name: 'New York', country: 'United States', postalCode: '10001', active: true },
     { id: 2, name: 'Los Angeles', country: 'United States', postalCode: '90001', active: true },
     { id: 3, name: 'Chicago', country: 'United States', postalCode: '60601', active: true },
-    { id: 4, name: 'Houston', country: 'United States', postalCode: '77001', active: true },
+    { id: 4, name: 'Houston', country: 'United States', postalCode: '77000', active: true },
     { id: 5, name: 'Toronto', country: 'Canada', postalCode: 'M5V 2A8', active: true }
   ];
 

@@ -16,7 +16,10 @@ import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
 import { Add } from "@mui/icons-material";
-import { fetchSupplierQuotations, deleteSupplierQuotation } from "./SupplierQuotationAPI";
+import {
+  fetchSupplierQuotations,
+  deleteSupplierQuotation,
+} from "./SupplierQuotationAPI";
 import FormDatePicker from "../../Common/FormDatePicker";
 import dayjs from "dayjs";
 
@@ -36,44 +39,33 @@ const SupplierQuotationList = () => {
   // Define columns for the data table
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
-    /* { 
-      field: "SupplierName", 
-      headerName: "Supplier", 
+    {
+      field: "PurchaseRFQID",
+      headerName: "Purchase RFQ ID",
       flex: 1,
       valueGetter: (params) => params.row.SupplierName || "-",
     },
-    { 
-      field: "CustomerName", 
-      headerName: "Customer", 
-      flex: 1,
-      valueGetter: (params) => params.row.CustomerName || "-",
-    },
-    { 
-      field: "Status", 
-      headerName: "Status", 
+    {
+      field: "Status",
+      headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        console.log(
+          "Status renderCell params.value:",
+          params.value,
+          "row:",
+          params.row
+        ); // Debug
+        const status = params.value ? String(params.value).trim() : "Pending";
+        let color = "default";
+
+        if (status.toLowerCase() === "approved") color = "success";
+        else if (status.toLowerCase() === "pending") color = "warning";
+        else if (status.toLowerCase() === "rejected") color = "error";
+
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
     },
-    { 
-      field: "Total", 
-      headerName: "Total Amount", 
-      flex: 1,
-      valueGetter: (params) => {
-        if (params.row.Total) {
-          return `${params.row.CurrencySymbol || ''}${parseFloat(params.row.Total).toFixed(2)}`;
-        }
-        return "-";
-      }
-    }, */
   ];
 
   // Fetch supplier quotations from API
@@ -94,14 +86,19 @@ const SupplierQuotationList = () => {
         formattedToDate
       );
 
+      console.log("Raw API response:", response); // Debug
       const quotations = response.data || [];
       console.log("Supplier Quotations loaded:", quotations);
 
       // Map the data for the table
-      const mappedData = quotations.map(quotation => ({
-        ...quotation,
-        id: quotation.SupplierQuotationID,
-      }));
+      const mappedData = quotations.map((quotation) => {
+        console.log("Mapping quotation:", quotation); // Debug
+        return {
+          ...quotation,
+          id: quotation.SupplierQuotationID,
+          Status: quotation.Status || "Pending", // Ensure Status is set
+        };
+      });
 
       setSupplierQuotations(mappedData);
       setTotalRows(response.totalRecords || quotations.length);
@@ -125,10 +122,13 @@ const SupplierQuotationList = () => {
       return;
     }
 
-    const filteredQuotations = supplierQuotations.filter(quotation => 
-      quotation.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quotation.SupplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quotation.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredQuotations = supplierQuotations.filter(
+      (quotation) =>
+        quotation.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quotation.SupplierName?.toLowerCase().includes(
+          searchTerm.toLowerCase()
+        ) ||
+        quotation.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     setSupplierQuotations(filteredQuotations);
@@ -200,7 +200,7 @@ const SupplierQuotationList = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2
+          mb: 2,
         }}
       >
         <Typography variant="h5">Supplier Quotation Management</Typography>
@@ -245,21 +245,23 @@ const SupplierQuotationList = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleDeleteCancel}
-      >
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this Supplier Quotation? This action cannot be undone.
+            Are you sure you want to delete this Supplier Quotation? This action
+            cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

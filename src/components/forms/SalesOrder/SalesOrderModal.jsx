@@ -1,13 +1,13 @@
 import React from "react";
 import { Dialog, DialogContent } from "@mui/material";
-import SalesQuotationForm from "./SalesQuotationForm";
+import SalesOrderForm from "./SalesOrderForm";
 
-const SalesQuotationModal = ({ open, onClose, salesQuotationId, onSave }) => {
+const SalesOrderModal = ({ open, onClose, salesOrderId, onSave }) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogContent>
-        <SalesQuotationForm
-          salesQuotationId={salesQuotationId}
+        <SalesOrderForm
+          salesOrderId={salesOrderId}
           onClose={onClose}
           onSave={onSave}
         />
@@ -16,4 +16,4 @@ const SalesQuotationModal = ({ open, onClose, salesQuotationId, onSave }) => {
   );
 };
 
-export default SalesQuotationModal;
+export default SalesOrderModal;

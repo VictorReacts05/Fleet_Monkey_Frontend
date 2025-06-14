@@ -14,7 +14,6 @@ const FormPage = ({
   loading,
   readOnly,
   onEdit,
-  onCreatePurchaseRFQ,
   isApproved,
 }) => {
   const handleSubmit = (e) => {
@@ -37,17 +36,7 @@ const FormPage = ({
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
           <Typography variant="h5">{title}</Typography>
           <Box>
-            {onEdit && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={onCreatePurchaseRFQ}
-                sx={{ mr: 1 }}
-                disabled={!isApproved}
-              >
-                Create Purchase RFQ
-              </Button>
-            )}
+            
             {onEdit && (
               <Button
                 variant="contained"

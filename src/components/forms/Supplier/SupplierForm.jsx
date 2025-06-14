@@ -5,8 +5,11 @@ import { toast } from 'react-toastify';
 
 const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    supplierName: '',  // Changed from SupplierName
-    supplierEmail: ''  // Changed from SupplierEmail
+    supplierName: "",
+    companyId: "",
+    supplierEmail: "",
+    billingCurrencyId: "",
+    // Add other fields as needed
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -67,28 +70,21 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validate()) {
-      return;
-    }
-    
     try {
-      setLoading(true);
-      
-      if (supplierId) {
-        await updateSupplier(supplierId, formData);
-        toast.success('Supplier updated successfully');
-      } else {
-        await createSupplier(formData);
-        toast.success('Supplier created successfully');
-      }
-      
-      if (onSave) onSave();
-      if (onClose) onClose();
+      const supplierData = {
+        ...formData,
+        companyId: Number(formData.companyId), // Convert to number
+        billingCurrencyId: formData.billingCurrencyId ? Number(formData.billingCurrencyId) : null,
+      };
+      console.log("Submitting supplier data:", supplierData); // Debug input
+      const response = await createSupplier(supplierData);
+      toast.success("Supplier created successfully");
+      console.log("Supplier creation response:", response);
+      onSave();
+      onClose();
     } catch (error) {
-      toast.error(`Failed to ${supplierId ? 'update' : 'create'} supplier: ${error.message}`);
-    } finally {
-      setLoading(false);
+      console.error("Failed to create supplier:", error);
+      toast.error(error.message || "Failed to create supplier");
     }
   };
 

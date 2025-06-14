@@ -14,11 +14,11 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification";
 import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 import { Chip } from "@mui/material";
+import { fetchPurchaseInvoices, deletePurchaseInvoice } from "./PurchaseInvoiceAPI";
+import axios from "axios";
 
 const getHeaders = () => {
   return {
@@ -36,80 +36,100 @@ const PurchaseInvoiceList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [purchaseInvoices, setPurchaseInvoices] = useState([]);
+  const [totalRows, setTotalRows] = useState(0);
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoaded, setSuppliersLoaded] = useState(false);
 
-  // Static data for the table
-  const purchaseInvoices = [
-    {
-      id: 1,
-      Series: "PI2025-001",
-      SupplierName: "ABC Suppliers Inc",
-      CustomerName: "John Smith",
-      PostingDate: "2025-06-10",
-      DeliveryDate: "2025-06-15",
-      ServiceType: "International Shipping",
-      Status: "Approved",
-      IsPaid: true,
-      Total: 13750.0,
-    },
-    {
-      id: 2,
-      Series: "PI2025-002",
-      SupplierName: "XYZ Logistics",
-      CustomerName: "Jane Doe",
-      PostingDate: "2025-06-12",
-      DeliveryDate: "2025-06-18",
-      ServiceType: "Domestic Shipping",
-      Status: "Pending",
-      IsPaid: false,
-      Total: 8500.0,
-    },
-    {
-      id: 3,
-      Series: "PI2025-003",
-      SupplierName: "Global Transport Co",
-      CustomerName: "Robert Johnson",
-      PostingDate: "2025-06-14",
-      DeliveryDate: "2025-06-20",
-      ServiceType: "Express Delivery",
-      Status: "Approved",
-      IsPaid: true,
-      Total: 22000.0,
-    },
-    {
-      id: 4,
-      Series: "PI2025-004",
-      SupplierName: "Fast Freight Ltd",
-      CustomerName: "Emily Williams",
-      PostingDate: "2025-06-15",
-      DeliveryDate: "2025-06-22",
-      ServiceType: "International Shipping",
-      Status: "Rejected",
-      IsPaid: false,
-      Total: 15300.0,
-    },
-    {
-      id: 5,
-      Series: "PI2025-005",
-      SupplierName: "Reliable Shipping Inc",
-      CustomerName: "Michael Brown",
-      PostingDate: "2025-06-16",
-      DeliveryDate: "2025-06-25",
-      ServiceType: "Domestic Shipping",
-      Status: "Approved",
-      IsPaid: true,
-      Total: 9800.0,
-    },
-  ];
+  // Fetch suppliers list
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:7000/api/suppliers",
+          getHeaders()
+        );
+        const suppliersData = response.data.data || [];
+        if (suppliersData.length === 0) {
+          console.warn("No suppliers found in API response");
+          toast.warn("No suppliers found. Supplier names may not display correctly.");
+        }
+        const mappedSuppliers = suppliersData.map((supplier) => ({
+          id: String(supplier.SupplierID),
+          name: supplier.SupplierName || "Unknown Supplier",
+        }));
+        setSuppliers(mappedSuppliers);
+        console.log("Fetched Suppliers (Detailed):", mappedSuppliers);
+        setSuppliersLoaded(true);
+      } catch (error) {
+        console.error("Error fetching suppliers:", error);
+        toast.error("Failed to fetch suppliers: " + error.message);
+        setSuppliersLoaded(true);
+      }
+    };
+
+    fetchSuppliers();
+  }, []);
+
+  // Fetch purchase invoices and map SupplierID to SupplierName
+  useEffect(() => {
+    const loadPurchaseInvoices = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchPurchaseInvoices(page + 1, rowsPerPage);
+        const invoices = response.data || [];
+        console.log("Fetched Purchase Invoices:", invoices);
+
+        if (invoices.length === 0) {
+          console.warn("No purchase invoices found in API response");
+          toast.warn("No purchase invoices found.");
+        }
+
+        // Map invoices with SupplierName using suppliers list
+        const mappedInvoices = invoices.map((invoice, index) => {
+          const supplier = suppliers.find(
+            (s) => String(s.id) === String(invoice.SupplierID)
+          );
+          const invoiceId = invoice.PInvoiceID !== undefined && invoice.PInvoiceID !== null
+            ? invoice.PInvoiceID
+            : `fallback-${index}`; // Fallback if PInvoiceID is missing
+          return {
+            id: `${invoiceId}`, // Ensure unique ID for DataTable keys
+            Series: invoice.Series || "-",
+            SupplierID: String(invoice.SupplierID) || "N/A",
+            SupplierName: supplier?.name || `Supplier ID: ${invoice.SupplierID} (Not Found)`,
+            CustomerName: invoice.CustomerName || "Unknown Customer", // Use CustomerName directly from sample
+            ServiceType: invoice.ServiceType?.ServiceType || "Unknown Service",
+            Status: invoice.Status || "Pending",
+            IsPaid: invoice.IsPaid || false,
+          };
+        });
+
+        console.log("Mapped Purchase Invoices:", mappedInvoices);
+        setPurchaseInvoices(mappedInvoices);
+        setTotalRows(response.total || 0);
+      } catch (error) {
+        console.error("Error fetching purchase invoices:", error);
+        toast.error("Failed to fetch purchase invoices: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (suppliersLoaded) {
+      loadPurchaseInvoices();
+    }
+  }, [page, rowsPerPage, suppliers, suppliersLoaded]);
 
   // Filter purchase invoices based on search term
   const filteredPurchaseInvoices = purchaseInvoices.filter((invoice) => {
     const searchString = searchTerm.toLowerCase();
     return (
-      invoice.Series.toLowerCase().includes(searchString) ||
-      invoice.SupplierName.toLowerCase().includes(searchString) ||
-      invoice.CustomerName.toLowerCase().includes(searchString) ||
-      invoice.ServiceType.toLowerCase().includes(searchString) ||
-      invoice.Status.toLowerCase().includes(searchString)
+      invoice.Series?.toLowerCase().includes(searchString) ||
+      invoice.SupplierName?.toLowerCase().includes(searchString) ||
+      invoice.CustomerName?.toLowerCase().includes(searchString) ||
+      invoice.ServiceType?.toLowerCase().includes(searchString) ||
+      invoice.Status?.toLowerCase().includes(searchString)
     );
   });
 
@@ -131,31 +151,31 @@ const PurchaseInvoiceList = () => {
       headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
+
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
     },
-    {
+    /* {
       field: "IsPaid",
       headerName: "Payment Status",
       flex: 1,
       renderCell: (params) => {
         const isPaid = params.value;
         return (
-          <Chip 
-            label={isPaid ? "Paid" : "Unpaid"} 
-            color={isPaid ? "success" : "error"} 
-            size="small" 
+          <Chip
+            label={isPaid ? "Paid" : "Unpaid"}
+            color={isPaid ? "success" : "error"}
+            size="small"
           />
         );
-      }
-    },
+      },
+    }, */
   ];
 
   const navigate = useNavigate();
@@ -170,7 +190,6 @@ const PurchaseInvoiceList = () => {
   };
 
   const handleView = (id) => {
-    console.log("View clicked for Purchase Invoice ID:", id);
     if (id && id !== "undefined") {
       navigate(`/purchase-invoice/view/${id}`);
     } else {
@@ -193,8 +212,11 @@ const PurchaseInvoiceList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      // In a real app, you would call an API to delete the purchase invoice
-      console.log(`Deleting purchase invoice with ID: ${selectedInvoice}`);
+      await deletePurchaseInvoice(selectedInvoice);
+      setPurchaseInvoices(
+        purchaseInvoices.filter((invoice) => invoice.id !== selectedInvoice)
+      );
+      setTotalRows((prev) => prev - 1);
       toast.success("Purchase Invoice deleted successfully");
       setDeleteDialogOpen(false);
     } catch (error) {
@@ -235,12 +257,23 @@ const PurchaseInvoiceList = () => {
 
       <DataTable
         rows={filteredPurchaseInvoices}
-        columns={columns}
+        columns={[
+          ...columns,
+          {
+            field: "id",
+            headerName: "ID",
+            width: 100,
+            valueGetter: (params) => {
+              const idParts = params.row.id.split('-');
+              return idParts[0]; // Display only the PInvoiceID part (e.g., "2252")
+            },
+          },
+        ]}
         loading={loading}
-        getRowId={(row) => row.id || "unknown"}
+        getRowId={(row) => row.id} // Use the unique id with index
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={filteredPurchaseInvoices.length}
+        totalRows={totalRows}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onView={handleView}

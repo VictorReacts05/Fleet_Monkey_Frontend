@@ -57,8 +57,8 @@ export const createForm = async (formData) => {
     const user = getUserData();
     
     const requestData = {
-      FormName: formData.FormName,
-      CreatedByID: user.personId || 1,
+      formName: formData.FormName,
+      createdById: user.personId || 1,
       IsDeleted: false
     };
 
@@ -81,9 +81,9 @@ export const updateForm = async (id, formData) => {
     const user = getUserData();
     
     const requestData = {
-      FormID: Number(id),
-      FormName: formData.FormName,
-      ModifiedByID: user.personId || 1
+      formId: Number(id),
+      formName: formData.FormName,
+      createdById: user.personId || 1
     };
 
     // Include RowVersionColumn if available

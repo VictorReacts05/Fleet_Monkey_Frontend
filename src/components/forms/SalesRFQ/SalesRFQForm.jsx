@@ -223,7 +223,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           { value: "", label: "Select an option" },
           ...addressesData.map((address) => ({
             value: String(address.AddressID),
-            label: `${address.AddressLine1}, ${address.City}, ${address.PostCode}`,
+            label: `${address.AddressLine1 || "Unknown Address"}, ${
+              address.City || "Unknown City"
+            }`,
             title: address.AddressTitle || address.Title || "",
           })),
         ];
@@ -308,13 +310,23 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         )
           ? String(data.CollectionAddressID)
           : "",
-        CollectionAddressTitle: displayValue(data.CollectionAddressTitle),
+        CollectionAddressTitle:
+          addresses.find(
+            (a) => String(a.value) === String(data.CollectionAddressID)
+          )?.label ||
+          displayValue(data.AddressLine1) ||
+          "-",
         DestinationAddressID: addresses.find(
           (a) => String(a.value) === String(data.DestinationAddressID)
         )
           ? String(data.DestinationAddressID)
           : "",
-        DestinationAddressTitle: displayValue(data.DestinationAddressTitle),
+        DestinationAddressTitle:
+          addresses.find(
+            (a) => String(a.value) === String(data.DestinationAddressID)
+          )?.label ||
+          displayValue(data.DestinationAddressLine1) ||
+          "-",
         ShippingPriorityID: mailingPriorities.find(
           (p) => String(p.value) === String(data.ShippingPriorityID)
         )
@@ -330,14 +342,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         CurrencyName: displayValue(
           data.CurrencyName || data.currencyName || data.Currency?.CurrencyName
         ),
-        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
+        CollectFromSupplierID: Boolean(data.CustomerID),
         PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
         FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? dayjs(data.CreatedDateTime)
           : null,
-        IsDeleted: data.IsDeleted || false,
+        IsDeleted: data.Boolean || false,
         DeletedDateTime: data.DeletedDateTime
           ? dayjs(data.DeletedDateTime)
           : null,
@@ -382,7 +394,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       toast.error(
         "Failed to load SalesRFQ status: " + (error.message || "Unknown error")
       );
-      setStatus("Pending"); // Fallback to Pending on error
+      setStatus("Pending"); // Fallback to Pending
     } finally {
       setLoading(false);
     }
@@ -647,6 +659,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       }
 
       const response = await createPurchaseRFQFromSalesRFQ(salesRFQId);
+      console.log("Create Purchase RFQ response:", response);
 
       let purchaseRFQId = null;
       if (response?.data?.data) {
@@ -679,10 +692,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </div>,
           { autoClose: 8000 }
         );
-        setPurchaseRFQExists(true); // Update state to reflect new Purchase RFQ
+        setPurchaseRFQExists(true);
       } else {
         console.warn(
-          "Purchase RFQ created, but ID is unavailable in response:",
+          "Purchase RFQ created, but ID is unavailable:",
           response.data
         );
         toast.error("Purchase RFQ created, but ID is unavailable");
@@ -690,48 +703,34 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
         message: error.message,
-        stack: error.stack,
+        responseData: error.response?.data,
+        salesRFQId,
       });
-      toast.error(
-        `Failed to create Purchase RFQ: ${
-          error.message || "Unknown server error"
-        }`
-      );
+      toast.error(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
       setPurchaseRFQDialogOpen(false);
     }
   };
 
-  /* const handleStatusChange = async (newStatus) => {
-    console.log("Status changed to:", newStatus);
-    setStatus(newStatus);
-    // Refresh status from API to confirm all approvals
-    await loadSalesRFQStatus();
-  }; */
-
   useEffect(() => {
     const loadStatuses = async () => {
       try {
-        // Fetch global status
         const globalStatus = await fetchSalesRFQStatus(salesRFQId);
-        console.log("Global status:", globalStatus);
-        setStatus(globalStatus);
+        console.log("Global status for SalesRFQID:", salesRFQId, globalStatus);
+        setStatus(globalStatus || "Pending");
 
-        // Fetch user-specific status
-        const user = JSON.parse(localStorage.getItem("user"));
-        const approverId = user?.personId;
-        if (approverId) {
-          const userApprovalStatus = await fetchUserApprovalStatus(
-            salesRFQId,
-            approverId
-          );
-          // debugger;
-          console.log("User approval status:", userApprovalStatus);
-          setUserStatus(userApprovalStatus);
-        }
+        const rawUser = localStorage.getItem("user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        console.log("Current user in loadStatuses:", { rawUser, user });
       } catch (error) {
-        console.error("Error loading statuses:", error);
+        console.error(
+          "Error loading global status for SalesRFQID:",
+          salesRFQId,
+          error
+        );
+        setStatus("Pending");
+        toast.error("Failed to load status information");
       }
     };
 
@@ -742,7 +741,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   const handleStatusChange = async (newStatus) => {
     console.log("User approval status changed to:", newStatus);
-    // Refresh SalesRFQ status from API to check if all approvals are complete
+    setUserStatus(newStatus);
     await loadSalesRFQStatus();
   };
 
@@ -772,55 +771,65 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   : "View Sales RFQ"
                 : "Create Sales RFQ"}
             </Typography>
-            {!isEditing && salesRFQId && (
-              <Fade in={true} timeout={500}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    background:
-                      theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
-                    borderRadius: "4px",
-                    paddingRight: "10px",
-                    height: "37px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    transition: "all 0.3s ease-in-out",
-                    marginLeft: "16px",
-                    "&:hover": {
-                      boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
-                      transform: "scale(1.02)",
-                    },
-                  }}
-                >
-                  <Chip
-                    label={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: "700",
-                          color:
-                            theme.palette.mode === "light" ? "white" : "black",
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        Status:
-                      </Typography>
-                    }
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {!isEditing && salesRFQId && (
+                <Fade in={true} timeout={500}>
+                  <Box
                     sx={{
-                      backgroundColor: "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      background:
+                        theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                      borderRadius: "4px",
+                      paddingRight: "10px",
+                      height: "37px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                      transition: "all 0.3s ease-in-out",
+                      "&:hover": {
+                        boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
+                        transform: "scale(1.02)",
+                      },
                     }}
-                  />
-                  {console.log(status, "___status")}
-                  {console.log(salesRFQId, "___salesRFQId")}
-                  <StatusIndicator
-                    // status={status}
-                    salesRFQId={salesRFQId}
-                    onStatusChange={handleStatusChange}
-                    readOnly={status === "Approved"}
-                  />
-                </Box>
-              </Fade>
-            )}
+                  >
+                    <Chip
+                      label={
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: "700",
+                            color:
+                              theme.palette.mode === "light"
+                                ? "white"
+                                : "black",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          Status:
+                        </Typography>
+                      }
+                      sx={{
+                        backgroundColor: "transparent",
+                      }}
+                    />
+                    <StatusIndicator
+                      salesRFQId={salesRFQId}
+                      onStatusChange={handleStatusChange}
+                      readOnly={readOnly && status === "Approved"}
+                    />
+                  </Box>
+                </Fade>
+              )}
+              {!isEditing && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleCreatePurchaseRFQ}
+                  disabled={status !== "Approved"}
+                >
+                  Create Purchase RFQ
+                </Button>
+              )}
+            </Box>
           </Box>
         }
         onCancel={onClose}
@@ -1061,7 +1070,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Collection Address"
-                value={formData.CollectionAddressTitle || "-"}
+                value={
+                  addresses.find(
+                    (a) => a.value === formData.CollectionAddressID
+                  )?.label || "-"
+                }
               />
             )}
           </Grid>
@@ -1080,7 +1093,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="Destination Address"
-                value={formData.DestinationAddressTitle || "-"}
+                value={
+                  addresses.find(
+                    (a) => a.value === formData.DestinationAddressID
+                  )?.label || "-"
+                }
               />
             )}
           </Grid>

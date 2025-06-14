@@ -2,7 +2,6 @@ import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get auth header and personId from localStorage
-// Helper function to get auth header and personId from localStorage
 export const getAuthHeader = () => {
   try {
     console.log("Raw localStorage user:", localStorage.getItem("user"));
@@ -47,7 +46,7 @@ export const fetchSalesRFQs = async (
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `${APIBASEURL}/sales-rfq?page=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/sales-rfq?pageNumber=${page}&pageSize=${pageSize}`;
 
     if (fromDate) {
       url += `&fromDate=${fromDate}`;
@@ -80,7 +79,6 @@ export const fetchSalesRFQs = async (
   }
 };
 
-// Create a new SalesRFQ with parcels
 // Create a new SalesRFQ with parcels
 export const createSalesRFQ = async (salesRFQData) => {
   try {
@@ -502,9 +500,9 @@ export const getSalesRFQById = async (id) => {
 export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/companies`, { headers });
+    const response = await axios.get(`${APIBASEURL}/sales-rfq`, { headers });
     const data = response.data.data || response.data || [];
-    console.log("Fetched companies:", data);
+    console.log("Fetched sales-rfq:", data);
     return data.map((company) => ({
       CompanyID: company.CompanyID || company.id,
       CompanyName: company.CompanyName || "Unknown",
@@ -728,7 +726,6 @@ export const fetchSalesRFQStatus = async (salesRFQId) => {
   }
 };
 
-
 export const fetchUserApprovalStatus = async (salesRFQId, approverId) => {
   try {
     const { headers } = getAuthHeader();
@@ -737,7 +734,7 @@ export const fetchUserApprovalStatus = async (salesRFQId, approverId) => {
       approverId,
     });
     const response = await axios.get(
-      `${APIBASEURL}/sales-rfq-approvals?salesRFQId=${salesRFQId}&approverId=${approverId}`,
+      `${APIBASEURL}/sales-rfq-approvals/${salesRFQId}/${approverId}`,
       { headers }
     );
 
@@ -749,33 +746,22 @@ export const fetchUserApprovalStatus = async (salesRFQId, approverId) => {
       { status: response.status, data: response.data }
     );
 
-    // Handle nested or flat response
-    let approvalData = response.data;
-    if (response.data?.data && Array.isArray(response.data.data)) {
-      approvalData = response.data.data;
-    } else if (!Array.isArray(approvalData)) {
-      console.warn("Unexpected response format:", response.data);
-      approvalData = [];
+    // Handle response
+    let approval = null;
+    if (response.data?.data) {
+      approval = response.data.data;
+    } else if (response.data && typeof response.data === "object") {
+      approval = response.data;
     }
 
-    // Log raw approval data
-    console.log("Processed approvalData:", approvalData);
-
-    // Find matching approval record
-    const approval = approvalData.find(
-      (record) =>
-        String(record.ApproverID) === String(approverId) &&
-        String(record.SalesRFQID) === String(salesRFQId)
-    );
-
-    console.log("Matching approval record:", approval);
+    console.log("Processed approval data:", approval);
 
     if (approval && approval.ApprovedYN === 1) {
       console.log("Approval found with ApprovedYN: 1, returning Approved");
       return "Approved";
     }
     console.log("No approval or ApprovedYN !== 1, returning Pending");
-    return "Pending"; // No record or not approved
+    return "Pending";
   } catch (error) {
     console.error("Error fetching user approval status:", {
       error: error.message,

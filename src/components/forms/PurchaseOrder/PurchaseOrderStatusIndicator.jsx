@@ -11,74 +11,48 @@ import {
 import { CheckCircle, PendingActions, Cancel } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import {
-  approvePurchaseRFQ,
-  fetchPurchaseRFQApprovalStatus,
-} from "./PurchaseRFQAPI";
+  fetchPurchaseOrderApprovalStatus,
+  approvePurchaseOrder,
+} from "./PurchaseOrderAPI";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
-const StatusIndicator = ({
+const PurchaseOrderStatusIndicator = ({
   status,
-  purchaseRFQId,
+  purchaseOrderId,
   onStatusChange,
   readOnly,
+  user,
 }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userApprovalStatus, setUserApprovalStatus] = useState("Pending");
 
-  const getCurrentUser = () => {
-    try {
-      const userData = localStorage.getItem("user");
-      if (!userData) {
-        console.warn("No user data found in localStorage");
-        return null;
-      }
-      return JSON.parse(userData);
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      return null;
-    }
-  };
-
   const fetchApprovalRecord = async () => {
-    if (!purchaseRFQId) return;
+    if (!purchaseOrderId || !user?.personId) {
+      console.warn("Missing purchaseOrderId or user.personId");
+      setUserApprovalStatus("Pending");
+      return;
+    }
 
     try {
-      const user = getCurrentUser();
-      if (!user?.personId) {
-        throw new Error("No user found in localStorage");
-      }
-
       console.log(
-        `Fetching approval for user ${user.personId} and RFQ ${purchaseRFQId}`
+        `Fetching approval for user ${user.personId} and PO ${purchaseOrderId}`
       );
-      const response = await fetchPurchaseRFQApprovalStatus(purchaseRFQId);
+      const response = await fetchPurchaseOrderApprovalStatus(
+        purchaseOrderId,
+        user
+      );
       console.log("Fetched approval record:", response);
 
-      if (response.success && response.data) {
-        // Handle single object or array
-        const approval = Array.isArray(response.data)
-          ? response.data.find(
-              (record) =>
-                parseInt(record.ApproverID) === parseInt(user.personId)
-            )
-          : response.data;
-
-        if (approval) {
-          const approved =
-            Number(approval.ApprovedYN || approval.ApprovedStatus) === 1 ||
-            approval.ApprovedYN === "true" ||
-            approval.ApprovedStatus === "true";
-          console.log(
-            `User approval for ${user.personId}: Approved=${approved}`
-          );
-          setUserApprovalStatus(approved ? "Approved" : "Pending");
-        } else {
-          console.log(`No approval record for user ${user.personId}`);
-          setUserApprovalStatus("Pending");
-        }
+      if (response.success && response.data && response.data.length > 0) {
+        const approval = response.data[0];
+        const approved =
+          Number(approval.ApprovedYN) === 1 || approval.ApprovedYN === "true";
+        console.log(`User approval for ${user.personId}: Approved=${approved}`);
+        setUserApprovalStatus(approved ? "Approved" : "Pending");
       } else {
-        console.log("No approval records or invalid response format");
+        console.log(`No approval record for user ${user.personId}`);
         setUserApprovalStatus("Pending");
       }
     } catch (error) {
@@ -92,14 +66,20 @@ const StatusIndicator = ({
   };
 
   useEffect(() => {
-    if (purchaseRFQId) {
+    if (purchaseOrderId && user) {
       fetchApprovalRecord();
     }
-  }, [purchaseRFQId]);
+  }, [purchaseOrderId, user]);
 
   const updateStatus = async (newStatus) => {
-    if (!purchaseRFQId || isNaN(parseInt(purchaseRFQId, 10))) {
-      toast.error("Invalid Purchase RFQ ID");
+    if (!purchaseOrderId || isNaN(parseInt(purchaseOrderId, 10))) {
+      toast.error("Invalid Purchase Order ID");
+      setAnchorEl(null);
+      return;
+    }
+
+    if (!user?.personId) {
+      toast.error("User not authenticated");
       setAnchorEl(null);
       return;
     }
@@ -108,30 +88,41 @@ const StatusIndicator = ({
       setLoading(true);
       const isApproved = newStatus === "Approved";
       console.log(
-        `Updating approval status to: ${newStatus} for PurchaseRFQId: ${purchaseRFQId}`
+        `Updating approval status to: ${newStatus} for PurchaseOrderId: ${purchaseOrderId}`
       );
 
-      const response = await approvePurchaseRFQ(purchaseRFQId, isApproved);
+      const response = await approvePurchaseOrder(
+        purchaseOrderId,
+        isApproved,
+        user
+      );
       console.log("Approval response:", response);
+
+      if (!response.success) {
+        throw new Error(
+          response.message ||
+            `Failed to ${newStatus.toLowerCase()} Purchase Order`
+        );
+      }
 
       setUserApprovalStatus(newStatus);
 
-      // Fetch updated RFQ status
-      const user = getCurrentUser();
-      const headers = { Authorization: `Bearer ${user.personId}` };
-      const rfqResponse = await fetch(
-        `http://localhost:7000/api/purchase-rfq/${purchaseRFQId}`,
-        { headers }
-      );
-      const rfqData = await rfqResponse.json();
-      const overallStatus = rfqData.data?.Status || "Pending";
+      // Fetch updated PO status
+      const headers = user?.token
+        ? { Authorization: `Bearer ${user.token}` }
+        : {};
+      const poResponse = await fetch(`${APIBASEURL}/po/${purchaseOrderId}`, {
+        headers,
+      });
+      const poData = await poResponse.json();
+      const overallStatus = poData.data?.Status || "Pending";
 
       if (onStatusChange && overallStatus !== status) {
         onStatusChange(overallStatus);
       }
 
       toast.success(
-        `Purchase RFQ ${isApproved ? "approved" : "disapproved"} successfully`
+        `Purchase Order ${isApproved ? "approved" : "disapproved"} successfully`
       );
     } catch (error) {
       console.error("Error updating status:", {
@@ -256,4 +247,4 @@ const StatusIndicator = ({
   );
 };
 
-export default StatusIndicator;
+export default PurchaseOrderStatusIndicator;

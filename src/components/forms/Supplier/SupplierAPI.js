@@ -57,11 +57,12 @@ export const createSupplier = async (supplierData) => {
     // Format request data
     const requestData = {
       supplierName: supplierData.supplierName.trim(),
-      companyId: supplierData.companyId ? Number(supplierData.companyId) : null,
+      companyId: supplierData.companyId? Number(supplierData.companyId) : 48,
       billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
       website: supplierData.website || '',
       supplierNotes: supplierData.supplierNotes || '',
-      createdById: user.personId || 1
+      userId: user.personId || 1,
+      supplierEmail:supplierData.supplierEmail||''
     };
 
     console.log('Formatted request data:', requestData);
@@ -94,7 +95,8 @@ export const updateSupplier = async (id, supplierData) => {
       billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
       website: supplierData.website || '',
       supplierNotes: supplierData.supplierNotes || '',
-      createdById: user.personId || 1
+      supplierEmail:supplierData.supplierEmail||'',
+      userId: user.personId || 1
     };
 
     console.log('Formatted update request data:', requestData);
@@ -114,7 +116,7 @@ export const deleteSupplier = async (id) => {
 
     const response = await axios.delete(`${APIBASEURL}/suppliers/${id}`, {
       data: {
-        createdById: user.personId || 1
+        userId: user.personId || 1
       }
     });
 
@@ -126,14 +128,15 @@ export const deleteSupplier = async (id) => {
   }
 };
 
+// Fixed getSupplierById function
 export const getSupplierById = async (id) => {
   try {
     console.log(`Fetching supplier with ID: ${id}`);
     const response = await axios.get(`${APIBASEURL}/suppliers/${id}`);
-    console.log('Supplier data response:', response.data);
+    console.log('Get supplier by ID response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching supplier:', error);
+    console.error('Error in getSupplierById:', error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };

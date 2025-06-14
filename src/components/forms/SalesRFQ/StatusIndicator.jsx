@@ -1,217 +1,129 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Box,
-  Typography,
   Chip,
+  CircularProgress,
   Menu,
   MenuItem,
-  CircularProgress,
-  useTheme,
+  Typography,
 } from "@mui/material";
 import { CheckCircle, PendingActions } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { approveSalesRFQ, fetchUserApprovalStatus } from "./SalesRFQAPI";
 
 const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  // Fetch user-specific approval status
-  useEffect(() => {
-    const loadUserApprovalStatus = async () => {
+  // Fetch user approval status when component mounts or salesRFQId changes
+  React.useEffect(() => {
+    const loadStatus = async () => {
+      if (!salesRFQId) return;
+
+      setLoading(true);
       try {
-        setLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
         const approverId = user?.personId;
 
-        console.log("Loading approval status:", { salesRFQId, approverId });
-
         if (!approverId) {
           console.error("No personId found in localStorage");
-          toast.error("User not authenticated");
-          setStatus("Pending");
-          return;
+          throw new Error("User not authenticated");
         }
 
+        console.log("Fetching user approval status", {
+          salesRFQId,
+          approverId,
+        });
         const userStatus = await fetchUserApprovalStatus(
           salesRFQId,
           approverId
         );
-        console.log("Fetched user approval status:", {
-          salesRFQId,
-          approverId,
-          userStatus,
-        });
+        console.log("Fetched user status:", userStatus);
         setStatus(userStatus);
       } catch (error) {
-        console.error("Error loading user approval status:", {
-          error: error.message,
-          stack: error.stack,
-        });
-        toast.error("Failed to load approval status");
+        console.error("Failed to fetch user approval status:", error);
+        toast.error("Unable to load approval status");
         setStatus("Pending");
       } finally {
         setLoading(false);
       }
     };
 
-    if (salesRFQId) {
-      loadUserApprovalStatus();
-    }
+    loadStatus();
   }, [salesRFQId]);
 
   const handleApprove = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      console.log(`Approving SalesRFQ with ID: ${salesRFQId}`);
-
+      console.log(`Initiating approval for SalesRFQ ID: ${salesRFQId}`);
       const response = await approveSalesRFQ(salesRFQId);
-
-      console.log("Approval response in handleApprove:", response);
+      console.log("Approval response:", response);
 
       if (response.success) {
-        toast.success("SalesRFQ approved successfully");
+        toast.success("Approval recorded successfully");
         setStatus("Approved");
-        onStatusChange("Approved");
-        // Refresh status with retry mechanism
-        const user = JSON.parse(localStorage.getItem("user"));
-        let userStatus = "Approved"; // Optimistic default
-        try {
-          userStatus = await fetchUserApprovalStatus(
-            salesRFQId,
-            user?.personId
-          );
-          console.log("Refreshed user approval status:", {
-            salesRFQId,
-            userStatus,
-          });
-        } catch (refreshError) {
-          console.warn(
-            "Failed to refresh approval status, retaining Approved:",
-            {
-              error: refreshError.message,
-            }
-          );
-        }
-        setStatus(userStatus);
+        onStatusChange?.("Approved");
       } else {
-        toast.error(
-          `Failed to approve: ${response.message || "Unknown error"}`
-        );
+        throw new Error(response.message || "Approval failed");
       }
     } catch (error) {
-      console.error("Error approving SalesRFQ:", {
-        error: error.message,
-        response: error.response?.data,
-      });
-      toast.error(
-        `Error approving: ${error.response?.data?.message || error.message}`
-      );
+      console.error("Approval error:", error);
+      toast.error(`Failed to approve: ${error.message}`);
     } finally {
       setLoading(false);
-      handleClose();
+      setAnchorEl(null);
     }
   };
 
-  const handleClick = (event) => {
-    console.log("Chip clicked", { status, readOnly, anchorEl });
+  const handleChipClick = (event) => {
     if (!readOnly && status !== "Approved") {
+      console.log("Opening approval menu");
       setAnchorEl(event.currentTarget);
-    } else {
-      console.log("Click ignored", { readOnly, status });
     }
   };
 
-  const handleClose = () => {
+  const handleMenuClose = () => {
+    console.log("Closing approval menu");
     setAnchorEl(null);
   };
 
-  const getChipProps = () => {
-    switch (status) {
-      case "Approved":
-        return {
-          color: "success",
-          icon: <CheckCircle />,
-          clickable: false,
-        };
-      case "Pending":
-        return {
-          color: "warning",
-          icon: <PendingActions />,
-          clickable: !readOnly,
-        };
-      default:
-        return {
-          color: "default",
-          icon: null,
-          clickable: !readOnly,
-        };
-    }
+  const chipProps = {
+    label: (
+      <Typography variant="body2">
+        {loading ? "Processing..." : status}
+      </Typography>
+    ),
+    icon: loading ? (
+      <CircularProgress size={16} />
+    ) : status === "Approved" ? (
+      <CheckCircle />
+    ) : (
+      <PendingActions />
+    ),
+    color: status === "Approved" ? "success" : "warning",
+    onClick: readOnly || status === "Approved" ? undefined : handleChipClick,
+    sx: {
+      height: 28,
+      minWidth: 80,
+      cursor: readOnly || status === "Approved" ? "default" : "pointer",
+    },
   };
 
-  const chipProps = getChipProps();
-
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Chip
-        label={
-          <Typography variant="body2">
-            {loading ? "Processing..." : status || "Unknown"}
-          </Typography>
-        }
-        color={chipProps.color}
-        icon={
-          loading ? (
-            <CircularProgress size={16} color="inherit" />
-          ) : (
-            chipProps.icon
-          )
-        }
-        onClick={handleClick}
-        clickable={chipProps.clickable}
-        sx={{
-          height: 28,
-          minWidth: 80,
-          padding: "2px 0px",
-          borderRadius: "12px",
-          position: "relative",
-          cursor: chipProps.clickable ? "pointer" : "default",
-          "& .MuiChip-label": {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: useTheme().palette.mode === "light" ? "white" : "black",
-            borderRadius: "12px",
-          },
-        }}
-      />
+    <>
+      <Chip {...chipProps} />
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={handleClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-        sx={{ zIndex: 1300 }}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        {status !== "Approved" && (
-          <MenuItem onClick={handleApprove} disabled={loading}>
-            {loading ? (
-              <CircularProgress size={16} sx={{ mr: 1 }} />
-            ) : (
-              <CheckCircle sx={{ mr: 1 }} color="success" />
-            )}
-            Approve
-          </MenuItem>
-        )}
+        <MenuItem onClick={handleApprove} disabled={loading}>
+          Approve
+        </MenuItem>
       </Menu>
-    </Box>
+    </>
   );
 };
 
