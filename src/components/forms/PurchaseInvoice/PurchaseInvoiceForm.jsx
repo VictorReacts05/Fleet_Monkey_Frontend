@@ -51,6 +51,7 @@ const PurchaseInvoiceForm = ({
   purchaseInvoiceId: propPurchaseInvoiceId,
   onClose,
   readOnly = false, // Changed default to false for testing
+  onStatusChange,
 }) => {
   const { id } = useParams();
   const theme = useTheme();
@@ -62,6 +63,8 @@ const PurchaseInvoiceForm = ({
   const [status, setStatus] = useState("Pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [localStatus, setLocalStatus] = useState(status || "Pending");
 
   const fetchData = async () => {
     setLoading(true);
@@ -304,6 +307,17 @@ const PurchaseInvoiceForm = ({
     updateStatus("Approved");
   };
 
+  const fetchApprovalRecord = async () => {
+    try {
+      // Add your approval record fetching logic here
+      // This might involve calling an API to get the latest approval status
+      console.log("Fetching approval record...");
+      // Example: await someApprovalAPI.getApprovalStatus(purchaseInvoiceId);
+    } catch (error) {
+      console.error("Error fetching approval record:", error);
+    }
+  };
+
   return (
     <FormPage
       title={
@@ -360,7 +374,10 @@ const PurchaseInvoiceForm = ({
               />
             </Box>
           </Fade>
-          <Button onClick={handleApprove} sx={{ background: "#66bb6a", color: "black", fontWeight: "bold" }}>
+          <Button
+            onClick={handleApprove}
+            sx={{ background: "#66bb6a", color: "black", fontWeight: "bold" }}
+          >
             Approve
           </Button>
         </Box>
