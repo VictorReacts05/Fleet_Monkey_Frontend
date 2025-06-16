@@ -1,31 +1,35 @@
-import axios from 'axios';
-import APIBASEURL from '../../../utils/apiBaseUrl';
+import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Helper function to get user data safely
 const getUserData = () => {
   try {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem("user");
     if (!userData) {
-      console.warn('No user data in localStorage, using default personId: 1');
-      return { personId: 1 }; // Default for development
+      console.warn("No user data in localStorage, using default personId: 1");
+      return { personId: 1 };
     }
     return JSON.parse(userData);
   } catch (error) {
-    console.error('Error parsing user data:', error);
-    return { personId: 1 }; // Fallback
+    console.error("Error parsing user data:", error);
+    return { personId: 1 };
   }
 };
 
 // Validate required fields for supplier operations
-const validateSupplierData = (data, operation = 'create') => {
+const validateSupplierData = (data, operation = "create") => {
   const errors = [];
-  if (operation !== 'delete') {
-    if (!data.supplierName || typeof data.supplierName !== 'string' || data.supplierName.trim() === '') {
-      errors.push('supplierName is required and must be a non-empty string');
+  if (operation !== "delete") {
+    if (
+      !data.supplierName ||
+      typeof data.supplierName !== "string" ||
+      data.supplierName.trim() === ""
+    ) {
+      errors.push("supplierName is required and must be a non-empty string");
     }
-  }
-  if (data.billingCurrencyId && isNaN(Number(data.billingCurrencyId))) {
-    errors.push('billingCurrencyId must be a valid number if provided');
+    if (data.supplierEmail && !/^\S+@\S+\.\S+$/.test(data.supplierEmail)) {
+      errors.push("supplierEmail must be a valid email if provided");
+    }
   }
   return errors;
 };
@@ -34,22 +38,22 @@ export const fetchSuppliers = async (page = 1, limit = 10) => {
   try {
     let url = `${APIBASEURL}/suppliers?pageNumber=${page}&pageSize=${limit}`;
     const response = await axios.get(url);
-    console.log('Fetch suppliers response:', response.data);
+    console.log("Fetch suppliers response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching suppliers:', error);
+    console.error("Error fetching suppliers:", error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
 
 export const createSupplier = async (supplierData) => {
   try {
-    console.log('Creating supplier with data:', supplierData);
+    console.log("Creating supplier with data:", supplierData);
 
     // Validate input
-    const validationErrors = validateSupplierData(supplierData, 'create');
+    const validationErrors = validateSupplierData(supplierData, "create");
     if (validationErrors.length > 0) {
-      throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+      throw new Error(`Validation failed: ${validationErrors.join(", ")}`);
     }
 
     const user = getUserData();
@@ -57,32 +61,34 @@ export const createSupplier = async (supplierData) => {
     // Format request data
     const requestData = {
       supplierName: supplierData.supplierName.trim(),
-      companyId: supplierData.companyId? Number(supplierData.companyId) : 48,
-      billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
-      website: supplierData.website || '',
-      supplierNotes: supplierData.supplierNotes || '',
+      companyId: 48, // Default to 48
+      billingCurrencyId: supplierData.billingCurrencyId
+        ? Number(supplierData.billingCurrencyId)
+        : null,
+      website: supplierData.website || "",
+      supplierNotes: supplierData.supplierNotes || "",
+      supplierEmail: supplierData.supplierEmail || "",
       userId: user.personId || 1,
-      supplierEmail:supplierData.supplierEmail||''
     };
 
-    console.log('Formatted request data:', requestData);
+    console.log("Formatted request data:", requestData);
 
     const response = await axios.post(`${APIBASEURL}/suppliers`, requestData);
     return response.data;
   } catch (error) {
-    console.error('Error in createSupplier:', error);
+    console.error("Error in createSupplier:", error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
 
 export const updateSupplier = async (id, supplierData) => {
   try {
-    console.log('Updating supplier with ID:', id, 'Data:', supplierData);
+    console.log("Updating supplier with ID:", id, "Data:", supplierData);
 
     // Validate input
-    const validationErrors = validateSupplierData(supplierData, 'update');
+    const validationErrors = validateSupplierData(supplierData, "update");
     if (validationErrors.length > 0) {
-      throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+      throw new Error(`Validation failed: ${validationErrors.join(", ")}`);
     }
 
     const user = getUserData();
@@ -91,20 +97,25 @@ export const updateSupplier = async (id, supplierData) => {
     const requestData = {
       supplierId: Number(id),
       supplierName: supplierData.supplierName.trim(),
-      companyId: supplierData.companyId ? Number(supplierData.companyId) : null,
-      billingCurrencyId: supplierData.billingCurrencyId ? Number(supplierData.billingCurrencyId) : null,
-      website: supplierData.website || '',
-      supplierNotes: supplierData.supplierNotes || '',
-      supplierEmail:supplierData.supplierEmail||'',
-      userId: user.personId || 1
+      companyId: 48, // Default to 48
+      billingCurrencyId: supplierData.billingCurrencyId
+        ? Number(supplierData.billingCurrencyId)
+        : null,
+      website: supplierData.website || "",
+      supplierNotes: supplierData.supplierNotes || "",
+      supplierEmail: supplierData.supplierEmail || "",
+      userId: user.personId || 1,
     };
 
-    console.log('Formatted update request data:', requestData);
+    console.log("Formatted update request data:", requestData);
 
-    const response = await axios.put(`${APIBASEURL}/suppliers/${id}`, requestData);
+    const response = await axios.put(
+      `${APIBASEURL}/suppliers/${id}`,
+      requestData
+    );
     return response.data;
   } catch (error) {
-    console.error('Error in updateSupplier:', error);
+    console.error("Error in updateSupplier:", error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
@@ -116,27 +127,26 @@ export const deleteSupplier = async (id) => {
 
     const response = await axios.delete(`${APIBASEURL}/suppliers/${id}`, {
       data: {
-        userId: user.personId || 1
-      }
+        userId: user.personId || 1,
+      },
     });
 
-    console.log('Delete supplier response:', response.data);
+    console.log("Delete supplier response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in deleteSupplier:', error);
+    console.error("Error in deleteSupplier:", error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
 
-// Fixed getSupplierById function
 export const getSupplierById = async (id) => {
   try {
     console.log(`Fetching supplier with ID: ${id}`);
     const response = await axios.get(`${APIBASEURL}/suppliers/${id}`);
-    console.log('Get supplier by ID response:', response.data);
+    console.log("Get supplier by ID response:", response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in getSupplierById:', error);
+    console.error("Error in getSupplierById:", error);
     throw error.response?.data || { message: error.message, success: false };
   }
 };
