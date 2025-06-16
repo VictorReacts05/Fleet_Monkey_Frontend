@@ -218,13 +218,13 @@ const SalesRFQList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Sales RFQ Management</Typography>
+        <Typography variant="h5">Inquiry Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search SalesRFQs..."
+            placeholder="Search Inquiries..."
           />
-          <Tooltip title="Add New Sales RFQ">
+          <Tooltip title="Add New Inquiry" arrow>
             <IconButton
               color="primary"
               onClick={handleCreate}

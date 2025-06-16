@@ -373,13 +373,13 @@ const SalesOrderList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Sales Order Management</Typography>
+        <Typography variant="h5">Approved Estimate Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales Orders..."
+            placeholder="Search Approved Estimates..."
           />
-          <Tooltip title="Add New Sales Order">
+          <Tooltip title="Add New Approved Estimate">
             <IconButton
               color="primary"
               onClick={() => {

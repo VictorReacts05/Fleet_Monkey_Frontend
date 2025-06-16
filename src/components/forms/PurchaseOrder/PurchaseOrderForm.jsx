@@ -425,7 +425,6 @@ const PurchaseOrderForm = ({
     >
       <Grid
         container
-        spacing={2}
         sx={{
           width: "100%",
           margin: 0,
@@ -436,88 +435,88 @@ const PurchaseOrderForm = ({
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Series" value={formData.Series} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Service Type" value={formData.ServiceType} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Customers" value={formData.CustomerName} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Suppliers" value={formData.SupplierName} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="External Ref" value={formData.ExternalRefNo} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Required By Date"
             value={formData.RequiredByDate}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
-        <Grid item xs={12} sm={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collection Address"
             value={formData.CollectionAddress}
           />
         </Grid>
-        <Grid item xs={12} sm={12} md={6} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Shipping Priority"
             value={formData.ShippingPriorityName}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Currencies" value={formData.CurrencyName} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Sales Amounts" value={formData.SalesAmount} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Taxes/Other Charges"
             value={formData.TaxesAndOtherCharges}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Totals" value={formData.Total} />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collect From Supplier"
             value={formData.CollectFromSupplierYN}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Packaging Required"
             value={formData.PackagingRequiredYN}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Form Completed"
             value={formData.FormCompletedYN}

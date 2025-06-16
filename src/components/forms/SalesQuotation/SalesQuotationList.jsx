@@ -354,13 +354,13 @@ const SalesQuotationList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Sales Quotation Management</Typography>
+        <Typography variant="h5">Estimate Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales Quotations..."
+            placeholder="Search Estimates..."
           />
-          <Tooltip title="Add New Sales Quotation">
+          <Tooltip title="Add New Estimate">
             <IconButton
               color="primary"
               onClick={() => {

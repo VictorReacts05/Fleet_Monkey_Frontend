@@ -235,11 +235,11 @@ const SalesInvoiceList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Sales Invoice Management</Typography>
+        <Typography variant="h5">Bill Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Sales Invoices..."
+            placeholder="Search Bills..."
           />
         </Stack>
       </Box>

@@ -186,11 +186,11 @@ const PurchaseRFQList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Purchase RFQ Management</Typography>
+        <Typography variant="h5">Quotation Request Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Purchase RFQs..."
+            placeholder="Search Quotation Requests..."
           />
         </Stack>
       </Box>

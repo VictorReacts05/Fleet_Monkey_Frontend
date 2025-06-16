@@ -581,7 +581,7 @@ const PurchaseRFQForm = ({
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-            <Typography variant="h6">View Purchase RFQ</Typography>
+            <Typography variant="h6">View Quotation Request</Typography>
             {purchaseRFQId && (
               <Box
                 sx={{

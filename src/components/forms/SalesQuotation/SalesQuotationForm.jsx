@@ -434,7 +434,7 @@ const SalesQuotationForm = ({
             }}
           >
             <Typography variant="h6">
-              {isEdit ? "Edit Sales Quotation" : "View Sales Quotation"}
+              {isEdit ? "Edit Estimate" : "View Estimate"}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Fade in={true} timeout={500}>

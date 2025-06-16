@@ -244,11 +244,11 @@ const PurchaseInvoiceList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Purchase Invoice Management</Typography>
+        <Typography variant="h5">Invoice Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Purchase Invoices..."
+            placeholder="Search Invoices..."
           />
         </Stack>
       </Box>

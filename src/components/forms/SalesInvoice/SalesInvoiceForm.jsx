@@ -524,7 +524,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Typography variant="h6">
-              {readOnly ? "View Sales Invoice" : "Edit Sales Invoice"}
+              {readOnly ? "View Bill" : "Edit Bill"}
             </Typography>
             {salesInvoiceId && (
               <Box
