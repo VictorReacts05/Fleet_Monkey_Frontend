@@ -12,7 +12,6 @@ import {
   fetchCompanies,
 } from "./CustomerAPI";
 import { Grid } from "@mui/material";
-import { showToast } from "../../toastNotification";
 
 const CustomerForm = ({ customerId, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
@@ -28,8 +27,6 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     Website: "",
     CustomerNotes: "",
   });
-
-  // Update the useEffect hook that fetches the data
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,7 +56,6 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
         }
 
         // If editing, fetch customer data
-        // In the useEffect hook where customer data is loaded
         if (customerId) {
           const customerData = await getCustomerById(customerId);
           if (customerData) {
@@ -70,7 +66,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
               BillingCurrencyID: customerData.BillingCurrencyID || "",
               Website: customerData.Website || "",
               CustomerNotes: customerData.CustomerNotes || "",
-              RowVersionColumn: customerData.RowVersionColumn || null, // Add this line
+              RowVersionColumn: customerData.RowVersionColumn || null,
             });
           }
         }
@@ -176,10 +172,13 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     }
   };
 
-  
+  // Add handleBlur function to validate fields on blur
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
 
   const handleSubmit = async (e) => {
-    // Add null check for the event parameter
     if (e) {
       e.preventDefault();
     }
@@ -234,14 +233,9 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
       if (customerId) {
         await updateCustomer(customerId, formData);
         toast.success("Customer updated successfully");
-        
       } else {
         await createCustomer(formData);
         toast.success("Customer created successfully");
-        
-
-
-
       }
       if (onSave) onSave();
       if (onClose) onClose();

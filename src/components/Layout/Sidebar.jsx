@@ -95,13 +95,13 @@ const menuItems = [
   { text: "Countries", icon: <PublicIcon />, path: "/countries" },
   { text: "Currencies", icon: <AttachMoneyIcon />, path: "/currencies" },
   { text: "Customers", icon: <PeopleIcon />, path: "/customers" },
+  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Form Roles", icon: <AssignmentIndIcon />, path: "/form-roles" },
   {
     text: "Form Role Approvers",
     icon: <AdminPanelSettingsIcon />,
     path: "/form-role-approvers",
   },
-  { text: "Forms", icon: <DescriptionIcon />, path: "/forms" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   {
     text: "Project Parameters",
