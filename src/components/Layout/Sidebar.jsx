@@ -191,7 +191,7 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Approved Estimate" &&
       item.text !== "Purchase Order" &&
       item.text !== "Invoice" &&
-      item.text !== "Sales Invoice" &&
+      item.text !== "Bill" &&
       item.text !== "Pending" 
   );
 

@@ -13,6 +13,7 @@ import axios from "axios";
 import { toast } from "react-toastify"; 
 import { useState, useEffect } from "react";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import { getAuthHeader } from "./SalesInvoiceAPI";
 
 const StatusIndicator = ({ status, salesInvoiceId, onStatusChange, readOnly }) => { 
   const theme = useTheme(); 
@@ -50,9 +51,10 @@ const StatusIndicator = ({ status, salesInvoiceId, onStatusChange, readOnly }) =
         ? { Authorization: `Bearer ${user.token}` } 
         : {}; 
 
-      const approverID = 2; 
+        
+      const {  personId } = getAuthHeader();
       const response = await axios.get( 
-        `${APIBASEURL}/sales-invoice-approvals?salesInvoiceId=${salesInvoiceId}&ApproverID=${approverID}`, 
+        `${APIBASEURL}/salesInvoiceApproval/${salesInvoiceId}/${personId}`, 
         { headers } 
       ); 
       console.log("Fetched approval record:", response.data); 
