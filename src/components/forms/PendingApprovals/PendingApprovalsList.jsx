@@ -18,6 +18,7 @@ import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FormSelect from "../../common/FormSelect";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 
 const getHeaders = () => {
@@ -45,7 +46,7 @@ const PendingApprovalsList = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:7000/api/pendingApprovals?pageSize=${rowsPerPage}&pageNumber=${page + 1}`,
+        `${APIBASEURL}/pendingApprovals?pageSize=${rowsPerPage}&pageNumber=${page + 1}`,
         getHeaders()
       );
 
@@ -111,7 +112,7 @@ const PendingApprovalsList = () => {
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:7000/api/pendingApprovals/${selectedId}`, getHeaders());
+      await axios.delete(`${APIBASEURL}/pendingApprovals/${selectedId}`, getHeaders());
       setPendingApprovals(prev => prev.filter(item => item.id !== selectedId));
       setTotalRows(prev => prev - 1);
       toast.success("Deleted successfully.");
