@@ -8,9 +8,9 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import DataTable from "../../common/DataTable";
-import FormSelect from "../../common/FormSelect";
-import FormInput from "../../common/FormInput";
+import DataTable from "../../Common/DataTable";
+import FormSelect from "../../Common/FormSelect";
+import FormInput from "../../Common/FormInput";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";

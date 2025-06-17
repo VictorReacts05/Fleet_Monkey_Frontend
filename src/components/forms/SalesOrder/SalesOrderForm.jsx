@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../Common/FormPage.jsx";
 import StatusIndicator from "./StatusIndicator";
 import ParcelTab from "./ParcelTab.jsx";
 import { toast } from "react-toastify";

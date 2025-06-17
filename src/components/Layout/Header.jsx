@@ -34,8 +34,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { connect } from "react-redux";
 import axios from "axios";
-import FormInput from "../../components/Common/FormInput";
-import FormSelect from "../../components/Common/FormSelect";
+import FormInput from "../Common/FormInput";
+import FormSelect from "../Common/FormSelect";
 import APIBASEURL from "../../utils/apiBaseUrl";
 
 const Header = ({ isMobile, onDrawerToggle, userInfo }) => {

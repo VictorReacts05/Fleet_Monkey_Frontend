@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import DataTable from "../../Common/DataTable";
 import SearchBar from "../../Common/SearchBar";
 import FilterListIcon from '@mui/icons-material/FilterList';
-import FormSelect from "../../common/FormSelect";
+import FormSelect from "../../Common/FormSelect";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
 
