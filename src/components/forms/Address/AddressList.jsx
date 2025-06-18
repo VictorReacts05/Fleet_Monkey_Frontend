@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Add } from '@mui/icons-material';
-import dayjs from 'dayjs';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, IconButton, Stack, Tooltip } from "@mui/material";
+import { Add } from "@mui/icons-material";
+import dayjs from "dayjs";
+import { toast } from "react-toastify";
 
-import DataTable from '../../Common/DataTable';
-import AddressModal from './AddressModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import SearchBar from '../../Common/SearchBar';
-import { fetchAddresses, deleteAddress } from './AddressAPI';
+import DataTable from "../../Common/DataTable";
+import AddressModal from "./AddressModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import SearchBar from "../../Common/SearchBar";
+import { fetchAddresses, deleteAddress } from "./AddressAPI";
 
 const AddressList = () => {
   const [rows, setRows] = useState([]);
@@ -22,16 +22,15 @@ const AddressList = () => {
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const columns = [
-    { field: 'serialNumber', headerName: 'S.No', width: 70 },
-    { field: 'addressName', headerName: 'Address Name', flex: 1 },
-    { field: 'addressType', headerName: 'Address Type', flex: 1 },
-    { field: 'addressLine1', headerName: 'Address Line 1', flex: 1 },
-    { field: 'addressLine2', headerName: 'Address Line 2', flex: 1 },
-    { field: 'city', headerName: 'City', flex: 1 },
-    { field: 'country', headerName: 'Country', flex: 1 },
+    { field: "addressName", headerName: "Address Name", flex: 1 },
+    { field: "addressType", headerName: "Address Type", flex: 1 },
+    { field: "addressLine1", headerName: "Address Line 1", flex: 1 },
+    { field: "addressLine2", headerName: "Address Line 2", flex: 1 },
+    { field: "city", headerName: "City", flex: 1 },
+    { field: "country", headerName: "Country", flex: 1 },
   ];
 
   const loadAddresses = async () => {
@@ -39,10 +38,10 @@ const AddressList = () => {
       setLoading(true);
 
       const formattedFromDate = fromDate
-        ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
         : null;
       const formattedToDate = toDate
-        ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
+        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
         : null;
 
       const response = await fetchAddresses(
@@ -56,22 +55,28 @@ const AddressList = () => {
       const addresses = response.data || [];
       const totalCount = response.totalRecords || 0;
 
+      console.log("Fetched addresses:", addresses);
+
       const formattedRows = addresses.map((address, i) => ({
         id: address.AddressID,
         serialNumber: page * rowsPerPage + i + 1,
-        addressName: address.AddressName || 'N/A',
-        addressType: address.AddressType?.AddressType || 'N/A',
-        addressLine1: address.AddressLine1 || 'N/A',
-        addressLine2: address.AddressLine2 || 'N/A',
-        city: address.City?.CityName || 'N/A',
-        country: address.Country?.CountryName || 'N/A',
+        addressName: address.AddressName || "N/A",
+        addressType: address.AddressType || "N/A", // Use AddressType directly
+        addressLine1: address.AddressLine1 || "N/A",
+        addressLine2: address.AddressLine2 || "N/A",
+        city: address.City || "N/A", // CityID, needs name resolution
+        country: address.Country || "N/A", // CountryID, needs name resolution
       }));
+
+      console.log("Formatted rows:", formattedRows);
 
       setRows(formattedRows);
       setTotalRows(totalCount);
     } catch (error) {
-      console.error('Error loading addresses:', error);
-      toast.error(`Failed to load addresses: ${error.message || 'Unknown error'}`);
+      console.error("Error loading addresses:", error);
+      toast.error(
+        `Failed to load addresses: ${error.message || "Unknown error"}`
+      );
     } finally {
       setLoading(false);
     }
@@ -100,13 +105,15 @@ const AddressList = () => {
   const confirmDelete = async () => {
     try {
       await deleteAddress(itemToDelete.id);
-      toast.success('Address deleted successfully');
+      toast.success("Address deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadAddresses();
     } catch (error) {
-      console.error('Error deleting address:', error);
-      toast.error(`Failed to delete address: ${error.message || 'Unknown error'}`);
+      console.error("Error deleting address:", error);
+      toast.error(
+        `Failed to delete address: ${error.message || "Unknown error"}`
+      );
     }
   };
 
@@ -129,22 +136,25 @@ const AddressList = () => {
     <Box>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           mb: 2,
         }}
       >
         <Typography variant="h5">Address Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar onSearch={handleSearch} placeholder="Search Addresses..." />
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search Addresses..."
+          />
           <Tooltip title="Add Address">
             <IconButton
               onClick={handleCreate}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': { backgroundColor: 'primary.dark' },
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": { backgroundColor: "primary.dark" },
                 height: 40,
                 width: 40,
               }}
