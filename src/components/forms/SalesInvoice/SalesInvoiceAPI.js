@@ -52,8 +52,7 @@ export const getAuthHeader = (user = null) => {
 export const fetchItems = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/items`, { headers }); // Adjust endpoint if needed
-    // console.log("fetchItems response:", response.data);
+    const response = await axios.get(`${APIBASEURL}/items`, { headers });
     return response.data.data || [];
   } catch (error) {
     console.error("fetchItems error:", {
@@ -68,8 +67,7 @@ export const fetchItems = async () => {
 export const fetchUOMs = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/uoms`, { headers }); // Adjust endpoint if needed
-    // console.log("fetchUOMs response:", response.data);
+    const response = await axios.get(`${APIBASEURL}/uoms`, { headers });
     const data = response.data.data || [];
     return Array.isArray(data) ? data : [];
   } catch (error) {
@@ -88,7 +86,6 @@ export const fetchSalesInvoices = async (page = 1, pageSize = 10) => {
       `${APIBASEURL}/salesInvoice`,
       getAuthHeader()
     );
-    // console.log("fetchSalesInvoices response:", response.data);
     return {
       data: response.data.data || [],
       total: response.data.total || 0,
@@ -109,12 +106,10 @@ export const fetchSalesInvoiceById = async (id) => {
       throw new Error("Invalid Sales Invoice ID");
     }
 
-    // console.log("Fetching Sales Invoice with ID:", id);
     const response = await axios.get(
       `${APIBASEURL}/salesInvoice/${id}`,
       getAuthHeader()
     );
-    // console.log("fetchSalesInvoiceById response:", response.data);
 
     if (response.data && response.data.data) {
       return response.data.data;
@@ -136,7 +131,6 @@ export const deleteSalesInvoice = async (id) => {
       `${APIBASEURL}/sales-invoice/${id}`,
       getAuthHeader()
     );
-    // console.log("deleteSalesInvoice response:", response.data);
     return { success: true, data: response.data };
   } catch (error) {
     console.error("deleteSalesInvoice error:", {
@@ -154,12 +148,10 @@ export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
       throw new Error("Invalid Sales Invoice ID");
     }
 
-    // console.log("Fetching items for Sales Invoice ID:", salesInvoiceId);
     const response = await axios.get(
       `${APIBASEURL}/salesInvoiceParcel?SalesinvoiceID=${salesInvoiceId}`,
       getAuthHeader()
     );
-    // console.log("fetchSalesInvoiceItems response:", response.data);
 
     if (response.data && response.data.data) {
       const items = response.data.data;
@@ -250,7 +242,6 @@ export const fetchServiceTypes = async () => {
       `${APIBASEURL}/service-types`,
       getAuthHeader()
     );
-    // console.log("fetchServiceTypes response:", response.data);
     if (response.data && Array.isArray(response.data.data)) {
       return response.data.data;
     }
@@ -276,5 +267,48 @@ export const fetchShippingPriorities = async () => {
   } catch (error) {
     console.error("Error fetching shipping priorities:", error);
     return [];
+  }
+};
+
+export const fetchSalesOrders = async () => {
+  try {
+    const response = await axios.get(
+      `${APIBASEURL}/sales-Order`,
+      getAuthHeader()
+    );
+    return response.data.data || [];
+  } catch (error) {
+    console.error("fetchSalesOrders error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    return [];
+  }
+};
+
+export const createSalesInvoice = async (data) => {
+  try {
+    const { headers } = getAuthHeader();
+    const salesOrderId = parseInt(data.salesOrderId);
+    if (isNaN(salesOrderId) || salesOrderId <= 0) {
+      throw new Error("Invalid Sales Order ID provided");
+    }
+
+    const payload = {
+      salesOrderId: salesOrderId,
+    };
+
+    const response = await axios.post(`${APIBASEURL}/salesInvoice`, payload, {
+      headers,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("createSalesInvoice error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
   }
 };

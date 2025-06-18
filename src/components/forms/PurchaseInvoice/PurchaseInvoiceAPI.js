@@ -543,7 +543,7 @@ export const createPurchaseInvoice = async (POID, user) => {
     );
     const response = await axios.post(
       `${APIBASEURL}/pInvoice`,
-      { POID: parseInt(POID, 10) },
+      { poid: parseInt(POID, 10) },
       { headers }
     );
     console.log("Create Purchase Invoice Response:", response.data);
