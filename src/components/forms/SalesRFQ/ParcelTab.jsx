@@ -78,6 +78,13 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
   const theme = useTheme();
 
+  // Reset activeView to "items" when in create mode (salesRFQId is undefined/null)
+  useEffect(() => {
+    if (!salesRFQId) {
+      setActiveView("items");
+    }
+  }, [salesRFQId]);
+
   // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
@@ -526,29 +533,29 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             Items
           </Typography>
         </Box>
-        <Box
-          sx={{
-            py: 1.5,
-            px: 3,
-            fontWeight: "bold",
-            borderTop: "1px solid #e0e0e0",
-            borderRight: "1px solid #e0e0e0",
-            borderLeft: "1px solid #e0e0e0",
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            backgroundColor:
-              activeView === "approvals"
-                ? theme.palette.mode === "dark"
-                  ? "#37474f"
-                  : "#e0f7fa"
-                : theme.palette.mode === "dark"
-                ? "#1f2529"
-                : "#f3f8fd",
-            color: theme.palette.text.primary,
-            cursor: "pointer",
-          }}
-        >
-          {salesRFQId && (
+        {salesRFQId && (
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                activeView === "approvals"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+            }}
+          >
             <Typography
               variant="subtitle1"
               sx={{
@@ -559,8 +566,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
             >
               Approvals
             </Typography>
-          )}
-        </Box>
+          </Box>
+        )}
       </Box>
 
       {/* Content area */}
