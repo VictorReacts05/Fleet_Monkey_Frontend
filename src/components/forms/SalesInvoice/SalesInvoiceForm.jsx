@@ -500,7 +500,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
     }));
     setConfirmAction(newStatus.toLowerCase());
     setConfirmMessage(`Are you sure you want to ${newStatus.toLowerCase()} this Sales Invoice?`);
-    setConfirmDialogOpen(true);
+    setConfirmDialogOpen(false);
   };
 
   const handleCancel = () => {
@@ -862,7 +862,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
             Cancel
           </Button>
           <Button
-            onClick={handleConfirmAction}
+            // onClick={handleConfirmAction}
             color="primary"
             autoFocus
             disabled={loading}
