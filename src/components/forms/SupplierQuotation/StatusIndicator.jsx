@@ -17,6 +17,7 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
   const [status, setStatus] = useState("Pending");
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [userApprovalStatus, setUserApprovalStatus] = useState("Pending");
 
   // Log props for debugging
   useEffect(() => {
@@ -134,6 +135,8 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
     },
   };
 
+  const validStatus = userApprovalStatus || "Pending";
+
   return (
     <>
       <Chip {...chipProps} />
@@ -151,9 +154,19 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
           },
         }} */
       >
-        <MenuItem onClick={handleApprove} disabled={loading}>
+        {/* <MenuItem onClick={handleApprove} disabled={loading}>
           Approve
-        </MenuItem>
+        </MenuItem> */}
+        {validStatus !== "Approved" && (
+          <MenuItem onClick={handleApprove} disabled={loading}>
+            {loading ? (
+              <CircularProgress size={16} sx={{ mr: 1 }} />
+            ) : (
+              <CheckCircle sx={{ mr: 1 }} color="success" />
+            )}
+            Approve
+          </MenuItem>
+        )}
       </Menu>
     </>
   );

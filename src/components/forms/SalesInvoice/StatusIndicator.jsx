@@ -1,252 +1,163 @@
-
-import { 
-  Box, 
-  Typography, 
-  Chip, 
-  Menu, 
-  MenuItem, 
-  CircularProgress, 
-  useTheme, 
-} from "@mui/material"; 
-import { CheckCircle, Cancel } from "@mui/icons-material"; 
-import axios from "axios"; 
-import { toast } from "react-toastify"; 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import {
+  Chip,
+  CircularProgress,
+  Menu,
+  MenuItem,
+  Typography,
+} from "@mui/material";
+import { CheckCircle, PendingActions } from "@mui/icons-material";
+import { toast } from "react-toastify";
+import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { getAuthHeader } from "./SalesInvoiceAPI";
 
-const StatusIndicator = ({ status, salesInvoiceId, onStatusChange, readOnly }) => { 
-  const theme = useTheme(); 
-  const [anchorEl, setAnchorEl] = useState(null); 
-  const [loading, setLoading] = useState(false); 
-  const [approvalRecord, setApprovalRecord] = useState(null); 
-  const [localStatus, setLocalStatus] = useState(status || "Unknown"); // Local status state
+const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  useEffect(() => { 
-    setLocalStatus(status || "Unknown"); // Sync with prop
-    if (salesInvoiceId) { 
-      fetchApprovalRecord(); 
-    } 
-  }, [salesInvoiceId, status]); 
+  // Fetch user approval status when component mounts or salesInvoiceId changes
+  React.useEffect(() => {
+    const loadStatus = async () => {
+      if (!salesInvoiceId) return;
 
-  const fetchApprovalRecord = async () => { 
-    try { 
-      const userData = localStorage.getItem("user"); 
-      if (!userData) { 
-        console.warn("No user data found in localStorage"); 
-        setApprovalRecord(null); 
-        return; 
-      } 
+      setLoading(true);
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        const approverId = user?.personId;
 
-      let user; 
-      try { 
-        user = JSON.parse(userData); 
-      } catch (error) { 
-        console.error("Error parsing user data:", error); 
-        setApprovalRecord(null); 
-        return; 
-      } 
-
-      const headers = user?.token 
-        ? { Authorization: `Bearer ${user.token}` } 
-        : {}; 
-
-        
-      const {  personId } = getAuthHeader();
-      const response = await axios.get( 
-        `${APIBASEURL}/salesInvoiceApproval/${salesInvoiceId}/${personId}`, 
-        { headers } 
-      ); 
-      console.log("Fetched approval record:", response.data); 
-
-      if ( 
-        response.data.success && 
-        response.data.data && 
-        response.data.data.length > 0 
-      ) { 
-        setApprovalRecord(response.data.data[0]); 
-      } else { 
-        setApprovalRecord(null); 
-      } 
-    } catch (error) { 
-      if (error.response && error.response.status === 404) { 
-        console.log("No approval record exists yet for this Sales Invoice"); 
-        setApprovalRecord(null); 
-      } else { 
-        console.error("Error fetching approval record:", error); 
-        setApprovalRecord(null); 
-      } 
-    } 
-  }; 
-
-  const updateStatus = async (newStatus) => { 
-    if (!salesInvoiceId || isNaN(parseInt(salesInvoiceId, 10))) { 
-      toast.error("Invalid Sales Invoice ID"); 
-      setAnchorEl(null); 
-      return; 
-    } 
-
-    try { 
-      setLoading(true); 
-      console.log(`Updating Sales Invoice status to: ${newStatus}`); 
-      console.log(`Sales Invoice ID: ${salesInvoiceId}, Type: ${typeof salesInvoiceId}`); 
-
-      const userData = localStorage.getItem("user"); 
-      if (!userData) { 
-        throw new Error("User data not found in localStorage"); 
-      } 
-
-      let user; 
-      try { 
-        user = JSON.parse(userData); 
-      } catch (error) { 
-        throw new Error("Invalid user data format"); 
-      } 
-
-      const headers = user?.token 
-        ? { Authorization: `Bearer ${user.token}` } 
-        : {}; 
-
-      // Use different endpoints for approve and disapprove
-      const endpoint = newStatus === "Approved" 
-        ? `${APIBASEURL}/sales-invoice/approve/` 
-        : `${APIBASEURL}/sales-invoice/disapprove/`; 
-      const approveData = { 
-        salesInvoiceId: parseInt(salesInvoiceId, 10), 
-      }; 
-
-      console.log(`Sending ${newStatus} request with data:`, approveData); 
-
-      const statusResponse = await axios.post( 
-        endpoint, 
-        approveData, 
-        { headers } 
-      ); 
-
-      console.log(`Sales Invoice ${newStatus} response:`, statusResponse.data); 
-
-      setLocalStatus(newStatus); // Update local status
-      if (onStatusChange) { 
-        onStatusChange(newStatus); 
-      } 
-
-      await fetchApprovalRecord(); 
-
-      const isApproved = newStatus === "Approved"; 
-      toast.success(`Sales Invoice ${isApproved ? "approved" : "disapproved"} successfully`); 
-    } catch (error) { 
-      console.error(`Error updating status to ${newStatus}:`, error); 
-      console.error("Error details:", { 
-        message: error.message, 
-        response: error.response?.data, 
-        status: error.response?.status, 
-      }); 
-      toast.error(`Failed to update status: ${error.response?.data?.message || error.message}`); 
-    } finally { 
-      setLoading(false); 
-      setAnchorEl(null); 
-    } 
-  }; 
-
-  const handleClick = (event) => { 
-    console.log("Chip clicked, readOnly:", readOnly); // Debug log
-    if (!readOnly) { 
-      setAnchorEl(event.currentTarget); 
-    } 
-  }; 
-
-  const handleClose = () => { 
-    setAnchorEl(null); 
-  }; 
-
-  const handleApprove = () => { 
-    console.log("Approve clicked"); // Debug log
-    updateStatus("Approved"); 
-  }; 
-
-  const handleDisapprove = () => { 
-    console.log("Disapprove clicked"); // Debug log
-    updateStatus("Pending"); 
-  }; 
-
-  const getChipProps = () => { 
-    switch (localStatus) { 
-      case "Approved": 
-        return { 
-          color: "success", 
-          icon: <CheckCircle />, 
-          clickable: !readOnly, 
-        }; 
-      default: // Handle "Pending" and "Unknown"
-        return { 
-          color: "error", // Use error for non-approved states
-          icon: <Cancel />, // Show cross icon
-          clickable: !readOnly, 
-        }; 
-    } 
-  }; 
-
-  const chipProps = getChipProps(); 
-  const validStatus = localStatus; 
-
-  return ( 
-    <Box 
-      sx={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 1, 
-        justifyContent: "center" // Match sample alignment
-      }}
-    >
-     
-      <Chip
-        label={
-          <Typography variant="body2">
-            {loading ? "Processing..." : validStatus}
-          </Typography>
+        if (!approverId) {
+          console.error("No personId found in localStorage");
+          throw new Error("User not authenticated");
         }
-        color={chipProps.color}
-        icon={
-          loading ? (
-            <CircularProgress size={16} color="inherit" />
-          ) : (
-            chipProps.icon
-          )
+
+        console.log("Fetching user approval status", {
+          salesInvoiceId,
+          approverId,
+        });
+        const { headers } = getAuthHeader();
+        const response = await axios.get(
+          `${APIBASEURL}/salesInvoiceApproval/${salesInvoiceId}/${approverId}`,
+          { headers }
+        );
+        console.log("Fetched approval record:", response.data);
+
+        const userStatus =
+          response.data.success &&
+          response.data.data &&
+          response.data.data.ApprovedYN === 1
+            ? "Approved"
+            : "Pending";
+        console.log("Fetched user status:", userStatus);
+        setStatus(userStatus);
+      } catch (error) {
+        console.error("Failed to fetch user approval status:", error);
+        if (error.response && error.response.status === 404) {
+          console.log("No approval record exists yet for this Sales Invoice");
+          setStatus("Pending");
+        } else {
+          toast.error("Unable to load approval status");
+          setStatus("Pending");
         }
-        onClick={handleClick}
-        clickable={chipProps.clickable}
-        sx={{
-          height: 28,
-          minWidth: 80,
-          padding: "2px 0px",
-          borderRadius: "12px",
-          position: "relative",
-          cursor: chipProps.clickable ? "pointer" : "default",
-          "& .MuiChip-label": {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }
-        }}
-      />
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStatus();
+  }, [salesInvoiceId]);
+
+  const handleApprove = async () => {
+    if (!salesInvoiceId || isNaN(parseInt(salesInvoiceId, 10))) {
+      toast.error("Invalid Sales Invoice ID");
+      setAnchorEl(null);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log(
+        `Initiating approval for Sales Invoice ID: ${salesInvoiceId}`
+      );
+      const { headers } = getAuthHeader();
+      const approveData = {
+        SalesInvoiceID: parseInt(salesInvoiceId, 10),
+      };
+
+      const response = await axios.post(
+        `${APIBASEURL}/salesInvoice/approve/`,
+        approveData,
+        { headers }
+      );
+      console.log("Approval response:", response);
+
+      if (response.data.success) {
+        toast.success("Approval recorded successfully");
+        setStatus("Approved");
+        onStatusChange?.("Approved");
+      } else {
+        throw new Error(response.data.message || "Approval failed");
+      }
+    } catch (error) {
+      console.error("Approval error:", error);
+      toast.error(`Failed to approve: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setAnchorEl(null);
+    }
+  };
+
+  const handleChipClick = (event) => {
+    if (!readOnly && status !== "Approved") {
+      console.log("Opening approval menu");
+      setAnchorEl(event.currentTarget);
+    }
+  };
+
+  const handleMenuClose = () => {
+    console.log("Closing approval menu");
+    setAnchorEl(null);
+  };
+
+  const chipProps = {
+    label: (
+      <Typography variant="body2">
+        {loading ? "Processing..." : status}
+      </Typography>
+    ),
+    icon: loading ? (
+      <CircularProgress size={16} />
+    ) : status === "Approved" ? (
+      <CheckCircle />
+    ) : (
+      <PendingActions />
+    ),
+    color: status === "Approved" ? "success" : "warning",
+    onClick: readOnly || status === "Approved" ? undefined : handleChipClick,
+    sx: {
+      height: 28,
+      minWidth: 80,
+      cursor: readOnly || status === "Approved" ? "default" : "pointer",
+    },
+  };
+
+  return (
+    <>
+      <Chip {...chipProps} />
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={handleClose}
-        sx={{
-          "& .MuiMenu-paper": {
-            minWidth: 200, // Set a minimum width for the menu
-            borderRadius: "8px", // Rounded corners for the menu
-            boxShadow: theme.shadows[3], // Use theme shadows for consistency
-            backgroundColor: theme.palette.background.paper, // Match theme background
-          },
-        }}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <MenuItem onClick={handleApprove}>Approve</MenuItem>
-        <MenuItem onClick={handleDisapprove}>Disapprove</MenuItem>
+        <MenuItem onClick={handleApprove} disabled={loading}>
+          Approve
+        </MenuItem>
       </Menu>
-    </Box>
-  ); 
-}; 
+    </>
+  );
+};
 
 export default StatusIndicator;

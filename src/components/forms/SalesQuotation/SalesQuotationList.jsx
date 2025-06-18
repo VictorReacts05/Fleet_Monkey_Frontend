@@ -299,7 +299,7 @@ const SalesQuotationList = () => {
       if (newSalesQuotationId) {
         toast.success("Sales Quotation created successfully");
         handleDialogClose();
-        navigate(`/sales-quotation/edit/${newSalesQuotationId}`);
+        // navigate(`/sales-quotation`);
       } else {
         throw new Error("No Sales Quotation ID returned");
       }
