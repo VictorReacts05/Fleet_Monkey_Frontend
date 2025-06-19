@@ -146,7 +146,7 @@ export const deleteUOM = async (id) => {
 
     const payload = {
       uomID: parseInt(id),
-      deletedById: personId,
+      createdById: personId,
     };
 
     console.log("Sending delete payload:", payload);

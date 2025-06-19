@@ -95,13 +95,12 @@ const FormForm = ({ formID, onClose, onSave }) => {
 
   return (
     <FormPage
-      title={formID ? "Edit Form" : "Create Form"}
       onSubmit={handleSubmit}
       onCancel={onClose}
       loading={loading}
     >
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid item sx={{width:'100%' }}>
           <FormInput
             name="FormName"
             label="Form Name"
@@ -111,6 +110,7 @@ const FormForm = ({ formID, onClose, onSave }) => {
             helperText={errors.FormName}
             required
             fullWidth
+          
           />
         </Grid>
       </Grid>

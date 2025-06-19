@@ -40,7 +40,7 @@ export const fetchCities = async (
   try {
     const user = getUserFromLocalStorage();
 
-    let url = `${APIBASEURL}/cities?pageNumber=${page}&pageSize=${limit}`;
+    let url = `${APIBASEURL}/city?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
@@ -85,7 +85,7 @@ export const createCity = async (cityData) => {
     };
 
     const response = await axios.post(
-      `${APIBASEURL}/cities`,
+      `${APIBASEURL}/city`,
       dataWithCreator,
       getAxiosConfig()
     );
@@ -124,7 +124,7 @@ export const updateCity = async (cityId, data) => {
     console.log("[DEBUG] City update request data:", dataWithUpdater);
 
     const response = await axios.put(
-      `${APIBASEURL}/cities/${cityId}`,
+      `${APIBASEURL}/city/${cityId}`,
       dataWithUpdater,
       getAxiosConfig()
     );
@@ -160,7 +160,7 @@ export const deleteCity = async (id, deletedById) => {
 
     const requestData = { deletedById: finalDeletedById };
 
-    const response = await axios.delete(`${APIBASEURL}/cities/${id}`, {
+    const response = await axios.delete(`${APIBASEURL}/city/${id}`, {
       ...getAxiosConfig(),
       data: requestData,
     });
@@ -182,7 +182,7 @@ export const getCityById = async (id) => {
   try {
     const user = getUserFromLocalStorage();
 
-    const response = await axios.get(`${APIBASEURL}/cities/${id}`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/city/${id}`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to get city by ID:", {

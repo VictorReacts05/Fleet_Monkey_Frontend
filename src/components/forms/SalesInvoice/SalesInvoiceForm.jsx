@@ -862,7 +862,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
             Cancel
           </Button>
           <Button
-            onClick={handleConfirmAction}
+            // onClick={handleConfirmAction}
             color="primary"
             autoFocus
             disabled={loading}
