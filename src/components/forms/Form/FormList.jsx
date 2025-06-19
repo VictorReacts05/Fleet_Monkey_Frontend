@@ -34,7 +34,15 @@ const FormList = () => {
       flex: 1,
       valueFormatter: (params) => {
         if (!params.value) return "N/A";
-        return new Date(params.value).toLocaleDateString();
+        const date = new Date(params.value);
+        return date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
       }
     }
   ];
