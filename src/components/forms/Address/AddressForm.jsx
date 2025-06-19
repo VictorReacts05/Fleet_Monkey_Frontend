@@ -1,4 +1,3 @@
-// src/features/address/AddressForm.jsx
 import React, { useState, useEffect } from "react";
 import { Box, CircularProgress } from "@mui/material";
 import { toast } from "react-toastify";
@@ -15,7 +14,12 @@ import {
   getAddressById,
 } from "./AddressAPI";
 
-const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) => {
+const AddressForm = ({
+  addressId = null,
+  initialData = null,
+  onSave,
+  onClose,
+}) => {
   // Form state
   const [formData, setFormData] = useState({
     addressName: "",
@@ -44,56 +48,110 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
   const [cities, setCities] = useState([]);
   const [countries, setCountries] = useState([]);
 
-  // 1) Fetch dropdown data on mount
+  // Fetch dropdown data on mount
   useEffect(() => {
     const loadDropdowns = async () => {
       try {
         setDropdownLoading(true);
 
-        const [typesData, citiesData, countriesDataRaw] = await Promise.all([
+        // Fetch all dropdown data concurrently
+        const [typesData, citiesData, countriesData] = await Promise.all([
           fetchAddressTypes(),
           fetchCities(),
           fetchCountries(),
         ]);
 
-        // typesData: array of { AddressTypeID, AddressType, … }
-        // citiesData: array of { CityID, CityName, … }
-        // countriesDataRaw: array of { CountryOfOriginID, CountryOfOrigin, … }
+        console.log("Raw address types data:", typesData);
+        console.log("Raw cities data:", citiesData);
+        console.log("Raw countries data:", countriesData);
 
         // Map address types → { value, label }
-        const mappedTypes = typesData.map((item) => ({
-          value: item.AddressTypeID || item.addressTypeId || item.id,
-          label:
-            item.AddressType ||
-            item.addressType ||
-            item.AddressTypeName ||
-            item.addressTypeName ||
-            item.name ||
-            "",
-        }));
+        const mappedTypes = Array.isArray(typesData)
+          ? typesData
+              .map((item, index) => {
+                const value =
+                  item.AddressTypeID != null
+                    ? item.AddressTypeID.toString()
+                    : "";
+                const label = item.AddressType || "";
+                console.log(`Mapping address type [${index}]:`, {
+                  value,
+                  label,
+                  item,
+                });
+                return { value, label };
+              })
+              .filter((item) => {
+                const isValid = item.value && item.label;
+                if (!isValid)
+                  console.warn(`Invalid address type filtered out:`, item);
+                return isValid;
+              })
+          : [];
+        console.log("Mapped address types:", mappedTypes);
 
         // Map cities → { value, label }
-        const mappedCities = citiesData.map((item) => ({
-          value: item.CityID || item.cityId || item.id,
-          label: item.CityName || item.cityName || item.name || "",
-        }));
-
-        // *** Here's the fix: map countriesDataRaw correctly ***
-        const mappedCountries = countriesDataRaw.map((item) => ({
-          // use CountryOfOriginID as value
-          value: item.CountryOfOriginID,
-          // use CountryOfOrigin as label
-          label: item.CountryOfOrigin,
-        }));
-
-        // Debug logs (optional):
-        console.log("Mapped addressTypes:", mappedTypes);
+        const mappedCities = Array.isArray(citiesData)
+          ? citiesData
+              .map((item, index) => {
+                const value = item.CityID != null ? item.CityID.toString() : "";
+                const label = item.CityName || "";
+                console.log(`Mapping city [${index}]:`, { value, label, item });
+                return { value, label };
+              })
+              .filter((item) => {
+                const isValid = item.value && item.label;
+                if (!isValid) console.warn(`Invalid city filtered out:`, item);
+                return isValid;
+              })
+          : [];
         console.log("Mapped cities:", mappedCities);
+
+        // Map countries → { value, label }
+        const mappedCountries = Array.isArray(countriesData)
+          ? countriesData
+              .map((item, index) => {
+                const value =
+                  item.CountryOfOriginID != null
+                    ? item.CountryOfOriginID.toString()
+                    : "";
+                const label = item.CountryOfOrigin || "";
+                console.log(`Mapping country [${index}]:`, {
+                  value,
+                  label,
+                  item,
+                });
+                return { value, label };
+              })
+              .filter((item) => {
+                const isValid = item.value && item.label;
+                if (!isValid)
+                  console.warn(`Invalid country filtered out:`, item);
+                return isValid;
+              })
+          : [];
         console.log("Mapped countries:", mappedCountries);
 
         setAddressTypes(mappedTypes);
         setCities(mappedCities);
         setCountries(mappedCountries);
+
+        // Debug notifications
+        if (!mappedTypes.length) {
+          toast.warn(
+            "No valid address types loaded. Check API response for http://localhost:7000/api/address-types"
+          );
+        }
+        if (!mappedCities.length) {
+          toast.warn(
+            "No valid cities loaded. Check API response for http://localhost:7000/api/city"
+          );
+        }
+        if (!mappedCountries.length) {
+          toast.warn(
+            "No valid countries loaded. Check API response for http://localhost:7000/api/country-of-origin"
+          );
+        }
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
         toast.error(`Failed to load dropdown data: ${error.message || error}`);
@@ -105,34 +163,41 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
     loadDropdowns();
   }, []);
 
-  // 2) If editing (addressId) and initialData passed, populate formData
+  // Populate formData if editing and initialData is provided
   useEffect(() => {
     if (addressId && initialData) {
+      console.log("Populating form with initialData:", initialData);
       setFormData({
-        addressName: initialData.AddressName || initialData.addressName || "",
-        addressTypeId: initialData.AddressTypeID || initialData.addressTypeId || "",
-        addressLine1: initialData.AddressLine1 || initialData.addressLine1 || "",
-        addressLine2: initialData.AddressLine2 || initialData.addressLine2 || "",
-        cityId: initialData.CityID || initialData.cityId || "",
-        countryId: initialData.CountryID || initialData.countryId || "",
+        addressName: initialData.AddressName || "",
+        addressTypeId:
+          initialData.AddressTypeID != null
+            ? initialData.AddressTypeID.toString()
+            : "",
+        addressLine1: initialData.AddressLine1 || "",
+        addressLine2: initialData.AddressLine2 || "",
+        cityId: initialData.City != null ? initialData.City.toString() : "",
+        countryId:
+          initialData.Country != null ? initialData.Country.toString() : "",
       });
     }
   }, [addressId, initialData]);
 
-  // 3) If editing but initialData is not yet available, fetch it
+  // Fetch address data if editing but no initialData
   useEffect(() => {
     if (addressId && !initialData) {
       const fetchOne = async () => {
         try {
           setLoading(true);
           const data = await getAddressById(addressId);
+          console.log("Fetched address data for edit:", data);
           setFormData({
-            addressName: data.AddressName || data.addressName || "",
-            addressTypeId: data.AddressTypeID || data.addressTypeId || "",
-            addressLine1: data.AddressLine1 || data.addressLine1 || "",
-            addressLine2: data.AddressLine2 || data.addressLine2 || "",
-            cityId: data.CityID || data.cityId || "",
-            countryId: data.CountryID || data.countryId || "",
+            addressName: data.AddressName || "",
+            addressTypeId:
+              data.AddressTypeID != null ? data.AddressTypeID.toString() : "",
+            addressLine1: data.AddressLine1 || "",
+            addressLine2: data.AddressLine2 || "",
+            cityId: data.City != null ? data.City.toString() : "",
+            countryId: data.Country != null ? data.Country.toString() : "",
           });
         } catch (error) {
           console.error("Error loading address:", error);
@@ -150,7 +215,8 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
     switch (field) {
       case "addressName":
         if (!value.trim()) return "Address name is required";
-        if (value.length < 2) return "Address name must be at least 2 characters";
+        if (value.length < 2)
+          return "Address name must be at least 2 characters";
         if (!/^[a-zA-Z0-9\s-]+$/.test(value))
           return "Address name can only contain letters, numbers, spaces, and hyphens";
         return "";
@@ -159,7 +225,8 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         return "";
       case "addressLine1":
         if (!value.trim()) return "Address line 1 is required";
-        if (value.length < 5) return "Address line 1 must be at least 5 characters";
+        if (value.length < 5)
+          return "Address line 1 must be at least 5 characters";
         return "";
       case "addressLine2":
         return ""; // optional
@@ -177,7 +244,10 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
   const validateForm = () => {
     const newErrors = {
       addressName: getValidationError("addressName", formData.addressName),
-      addressTypeId: getValidationError("addressTypeId", formData.addressTypeId),
+      addressTypeId: getValidationError(
+        "addressTypeId",
+        formData.addressTypeId
+      ),
       addressLine1: getValidationError("addressLine1", formData.addressLine1),
       addressLine2: getValidationError("addressLine2", formData.addressLine2),
       cityId: getValidationError("cityId", formData.cityId),
@@ -190,18 +260,23 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
   // Handle field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Field changed: ${name} = ${value}`);
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (isSubmitted) {
-      setErrors((prev) => ({ ...prev, [name]: getValidationError(name, value) }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: getValidationError(name, value),
+      }));
     }
   };
 
   // Submit handler
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     if (e?.preventDefault) {
-     e.preventDefault();
+      e.preventDefault();
     }
+    setIsSubmitted(true);
     if (!validateForm()) return;
 
     try {
@@ -216,13 +291,14 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         toast.success("Address created successfully");
       }
 
-      // Return newly created/updated record
       if (onSave) onSave(response.data || response);
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving address:", error);
       const message = error.message || error;
-      toast.error(`Failed to ${addressId ? "update" : "create"} address: ${message}`);
+      toast.error(
+        `Failed to ${addressId ? "update" : "create"} address: ${message}`
+      );
     } finally {
       setLoading(false);
     }
@@ -237,6 +313,11 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
     );
   }
 
+  // Log final dropdown options before rendering
+  console.log("Rendering FormSelect with addressTypes:", addressTypes);
+  console.log("Rendering FormSelect with cities:", cities);
+  console.log("Rendering FormSelect with countries:", countries);
+
   return (
     <FormPage onSubmit={handleSubmit} onCancel={onClose} loading={loading}>
       <FormInput
@@ -248,7 +329,6 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         required
         placeholder="Enter address name"
       />
-
       <FormSelect
         label="Address Type"
         name="addressTypeId"
@@ -258,7 +338,6 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         options={addressTypes}
         required
       />
-
       <FormTextArea
         label="Address Line 1"
         name="addressLine1"
@@ -269,7 +348,6 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         rows={3}
         placeholder="Enter address line 1"
       />
-
       <FormTextArea
         label="Address Line 2"
         name="addressLine2"
@@ -279,7 +357,6 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         rows={2}
         placeholder="(Optional) Address line 2"
       />
-
       <FormSelect
         label="City"
         name="cityId"
@@ -289,7 +366,6 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
         options={cities}
         required
       />
-
       <FormSelect
         label="Country"
         name="countryId"
@@ -304,3 +380,4 @@ const AddressForm = ({ addressId = null, initialData = null, onSave, onClose }) 
 };
 
 export default AddressForm;
+  

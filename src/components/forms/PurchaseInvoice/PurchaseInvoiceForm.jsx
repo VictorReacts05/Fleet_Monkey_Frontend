@@ -262,7 +262,7 @@ const PurchaseInvoiceForm = ({
           ? `${APIBASEURL}/pinvoice/approve`
           : `${APIBASEURL}/purchase-invoice/disapprove/`;
       const approveData = {
-        pInvoiceID: parseInt(purchaseInvoiceId, 10),
+        PInvoiceID: parseInt(purchaseInvoiceId, 10),
         ApproverID: parseInt(personId, 10), // Include ApproverID
       };
 

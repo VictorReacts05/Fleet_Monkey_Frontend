@@ -9,6 +9,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Tooltip,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../Common/DataTable";
@@ -16,15 +22,23 @@ import SearchBar from "../../Common/SearchBar";
 import { toast } from "react-toastify";
 import SalesInvoiceForm from "./SalesInvoiceForm";
 import { Chip } from "@mui/material";
-import { fetchSalesInvoices, deleteSalesInvoice } from "./SalesInvoiceAPI";
+import {
+  fetchSalesInvoices,
+  deleteSalesInvoice,
+  fetchSalesOrders,
+  createSalesInvoice,
+} from "./SalesInvoiceAPI";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import Add from "@mui/icons-material/Add";
 
 const getHeaders = () => {
   return {
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${JSON.parse(localStorage.getItem("user") || "{}")?.personId}`,
+      Authorization: `Bearer ${
+        JSON.parse(localStorage.getItem("user") || "{}")?.personId
+      }`,
     },
   };
 };
@@ -35,12 +49,15 @@ const SalesInvoiceList = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [salesInvoices, setSalesInvoices] = useState([]);
   const [totalRows, setTotalRows] = useState(0);
   const [customers, setCustomers] = useState([]);
   const [customersLoaded, setCustomersLoaded] = useState(false);
+  const [salesOrders, setSalesOrders] = useState([]);
+  const [selectedSalesOrder, setSelectedSalesOrder] = useState("");
 
   // Fetch customers list
   useEffect(() => {
@@ -53,7 +70,9 @@ const SalesInvoiceList = () => {
         const customersData = response.data.data || [];
         if (customersData.length === 0) {
           console.warn("No customers found in API response");
-          toast.warn("No customers found. Customer names may not display correctly.");
+          toast.warn(
+            "No customers found. Customer names may not display correctly."
+          );
         }
         const mappedCustomers = customersData.map((customer) => ({
           id: String(customer.CustomerID),
@@ -70,6 +89,29 @@ const SalesInvoiceList = () => {
     };
 
     fetchCustomers();
+  }, []);
+
+  // Fetch sales orders for dropdown
+  useEffect(() => {
+    const loadSalesOrders = async () => {
+      try {
+        const salesOrdersData = await fetchSalesOrders();
+        const formattedSalesOrders = [
+          { value: "", label: "Select a Sales Order" },
+          ...salesOrdersData.map((order) => ({
+            value: String(order.SalesOrderID),
+            label: order.Series || `Sales Order #${order.SalesOrderID}`,
+          })),
+        ];
+        setSalesOrders(formattedSalesOrders);
+      } catch (error) {
+        console.error("Error fetching sales orders:", error);
+        toast.error("Failed to fetch sales orders: " + error.message);
+        setSalesOrders([{ value: "", label: "No Sales Orders Available" }]);
+      }
+    };
+
+    loadSalesOrders();
   }, []);
 
   // Fetch sales invoices and map CustomerID to CustomerName
@@ -91,9 +133,11 @@ const SalesInvoiceList = () => {
           const customer = customers.find(
             (c) => String(c.id) === String(invoice.CustomerID)
           );
-          const invoiceId = invoice.SalesInvoiceID !== undefined && invoice.SalesInvoiceID !== null
-            ? invoice.SalesInvoiceID
-            : `fallback-${index}`; // Fallback if SalesInvoiceID is missing
+          const invoiceId =
+            invoice.SalesInvoiceID !== undefined &&
+            invoice.SalesInvoiceID !== null
+              ? invoice.SalesInvoiceID
+              : `fallback-${index}`; // Fallback if SalesInvoiceID is missing
           return {
             id: `${invoiceId}`,
             Series: invoice.Series || "-",
@@ -199,7 +243,9 @@ const SalesInvoiceList = () => {
   const handleDialogClose = () => {
     setViewDialogOpen(false);
     setDeleteDialogOpen(false);
+    setCreateDialogOpen(false);
     setSelectedInvoice(null);
+    setSelectedSalesOrder("");
   };
 
   const confirmDelete = async () => {
@@ -225,6 +271,28 @@ const SalesInvoiceList = () => {
     setPage(0);
   };
 
+  const handleCreateSalesInvoice = async () => {
+    if (!selectedSalesOrder) {
+      toast.error("Please select a Sales Order");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await createSalesInvoice({
+        salesOrderId: parseInt(selectedSalesOrder),
+      });
+      toast.success("Sales Invoice created successfully");
+      handleDialogClose();
+      navigate(`/sales-invoice/view/${response.data.SalesInvoiceID}`);
+    } catch (error) {
+      console.error("Error creating Sales Invoice:", error);
+      toast.error("Failed to create Sales Invoice: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box>
       <Box
@@ -237,10 +305,28 @@ const SalesInvoiceList = () => {
       >
         <Typography variant="h5">Bill Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search Bills..."
-          />
+          <SearchBar onSearch={handleSearch} placeholder="Search Bills..." />
+          <Tooltip title="Add New Sales Invoice">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                console.log("Add New Sales Invoice clicked");
+                setCreateDialogOpen(true);
+              }}
+              sx={{
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+                height: 40,
+                width: 40,
+                ml: 1,
+              }}
+            >
+              <Add />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
 
@@ -298,6 +384,52 @@ const SalesInvoiceList = () => {
           </Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={createDialogOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Create New Sales Invoice</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel id="sales-order-select-label">Sales Order</InputLabel>
+              <Select
+                labelId="sales-order-select-label"
+                value={selectedSalesOrder}
+                label="Sales Order"
+                onChange={(e) => setSelectedSalesOrder(e.target.value)}
+              >
+                {salesOrders.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {salesOrders.length === 1 && salesOrders[0].value === "" && (
+              <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                No Sales Orders available. Please create a Sales Order first.
+              </Typography>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreateSalesInvoice}
+            color="primary"
+            variant="contained"
+            disabled={loading || !selectedSalesOrder}
+          >
+            Create
           </Button>
         </DialogActions>
       </Dialog>

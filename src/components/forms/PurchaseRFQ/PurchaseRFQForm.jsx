@@ -594,7 +594,6 @@ const PurchaseRFQForm = ({
                   height: "37px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   transition: "all 0.3s ease-in-out",
-                  marginLeft: "16px",
                 }}
               >
                 <Typography
