@@ -24,7 +24,7 @@ const RolesList = () => {
 
   const columns = [
     { field: "roleName", headerName: "Role Name", flex: 1 },
-    {
+    /* {
       field: "readAccess",
       headerName: "Read",
       width: 120,
@@ -59,7 +59,7 @@ const RolesList = () => {
           />
         );
       },
-    },
+    }, */
   ];
 
   const loadRoles = async () => {

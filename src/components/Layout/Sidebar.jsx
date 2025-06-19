@@ -103,11 +103,11 @@ const menuItems = [
     path: "/form-role-approvers",
   },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
-  {
-    text: "Project Parameters",
-    icon: <SettingsApplicationsIcon />,
-    path: "/project-parameters",
-  },
+  // {
+  //   text: "Project Parameters",
+  //   icon: <SettingsApplicationsIcon />,
+  //   path: "/project-parameters",
+  // },
   { text: "Roles", icon: <PersonIcon />, path: "/roles" },
   {
     text: "Subscriptions",

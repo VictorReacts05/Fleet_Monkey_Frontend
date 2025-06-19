@@ -4,6 +4,7 @@ import { createRole, updateRole, getRoleById } from "./RolesAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
 import FormPage from "../../Common/FormPage";
+import { WidthFull } from "@mui/icons-material";
 
 const RolesForm = ({ roleId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -95,13 +96,13 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
 
   return (
     <FormPage
-      title={roleId ? "Edit Role" : "Create Role"}
+      // title={roleId ? "Edit Role" : "Create Role"}
       onSubmit={handleSubmit}
       onCancel={onClose}
       loading={loading}
     >
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid item xs={12} sx={{ width: "100%" }}>
           <FormInput
             name="RoleName"
             label="Role Name"
@@ -113,7 +114,7 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
             fullWidth
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        {/* <Grid item xs={12} md={6}>
           <FormControlLabel
             control={
               <Checkbox
@@ -138,7 +139,7 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
             }
             label="Write Access"
           />
-        </Grid>
+        </Grid>*/}
       </Grid>
     </FormPage>
   );

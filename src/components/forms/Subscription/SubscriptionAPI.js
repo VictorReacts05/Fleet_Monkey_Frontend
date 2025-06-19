@@ -39,7 +39,7 @@ export const fetchSubscriptionPlans = async (
     console.log("token:", localStorage.getItem("token"));
     console.log("user data:", localStorage.getItem("user"));
 
-    let url = `${APIBASEURL}/subscriptionPlan?page=${page}&limit=${limit}`;
+    let url = `${APIBASEURL}/subscriptionPlan?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 
