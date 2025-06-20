@@ -801,13 +801,13 @@ const PurchaseRFQForm = ({
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Collection Address"
-            value={formData.CollectionAddress || "-"}
+            value={formData.CollectionAddressID || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Destination Address"
-            value={formData.DestinationAddress || "-"}
+            value={formData.DestinationAddressID || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -851,166 +851,141 @@ const PurchaseRFQForm = ({
         readOnly={readOnly || formData.Status === "Approved"}
       />
 
-      <Dialog
-        open={suppliersDialogOpen}
-        onClose={handleCloseSuppliersDialog}
-        maxWidth="md"
+
+<Dialog
+  open={suppliersDialogOpen}
+  onClose={handleCloseSuppliersDialog}
+  maxWidth="md"
+  fullWidth
+>
+  <DialogTitle
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+    }}
+  >
+    <Typography variant="h5" component="div">
+      Select Suppliers
+    </Typography>
+    {selectedSuppliers.length > 0 && (
+      <Typography variant="body2" sx={{ mr: 2 }}>
+        {selectedSuppliers.length} suppliers selected
+      </Typography>
+    )}
+  </DialogTitle>
+
+  <DialogContent dividers>
+    <Box sx={{ mb: 2 }}>
+      <TextField
         fullWidth
+        placeholder="Search suppliers..."
+        value={supplierSearchTerm}
+        onChange={(e) => setSupplierSearchTerm(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
+        variant="outlined"
+        size="small"
+      />
+    </Box>
+    {loadingSuppliers ? (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+        <CircularProgress />
+      </Box>
+    ) : (
+      <List
+        sx={{
+          width: "100%",
+          bgcolor: "background.paper",
+          maxHeight: "400px",
+          overflow: "auto",
+          border: "1px solid #e0e0e0",
+          borderRadius: "4px",
+        }}
       >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Typography variant="h5" component="div">
-            Select Suppliers
-          </Typography>
-          {selectedSuppliers.length > 0 && (
-            <Typography variant="body2" sx={{ mr: 2 }}>
-              {selectedSuppliers.length} suppliers selected
-            </Typography>
-          )}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mb: 2 }}>
-            <TextField
-              fullWidth
-              placeholder="Search suppliers..."
-              value={supplierSearchTerm}
-              onChange={(e) => setSupplierSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              variant="outlined"
-              size="small"
-            />
-          </Box>
-          {loadingSuppliers ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <List
-              sx={{
-                width: "100%",
-                bgcolor: "background.paper",
-                maxHeight: "400px",
-                overflow: "auto",
-                border: "1px solid #e0e0e0",
-                borderRadius: "4px",
-              }}
-            >
-              {suppliers.length > 0 ? (
-                suppliers
-                  .filter((supplier) =>
-                    supplier.SupplierName?.toLowerCase().includes(
-                      supplierSearchTerm.toLowerCase()
-                    )
-                  )
-                  .map((supplier) => {
-                    const isSelected = selectedSuppliers.some(
-                      (s) => s.SupplierID === supplier.SupplierID
-                    );
-                    return (
-                      <React.Fragment key={supplier.SupplierID}>
-                        <ListItem
-                          button
-                          onClick={() => handleSupplierToggle(supplier)}
-                          sx={{
-                            backgroundColor: isSelected
-                              ? theme.palette.primary.light
-                              : "transparent",
-                            "&:hover": {
-                              backgroundColor: isSelected
-                                ? theme.palette.primary.main
-                                : theme.palette.action.hover,
-                            },
-                          }}
-                        >
-                          <ListItemIcon>
-                            <Checkbox
-                              edge="start"
-                              checked={isSelected}
-                              tabIndex={-1}
-                              disableRipple
-                              color="primary"
-                            />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={supplier.SupplierName}
-                            secondary={
-                              supplier.ContactPerson || "No contact person"
-                            }
-                          />
-                        </ListItem>
-                        <Divider />
-                      </React.Fragment>
-                    );
-                  })
-              ) : (
-                <ListItem>
-                  <ListItemText primary="No suppliers found" />
-                </ListItem>
-              )}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSuppliersDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmSupplierSelection}
-            variant="contained"
-            color="primary"
-            disabled={selectedSuppliers.length === 0}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog
-        open={confirmDialogOpen}
-        onClose={handleCancelAction}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Confirm Action</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {confirmMessage}
-            {confirmAction === "send" && (
-              <Typography
-                variant="body2"
-                color="warning.main"
-                sx={{ mt: 2, fontWeight: "medium" }}
-              >
-                Note: Email sending may take several minutes depending on the
-                number of suppliers. Please do not close this page during the
-                process.
-              </Typography>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelAction} color="primary">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmAction}
-            color="primary"
-            autoFocus
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : null}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {suppliers.length > 0 ? (
+          suppliers
+            .filter((supplier) =>
+              supplier.SupplierName?.toLowerCase().includes(
+                supplierSearchTerm.toLowerCase()
+              )
+            )
+            .map((supplier) => {
+              const isSelected = selectedSuppliers.some(
+                (s) => s.SupplierID === supplier.SupplierID
+              );
+              return (
+                <React.Fragment key={supplier.SupplierID}>
+                  <ListItem
+  button
+  onClick={() => handleSupplierToggle(supplier)}
+  sx={{
+    borderRadius: 1,
+    mx: 1,
+    my: 0.5,
+    px: 2,
+    backgroundColor: isSelected
+      ? theme.palette.action.selected
+      : "transparent",
+    transition: "background-color 0.3s",
+    "&:hover": {
+      backgroundColor: theme.palette.action.hover,
+      "& .MuiListItemText-primary": {
+        color: theme.palette.primary.main,
+        fontWeight: "bold",
+      },
+      "& .MuiCheckbox-root": {
+        color: theme.palette.primary.main,
+      },
+    },
+  }}
+>
+  <ListItemIcon>
+    <Checkbox
+      edge="start"
+      checked={isSelected}
+      tabIndex={-1}
+      disableRipple
+      color="primary"
+    />
+  </ListItemIcon>
+  <ListItemText
+    primary={supplier.SupplierName}
+    secondary={supplier.ContactPerson || "No contact person"}
+  />
+</ListItem>
+
+                  <Divider />
+                </React.Fragment>
+              );
+            })
+        ) : (
+          <ListItem>
+            <ListItemText primary="No suppliers found" />
+          </ListItem>
+        )}
+      </List>
+    )}
+  </DialogContent>
+
+  <DialogActions>
+    <Button onClick={handleCloseSuppliersDialog}>Cancel</Button>
+    <Button
+      onClick={handleConfirmSupplierSelection}
+      variant="contained"
+      color="primary"
+      disabled={selectedSuppliers.length === 0}
+    >
+      Confirm
+    </Button>
+  </DialogActions>
+</Dialog>
+
     </FormPage>
   );
 };

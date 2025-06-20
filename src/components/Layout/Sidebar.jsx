@@ -81,7 +81,7 @@ const menuItems = [
     path: "/sales-invoice" 
   },
   {
-    text: "Pending",
+    text: "Pending Approvals",
     icon: <HourglassTopIcon />,
     path: "/pending-approvals",
   },
@@ -176,7 +176,7 @@ const Sidebar = ({ open, variant, onClose }) => {
         item.text === "Purchase Order" ||
         item.text === "Invoice" ||
         item.text === "Bill" ||
-        item.text==="Pending"
+        item.text==="Pending Approvals"
     ),
   ];
 
@@ -192,7 +192,7 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Purchase Order" &&
       item.text !== "Invoice" &&
       item.text !== "Bill" &&
-      item.text !== "Pending" 
+      item.text !== "Pending Approvals" 
   );
 
   // Update the mainMenuItems to include Masters as second item
