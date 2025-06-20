@@ -218,8 +218,6 @@ const Dashboard = () => {
               borderRadius: 2,
               height: '100%',
               minHeight: 350,
-              bgcolor: '#1a1a1a',
-              color: 'white',
             }}
           >
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
@@ -256,8 +254,6 @@ const Dashboard = () => {
               borderRadius: 2,
               height: '100%',
               minHeight: 350,
-              bgcolor: '#1a1a1a',
-              color: 'white',
             }}
           >
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
@@ -269,8 +265,8 @@ const Dashboard = () => {
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis dataKey="name" stroke="white" />
-                <YAxis stroke="white" />
+                <XAxis dataKey="name"  />
+                <YAxis  />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="count" fill="#8884d8" name="Count" />
