@@ -265,7 +265,7 @@ export const getAddressTypeById = async (id) => {
 
 // Fetch address types with pagination and filtering
 export const fetchAddressTypes = async (
-  page,
+  pageNumber,
   pageSize,
   fromDate,
   toDate,
@@ -275,7 +275,7 @@ export const fetchAddressTypes = async (
     const { headers } = getAuthHeader();
 
     const params = {
-      page,
+      pageNumber,
       pageSize,
       ...(fromDate && { fromDate }),
       ...(toDate && { toDate }),

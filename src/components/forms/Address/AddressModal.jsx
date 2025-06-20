@@ -1,52 +1,52 @@
-// src/features/address/AddressModal.jsx
-import React, { useState, useEffect } from "react";
-import { Dialog, DialogTitle, DialogContent, CircularProgress, Box } from "@mui/material";
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+  Box,
+  Divider,
+  useTheme,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import AddressForm from "./AddressForm";
-import { getAddressById } from "./AddressAPI";
-import { toast } from "react-toastify";
 
 const AddressModal = ({ open, addressId = null, onClose, onSave }) => {
-  const [loading, setLoading] = useState(false);
-  const [initialData, setInitialData] = useState(null);
-
-  // Whenever addressId changes (or modal opens), load initial data
-  useEffect(() => {
-    if (addressId) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const data = await getAddressById(addressId);
-          setInitialData(data);
-        } catch (error) {
-          console.error("Error loading address:", error);
-          toast.error(`Failed to load address: ${error.message || error}`);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
-    } else {
-      // “New Address” mode → clear any leftover data
-      setInitialData(null);
-    }
-  }, [addressId]);
+  const theme = useTheme();
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{addressId ? "Edit Address" : "New Address"}</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+        },
+      }}
+    >
+      <DialogTitle>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold">
+            {addressId ? "Edit Address" : "Add New Address"}
+          </Typography>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+      <Divider />
       <DialogContent>
-        {addressId && loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" p={4}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <AddressForm
-            addressId={addressId}
-            initialData={initialData}
-            onSave={onSave}
-            onClose={onClose}
-          />
-        )}
+        <AddressForm addressId={addressId} onClose={onClose} onSave={onSave} />
       </DialogContent>
     </Dialog>
   );
