@@ -11,8 +11,8 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
 import { toast } from "react-toastify";
 import { Add } from "@mui/icons-material";
 import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
@@ -71,53 +71,56 @@ const PurchaseInvoiceList = () => {
 
   // Fetch purchase invoices and map SupplierID to SupplierName
   useEffect(() => {
-    const loadPurchaseInvoices = async () => {
-      setLoading(true);
-      try {
-        const response = await fetchPurchaseInvoices(page + 1, rowsPerPage);
-        const invoices = response.data || [];
-        console.log("Fetched Purchase Invoices:", invoices);
+  const loadPurchaseInvoices = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchPurchaseInvoices(page + 1, rowsPerPage);
+      const invoices = response.data || [];
+      console.log("Fetched Purchase Invoices (length):", invoices.length, "Data:", invoices);
 
-        if (invoices.length === 0) {
-          console.warn("No purchase invoices found in API response");
-          toast.warn("No purchase invoices found.");
-        }
-
-        // Map invoices with SupplierName using suppliers list
-        const mappedInvoices = invoices.map((invoice, index) => {
-          const supplier = suppliers.find(
-            (s) => String(s.id) === String(invoice.SupplierID)
-          );
-          const invoiceId = invoice.PInvoiceID !== undefined && invoice.PInvoiceID !== null
-            ? invoice.PInvoiceID
-            : `fallback-${index}`; // Fallback if PInvoiceID is missing
-          return {
-            id: `${invoiceId}`, // Ensure unique ID for DataTable keys
-            Series: invoice.Series || "-",
-            SupplierID: String(invoice.SupplierID) || "N/A",
-            SupplierName: supplier?.name || `Supplier ID: ${invoice.SupplierID} (Not Found)`,
-            CustomerName: invoice.CustomerName || "Unknown Customer", // Use CustomerName directly from sample
-            ServiceType: invoice.ServiceType?.ServiceType || "Unknown Service",
-            Status: invoice.Status || "Pending",
-            IsPaid: invoice.IsPaid || false,
-          };
-        });
-
-        console.log("Mapped Purchase Invoices:", mappedInvoices);
-        setPurchaseInvoices(mappedInvoices);
-        setTotalRows(response.total || 0);
-      } catch (error) {
-        console.error("Error fetching purchase invoices:", error);
-        toast.error("Failed to fetch purchase invoices: " + error.message);
-      } finally {
-        setLoading(false);
+      if (invoices.length === 0) {
+        console.warn("No purchase invoices found in API response");
+        toast.warn("No purchase invoices found.");
       }
-    };
 
-    if (suppliersLoaded) {
-      loadPurchaseInvoices();
+      // Map invoices with SupplierName using suppliers list
+      const mappedInvoices = invoices.map((invoice, index) => {
+        const supplier = suppliers.find(
+          (s) => String(s.id) === String(invoice.SupplierID)
+        );
+        const invoiceId = invoice.PInvoiceID !== undefined && invoice.PInvoiceID !== null
+          ? invoice.PInvoiceID
+          : `fallback-${index}`; // Fallback if PInvoiceID is missing
+        return {
+          id: `${invoiceId}`, // Ensure unique ID for DataTable keys
+          Series: invoice.Series || "-",
+          SupplierID: String(invoice.SupplierID) || "-",
+          SupplierName: supplier?.name || ` - `,
+          CustomerName: invoice.CustomerName || "-",
+          ServiceType: invoice.ServiceType?.ServiceType || "-",
+          Status: invoice.Status || "Pending",
+          IsPaid: invoice.IsPaid || false,
+        };
+      });
+
+      console.log("Mapped Purchase Invoices (length):", mappedInvoices.length, "Data:", mappedInvoices);
+      // Fallback: Limit to rowsPerPage if server returns more
+      const limitedInvoices = mappedInvoices.slice(0, rowsPerPage);
+      console.log("Limited Purchase Invoices (length):", limitedInvoices.length, "Data:", limitedInvoices);
+      setPurchaseInvoices(limitedInvoices);
+      setTotalRows(response.totalRecords || 0); // Updated to use totalRecords
+    } catch (error) {
+      console.error("Error fetching purchase invoices:", error);
+      toast.error("Failed to fetch purchase invoices: " + error.message);
+    } finally {
+      setLoading(false);
     }
-  }, [page, rowsPerPage, suppliers, suppliersLoaded]);
+  };
+
+  if (suppliersLoaded) {
+    loadPurchaseInvoices();
+  }
+}, [page, rowsPerPage, suppliers, suppliersLoaded]);
 
   // Filter purchase invoices based on search term
   const filteredPurchaseInvoices = purchaseInvoices.filter((invoice) => {

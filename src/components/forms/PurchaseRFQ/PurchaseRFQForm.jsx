@@ -30,7 +30,7 @@ import {
   fetchCurrencies,
 } from "./PurchaseRFQAPI";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../common/FormPage";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import StatusIndicator from "./StatusIndicator";

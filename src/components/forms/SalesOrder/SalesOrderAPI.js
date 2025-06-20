@@ -623,21 +623,30 @@ export const fetchCurrencies = async () => {
 };
 
 // Fetch all Sales Orders with pagination
-export const fetchSalesOrders = async (page = 1, limit = 10) => {
+export const fetchSalesOrders = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null
+) => {
   try {
     const { headers } = getAuthHeader();
     console.log(
-      `Fetching Sales Orders from: ${APIBASEURL}/sales-Order?page=${page}&limit=${limit}`
+      `Fetching Sales Orders from: ${APIBASEURL}/sales-Order?pageNumber=${page}&pageSize=${pageSize}${
+        fromDate ? `&fromDate=${fromDate}` : ""
+      }${toDate ? `&toDate=${toDate}` : ""}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/sales-Order?page=${page}&limit=${limit}`,
+      `${APIBASEURL}/sales-Order?pageNumber=${page}&pageSize=${pageSize}${
+        fromDate ? `&fromDate=${fromDate}` : ""
+      }${toDate ? `&toDate=${toDate}` : ""}`,
       { headers }
     );
     console.log("Sales Orders API Response:", response.data);
     if (response.data && response.data.data) {
       return {
         data: response.data.data,
-        total: response.data.total || response.data.data.length,
+        total: response.data.total || response.data.totalRecords || 0, // Fallback to 0 if total is missing
       };
     }
     console.warn("No data found in Sales Orders response:", response.data);
@@ -739,7 +748,7 @@ export const fetchSalesQuotations = async () => {
       let usedQuotationIds = [];
       try {
         const salesOrdersResponse = await axios.get(
-          `${APIBASEURL}/sales-Order?page=1&limit=1000`,
+          `${APIBASEURL}/sales-Order/`,
           { headers }
         );
         console.log(

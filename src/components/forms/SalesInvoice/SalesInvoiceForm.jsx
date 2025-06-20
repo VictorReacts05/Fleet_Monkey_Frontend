@@ -31,7 +31,7 @@ import {
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../common/FormPage";
 import StatusIndicator from "./StatusIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import APIBASEURL from "../../../utils/apiBaseUrl";

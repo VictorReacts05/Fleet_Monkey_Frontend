@@ -13,9 +13,9 @@ import {
   IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
-import FormSelect from "../../Common/FormSelect";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
+import FormSelect from "../../common/FormSelect";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
@@ -42,6 +42,10 @@ const SalesOrderList = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
+  
+    const [toDate, setToDate] = useState(null);
+    const [fromDate, setFromDate] = useState(null);
+  
 
   const navigate = useNavigate();
 
@@ -115,7 +119,17 @@ const SalesOrderList = () => {
     let isMounted = true;
     try {
       setLoading(true);
-      const response = await fetchSalesOrders(page + 1, rowsPerPage);
+      const formattedFromDate = fromDate
+              ? dayjs(fromDate).format("YYYY-MM-DD")
+              : null;
+            const formattedToDate = toDate
+              ? dayjs(toDate).format("YYYY-MM-DD")
+              : null;
+      
+      const response = await fetchSalesOrders( page + 1,
+        rowsPerPage,
+        formattedFromDate,
+        formattedToDate);
       console.log("Sales Orders API response:", response);
 
       const orderData = Array.isArray(response.data) ? response.data : [];
@@ -140,7 +154,7 @@ const SalesOrderList = () => {
 
       if (isMounted) {
         setSalesOrders(mappedData);
-        setTotalRows(response.total || mappedData.length);
+        setTotalRows(response.total|| salesOrders.length );
         setError(null);
       }
     } catch (error) {

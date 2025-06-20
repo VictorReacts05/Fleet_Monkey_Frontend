@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import ConfirmDialog from "../../Common/ConfirmDialog";
+import DataTable from "../../common/DataTable";
+import ConfirmDialog from "../../common/ConfirmDialog";
 import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton, Chip } from "@mui/material";
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { showToast } from "../../toastNotification";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";

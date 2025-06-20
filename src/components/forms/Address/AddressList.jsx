@@ -4,10 +4,10 @@ import { Add } from "@mui/icons-material";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 
-import DataTable from "../../Common/DataTable";
+import DataTable from "../../common/DataTable";
 import AddressModal from "./AddressModal";
-import ConfirmDialog from "../../Common/ConfirmDialog";
-import SearchBar from "../../Common/SearchBar";
+import ConfirmDialog from "../../common/ConfirmDialog";
+import SearchBar from "../../common/SearchBar";
 import { fetchAddresses, deleteAddress } from "./AddressAPI";
 
 const AddressList = () => {
@@ -60,12 +60,12 @@ const AddressList = () => {
       const formattedRows = addresses.map((address, i) => ({
         id: address.AddressID,
         serialNumber: page * rowsPerPage + i + 1,
-        addressName: address.AddressName || "N/A",
-        addressType: address.AddressType || "N/A", // Use AddressType directly
-        addressLine1: address.AddressLine1 || "N/A",
-        addressLine2: address.AddressLine2 || "N/A",
-        city: address.City || "N/A", // CityID, needs name resolution
-        country: address.Country || "N/A", // CountryID, needs name resolution
+        addressName: address.AddressName || "-",
+        addressType: address.AddressType || "-", // Use AddressType directly
+        addressLine1: address.AddressLine1 || "-",
+        addressLine2: address.AddressLine2 || "-",
+        city: address.City || "-", // CityID, needs name resolution
+        country: address.Country || "-", // CountryID, needs name resolution
       }));
 
       console.log("Formatted rows:", formattedRows);

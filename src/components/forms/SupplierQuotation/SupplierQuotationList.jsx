@@ -12,15 +12,15 @@ import {
   Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
 import { toast } from "react-toastify";
 import { Add } from "@mui/icons-material";
 import {
   fetchSupplierQuotations,
   deleteSupplierQuotation,
 } from "./SupplierQuotationAPI";
-import FormDatePicker from "../../Common/FormDatePicker";
+import FormDatePicker from "../../common/FormDatePicker";
 import dayjs from "dayjs";
 
 const SupplierQuotationList = () => {

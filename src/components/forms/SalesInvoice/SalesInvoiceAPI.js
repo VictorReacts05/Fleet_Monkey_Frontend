@@ -80,26 +80,40 @@ export const fetchUOMs = async () => {
   }
 };
 
-export const fetchSalesInvoices = async (page = 1, pageSize = 10) => {
+export const fetchSalesInvoices = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null,
+  searchTerm = null
+) => {
   try {
-    const response = await axios.get(
-      `${APIBASEURL}/salesInvoice`,
-      getAuthHeader()
-    );
-    return {
-      data: response.data.data || [],
-      total: response.data.total || 0,
-    };
+    let url = `${APIBASEURL}/salesInvoice?pageNumber=${page}&pageSize=${pageSize}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+    const response = await axios.get(url, getAuthHeader());
+    console.log("Raw API response for SalesInvoices:", response.data);
+
+    if (response.data && response.data.data) {
+      return {
+        data: response.data.data,
+        pagination: response.data.pagination || { totalRecords: 0 },
+      };
+    }
+
+    console.warn("No data found in response:", response.data);
+    return { data: [], pagination: { totalRecords: 0 } };
   } catch (error) {
     console.error("fetchSalesInvoices error:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
     });
-    return { data: [], total: 0 };
+    return { data: [], pagination: { totalRecords: 0 } };
   }
 };
-
 export const fetchSalesInvoiceById = async (id) => {
   try {
     if (!id || id === "undefined" || id === "create") {
