@@ -13,9 +13,9 @@ import {
   IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
-import FormSelect from "../../Common/FormSelect";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
+import FormSelect from "../../common/FormSelect";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add, Edit } from "@mui/icons-material";
@@ -70,18 +70,6 @@ const SalesQuotationList = () => {
         return <Chip label={status} color={color} size="small" />;
       },
     },
-    /* {
-      field: "actions",
-      headerName: "Actions",
-      width: 100,
-      renderCell: (params) => (
-        <Tooltip title="Edit">
-          <IconButton onClick={() => handleEdit(params.row.id)} size="small">
-            <Edit />
-          </IconButton>
-        </Tooltip>
-      ),
-    }, */
   ];
 
   const checkAuthAndLoadPersonId = () => {
@@ -117,32 +105,39 @@ const SalesQuotationList = () => {
       const { headers } = getAuthHeader();
       console.log("Fetching Sales Quotations with headers:", headers);
       const response = await axios.get(
-        `${APIBASEURL}/sales-Quotation?page=${page + 1}&limit=${rowsPerPage}`,
+        `${APIBASEURL}/sales-Quotation?page=${page + 1}&limit=${rowsPerPage}${
+          searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : ""
+        }`,
         { headers }
       );
       console.log("Sales Quotations API response:", response.data);
-      const quotationData = Array.isArray(response.data)
-        ? response.data
-        : Array.isArray(response.data?.data)
-        ? response.data.data
-        : [];
-      if (!quotationData.length) {
-        console.warn("No sales quotations found in response:", response.data);
-      }
-      const mappedData = quotationData.map((quotation) => ({
-        ...quotation,
-        id: quotation.SalesQuotationID ?? null,
-        Status: quotation.Status || "Pending",
-        CreatedDate: quotation.CreatedDate
-          ? dayjs(quotation.CreatedDate).isValid()
-            ? dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
-            : "Invalid Date"
-          : "No Data Provided",
-      }));
-      console.log("Mapped Sales Quotation Data:", mappedData);
+
       if (isMounted) {
-        setSalesQuotations(mappedData);
-        setTotalRows(response.data.total || mappedData.length);
+        const quotationData = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+        console.log("Raw quotation data length:", quotationData.length);
+        if (!quotationData.length) {
+          console.warn("No sales quotations found in response:", response.data);
+        }
+        const mappedData = quotationData.map((quotation) => ({
+          ...quotation,
+          id: quotation.SalesQuotationID ?? null,
+          Status: quotation.Status || "Pending",
+          CreatedDate: quotation.CreatedDate
+            ? dayjs(quotation.CreatedDate).isValid()
+              ? dayjs(quotation.CreatedDate).format("YYYY-MM-DD")
+              : "Invalid Date"
+            : "No Data Provided",
+        }));
+        console.log("Mapped Sales Quotation Data length:", mappedData.length);
+        // Enforce rowsPerPage limit on frontend if API returns extra records
+        const limitedData = mappedData.slice(0, rowsPerPage);
+        console.log("Limited Data length after slice:", limitedData.length);
+        setSalesQuotations(limitedData);
+        setTotalRows(response.data.total || response.data.totalRecords || 0); // Use total or totalRecords
         setError(null);
       }
     } catch (error) {
@@ -197,21 +192,18 @@ const SalesQuotationList = () => {
       fetchSalesQuotations();
       loadPurchaseRFQs();
     }
-  }, [personId, page, rowsPerPage]);
+  }, [personId, page, rowsPerPage, searchTerm]);
 
-  const handlePageChange = async (newPage) => {
+  const handlePageChange = (newPage) => {
     setPage(newPage);
-    await fetchSalesQuotations();
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(0);
-    fetchSalesQuotations();
   };
 
   const handleView = (id) => {
-    console.log("View clicked for Sales Quotation ID:", id);
     if (id && id !== "undefined") {
       navigate(`/sales-quotation/view/${id}`);
     } else {
@@ -221,7 +213,6 @@ const SalesQuotationList = () => {
   };
 
   const handleEdit = (id) => {
-    console.log("Edit clicked for Sales Quotation ID:", id);
     if (id && id !== "undefined") {
       navigate(`/sales-quotation/edit/${id}`);
     } else {
@@ -269,7 +260,7 @@ const SalesQuotationList = () => {
 
   const handleSearch = (term) => {
     setSearchTerm(term);
-    setPage(0);
+    setPage(0); // Reset to first page on search
   };
 
   const validateForm = () => {
@@ -356,10 +347,7 @@ const SalesQuotationList = () => {
       >
         <Typography variant="h5">Estimate Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="Search Estimates..."
-          />
+          <SearchBar onSearch={handleSearch} placeholder="Search Estimates..." />
           <Tooltip title="Add New Estimate">
             <IconButton
               color="primary"
@@ -396,6 +384,21 @@ const SalesQuotationList = () => {
               width: 100,
               valueGetter: (params) =>
                 params.row.SalesQuotationID || params.row.id || "No ID",
+            },
+            {
+              field: "actions",
+              headerName: "Actions",
+              width: 100,
+              renderCell: (params) => (
+                <Tooltip title="Edit">
+                  <IconButton
+                    onClick={() => handleEdit(params.row.id)}
+                    size="small"
+                  >
+                    <Edit />
+                  </IconButton>
+                </Tooltip>
+              ),
             },
           ]}
           loading={loading}

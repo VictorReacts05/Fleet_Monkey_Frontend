@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Stack } from "@mui/material";
-import DataTable from "../../Common/DataTable";
+import DataTable from "../../common/DataTable";
 import CompanyModal from "./CompanyModal";
-import ConfirmDialog from "../../Common/ConfirmDialog";
+import ConfirmDialog from "../../common/ConfirmDialog";
 import { fetchCompanies, deleteCompany } from "./CompanyAPI";
 import { toast } from "react-toastify";
 import axios from "axios";
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import APIBASEURL from "../../../utils/apiBaseUrl";
@@ -61,14 +61,14 @@ const CompanyList = () => {
 
       const mappedRows = companies.map((company) => ({
         id: company.CompanyID || company.companyId,
-        companyName: company.CompanyName || company.companyName || "N/A",
+        companyName: company.CompanyName || company.companyName || "-",
         currencyName: company.BillingCurrencyID
           ? currencyMap[company.BillingCurrencyID] ||
             `Unknown (ID: ${company.BillingCurrencyID})`
-          : "N/A",
-        vatAccount: company.VAT_Account || company.vatAccount || "N/A",
-        website: company.Website || company.website || "N/A",
-        companyNotes: company.CompanyNotes || company.companyNotes || "N/A",
+          : "-",
+        vatAccount: company.VAT_Account || company.vatAccount || "-",
+        website: company.Website || company.website || "-",
+        companyNotes: company.CompanyNotes || company.companyNotes || "-",
       }));
 
       setRows(mappedRows);

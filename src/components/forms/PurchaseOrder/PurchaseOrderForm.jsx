@@ -11,7 +11,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../common/FormPage";
 import PurchaseOrderStatusIndicator from "./PurchaseOrderStatusIndicator";
 import PurchaseOrderParcelsTab from "./PurchaseOrderParcelsTab";
 import { toast } from "react-toastify";

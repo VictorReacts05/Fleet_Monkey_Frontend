@@ -24,10 +24,10 @@ import {
   getAuthHeader,
 } from "./SupplierQuotationAPI";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage";
-import FormSelect from "../../Common/FormSelect";
-import FormDatePicker from "../../Common/FormDatePicker";
-import FormInput from "../../Common/FormInput";
+import FormPage from "../../common/FormPage";
+import FormSelect from "../../common/FormSelect";
+import FormDatePicker from "../../common/FormDatePicker";
+import FormInput from "../../common/FormInput";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";

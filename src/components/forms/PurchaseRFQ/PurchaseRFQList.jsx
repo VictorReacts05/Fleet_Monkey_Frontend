@@ -11,12 +11,11 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
-import { showToast } from "../../toastNotification"; 
+import { showToast } from "../../toastNotification";
 import axios from "axios";
 import PurchaseRFQForm from "./PurchaseRFQForm";
 import { Chip } from "@mui/material";
@@ -30,6 +29,52 @@ const getHeaders = () => {
   };
 };
 
+const fetchPurchaseRFQs = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null
+) => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+
+    let url = `${APIBASEURL}/purchase-rfq?pageNumber=${page}&pageSize=${pageSize}`;
+
+    if (fromDate) {
+      url += `&fromDate=${fromDate}`;
+    }
+
+    if (toDate) {
+      url += `&toDate=${toDate}`;
+    }
+
+    const response = await axios.get(url, { headers });
+    console.log("Raw API response for PurchaseRFQs:", response.data);
+
+    if (response.data && response.data.data) {
+      // Make sure each item has a Status field and proper ID
+      const processedData = response.data.data.map((item) => ({
+        ...item,
+        id: item.PurchaseRFQID || item.id,
+        Status: item.Status || item.status || "Pending",
+      }));
+
+      return {
+        data: processedData,
+        totalRecords: response.data.totalRecords || processedData.length,
+      };
+    }
+
+    return { data: [], totalRecords: 0 };
+  } catch (error) {
+    console.error("Error fetching PurchaseRFQs:", error);
+    throw error;
+  }
+};
+
 const PurchaseRFQList = () => {
   const [purchaseRFQs, setPurchaseRFQs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,11 +82,11 @@ const PurchaseRFQList = () => {
   const [selectedRFQ, setSelectedRFQ] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
 
-  // Update the columns definition to include status
   const columns = [
     { field: "Series", headerName: "Series", flex: 1 },
     {
@@ -50,65 +95,48 @@ const PurchaseRFQList = () => {
       flex: 1,
       valueGetter: (params) => params.row.CustomerName || "-",
     },
-    { 
-      field: "Status", 
-      headerName: "Status", 
+    {
+      field: "Status",
+      headerName: "Status",
       flex: 1,
       renderCell: (params) => {
-        const status = params.value || 'Pending';
-        let color = 'default';
-        
-        if (status === 'Approved') color = 'success';
-        else if (status === 'Rejected') color = 'error';
-        else if (status === 'Pending') color = 'warning';
-        
+        const status = params.value || "Pending";
+        let color = "default";
+
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
+
         return <Chip label={status} color={color} size="small" />;
-      }
+      },
     },
   ];
 
   const navigate = useNavigate();
 
-  // Update the fetchPurchaseRFQs function to include status
-  const fetchPurchaseRFQs = async () => {
-    try {
-      setLoading(true);
-      const { headers } = getHeaders();
-      const response = await axios.get(
-        `${APIBASEURL}/purchase-rfq`,
-        { headers }
-      );
-  
-      let purchaseRFQData = [];
-      
-      if (Array.isArray(response.data)) {
-        purchaseRFQData = response.data;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        purchaseRFQData = response.data.data;
-      } else {
-        console.error("Unexpected API response format:", response.data);
-        purchaseRFQData = [];
-      }
-      
-      // Map the data to include status
-      const mappedData = purchaseRFQData.map(rfq => ({
-        ...rfq,
-        id: rfq.PurchaseRFQID,
-        Status: rfq.Status || 'Pending'
-      }));
-      
-      setPurchaseRFQs(mappedData);
-    } catch (error) {
-      toast.error("Failed to load Purchase RFQs");
-      setPurchaseRFQs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchPurchaseRFQs();
-  }, []);
+    const loadPurchaseRFQs = async () => {
+      try {
+        setLoading(true);
+        const { data, totalRecords } = await fetchPurchaseRFQs(
+          page + 1,
+          rowsPerPage,
+          null,
+          null
+        );
+        setPurchaseRFQs(data);
+        setTotalRows(totalRecords);
+      } catch (error) {
+        toast.error("Failed to load Purchase RFQs");
+        setPurchaseRFQs([]);
+        setTotalRows(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPurchaseRFQs();
+  }, [page, rowsPerPage]);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -130,39 +158,40 @@ const PurchaseRFQList = () => {
   };
 
   const handleDeleteClick = (id) => {
-    const item = rows.find((row) => row.id === id);
+    const item = purchaseRFQs.find((row) => row.id === id);
     if (item) {
       setItemToDelete(item);
+      setSelectedRFQ(id);
       setDeleteDialogOpen(true);
     } else {
       toast.error("Item not found");
-      
     }
-    setSelectedRFQ(id);
-    setDeleteDialogOpen(true);
   };
 
   const handleDialogClose = () => {
     setViewDialogOpen(false);
     setDeleteDialogOpen(false);
     setSelectedRFQ(null);
-    fetchPurchaseRFQs(page + 1, rowsPerPage);
+    setItemToDelete(null);
   };
 
   const confirmDelete = async () => {
     try {
       setLoading(true);
-      await deletePurchaseRFQ(itemToDelete.id);
-      // toast.success("Purchase RFQ deleted successfully");
-      showToast("Purchase RFQ deleted successfully", "success");
       const { headers } = getHeaders();
-      await axios.delete(
-        `${APIBASEURL}/purchase-rfqs/${selectedRFQ}`,
-        { headers }
-      );
-      toast.success("Purchase RFQ deleted successfully");
+      await axios.delete(`${APIBASEURL}/purchase-rfq/${selectedRFQ}`, {
+        headers,
+      });
+      showToast("Purchase RFQ deleted successfully", "success");
       setDeleteDialogOpen(false);
-      fetchPurchaseRFQs(page + 1, rowsPerPage);
+      const { data, totalRecords } = await fetchPurchaseRFQs(
+        page + 1,
+        rowsPerPage,
+        null,
+        null
+      );
+      setPurchaseRFQs(data);
+      setTotalRows(totalRecords);
     } catch (error) {
       console.error("Error deleting Purchase RFQ:", error);
       toast.error("Failed to delete Purchase RFQ");
@@ -174,6 +203,8 @@ const PurchaseRFQList = () => {
   const handleSearch = (term) => {
     setSearchTerm(term);
     setPage(0);
+    // Note: Search functionality would require additional API support
+    // You may need to modify fetchPurchaseRFQs to include searchTerm
   };
 
   return (
@@ -198,13 +229,13 @@ const PurchaseRFQList = () => {
       <DataTable
         rows={purchaseRFQs.map((row) => ({
           ...row,
-          id: row.PurchaseRFQID,
+          id: row.PurchaseRFQID || row.id,
         }))}
         columns={[
           ...columns,
           {
-            field: "SalesRFQID",
-            headerName: "Sales RFQ ID",
+            field: "PurchaseRFQID",
+            headerName: "Purchase RFQ ID",
             width: 100,
             valueGetter: (params) =>
               params.row.PurchaseRFQID || params.row.id || "No ID",
@@ -217,7 +248,7 @@ const PurchaseRFQList = () => {
         }}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalRows={purchaseRFQs.length}
+        totalRows={totalRows}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         onView={handleView}

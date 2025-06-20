@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Grid, CircularProgress, Box } from "@mui/material";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage";
-import FormInput from "../../Common/FormInput";
-import FormSelect from "../../Common/FormSelect";
-import FormTextArea from "../../Common/FormTextArea";
+import FormPage from "../../common/FormPage";
+import FormInput from "../../common/FormInput";
+import FormSelect from "../../common/FormSelect";
+import FormTextArea from "../../common/FormTextArea";
 import {
   fetchAddressTypes,
   fetchCities,

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Typography,
@@ -14,9 +15,9 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import DataTable from "../../Common/DataTable";
-import SearchBar from "../../Common/SearchBar";
-import FormSelect from "../../Common/FormSelect";
+import DataTable from "../../common/DataTable";
+import SearchBar from "../../common/SearchBar";
+import FormSelect from "../../common/FormSelect";
 import { toast } from "react-toastify";
 import { Chip } from "@mui/material";
 import {
@@ -57,38 +58,54 @@ const PurchaseOrderList = () => {
   }, [isAuthenticated, user, navigate]);
 
   // Fetch purchase orders
-  useEffect(() => {
-    const loadPurchaseOrders = async () => {
-      if (!isAuthenticated || !user) return;
+useEffect(() => {
+  const loadPurchaseOrders = async () => {
+    try {
       setLoading(true);
-      try {
-        const response = await fetchPurchaseOrders(page + 1, rowsPerPage, user);
-        console.log("Fetched Purchase Orders:", response);
-        const mappedData = (response.data || []).map((order) => ({
-          ...order,
-          id: order.POID,
-        }));
-        console.log("Mapped Purchase Orders:", mappedData);
-        setPurchaseOrders(mappedData);
-        setTotalRows(response.total || mappedData.length);
-        setError(null);
-      } catch (error) {
-        const errorMessage = error.response
-          ? `Server error: ${error.response.status} - ${
-              error.response.data?.message || error.message
-            }`
-          : `Failed to fetch purchase orders: ${error.message}`;
-        console.error("Error fetching purchase orders:", error);
-        toast.error(errorMessage);
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const { data, totalRecords } = await fetchPurchaseOrders(
+        page + 1,
+        rowsPerPage,
+        null,
+        null,
+        searchTerm || null
+      );
+      console.log(
+        "Fetched POs (length):",
+        data.length,
+        "Data:",
+        data,
+        "Total Records:",
+        totalRecords,
+        "Page:",
+        page + 1,
+        "RowsPerPage:",
+        rowsPerPage,
+        "SearchTerm:",
+        searchTerm
+      );
+      // Fallback: Limit data to rowsPerPage if server returns more
+      const paginatedData = data.slice(0, rowsPerPage);
+      console.log(
+        "Paginated Data (length after slice):",
+        paginatedData.length,
+        "Paginated Data:",
+        paginatedData
+      );
+      setPurchaseOrders(paginatedData);
+      setTotalRows(totalRecords);
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      toast.error("Failed to load Purchase Orders");
+      setPurchaseOrders([]);
+      setTotalRows(0);
+      setError(error.message || "Failed to load purchase orders");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadPurchaseOrders();
-  }, [page, rowsPerPage, user, isAuthenticated]);
-
+  loadPurchaseOrders();
+}, [page, rowsPerPage, searchTerm]);
   // Fetch sales orders for create modal
   useEffect(() => {
     const loadSalesOrders = async () => {
@@ -114,18 +131,6 @@ const PurchaseOrderList = () => {
     loadSalesOrders();
   }, [user, isAuthenticated]);
 
-  // Filter purchase orders based on search term
-  const filteredPurchaseOrders = purchaseOrders.filter((order) => {
-    const searchString = searchTerm.toLowerCase();
-    return (
-      order.Series?.toLowerCase().includes(searchString) ||
-      order.SupplierName?.toLowerCase().includes(searchString) ||
-      order.CustomerName?.toLowerCase().includes(searchString) ||
-      order.ServiceType?.toLowerCase().includes(searchString) ||
-      order.Status?.toLowerCase().includes(searchString)
-    );
-  });
-
   // Table columns definition
   const columns = [
     {
@@ -146,11 +151,9 @@ const PurchaseOrderList = () => {
       renderCell: (params) => {
         const status = params.value || "Pending";
         let color = "default";
-
         if (status === "Approved") color = "success";
         else if (status === "Rejected") color = "error";
         else if (status === "Pending") color = "warning";
-
         return <Chip label={status} color={color} size="small" />;
       },
     },
@@ -158,15 +161,17 @@ const PurchaseOrderList = () => {
       field: "POID",
       headerName: "Purchase Order ID",
       width: 100,
-      valueGetter: (params) => params.row.POID || "No ID",
+      valueGetter: (params) => params.row.POID || params.row.id || "No ID",
     },
   ];
 
   const handlePageChange = (newPage) => {
+    console.log("Changing to page:", newPage);
     setPage(newPage);
   };
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
+    console.log("Changing rows per page to:", newRowsPerPage);
     setRowsPerPage(newRowsPerPage);
     setPage(0);
   };
@@ -205,11 +210,27 @@ const PurchaseOrderList = () => {
     try {
       setLoading(true);
       await deletePurchaseOrder(selectedOrder, user);
-      setPurchaseOrders(
-        purchaseOrders.filter((order) => order.POID !== selectedOrder)
-      );
       toast.success("Purchase order deleted successfully");
       setDeleteDialogOpen(false);
+      const { data, totalRecords } = await fetchPurchaseOrders(
+        page + 1,
+        rowsPerPage,
+        null,
+        null,
+        searchTerm || null
+      );
+      const filteredData = searchTerm
+        ? data.filter(
+            (order) =>
+              order.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              order.SupplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              order.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              order.ServiceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              order.Status?.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : data;
+      setPurchaseOrders(filteredData);
+      setTotalRows(searchTerm ? filteredData.length : totalRecords);
     } catch (error) {
       console.error("Error deleting Purchase Order:", error);
       toast.error("Failed to delete purchase order");
@@ -219,6 +240,7 @@ const PurchaseOrderList = () => {
   };
 
   const handleSearch = (term) => {
+    console.log("Search term:", term);
     setSearchTerm(term);
     setPage(0);
   };
@@ -259,7 +281,25 @@ const PurchaseOrderList = () => {
       if (newPurchaseOrderId) {
         toast.success("Purchase Order created successfully");
         handleDialogClose();
-        await fetchPurchaseOrders(page + 1, rowsPerPage, user); // Refresh list
+        const { data, totalRecords } = await fetchPurchaseOrders(
+          page + 1,
+          rowsPerPage,
+          null,
+          null,
+          searchTerm || null
+        );
+        const filteredData = searchTerm
+          ? data.filter(
+              (order) =>
+                order.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.SupplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.ServiceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                order.Status?.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+          : data;
+        setPurchaseOrders(filteredData);
+        setTotalRows(searchTerm ? filteredData.length : totalRecords);
         navigate(`/purchase-order/view/${newPurchaseOrderId}`);
       } else {
         throw new Error("No Purchase Order ID returned");
@@ -307,7 +347,31 @@ const PurchaseOrderList = () => {
           variant="contained"
           onClick={() => {
             setError(null);
-            loadPurchaseOrders();
+            // Note: loadPurchaseOrders is not defined; call fetch directly
+            fetchPurchaseOrders(page + 1, rowsPerPage, null, null, searchTerm || null)
+              .then(({ data, totalRecords }) => {
+                const filteredData = searchTerm
+                  ? data.filter(
+                      (order) =>
+                        order.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        order.SupplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        order.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        order.ServiceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        order.Status?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                  : data;
+                setPurchaseOrders(filteredData);
+                setTotalRows(searchTerm ? filteredData.length : totalRecords);
+                setLoading(false);
+              })
+              .catch((err) => {
+                console.error("Retry Fetch Error:", err);
+                toast.error("Failed to load Purchase Orders");
+                setPurchaseOrders([]);
+                setTotalRows(0);
+                setError(err.message || "Failed to load purchase orders");
+                setLoading(false);
+              });
           }}
           sx={{ mt: 2 }}
         >
@@ -333,7 +397,7 @@ const PurchaseOrderList = () => {
             onSearch={handleSearch}
             placeholder="Search Purchase Orders..."
           />
-          {/* <Tooltip title="Add New Purchase Order">
+          <Tooltip title="Add New Purchase Order">
             <IconButton
               color="primary"
               onClick={() => setCreateDialogOpen(true)}
@@ -349,7 +413,7 @@ const PurchaseOrderList = () => {
             >
               <Add />
             </IconButton>
-          </Tooltip> */}
+          </Tooltip>
         </Stack>
       </Box>
 
@@ -357,10 +421,10 @@ const PurchaseOrderList = () => {
         <Typography>No purchase orders available.</Typography>
       ) : (
         <DataTable
-          rows={filteredPurchaseOrders}
+          rows={purchaseOrders}
           columns={columns}
           loading={loading}
-          getRowId={(row) => row.POID || "unknown"}
+          getRowId={(row) => row.POID || row.id || "unknown"}
           page={page}
           rowsPerPage={rowsPerPage}
           totalRows={totalRows}
@@ -368,6 +432,7 @@ const PurchaseOrderList = () => {
           onRowsPerPageChange={handleRowsPerPageChange}
           onView={handleView}
           onDelete={handleDeleteClick}
+          paginationMode="server"
         />
       )}
 
@@ -394,17 +459,17 @@ const PurchaseOrderList = () => {
 
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={handleDialogClose}
       >
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this Purchase order? This action
+            Are you sure you want to delete this Purchase Order? This action
             cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDialogClose}>Cancel</Button>
           <Button onClick={handleDelete} color="error" variant="contained">
             Delete
           </Button>
