@@ -379,7 +379,7 @@ const SupplierQuotationParcelTab = ({
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#1f2529",
+              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
             color: theme.palette.text.primary,
             cursor: "pointer",
             display: "flex",
@@ -387,7 +387,7 @@ const SupplierQuotationParcelTab = ({
             alignItems: "center",
           }}
         >
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" >
             Items
           </Typography>
         </Box>
@@ -418,6 +418,7 @@ const SupplierQuotationParcelTab = ({
                   p: 2,
                   border: "1px solid #e0e0e0",
                   borderRadius: 1,
+                  color: "text.secondary" 
                 }}
               >
                 <Typography variant="subtitle1" gutterBottom>
