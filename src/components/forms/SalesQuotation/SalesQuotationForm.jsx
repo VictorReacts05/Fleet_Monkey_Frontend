@@ -273,7 +273,7 @@ const SalesQuotationForm = ({
     try {
       const quotationPayload = {
         SalesQuotationID: parseInt(salesQuotationId),
-        TaxesAndOtherCharges: formData.TaxAmount.toFixed(4),
+        TaxesAndOtherCharges: formData.TaxAmount.toFixed(2),
       };
 
       console.log("Sending Sales Quotation Update Payload:", quotationPayload);
@@ -283,8 +283,8 @@ const SalesQuotationForm = ({
         SalesQuotationParcelID: parcel.SalesQuotationParcelID,
         SalesQuotationID: salesQuotationId,
         SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
-        SalesRate: parcel.salesRate.toFixed(4),
-        SalesAmount: parcel.salesAmount.toFixed(4),
+        SalesRate: parcel.salesRate.toFixed(2),
+        SalesAmount: parcel.salesAmount.toFixed(2),
       }));
 
       console.log(

@@ -60,31 +60,33 @@ const PendingApprovalsList = () => {
 
   const navigate = useNavigate();
 
-  const fetchPendingApprovals = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${APIBASEURL}/pendingApprovals?pageSize=${rowsPerPage}&pageNumber=${page + 1}`,
-        getHeaders()
-      );
+const fetchPendingApprovals = async () => {
+  setLoading(true);
+  try {
+    const response = await axios.get(
+      `${APIBASEURL}/pendingApprovals?pageSize=${rowsPerPage}&pageNumber=${page + 1}`, // 1-based indexing
+      getHeaders()
+    );
 
-      const data = response.data?.data || [];
-      const total = response.data?.total;
+    console.log("API Response:", response.data); // Debug log
 
-      setPendingApprovals(data);
-      setTotalRows(typeof total === "number" ? total : data.length);
-      setAvailableFormNames(getUniqueFormNames(data));
-    } catch (error) {
-      console.error("Failed to fetch pending approvals:", error);
-      toast.error("Error fetching pending approvals.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const data = response.data?.data || [];
+    const total = response.data?.total || response.data?.totalRecords || data.length;
 
-  useEffect(() => {
-    fetchPendingApprovals();
-  }, [page, rowsPerPage]);
+    setPendingApprovals(data);
+    setTotalRows(total);
+    setAvailableFormNames(getUniqueFormNames(data));
+  } catch (error) {
+    console.error("Failed to fetch pending approvals:", error);
+    toast.error("Error fetching pending approvals.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchPendingApprovals();
+}, [page, rowsPerPage]);
 
   const filteredApprovals = pendingApprovals.filter((item) => {
     const search = searchTerm.toLowerCase();
@@ -155,6 +157,9 @@ const PendingApprovalsList = () => {
   };
 
   const columns = [
+    {
+      field:"FormName",headerName:"Form Name",flex:1
+    },
     { field: "Series", headerName: "Series", flex: 1 },
     {
       field: "Status",
@@ -171,7 +176,7 @@ const PendingApprovalsList = () => {
     },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: "Action",
       flex: 0.6,
       renderCell: (params) => (
         <Button
@@ -214,17 +219,17 @@ const PendingApprovalsList = () => {
       </Box>
 
       <DataTable
-        rows={filteredApprovals}
-        columns={columns}
-        loading={loading}
-        getRowId={(row) => row.Series} // Use Series as the unique identifier
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalRows={totalRows}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
-        hideActions={true}
-      />
+  rows={filteredApprovals}
+  columns={columns}
+  loading={loading}
+  getRowId={(row) => row.Series}
+  page={page}
+  rowsPerPage={rowsPerPage}
+  totalRows={totalRows}
+  onPageChange={handlePageChange}
+  onRowsPerPageChange={handleRowsPerPageChange}
+  hideActions={true}
+/>
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>

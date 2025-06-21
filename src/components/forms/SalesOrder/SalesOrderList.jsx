@@ -77,7 +77,7 @@ const SalesOrderList = () => {
       flex: 1,
       valueGetter: (params) => {
         const total = params.row.Total || params.row.TotalAmount || 0;
-        return `$${Number(total).toFixed(2)}`;
+        return `$${Number(total)}`;
       },
     },
     {
