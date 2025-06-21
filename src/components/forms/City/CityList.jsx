@@ -104,9 +104,9 @@ const CityList = () => {
       
       const formattedRows = cities.map((city) => ({
         id: city.CityID,
-        cityName: city.CityName || "N/A",
+        cityName: city.CityName || "-",
         countryId: city.CountryID,
-        countryName: countries[city.CountryID] || "N/A",
+        countryName: countries[city.CountryID] || "-",
       }));
   
       setRows(formattedRows);

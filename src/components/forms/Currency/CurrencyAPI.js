@@ -70,7 +70,7 @@ export const createCurrency = async (currencyData, personId = null) => {
     // to match what the backend expects
     const requestBody = {
       currencyName: currencyData.CurrencyName ,
-      CreatedById: currencyData.createdById || createdById || 1,
+      createdById: currencyData.createdById || createdById || 1,
 
     };
 
