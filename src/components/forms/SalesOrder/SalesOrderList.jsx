@@ -417,9 +417,6 @@ const SalesOrderList = () => {
         </Stack>
       </Box>
 
-      {salesOrders.length === 0 && !loading ? (
-        <Typography>No sales orders available.</Typography>
-      ) : (
         <DataTable
           rows={salesOrders}
           columns={columns}
@@ -433,7 +430,6 @@ const SalesOrderList = () => {
           onView={handleView}
           onDelete={handleDeleteClick}
         />
-      )}
 
       <Dialog
         open={deleteDialogOpen}
