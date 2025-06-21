@@ -417,9 +417,6 @@ useEffect(() => {
         </Stack>
       </Box>
 
-      {purchaseOrders.length === 0 && !loading ? (
-        <Typography>No purchase orders available.</Typography>
-      ) : (
         <DataTable
           rows={purchaseOrders}
           columns={columns}
@@ -434,7 +431,6 @@ useEffect(() => {
           onDelete={handleDeleteClick}
           paginationMode="server"
         />
-      )}
 
       <Dialog
         open={viewDialogOpen}

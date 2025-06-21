@@ -48,10 +48,7 @@ const PurchaseInvoiceList = () => {
       try {
         const response = await axios.get(`${APIBASEURL}/suppliers`, getHeaders());
         const suppliersData = response.data.data || [];
-        if (suppliersData.length === 0) {
-          console.warn("No suppliers found in API response");
-          toast.warn("No suppliers found. Supplier names may not display correctly.");
-        }
+       
         const mappedSuppliers = suppliersData.map((supplier) => ({
           id: String(supplier.SupplierID),
           name: supplier.SupplierName || "Unknown Supplier",
@@ -77,11 +74,6 @@ const PurchaseInvoiceList = () => {
       const response = await fetchPurchaseInvoices(page + 1, rowsPerPage);
       const invoices = response.data || [];
       console.log("Fetched Purchase Invoices (length):", invoices.length, "Data:", invoices);
-
-      if (invoices.length === 0) {
-        console.warn("No purchase invoices found in API response");
-        toast.warn("No purchase invoices found.");
-      }
 
       // Map invoices with SupplierName using suppliers list
       const mappedInvoices = invoices.map((invoice, index) => {

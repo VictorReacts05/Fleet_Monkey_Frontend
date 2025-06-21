@@ -67,11 +67,6 @@ const SalesInvoiceList = () => {
       const invoices = response.data || [];
       console.log("Fetched Sales Invoices (length):", invoices.length, "Data:", invoices, "Full Response:", response);
 
-      if (invoices.length === 0) {
-        console.warn("No sales invoices found in API response");
-        toast.warn("No sales invoices found.");
-      }
-
       // Map invoices with CustomerName using customers list
       const mappedInvoices = invoices.map((invoice, index) => {
         const customer = customers.find(

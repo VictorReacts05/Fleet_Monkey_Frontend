@@ -371,9 +371,7 @@ const SalesQuotationList = () => {
           </Tooltip>
         </Stack>
       </Box>
-      {salesQuotations.length === 0 && !loading ? (
-        <Typography>No sales quotations available.</Typography>
-      ) : (
+
         <DataTable
           rows={salesQuotations}
           columns={[
@@ -398,7 +396,6 @@ const SalesQuotationList = () => {
           onEdit={handleEdit}
           onDelete={handleDeleteClick}
         />
-      )}
 
       <Dialog
         open={viewDialogOpen}
