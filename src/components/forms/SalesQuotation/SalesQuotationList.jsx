@@ -385,21 +385,7 @@ const SalesQuotationList = () => {
               valueGetter: (params) =>
                 params.row.SalesQuotationID || params.row.id || "No ID",
             },
-            {
-              field: "actions",
-              headerName: "Actions",
-              width: 100,
-              renderCell: (params) => (
-                <Tooltip title="Edit">
-                  <IconButton
-                    onClick={() => handleEdit(params.row.id)}
-                    size="small"
-                  >
-                    <Edit />
-                  </IconButton>
-                </Tooltip>
-              ),
-            },
+           
           ]}
           loading={loading}
           getRowId={(row) => row.id || "unknown"}

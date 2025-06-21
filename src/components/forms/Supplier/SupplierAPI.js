@@ -34,9 +34,15 @@ const validateSupplierData = (data, operation = "create") => {
   return errors;
 };
 
-export const fetchSuppliers = async (page = 1, limit = 10) => {
+export const fetchSuppliers = async (page = 1, limit = 10,fromDate = null,
+  toDate = null,
+  searchTerm = "") => {
   try {
     let url = `${APIBASEURL}/suppliers?pageNumber=${page}&pageSize=${limit}`;
+        if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
+    if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
+    if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
     const response = await axios.get(url);
     console.log("Fetch suppliers response:", response.data);
     return response.data;

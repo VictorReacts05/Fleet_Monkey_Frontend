@@ -21,15 +21,29 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 const getHeaders = () => ({
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${JSON.parse(localStorage.getItem("user") || "{}")?.personId}`,
+    Authorization: `Bearer ${
+      JSON.parse(localStorage.getItem("user") || "{}")?.personId
+    }`,
   },
 });
 
 const getUniqueFormNames = (data) => {
   const formNames = data.map((item) => item.FormName);
   const uniqueFormNames = [...new Set(formNames)];
-  // Limit to first five unique form names
-  return uniqueFormNames.slice(0, 5).map(f => ({ value: f, label: f }));
+  return uniqueFormNames.slice(0, 5).map((f) => ({ value: f, label: f }));
+};
+
+// Mapping of form names to routes and type IDs
+const formConfigMap = {
+  "Sales RFQ": { route: "sales-rfq", typeId: 1 },
+  "Purchase RFQ": { route: "purchase-rfq", typeId: 2 },
+  "Supplier Quotation": { route: "supplier-quotation", typeId: 3 },
+  "Sales Quotation": { route: "sales-quotation", typeId: 4 },
+  "Sales Order": { route: "sales-order", typeId: 5 },
+  "Purchase Order": { route: "purchase-order", typeId: 6 },
+  "Bill": { route: "purchase-invoice", typeId: 7 },
+  "Invoice": { route: "sales-invoice", typeId: 8 },
+  "Estimate": { route: "estimate", typeId: 9 },
 };
 
 const PendingApprovalsList = () => {
@@ -84,32 +98,32 @@ const PendingApprovalsList = () => {
     return matchesSearch && matchesForm;
   });
 
-  const formViewRouteMap = {
-    "Sales RFQ": "sales-rfq",
-    "Purchase RFQ": "purchase-rfq",
-    "Supplier Quotation": "supplier-quotation",
-    "Sales Quotation": "sales-quotation",
-    "Sales Order": "sales-order",
-    "Purchase Order": "purchase-order", // Corrected to 'purchase-order' for consistency
-    "Invoice": "sales-invoice",
-    "Bill": "purchase-invoice", // Assuming 'Bill' maps to Purchase Invoice
-    "Estimate": "estimate",
+ const handleView = (id, formName) => {
+  console.log("handleView called with:", { id, formName }); // Debug log
+  if (!id || !formName) {
+    toast.error("Invalid record selected.");
+    return;
+  }
+
+  const config = formConfigMap[formName];
+  if (!config) {
+    toast.warning(`View not implemented for: ${formName}`);
+    return;
+  }
+
+  // Extract the number after the third hyphen
+  const extractId = (str) => {
+    const parts = str.split('-');
+    if (parts.length >= 4) {
+      return parts[3]; // Return the number after the third hyphen
+    }
+    return str; // Fallback to original id if format doesn't match
   };
 
-  const handleView = (id, formName) => {
-    if (!id || !formName) {
-      toast.error("Invalid record selected.");
-      return;
-    }
-    const recordId = id || (typeof id === "string" ? id : id.toString()); // Ensure id is a string
-    const route = formViewRouteMap[formName];
-    if (route) {
-      console.log(`Navigating to: /${route}/view/${recordId}`);
-      navigate(`/${route}/view/${recordId}`);
-    } else {
-      toast.warning(`View not implemented for: ${formName}`);
-    }
-  };
+  const extractedId = extractId(id);
+  const { route, typeId } = config;
+  navigate(`/${route}/view/${extractedId}`);
+};
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -163,7 +177,7 @@ const PendingApprovalsList = () => {
         <Button
           variant="outlined"
           size="small"
-          onClick={() => handleView(params._id || params.row.id, params.row.FormName)}
+          onClick={() => handleView(params.row.Series, params.row.FormName)}
         >
           VIEW
         </Button>
@@ -203,18 +217,29 @@ const PendingApprovalsList = () => {
         rows={filteredApprovals}
         columns={columns}
         loading={loading}
-        getRowId={(row) => row.id || row._id}
+        getRowId={(row) => row.Series} // Use Series as the unique identifier
         page={page}
         rowsPerPage={rowsPerPage}
         totalRows={totalRows}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
         hideActions={true}
-        // onView={handleView} // Added to enable view action
-        // onDelete={handleDeleteClick} // Added to enable delete action
       />
 
-      
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this approval?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

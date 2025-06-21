@@ -19,44 +19,71 @@ const SupplierList = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");  
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+  
   const columns = [
     { field: "supplierName", headerName: "Supplier Name", flex: 1 },
     { field: "supplierEmail", headerName: "Supplier Email", flex: 1 },
   ];
 
-  const loadSuppliers = async () => {
-    try {
-      setLoading(true);
-      
-      const response = await fetchSuppliers(
-        page + 1,
-        rowsPerPage
-      );
-      
-      const suppliers = response.data || [];
-      const totalCount = response.totalRecords || suppliers.length;
-      
-      const formattedRows = suppliers.map((supplier) => ({
-        id: supplier.SupplierID,
-        supplierName: supplier.SupplierName || "N/A",
-        supplierEmail: supplier.SupplierEmail || "N/A",
-      }));
+const loadSuppliers = async () => {
+  try {
+    setLoading(true);
 
-      setRows(formattedRows);
-      setTotalRows(totalCount);
-    } catch (error) {
-      console.error('Error loading suppliers:', error);
-      toast.error('Failed to load suppliers: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const formattedFromDate = fromDate
+      ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+      : null;
+    const formattedToDate = toDate
+      ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
+      : null;
 
-  useEffect(() => {
-    loadSuppliers();
-  }, [page, rowsPerPage]);
+    const validPage = Number.isInteger(page) ? page + 1 : 1;
+    const validRowsPerPage = Number.isInteger(rowsPerPage) ? rowsPerPage : 10;
+
+    console.log("Fetching suppliers with:", {
+      validPage,
+      validRowsPerPage,
+      formattedFromDate,
+      formattedToDate,
+      searchTerm,
+    });
+
+    const response = await fetchSuppliers(
+      validPage,
+      validRowsPerPage,
+      formattedFromDate,
+      formattedToDate,
+      searchTerm
+    );
+
+    const suppliers = response.data || [];
+    const totalCount = response.totalRecords || suppliers.length;
+
+    const formattedRows = suppliers.map((supplier, i) => ({
+      id: supplier.SupplierID,
+      serialNumber: (Number.isInteger(page) ? page : 0) * rowsPerPage + i + 1,
+
+      supplierName: supplier.SupplierName || "N/A",
+      supplierEmail: supplier.SupplierEmail || "N/A",
+    }));
+
+    setRows(formattedRows);
+    setTotalRows(totalCount);
+  } catch (error) {
+    console.error("Error loading suppliers:", error);
+    toast.error("Failed to load suppliers: " + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+useEffect(() => {
+  console.log("useEffect triggered with page:", page);
+  loadSuppliers();
+}, [page, rowsPerPage, fromDate, toDate, searchTerm]);
 
   const handleCreate = () => {
     setSelectedSupplierId(null);
@@ -143,10 +170,14 @@ const SupplierList = () => {
         rows={rows}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
+        onPageChange={(...args) => {
+  const newPage = args.length === 2 ? args[1] : args[0];
+  setPage(Number.isInteger(newPage) ? newPage : 0);
+}}
+
+        onRowsPerPageChange={(newRowsPerPage) => {
           setPage(0);
+          setRowsPerPage(newRowsPerPage);
         }}
         onEdit={handleEdit}
         onDelete={handleDelete}
