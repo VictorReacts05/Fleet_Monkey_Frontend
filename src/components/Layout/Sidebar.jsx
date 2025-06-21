@@ -81,7 +81,7 @@ const menuItems = [
   },
   { text: "Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
-  // { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
+  { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
   { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
@@ -96,7 +96,7 @@ const menuItems = [
     path: "/form-role-approvers",
   },
   { text: "Items", icon: <CategoryIcon />, path: "/items" },
-  // { text: "Persons", icon: <PersonIcon />, path: "/persons" },
+  { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   { text: "Roles", icon: <PersonIcon />, path: "/roles" },
   {
     text: "Subscriptions",
