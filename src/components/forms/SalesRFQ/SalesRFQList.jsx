@@ -60,7 +60,6 @@ const SalesRFQList = () => {
   useEffect(() => {
     // Fetch purchase RFQs on mount and when page/rowsPerPage changes
     fetchPurchaseRFQs();
-    // eslint-disable-next-line
   }, [page, rowsPerPage, fromDate, toDate]);
   
   useEffect(() => {

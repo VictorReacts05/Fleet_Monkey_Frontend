@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Box, Stack, Tooltip, IconButton } from "@mui/material";
-import { Add } from "@mui/icons-material";
-import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import DataTable from "../../Common/DataTable";
-import ConfirmDialog from "../../Common/ConfirmDialog";
-import FormDatePicker from "../../Common/FormDatePicker";
-import { fetchUOMs, deleteUOM } from "./uomapi";
-import UOMModal from "./uommodal";
-import SearchBar from "../../Common/SearchBar";
+import React, { useState, useEffect } from 'react';
+import { Typography, Box, Stack, Tooltip, IconButton } from '@mui/material';
+import { Add } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import dayjs from 'dayjs';
+import DataTable from '../../Common/DataTable';
+import ConfirmDialog from '../../Common/ConfirmDialog';
+import FormDatePicker from '../../Common/FormDatePicker';
+import { fetchUOMs, deleteUOM } from "./UOMAPI";
+import UOMModal from './UOMModal';
 
 const UOMList = () => {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Changed to 5 for 2 pages with 10 records
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalRows, setTotalRows] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUOMId, setSelectedUOMId] = useState(null);
@@ -24,53 +23,41 @@ const UOMList = () => {
   const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { field: "uom", headerName: "Unit of Measurement", flex: 1 },
+    { field: 'uom', headerName: 'Unit of Measurement', flex: 1 },
   ];
 
   const loadUOMs = async () => {
     try {
       setLoading(true);
       const formattedFromDate = fromDate
-        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+        ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss')
         : null;
       const formattedToDate = toDate
-        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
+        ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
         : null;
 
-      const response = await fetchUOMs(
-        page + 1,
-        rowsPerPage,
-        formattedFromDate,
-        formattedToDate
-      );
+      // Fetch all UOMs to get the actual count
+      const allResponse = await fetchUOMs(1, 1000, formattedFromDate, formattedToDate);
+      const allUOMs = allResponse.data || [];
+      const activeUOMs = allUOMs.filter(uom => !uom.IsDeleted);
+      const actualTotalCount = activeUOMs.length;
+
+      // Fetch paginated data
+      const response = await fetchUOMs(page + 1, rowsPerPage, formattedFromDate, formattedToDate);
       const uoms = response.data || [];
 
       const formattedRows = uoms
-        .filter((uom) => !uom.IsDeleted)
-        .map((uom) => ({
+        .filter(uom => !uom.IsDeleted)
+        .map(uom => ({
           id: uom.UOMID,
-          uom: uom.UOM || "N/A",
+          uom: uom.UOM || 'N/A',
         }));
 
       setRows(formattedRows);
-      // Fallback to rows.length if totalRecords is 0 or invalid
-      const total =
-        response.totalRecords > 0
-          ? response.totalRecords
-          : formattedRows.length * (page + 1);
-      setTotalRows(total);
-
-      console.log("Total number of rows:", total);
-      console.log("Number of rows on current page:", formattedRows.length);
-      console.log("Current page:", page);
-      console.log("Rows per page:", rowsPerPage);
-      console.log("Backend totalRecords:", response.totalRecords);
+      setTotalRows(actualTotalCount);
     } catch (error) {
-      console.error("Error loading UOMs:", error);
-      toast.error(
-        "Failed to load UOMs: " +
-          (error.response?.data?.message || error.message)
-      );
+      console.error('Error loading UOMs:', error);
+      toast.error('Failed to load UOMs: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +78,7 @@ const UOMList = () => {
   };
 
   const handleDelete = (id) => {
-    const uom = rows.find((row) => row.id === id);
+    const uom = rows.find(row => row.id === id);
     setItemToDelete(uom);
     setDeleteDialogOpen(true);
   };
@@ -99,15 +86,12 @@ const UOMList = () => {
   const confirmDelete = async () => {
     try {
       await deleteUOM(itemToDelete.id);
-      toast.success("UOM deleted successfully");
+      toast.success('UOM deleted successfully');
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadUOMs();
     } catch (error) {
-      toast.error(
-        "Failed to delete UOM: " +
-          (error.response?.data?.message || error.message)
-      );
+      toast.error('Failed to delete UOM: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -122,37 +106,37 @@ const UOMList = () => {
     setSelectedUOMId(null);
   };
 
-  const handlePageChange = (newPage) => {
-    console.log("Changing to page:", newPage);
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (newRowsPerPage) => {
-    console.log("Changing rows per page to:", newRowsPerPage);
-    setRowsPerPage(newRowsPerPage);
-    setPage(0);
-  };
-
   return (
     <Box>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           mb: 2,
         }}
       >
         <Typography variant="h5">Unit of Measurement Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar placeholder="Search UOMs..." />
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+            sx={{ width: 200 }}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+            sx={{ width: 200 }}
+          />
           <Tooltip title="Add UOM">
             <IconButton
               onClick={handleCreate}
               sx={{
-                backgroundColor: "primary.main",
-                color: "white",
-                "&:hover": { backgroundColor: "primary.dark" },
+                backgroundColor: 'primary.main',
+                color: 'white',
+                '&:hover': { backgroundColor: 'primary.dark' },
                 height: 40,
                 width: 40,
               }}
@@ -163,37 +147,24 @@ const UOMList = () => {
         </Stack>
       </Box>
 
-      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
-        <FormDatePicker
-          label="From Date"
-          value={fromDate}
-          onChange={setFromDate}
-          sx={{ width: 200 }}
-        />
-        <FormDatePicker
-          label="To Date"
-          value={toDate}
-          onChange={setToDate}
-          sx={{ width: 200 }}
-        />
-      </Box>
-
       <DataTable
         columns={columns}
         rows={rows}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={(e, newPage) => handlePageChange(newPage)}
-        onRowsPerPageChange={(e) =>
-          handleRowsPerPageChange(parseInt(e.target.value, 10))
-        }
+        onPageChange={(e, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(e) => {
+          const newRowsPerPage = parseInt(e.target.value, 10);
+          setRowsPerPage(newRowsPerPage);
+          setPage(0);
+        }}
         onEdit={handleEdit}
         onDelete={handleDelete}
         totalRows={totalRows}
         loading={loading}
-        isPagination={true}
       />
 
+      {/* Replace AddressTypeModal with UOMModal */}
       <UOMModal
         open={modalOpen}
         onClose={handleModalClose}

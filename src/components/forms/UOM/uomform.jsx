@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { Grid, Box, Typography } from "@mui/material";
-import { toast } from "react-toastify";
-import { createUOM, updateUOM, getUOMById } from "./uomapi";
-import FormInput from "../../Common/FormInput";
-import FormPage from "../../Common/FormPage";
+import React, { useState, useEffect } from 'react';
+import { 
+  Grid, 
+  Box, 
+  Typography 
+} from '@mui/material';
+import { toast } from 'react-toastify';
+import { createUOM, updateUOM, getUOMById } from './UOMAPI';
+import FormInput from '../../Common/FormInput';
+import FormPage from '../../Common/FormPage';
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -20,8 +24,15 @@ const ReadOnlyField = ({ label, value }) => {
 
 const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
   const [formData, setFormData] = useState({
-    UOM: "",
+    uom: '',
+    createdByID: '',
+    CreatedDateTime: null,
+    IsDeleted: false,
+    DeletedDateTime: null,
+    DeletedByID: '',
+    RowVersionColumn: '',
   });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(!readOnly);
@@ -34,35 +45,41 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
 
   const loadUOM = async () => {
     try {
-      setLoading(true);
       const response = await getUOMById(uomId);
-      console.log("Load UOM response:", response);
+      const data = response.data;
 
-      // Handle different response structures
-      const data =
-        response.data && response.data.uom ? response.data : response;
+      const displayValue = (value) =>
+        value === null || value === undefined ? "-" : value;
 
-      setFormData({
-        UOM: data.uom || "",
-      });
+      const formattedData = {
+        ...formData,
+        uom: displayValue(data.uom),
+        createdByID: displayValue(data.createdByID),
+        CreatedDateTime: data.CreatedDateTime
+          ? new Date(data.CreatedDateTime)
+          : null,
+        IsDeleted: data.IsDeleted || false,
+        DeletedDateTime: data.DeletedDateTime
+          ? new Date(data.DeletedDateTime)
+          : null,
+        DeletedByID: displayValue(data.DeletedByID),
+        RowVersionColumn: displayValue(data.RowVersionColumn),
+      };
+
+      setFormData(formattedData);
     } catch (error) {
       console.error("Failed to load UOM:", error);
-      toast.error(
-        "Failed to load UOM: " +
-          (error.response?.data?.message || error.message)
-      );
-    } finally {
-      setLoading(false);
+      toast.error("Failed to load UOM: " + error.message);
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.UOM || !formData.UOM.trim()) {
-      newErrors.UOM = "UOM is required";
-    } else if (formData.UOM.length > 20) {
-      newErrors.UOM = "UOM must be 20 characters or less";
+    if (!formData.uom || !formData.uom.trim()) {
+      newErrors.uom = "UOM is required";
+    } else if (formData.uom.length > 20) {
+      newErrors.uom = "UOM must be 20 characters or less";
     }
 
     setErrors(newErrors);
@@ -78,15 +95,25 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
     try {
       setLoading(true);
       const apiData = {
-        UOM: formData.UOM,
+        UOM: formData.uom === "-" ? null : formData.uom,
+        CreatedByID: formData.createdByID === "-" ? null : formData.createdByID,
+        DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
+        RowVersionColumn:
+          formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
+        CreatedDateTime: formData.CreatedDateTime
+          ? formData.CreatedDateTime.toISOString()
+          : null,
+        DeletedDateTime: formData.DeletedDateTime
+          ? formData.DeletedDateTime.toISOString()
+          : null,
       };
 
-      console.log("Submitting UOM data:", apiData);
-
       if (uomId) {
+        // Update existing UOM
         await updateUOM(uomId, apiData);
         toast.success("UOM updated successfully");
       } else {
+        // Create new UOM
         await createUOM(apiData);
         toast.success("UOM created successfully");
       }
@@ -94,21 +121,16 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
-      console.error("Error saving UOM:", error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message &&
-        error.response.data.message.includes("UNIQUE KEY constraint")
-      ) {
-        toast.error(
-          "This Unit of Measurement already exists. Please use a different name."
-        );
+      console.error("Error in handleSubmit:", error);
+      
+      // Check for duplicate key error
+      if (error.response && error.response.data && error.response.data.message && 
+          error.response.data.message.includes("UNIQUE KEY constraint")) {
+        toast.error(`This Unit of Measurement already exists. Please use a different name.`);
       } else {
         toast.error(
-          `Failed to ${uomId ? "update" : "create"} UOM: ${
-            error.response?.data?.message || error.message
-          }`
+          `Failed to ${uomId ? "update" : "create"} UOM: ` +
+            (error.message || "Unknown error")
         );
       }
     } finally {
@@ -143,36 +165,32 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       readOnly={!isEditing}
       onEdit={uomId && !isEditing ? toggleEdit : null}
     >
-      {loading ? (
-        <Typography>Loading...</Typography>
-      ) : (
-        <Grid
-          container
-          spacing={1}
-          sx={{
-            width: "100%",
-            margin: 0,
-            overflow: "hidden",
-          }}
-        >
-          <Grid item xs={12} md={6} sx={{ width: "100%" }}>
-            {isEditing ? (
-              <FormInput
-                name="UOM"
-                label="Unit of Measurement"
-                value={formData.UOM || ""}
-                onChange={handleChange}
-                error={!!errors.UOM}
-                helperText={errors.UOM}
-                disabled={!isEditing}
-                fullWidth
-              />
-            ) : (
-              <ReadOnlyField label="Unit of Measurement" value={formData.UOM} />
-            )}
-          </Grid>
+      <Grid
+        container
+        spacing={1}
+        sx={{
+          width: "100%",
+          margin: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Grid item xs={12} md={6} sx={{ width: "100%" }}>
+          {isEditing ? (
+            <FormInput
+              name="uom"
+              label="Unit of Measurement"
+              value={formData.uom || ""}
+              onChange={handleChange}
+              error={!!errors.uom}
+              helperText={errors.uom}
+              disabled={!isEditing}
+              fullWidth
+            />
+          ) : (
+            <ReadOnlyField label="Unit of Measurement" value={formData.uom} />
+          )}
         </Grid>
-      )}
+      </Grid>
     </FormPage>
   );
 };
