@@ -1,10 +1,11 @@
 import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 // Define API base URLs directly
-const API_ADDRESS_TYPES = "http://localhost:7000/api/address-types";
-const API_CITIES = "http://localhost:7000/api/city"; // Updated to /api/city
-const API_COUNTRIES = "http://localhost:7000/api/country-of-origin";
-const API_ADDRESSES = "http://localhost:7000/api/addresses";
+const API_ADDRESS_TYPES = `${APIBASEURL}/address-types`;
+const API_CITIES = `${APIBASEURL}/city`; // Updated to /api/city
+const API_COUNTRIES = `${APIBASEURL}/country-of-origin`;
+const API_ADDRESSES = `${APIBASEURL}/addresses`;
 
 // Helper function to get user data safely
 const getUserData = () => {

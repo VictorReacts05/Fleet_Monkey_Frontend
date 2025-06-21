@@ -34,16 +34,13 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DescriptionIcon from "@mui/icons-material/Description";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import RequestQuote from '@mui/icons-material/RequestQuote';
-import FindInPageSharpIcon from '@mui/icons-material/FindInPageSharp';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
-import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import HourglassTopIcon from '@mui/icons-material/HourglassTop';
-import PendingIcon from '@mui/icons-material/Pending';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import AssignmentLateIcon from '@mui/icons-material/AssignmentLate';
+import RequestQuote from "@mui/icons-material/RequestQuote";
+import FindInPageSharpIcon from "@mui/icons-material/FindInPageSharp";
+import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
+import ShoppingCartCheckoutIcon from "@mui/icons-material/ShoppingCartCheckout";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 
 const drawerWidth = 240;
 
@@ -76,16 +73,12 @@ const menuItems = [
     icon: <ReceiptIcon />,
     path: "/purchase-invoice",
   },
-  { text: "Bill", 
-    icon: <ReceiptLongIcon />, 
-    path: "/sales-invoice" 
-  },
+  { text: "Bill", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
   {
     text: "Pending Approvals",
     icon: <HourglassTopIcon />,
     path: "/pending-approvals",
   },
-
   { text: "Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
   { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
@@ -102,12 +95,8 @@ const menuItems = [
     icon: <AdminPanelSettingsIcon />,
     path: "/form-role-approvers",
   },
+  { text: "Items", icon: <CategoryIcon />, path: "/items" },
   { text: "Persons", icon: <PersonIcon />, path: "/persons" },
-  // {
-  //   text: "Project Parameters",
-  //   icon: <SettingsApplicationsIcon />,
-  //   path: "/project-parameters",
-  // },
   { text: "Roles", icon: <PersonIcon />, path: "/roles" },
   {
     text: "Subscriptions",
@@ -118,14 +107,6 @@ const menuItems = [
   { text: "Units of Measurement", icon: <CategoryIcon />, path: "/uoms" },
   { text: "Vehicles", icon: <DirectionsBusIcon />, path: "/vehicles" },
   { text: "Warehouses", icon: <WarehouseIcon />, path: "/warehouses" },
-  /* { text: "Sales RFQ", icon: <LocalShippingIcon />, path: "/sales-rfq" },
-  { text: "Purchase RFQ", icon: <ShoppingCartIcon />, path: "/purchase-rfq" },
-  { text: 'Supplier Quotation', icon: <RequestQuote />, path: '/supplier-quotation' },
-  { text: "Sales Quotation", icon: <FindInPageSharpIcon />, path: "/sales-quotation" },
-  { text: "Sales Order", icon: <ShoppingBagIcon />, path: "/sales-order" },
-  { text: "Purchase Order", icon: <ShoppingCartCheckoutIcon />, path: "/purchase-order" },
-  { text: "Purchase Invoice", icon: <ReceiptIcon />, path: "/purchase-invoice" },
-  { text: "Sales Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" }, */
 ];
 
 const Sidebar = ({ open, variant, onClose }) => {
@@ -147,22 +128,6 @@ const Sidebar = ({ open, variant, onClose }) => {
     handleMastersClose();
   };
 
-  // Update the mainMenuItems filter
-  // Remove the old mainMenuItems filter
-  // const mainMenuItems = menuItems.filter(
-  //   (item) =>
-  //     item.text === "Dashboard" ||
-  //     item.text === "Sales RFQ" ||
-  //     item.text === "Purchase RFQ" ||
-  //     item.text === "Supplier Quotation" ||
-  //     item.text === "Sales Quotation" ||
-  //     item.text === "Sales Order" ||
-  //     item.text === "Purchase Order" ||
-  //     item.text === "Purchase Invoice" ||
-  //     item.text === "Sales Invoice"
-  // );
-  
-  // Use this as the main menu items
   const mainMenuItems = [
     menuItems.find((item) => item.text === "Dashboard"),
     { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
@@ -176,11 +141,10 @@ const Sidebar = ({ open, variant, onClose }) => {
         item.text === "Purchase Order" ||
         item.text === "Invoice" ||
         item.text === "Bill" ||
-        item.text==="Pending Approvals"
+        item.text === "Pending Approvals"
     ),
   ];
 
-  // Remove mainMenuItemstemp as it's no longer needed
   const mastersItems = menuItems.filter(
     (item) =>
       item.text !== "Dashboard" &&
@@ -192,37 +156,8 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Purchase Order" &&
       item.text !== "Invoice" &&
       item.text !== "Bill" &&
-      item.text !== "Pending Approvals" 
+      item.text !== "Pending Approvals"
   );
-
-  // Update the mainMenuItems to include Masters as second item
-  // Update the mainMenuItems to keep Dashboard first
-  const mainMenuItemstemp = [
-    menuItems.find((item) => item.text === "Dashboard"),
-    ...menuItems.filter(
-      (item) =>
-        item.text === "Inquiry" ||
-        item.text === "Quotation Request" ||
-        item.text === "Supplier Quotation" ||
-        item.text === "Estimate" ||
-        item.text === "Approved Estimate" ||
-        item.text === "Purchase Order" ||
-        item.text === "Invoice" ||
-        item.text === "Bill" ||
-        item.text === "Pending" 
-    ),
-    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
-  ];
-
-  // Paginate masters items to show 5 at a time
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(mastersItems.length / itemsPerPage);
-  
-  const getCurrentMastersItems = () => {
-    const start = currentPage * itemsPerPage;
-    return mastersItems.slice(start, start + itemsPerPage);
-  };
 
   return (
     <Drawer
@@ -255,10 +190,14 @@ const Sidebar = ({ open, variant, onClose }) => {
         {mainMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
-              onClick={item.isDropdown ? handleMastersClick : () => handleMenuItemClick(item.path)}
+              onClick={
+                item.isDropdown
+                  ? handleMastersClick
+                  : () => handleMenuItemClick(item.path)
+              }
               selected={location.pathname === item.path}
             >
-              <ListItemIcon sx={{color:"#fff"}}>{item.icon}</ListItemIcon>
+              <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
               {item.isDropdown && <ArrowDropDownIcon />}
             </ListItemButton>
@@ -271,14 +210,14 @@ const Sidebar = ({ open, variant, onClose }) => {
         open={Boolean(anchorEl)}
         onClose={handleMastersClose}
         sx={{
-          '& .MuiPaper-root': {
+          "& .MuiPaper-root": {
             width: 240,
-            '& .MuiMenuItem-root': {
+            "& .MuiMenuItem-root": {
               height: 48,
               minHeight: 48,
             },
-            maxHeight: 250, // Exactly 5 items (48px * 5)
-            overflowY: 'auto',
+            maxHeight: 250,
+            overflowY: "auto",
           },
         }}
       >
@@ -286,14 +225,12 @@ const Sidebar = ({ open, variant, onClose }) => {
           <MenuItem
             key={item.text}
             onClick={() => handleMenuItemClick(item.path)}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </MenuItem>
         ))}
-        
-       
       </Menu>
     </Drawer>
   );

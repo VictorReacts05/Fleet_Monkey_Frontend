@@ -60,6 +60,7 @@ import SalesInvoiceForm from "./components/forms/SalesInvoice/SalesInvoiceForm";
 import SalesInvoicePage from "./components/forms/SalesInvoice/SalesInvoicePage";
 import AddressList from "./components/forms/Address/AddressList";
 import PendingApprovalsList from "./components/forms/PendingApprovals/PendingApprovalsList";
+import ItemList from "./components/forms/Item/ItemList";
 
 // Wrapper for Create Sales RFQ
 const CreateSalesRFQWrapper = () => {
@@ -377,6 +378,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <BankList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items"
+            element={
+              <ProtectedRoute>
+                <ItemList />
               </ProtectedRoute>
             }
           />

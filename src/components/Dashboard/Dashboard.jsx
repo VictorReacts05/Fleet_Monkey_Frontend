@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Warehouse, People, DirectionsCar, Business } from '@mui/icons-material';
+import APIBASEURL from './../../utils/apiBaseUrl';
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -47,10 +48,10 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const [customersRes, suppliersRes, vehiclesRes, warehousesRes] = await Promise.all([
-          axios.get('http://localhost:7000/api/customers'),
-          axios.get('http://localhost:7000/api/suppliers'),
-          axios.get('http://localhost:7000/api/vehicles'),
-          axios.get('http://localhost:7000/api/warehouses'),
+          axios.get(`${APIBASEURL}/customers`),
+          axios.get(`${APIBASEURL}/suppliers`),
+          axios.get(`${APIBASEURL}/vehicles`),
+          axios.get(`${APIBASEURL}/warehouses`),
           
         ]);
 

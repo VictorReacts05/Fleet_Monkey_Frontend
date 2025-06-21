@@ -116,10 +116,10 @@ const ResetPassword = () => {
       return;
     }
 
-    if (!validatePassword(newPassword)) {
+    /* if (!validatePassword(newPassword)) {
       setPasswordError("Password must be at least 8 characters long");
       return;
-    }
+    } */
 
     // Validate confirm password
     if (!confirmPassword) {
