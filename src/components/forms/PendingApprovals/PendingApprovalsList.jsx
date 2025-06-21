@@ -19,10 +19,10 @@ import FormSelect from "../../Common/FormSelect";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const getHeaders = () => ({
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${JSON.parse(localStorage.getItem("user") || "{}")?.personId}`,
-  },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${JSON.parse(localStorage.getItem("user") || "{}")?.personId}`,
+    },
 });
 
 const getUniqueFormNames = (data) => {
