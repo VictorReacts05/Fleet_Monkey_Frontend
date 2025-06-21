@@ -14,6 +14,7 @@ const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
   const [status, setStatus] = useState("Pending");
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [userApprovalStatus, setUserApprovalStatus] = useState("Pending");
 
   // Fetch user approval status when component mounts or salesRFQId changes
   React.useEffect(() => {
@@ -109,6 +110,8 @@ const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
     },
   };
 
+  const validStatus = userApprovalStatus || "Pending";
+
   return (
     <>
       <Chip {...chipProps} />
@@ -119,9 +122,19 @@ const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <MenuItem onClick={handleApprove} disabled={loading}>
+        {/* <MenuItem onClick={handleApprove} disabled={loading}>
           Approve
-        </MenuItem>
+        </MenuItem> */}
+        {validStatus !== "Approved" && (
+          <MenuItem onClick={handleApprove} disabled={loading}>
+            {loading ? (
+              <CircularProgress size={16} sx={{ mr: 1 }} />
+            ) : (
+              <CheckCircle sx={{ mr: 1 }} color="success" />
+            )}
+            Approve
+          </MenuItem>
+        )}
       </Menu>
     </>
   );

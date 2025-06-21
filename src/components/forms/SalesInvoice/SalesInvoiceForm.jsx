@@ -27,16 +27,23 @@ import {
   TableCell,
   Paper,
   alpha,
-  Chip
+  Chip,
 } from "@mui/material";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../common/FormPage";
 import StatusIndicator from "./StatusIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import axios from "axios";
-import { fetchSalesInvoiceById, fetchSalesInvoiceItems, fetchCurrencies, fetchServiceTypes, fetchShippingPriorities } from "./SalesInvoiceAPI";
+import {
+  fetchSalesInvoiceById,
+  fetchSalesInvoiceItems,
+  fetchCurrencies,
+  fetchServiceTypes,
+  fetchShippingPriorities,
+} from "./SalesInvoiceAPI";
+import SalesInvoiceParcelsTab from "./SalesInvoiceParcelTab";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -244,7 +251,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       }
 
       const response = await axios.get(
-        `${APIBASEURL}/sales-invoice-approvals/${salesInvoiceId}/${user.personId}`,
+        `${APIBASEURL}/salesInvoiceApproval/${salesInvoiceId}/${user.personId}`,
         {
           headers: {
             Authorization: `Bearer ${user.personId}`,
@@ -271,6 +278,10 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       loadApprovalStatus();
     }
   }, [salesInvoiceId, loadSalesInvoiceData, loadApprovalStatus]);
+
+  const handleItemsChange = (updatedItems) => {
+    setItems(updatedItems); // Update the items state in SalesInvoiceForm
+  };
 
   const fetchSuppliers = async () => {
     try {
@@ -489,14 +500,14 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
     }));
     setConfirmAction(newStatus.toLowerCase());
     setConfirmMessage(`Are you sure you want to ${newStatus.toLowerCase()} this Sales Invoice?`);
-    setConfirmDialogOpen(true);
+    setConfirmDialogOpen(false);
   };
 
   const handleCancel = () => {
     if (onClose) {
       onClose();
     } else {
-      navigate('/sales-invoice');
+      navigate("/sales-invoice");
     }
   };
 
@@ -513,7 +524,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Typography variant="h6">
-              {readOnly ? "View Sales Invoice" : "Edit Sales Invoice"}
+              {readOnly ? "View Bill" : "Edit Bill"}
             </Typography>
             {salesInvoiceId && (
               <Box
@@ -704,93 +715,6 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Items
-        </Typography>
-        <TableContainer
-          component={Paper}
-          sx={{
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <Table>
-            <TableHead
-              sx={{
-                backgroundColor: "#1976d2",
-                height: "56px",
-              }}
-            >
-              <TableRow>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Sr. No.
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Item
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  UOM
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Quantity
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Rate
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: "bold", color: "white", py: 2 }}
-                >
-                  Amount
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item) => (
-                <TableRow
-                  key={item.id}
-                  sx={{
-                    height: "52px",
-                    "&:nth-of-type(odd)": {
-                      backgroundColor: alpha("#1976d2", 0.05),
-                    },
-                    "&:hover": {
-                      backgroundColor: alpha("#1976d2", 0.1),
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                    },
-                  }}
-                >
-                  <TableCell align="center">{item.srNo}</TableCell>
-                  <TableCell align="center">{item.itemName}</TableCell>
-                  <TableCell align="center">{item.uomName}</TableCell>
-                  <TableCell align="center">{item.quantity}</TableCell>
-                  <TableCell align="center">{item.rate?.toFixed(2) || "-"}</TableCell>
-                  <TableCell align="center">{item.amount?.toFixed(2) || "-"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-
       <Dialog
         open={suppliersDialogOpen}
         onClose={handleCloseSuppliersDialog}
@@ -938,7 +862,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
             Cancel
           </Button>
           <Button
-            onClick={handleConfirmAction}
+            // onClick={handleConfirmAction}
             color="primary"
             autoFocus
             disabled={loading}
@@ -948,6 +872,12 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           </Button>
         </DialogActions>
       </Dialog>
+
+      <SalesInvoiceParcelsTab
+        salesInvoiceId={salesInvoiceId} // Fixed: Correct prop name
+        onItemsChange={handleItemsChange} // Uncommented and defined
+        readOnly={readOnly}
+      />
     </FormPage>
   );
 };

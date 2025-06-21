@@ -767,9 +767,9 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             <Typography variant="h6">
               {salesRFQId
                 ? isEditing
-                  ? "Edit Sales RFQ"
-                  : "View Sales RFQ"
-                : "Create Sales RFQ"}
+                  ? "Edit Inquiry"
+                  : "View Inquiry"
+                : "Create Inquiry"}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               {!isEditing && salesRFQId && (

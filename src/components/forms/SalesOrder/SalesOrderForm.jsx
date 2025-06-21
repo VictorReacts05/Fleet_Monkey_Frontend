@@ -559,7 +559,7 @@ const SalesOrderForm = ({ onClose }) => {
             gap: 2,
           }}
         >
-          <Typography variant="h6">Sales Order Details</Typography>
+          <Typography variant="h6">View Approved Estimate</Typography>
           <Box
             sx={{
               display: "flex",

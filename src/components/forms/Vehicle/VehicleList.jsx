@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Button, Stack } from "@mui/material";
-import DataTable from "../../Common/DataTable";
+import DataTable from "../../common/DataTable";
 import VehicleModal from "./VehicleModal";
-import ConfirmDialog from "../../Common/ConfirmDialog";
-import FormDatePicker from "../../Common/FormDatePicker";
+import ConfirmDialog from "../../common/ConfirmDialog";
+import FormDatePicker from "../../common/FormDatePicker";
 import { fetchVehicles, deleteVehicle } from "./VehicleAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from '@mui/icons-material';
 import { Tooltip, IconButton } from '@mui/material';
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { showToast } from "../../toastNotification";
 
 const VehicleList = (props) => {
@@ -54,14 +54,14 @@ const VehicleList = (props) => {
       
       const formattedRows = vehicles.map((vehicle) => ({
         id: vehicle.VehicleID,
-        truckNumberPlate: vehicle.TruckNumberPlate || "N/A",
-        vin: vehicle.VIN || "N/A",
-        companyName: vehicle.CompanyName || "N/A",
+        truckNumberPlate: vehicle.TruckNumberPlate || "-",
+        vin: vehicle.VIN || "-",
+        companyName: vehicle.CompanyName || "-",
         companyId: vehicle.CompanyID,
-        maxWeight: vehicle.MaxWeight ? parseFloat(vehicle.MaxWeight).toFixed(2) : "N/A",
-        length: vehicle.Length ? parseFloat(vehicle.Length).toFixed(2) : "N/A",
-        width: vehicle.Width ? parseFloat(vehicle.Width).toFixed(2) : "N/A",
-        height: vehicle.Height ? parseFloat(vehicle.Height).toFixed(2) : "N/A",
+        maxWeight: vehicle.MaxWeight ? parseFloat(vehicle.MaxWeight).toFixed(2) : "-",
+        length: vehicle.Length ? parseFloat(vehicle.Length).toFixed(2) : "-",
+        width: vehicle.Width ? parseFloat(vehicle.Width).toFixed(2) : "-",
+        height: vehicle.Height ? parseFloat(vehicle.Height).toFixed(2) : "-",
         // vehicleTypeName: vehicle.VehicleTypeName || "N/A",
         // vehicleTypeId: vehicle.VehicleTypeID,
       }));

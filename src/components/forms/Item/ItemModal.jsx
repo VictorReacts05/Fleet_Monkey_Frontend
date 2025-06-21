@@ -10,9 +10,9 @@ import {
   useTheme,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import AddressForm from "./AddressForm";
+import ItemForm from "./ItemForm";
 
-const AddressModal = ({ open, addressId = null, onClose, onSave }) => {
+const ItemModal = ({ open, onClose, itemId, onSave }) => {
   const theme = useTheme();
 
   return (
@@ -37,7 +37,7 @@ const AddressModal = ({ open, addressId = null, onClose, onSave }) => {
           }}
         >
           <Typography variant="h6" fontWeight="bold">
-            {addressId ? "Edit Address" : "Add New Address"}
+            {itemId ? "Edit Item" : "Add New Item"}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -46,10 +46,10 @@ const AddressModal = ({ open, addressId = null, onClose, onSave }) => {
       </DialogTitle>
       <Divider />
       <DialogContent>
-        <AddressForm addressId={addressId} onClose={onClose} onSave={onSave} />
+        <ItemForm itemId={itemId} onClose={onClose} onSave={onSave} />
       </DialogContent>
     </Dialog>
   );
 };
 
-export default AddressModal;
+export default ItemModal;

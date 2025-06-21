@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Box, Typography, CircularProgress } from '@mui/material';
-import { createSupplier, updateSupplier, getSupplierById } from './SupplierAPI';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
+import { createSupplier, updateSupplier, getSupplierById } from "./SupplierAPI";
+import { toast } from "react-toastify";
+import FormInput from './../../Common/FormInput';
 
 const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     supplierName: "",
-    companyId: "",
     supplierEmail: "",
-    billingCurrencyId: "",
-    // Add other fields as needed
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -23,13 +27,20 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const loadSupplier = async () => {
     try {
       setLoading(true);
-      const data = await getSupplierById(supplierId);
+      const response = await getSupplierById(supplierId);
+      console.log("Supplier response:", response);
+
+      const supplier = response.data || response;
+
       setFormData({
-        supplierName: data.data?.supplierName || '',  // Changed case
-        supplierEmail: data.data?.supplierEmail || ''  // Changed case
+        supplierName: supplier.SupplierName || "",
+        supplierEmail: supplier.SupplierEmail || "",
       });
     } catch (error) {
-      toast.error('Failed to load supplier: ' + error.message);
+      console.error("Error loading supplier:", error);
+      toast.error(
+        "Failed to load supplier: " + (error.message || "Unknown error")
+      );
     } finally {
       setLoading(false);
     }
@@ -37,102 +48,117 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
-    // Clear error when field is edited
+
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: null
+        [name]: null,
       }));
     }
   };
 
   const validate = () => {
     const newErrors = {};
-    
-    if (!formData.supplierName?.trim()) {  // Changed case
-      newErrors.supplierName = 'Supplier name is required';
+
+    if (!formData.supplierName?.trim()) {
+      newErrors.supplierName = "Supplier name is required";
     }
-    
-    if (!formData.supplierEmail?.trim()) {  // Changed case
-      newErrors.supplierEmail = 'Supplier email is required';
+    if (!formData.supplierEmail?.trim()) {
+      newErrors.supplierEmail = "Supplier email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.supplierEmail)) {
-      newErrors.supplierEmail = 'Email is invalid';
+      newErrors.supplierEmail = "Email is invalid";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) {
+      toast.error("Please fix the validation errors");
+      return;
+    }
+
     try {
+      setLoading(true);
       const supplierData = {
-        ...formData,
-        companyId: Number(formData.companyId), // Convert to number
-        billingCurrencyId: formData.billingCurrencyId ? Number(formData.billingCurrencyId) : null,
+        supplierName: formData.supplierName,
+        supplierEmail: formData.supplierEmail,
       };
-      console.log("Submitting supplier data:", supplierData); // Debug input
-      const response = await createSupplier(supplierData);
-      toast.success("Supplier created successfully");
-      console.log("Supplier creation response:", response);
+
+      console.log("Submitting supplier data:", supplierData);
+
+      if (supplierId) {
+        await updateSupplier(supplierId, supplierData);
+        toast.success("Supplier updated successfully");
+      } else {
+        await createSupplier(supplierData);
+        toast.success("Supplier created successfully");
+      }
+
       onSave();
       onClose();
     } catch (error) {
-      console.error("Failed to create supplier:", error);
-      toast.error(error.message || "Failed to create supplier");
+      console.error(
+        `Failed to ${supplierId ? "update" : "create"} supplier:`,
+        error
+      );
+      toast.error(
+        `Failed to ${supplierId ? "update" : "create"} supplier: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Typography variant="h6" mb={3}>
-        {supplierId ? 'Edit Supplier' : 'Create New Supplier'}
+        {supplierId ? "Edit Supplier" : "Create New Supplier"}
       </Typography>
-      
-      <TextField
+
+      <FormInput
         fullWidth
         margin="normal"
         label="Supplier Name"
-        name="supplierName"  // Changed case
-        value={formData.supplierName}  // Changed case
+        name="supplierName"
+        value={formData.supplierName}
         onChange={handleChange}
-        error={!!errors.supplierName}  // Changed case
-        helperText={errors.supplierName}  // Changed case
+        error={!!errors.supplierName}
+        helperText={errors.supplierName}
         required
       />
-      
-      <TextField
+
+      <FormInput
         fullWidth
         margin="normal"
         label="Supplier Email"
-        name="supplierEmail"  // Changed case
-        value={formData.supplierEmail}  // Changed case
+        name="supplierEmail"
+        value={formData.supplierEmail}
         onChange={handleChange}
-        error={!!errors.supplierEmail}  // Changed case
-        helperText={errors.supplierEmail}  // Changed case
+        error={!!errors.supplierEmail}
+        helperText={errors.supplierEmail}
         required
       />
-      
-      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-        <Button 
-          variant="outlined" 
-          onClick={onClose}
-          disabled={loading}
-        >
+
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+        <Button variant="outlined" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button 
-          type="submit" 
-          variant="contained" 
+        <Button
+          type="submit"
+          variant="contained"
           disabled={loading}
           startIcon={loading ? <CircularProgress size={20} /> : null}
         >
-          {supplierId ? 'Update' : 'Create'}
+          {supplierId ? "Update" : "Create"}
         </Button>
       </Box>
     </Box>

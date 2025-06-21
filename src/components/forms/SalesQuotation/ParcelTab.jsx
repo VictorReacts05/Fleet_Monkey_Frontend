@@ -1,9 +1,9 @@
 import React from "react";
 import { Box, Typography, Button, TextField } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import DataTable from "../../Common/DataTable";
-import FormSelect from "../../Common/FormSelect";
-import FormInput from "../../Common/FormInput";
+import DataTable from "../../common/DataTable";
+import FormSelect from "../../common/FormSelect";
+import FormInput from "../../common/FormInput";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";

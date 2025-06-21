@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../Common/DataTable";
-import ConfirmDialog from "../../Common/ConfirmDialog";
+import DataTable from "../../common/DataTable";
+import ConfirmDialog from "../../common/ConfirmDialog";
 import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton, Chip } from "@mui/material";
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { showToast } from "../../toastNotification";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
@@ -60,7 +60,6 @@ const SalesRFQList = () => {
   useEffect(() => {
     // Fetch purchase RFQs on mount and when page/rowsPerPage changes
     fetchPurchaseRFQs();
-    // eslint-disable-next-line
   }, [page, rowsPerPage, fromDate, toDate]);
   
   useEffect(() => {
@@ -168,7 +167,7 @@ const SalesRFQList = () => {
   };
 
   const handleView = (id) => {
-    navigate(`/sales-rfq/edit/${id}?view=true`);
+    navigate(`/sales-rfq/view/${id}?view=true`);
   };
 
   const handleDeleteClick = (id) => {
@@ -218,13 +217,13 @@ const SalesRFQList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Sales RFQ Management</Typography>
+        <Typography variant="h5">Inquiry Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search SalesRFQs..."
+            placeholder="Search Inquiries..."
           />
-          <Tooltip title="Add New Sales RFQ">
+          <Tooltip title="Add New Inquiry" arrow>
             <IconButton
               color="primary"
               onClick={handleCreate}

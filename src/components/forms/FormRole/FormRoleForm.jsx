@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Grid, FormControlLabel, Checkbox } from "@mui/material";
-import { 
-  createFormRole, 
-  updateFormRole, 
+import { Grid, FormControlLabel, Checkbox, Box } from "@mui/material";
+import {
+  createFormRole,
+  updateFormRole,
   getFormRoleById,
   fetchForms,
-  fetchRoles
+  fetchRoles,
 } from "./FormRoleAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -17,7 +17,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
     FormID: "",
     RoleID: "",
     ReadOnly: false,
-    Write: false
+    Write: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -35,22 +35,26 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
   const loadDropdownData = async () => {
     try {
       setLoading(true);
-      
+
       // Load forms for dropdown
       const formsResponse = await fetchForms();
       const formsData = formsResponse.data || [];
-      setForms(formsData.map(form => ({
-        value: form.FormID,
-        label: form.FormName
-      })));
-      
+      setForms(
+        formsData.map((form) => ({
+          value: form.FormID,
+          label: form.FormName,
+        }))
+      );
+
       // Load roles for dropdown
       const rolesResponse = await fetchRoles();
       const rolesData = rolesResponse.data || [];
-      setRoles(rolesData.map(role => ({
-        value: role.RoleID,
-        label: role.RoleName
-      })));
+      setRoles(
+        rolesData.map((role) => ({
+          value: role.RoleID,
+          label: role.RoleName,
+        }))
+      );
     } catch (error) {
       toast.error("Failed to load dropdown data: " + error.message);
     } finally {
@@ -62,12 +66,12 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
     try {
       setLoading(true);
       const data = await getFormRoleById(formRoleID);
-      
+
       setFormData({
         FormID: data.FormID || "",
         RoleID: data.RoleID || "",
         ReadOnly: data.ReadOnly || false,
-        Write: data.Write || false
+        Write: data.Write || false,
       });
     } catch (error) {
       toast.error("Failed to load form role details: " + error.message);
@@ -82,7 +86,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
     if (!formData.FormID) {
       newErrors.FormID = "Form is required";
     }
-    
+
     if (!formData.RoleID) {
       newErrors.RoleID = "Role is required";
     }
@@ -103,7 +107,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
 
     try {
       setLoading(true);
-      
+
       if (formRoleID) {
         await updateFormRole(formRoleID, formData);
         toast.success("Form Role updated successfully");
@@ -111,14 +115,14 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
         await createFormRole(formData);
         toast.success("Form Role created successfully");
       }
-      
+
       if (onSave) onSave();
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
       toast.error(
-        `Failed to ${formRoleID ? "update" : "create"} form role: ` + 
-        (error.error || error.message || "Unknown error")
+        `Failed to ${formRoleID ? "update" : "create"} form role: ` +
+          (error.error || error.message || "Unknown error")
       );
     } finally {
       setLoading(false);
@@ -127,10 +131,10 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -141,33 +145,32 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
       onCancel={onClose}
       loading={loading}
     >
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <FormSelect
-            name="FormID"
-            label="Form"
-            value={formData.FormID}
-            onChange={handleChange}
-            options={forms}
-            error={!!errors.FormID}
-            helperText={errors.FormID}
-            required
-            fullWidth
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormSelect
-            name="RoleID"
-            label="Role"
-            value={formData.RoleID}
-            onChange={handleChange}
-            options={roles}
-            error={!!errors.RoleID}
-            helperText={errors.RoleID}
-            required
-            fullWidth
-          />
-        </Grid>
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <FormSelect
+          name="FormID"
+          label="Form"
+          value={formData.FormID}
+          onChange={handleChange}
+          options={forms}
+          error={!!errors.FormID}
+          helperText={errors.FormID}
+          required
+          fullWidth
+        />
+        <FormSelect
+          name="RoleID"
+          label="Role"
+          value={formData.RoleID}
+          onChange={handleChange}
+          options={roles}
+          error={!!errors.RoleID}
+          helperText={errors.RoleID}
+          required
+          fullWidth
+        />
+      </Box>
+
+      <Box sx={{ display: "flex", gap: 2 }}>
         <Grid item xs={12} md={6}>
           <FormControlLabel
             control={
@@ -194,7 +197,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
             label="Write"
           />
         </Grid>
-      </Grid>
+      </Box>
     </FormPage>
   );
 };

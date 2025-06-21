@@ -271,7 +271,7 @@ export const fetchVehicles = async (
   toDate = null
 ) => {
   try {
-    let url = `${APIBASEURL}/vehicles?page=${page}&limit=${limit}`;
+    let url = `${APIBASEURL}/vehicles?pageNumber=${page}&pageSize=${limit}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
 

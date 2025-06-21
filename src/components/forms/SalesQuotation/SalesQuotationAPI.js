@@ -636,7 +636,7 @@ export const sendSalesQuotation = async (salesQuotationId) => {
     console.log("Request headers:", headers);
     console.log("Request URL:", `${APIBASEURL}/send-sales-quotation`);
     const response = await axios.post(
-      `${APIBASEURL}/send-sales-quotation`,
+      `${APIBASEURL}/send-sales-quotation/send-sales-quotation`,
       payload,
       { headers }
     );

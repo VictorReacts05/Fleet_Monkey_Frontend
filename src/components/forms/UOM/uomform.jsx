@@ -5,7 +5,7 @@ import {
   Typography 
 } from '@mui/material';
 import { toast } from 'react-toastify';
-import { createUOM, updateUOM, getUOMById } from './uomapi';
+import { createUOM, updateUOM, getUOMById } from './UOMAPI';
 import FormInput from '../../Common/FormInput';
 import FormPage from '../../Common/FormPage';
 

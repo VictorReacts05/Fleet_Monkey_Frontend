@@ -18,77 +18,37 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { fetchSalesInvoiceItems } from "./salesInvoice"; // Import from your salesInvoice.js
+import { fetchItems, fetchUOMs } from "./SalesInvoiceAPI";
+import { useNavigate } from "react-router-dom";
 
-// Function to fetch items from API
-const fetchItems = async (token) => {
-  try {
-    const response = await axios.get(`${APIBASEURL}/items`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data.data || [];
-  } catch (error) {
-    console.error("fetchItems error:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-    throw error;
-  }
-};
-
-// Function to fetch UOMs from API
-const fetchUOMs = async (token) => {
-  try {
-    const response = await axios.get(`${APIBASEURL}/uoms`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = response.data.data || [];
-    if (Array.isArray(data)) {
-      return data;
-    }
-    console.warn("Unexpected UOM response:", data);
-    return [];
-  } catch (error) {
-    console.error("fetchUOMs error:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-    throw error;
-  }
-};
-
-// Function to get auth header
 const getAuthHeader = () => {
-  try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user?.personId) {
-      console.warn("No valid personId found in localStorage");
-      return null;
-    }
-    return {
-      personId: user?.personId || null,
-      token: user?.personId, // Use personId as token
-    };
-  } catch (err) {
-    console.error("getAuthHeader error:", err.message);
-    return null;
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const personId = user?.personId;
+  if (!personId) {
+    throw new Error("No personId found in localStorage");
   }
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${personId}`,
+    },
+    personId,
+  };
 };
 
-const SalesInvoiceParcelTab = ({
+const SalesInvoiceParcelsTab = ({
   salesInvoiceId,
   onItemsChange,
   readOnly = false,
 }) => {
+  const navigate = useNavigate();
   const [itemsList, setItemsList] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [itemForms, setItemForms] = useState([]);
-  const [formErrors, setFormErrors] = useState({});
+  const [errors, setErrors] = useState({});
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -96,86 +56,138 @@ const SalesInvoiceParcelTab = ({
   const theme = useTheme();
   const isMounted = useRef(true);
 
-  // Define columns for table
+  // Define columns for DataTable
   const columns = [
-    { field: "itemName", headerName: "Name", flex: 1 },
+    { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1 },
+    { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
+    { field: "Rate", headerName: "Rate", flex: 1 },
+    { field: "Amount", headerName: "Amount", flex: 1 },
   ];
 
+  // Fetch sales invoice parcels
+ const fetchSalesInvoiceItems = async (salesInvoiceId) => {
+  try {
+    const { headers } = getAuthHeader();
+    console.log("Fetching sales invoice items for SalesInvoiceID:", salesInvoiceId);
+    const response = await axios.get(
+      `${APIBASEURL}/salesInvoiceParcel?SalesinvoiceID=${salesInvoiceId}`, // Remove the extra /api/
+      { headers }
+    );
+    console.log("Raw API response in SalesInvoiceParcelsTab:", response.data);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("fetchSalesInvoiceItems error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
   // Load data with caching
-  const loadData = useCallback(async () => {
-    if (!salesInvoiceId) {
-      setError("No Sales Invoice ID provided");
-      setLoading(false);
-      return;
+ const loadData = useCallback(async () => {
+  console.log("loadData called with salesInvoiceId:", salesInvoiceId);
+
+  if (!salesInvoiceId) {
+    setError("No Sales Invoice ID provided");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+
+    // Fetch items and UOMs only if not loaded
+    let itemsData = items.length > 1 ? items : [];
+    let uomsData = uoms.length > 1 ? uoms : [];
+
+    if (!itemsData.length) {
+      const rawItems = await fetchItems();
+      console.log("Fetched items:", rawItems);
+      itemsData = [
+        { value: "", label: "Select an item" },
+        ...rawItems.map((item) => ({
+          value: String(item.ItemID),
+          label: item.ItemName || "Unknown Item",
+        })),
+      ];
+      setItems(itemsData);
     }
 
-    const auth = getAuthHeader();
-    if (!auth) {
-      setError("Please log in to view items.");
-      setLoading(false);
-      return;
+    if (!uomsData.length) {
+      const rawUoms = await fetchUOMs();
+      console.log("Fetched UOMs:", rawUoms);
+      uomsData = [
+        { value: "", label: "Select a UOM" },
+        ...rawUoms.map((uom) => ({
+          value: String(uom.UOMID),
+          label: uom.UOM || uom.UOMName || "Unknown UOM",
+        })),
+      ];
+      setUOMs(uomsData);
     }
 
+    // Fetch parcels, handle failure gracefully
+    let parcelData = [];
     try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch items and UOMs only if not loaded
-      let itemsData = items.length > 1 ? items : [];
-      let uomsData = uoms.length > 1 ? uoms : [];
-
-      if (!itemsData.length) {
-        const rawItems = await fetchItems(auth.token);
-        itemsData = [
-          { value: "", label: "Select an item" },
-          ...rawItems.map((item) => ({
-            value: String(item.ItemID),
-            label: item.ItemName || "Unknown Item",
-          })),
-        ];
-        setItems(itemsData);
-      }
-
-      if (!uomsData.length) {
-        const rawUoms = await fetchUOMs(auth.token);
-        uomsData = [
-          { value: "", label: "Select a UOM" },
-          ...rawUoms.map((uom) => ({
-            value: String(uom.UOMID),
-            label: uom.UOM || uom.UOMName || "Unknown UOM",
-          })),
-        ];
-        setUOMs(uomsData);
-      }
-
-      // Fetch invoice items
-      const itemData = await fetchSalesInvoiceItems(salesInvoiceId);
-      const formattedItems = itemData.map((item, index) => ({
-        id: item.id,
-        itemId: item.itemId,
-        uomId: item.uomId,
-        quantity: item.quantity,
-        itemName: item.itemName,
-        uomName: item.uomName,
-        srNo: item.srNo,
-      }));
-
-      setItemsList(formattedItems);
-      onItemsChange(formattedItems);
+      parcelData = await fetchSalesInvoiceItems(salesInvoiceId);
     } catch (error) {
-      console.error("loadData error:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-      setError("Failed to load items. Please try again.");
-      toast.error("Failed to load items");
-    } finally {
-      setLoading(false);
+      console.warn("Failed to fetch sales invoice items, defaulting to empty array:", error.message);
+      if (error.response?.status === 404) {
+        setError("Sales Invoice not found. It may have been deleted.");
+      }
+      parcelData = [];
     }
-  }, [salesInvoiceId, onItemsChange, items.length, uoms.length]);
+    console.log("Parcel data after fetch:", parcelData);
+
+    const formattedItems = parcelData.map((item, index) => {
+      const itemId = String(item.ItemID || "");
+      const uomId = String(item.UOMID || "");
+      const itemOption = itemsData.find((i) => i.value === itemId);
+      const uomOption = uomsData.find((u) => u.value === uomId);
+
+      return {
+        id: item.SalesInvoiceParcelID || Date.now() + index,
+        itemId,
+        uomId,
+        quantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
+        ItemQuantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
+        rate: parseFloat(item.Rate || "0").toString(),
+        Rate: parseFloat(item.Rate || "0").toString(),
+        amount: parseFloat(item.Amount || "0").toString(),
+        Amount: parseFloat(item.Amount || "0").toString(),
+        itemName: itemOption?.label || `Item ${itemId}`,
+        uomName: uomOption?.label || `UOM ${uomId}`,
+        srNo: index + 1,
+        SalesInvoiceParcelID: item.SalesInvoiceParcelID,
+        SalesInvoiceID: salesInvoiceId,
+      };
+    });
+
+    console.log("Formatted items for DataTable:", formattedItems);
+    setItemsList(formattedItems);
+    if (onItemsChange) {
+      onItemsChange(formattedItems);
+    }
+  } catch (error) {
+    console.error("loadData error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    if (error.message.includes("personId")) {
+      setError("Please log in to view items. Click below to log in.");
+    } else if (!error.response?.status === 404) { // Avoid overwriting the 404 error message
+      setError("Failed to load items. Please try again.");
+      toast.error("Failed to load items: " + error.message);
+    }
+  } finally {
+    setLoading(false);
+  }
+}, [salesInvoiceId, onItemsChange, items.length, uoms.length]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -185,138 +197,179 @@ const SalesInvoiceParcelTab = ({
     };
   }, [loadData]);
 
-  // Handle add item form
+  // Handle adding a new item form
   const handleAddItem = () => {
     const newFormId = Date.now();
     setItemForms((prev) => [
       ...prev,
-      { id: newFormId, itemId: "", uomId: "", quantity: "" },
+      {
+        id: newFormId,
+        itemId: "",
+        uomId: "",
+        quantity: "",
+        rate: "",
+        amount: "",
+      },
     ]);
   };
 
-  // Handle edit item
+  // Handle editing an existing item
   const handleEditItem = (id) => {
-    const item = itemsList.find((i) => i.id === id);
-    if (!item) return;
+    const itemToEdit = itemsList.find((p) => p.id === id);
+    if (!itemToEdit) {
+      console.error("Item not found for editing:", id);
+      return;
+    }
+
     const editFormId = Date.now();
     setItemForms((prev) => [
       ...prev,
       {
         id: editFormId,
-        itemId: item.itemId,
-        uomId: item.uomId,
-        quantity: item.quantity,
-        editIndex: itemsList.findIndex((i) => i.id === id),
-        originalId: item.id,
+        itemId: itemToEdit.itemId,
+        uomId: itemToEdit.uomId,
+        quantity: itemToEdit.quantity,
+        rate: itemToEdit.rate,
+        amount: itemToEdit.amount,
+        editIndex: itemsList.findIndex((p) => p.id === id),
+        originalId: id,
       },
     ]);
   };
 
-  // Handle form changes
+  // Handle form field changes
   const handleChange = (e, formId) => {
     const { name, value } = e.target;
     setItemForms((prev) =>
-      prev.map((form) =>
-        form.id === formId ? { ...form, [name]: value } : form
-      )
+      prev.map((form) => {
+        if (form.id !== formId) return form;
+        const updatedForm = { ...form, [name]: value };
+        if (name === "quantity" || name === "rate") {
+          const qty = name === "quantity" ? value : form.quantity;
+          const rate = name === "rate" ? value : form.rate;
+          updatedForm.amount = (Number(qty) * Number(rate)).toFixed(2);
+        }
+        return updatedForm;
+      })
     );
-    setFormErrors((prev) => ({
-      ...prev,
-      [formId]: { ...prev[formId], [name]: "" },
-    }));
-  };
 
-  // Validate form
-  const validateForm = (formData) => {
-    const errors = {};
-    if (!formData.itemId) errors.itemId = "Item is required";
-    if (!formData.uomId) errors.uomId = "UOM is required";
-    if (!formData.quantity) {
-      errors.quantity = "Quantity is required";
-    } else if (
-      isNaN(Number(formData.quantity)) ||
-      Number(formData.quantity) <= 0
-    ) {
-      errors.quantity = "Quantity must be a positive number";
+    if (errors[formId]?.[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [formId]: {
+          ...prev[formId],
+          [name]: undefined,
+        },
+      }));
     }
-    return errors;
   };
 
-  // Handle form save
+  // Validate an item form
+  const validateItemForm = (form) => {
+    const formErrors = {};
+    if (!form.itemId) formErrors.itemId = "Item is required";
+    if (!form.uomId) formErrors.uomId = "UOM is required";
+    if (!form.quantity) {
+      formErrors.quantity = "Quantity is required";
+    } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
+      formErrors.quantity = "Quantity must be a positive number";
+    }
+    if (!form.rate) {
+      formErrors.rate = "Rate is required";
+    } else if (isNaN(Number(form.rate)) || Number(form.rate) < 0) {
+      formErrors.rate = "Rate must be a non-negative number";
+    }
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) < 0) {
+      formErrors.amount = "Invalid Amount";
+    }
+
+    return formErrors;
+  };
+
+  // Handle saving an item form
   const handleSave = async (formId) => {
     const form = itemForms.find((f) => f.id === formId);
     if (!form) return;
 
-    const formErrors = validateForm(form);
+    const formErrors = validateItemForm(form);
     if (Object.keys(formErrors).length > 0) {
-      setFormErrors((prev) => ({ ...prev, [formId]: formErrors }));
-      return;
-    }
-
-    const auth = getAuthHeader();
-    if (!auth) {
-      setError("Please log in to save items.");
+      setErrors((prev) => ({
+        ...prev,
+        [formId]: formErrors,
+      }));
       return;
     }
 
     try {
-      const selectedItem = items.find((item) => item.value === form.itemId);
+      const { headers, personId } = getAuthHeader();
+      const selectedItem = items.find((i) => i.value === form.itemId);
       const selectedUOM = uoms.find((u) => u.value === form.uomId);
       const originalItem =
         form.editIndex !== undefined ? itemsList[form.editIndex] : null;
 
-      const newItemData = {
+      const newItem = {
         id: form.originalId || form.id,
-        itemId: form.itemId,
+        SalesInvoiceParcelID:
+          originalItem?.SalesInvoiceParcelID || originalItem?.id,
+        SalesInvoiceID: salesInvoiceId,
         ItemID: parseInt(form.itemId, 10),
-        uomId: form.uomId,
+        itemId: form.itemId,
         UOMID: parseInt(form.uomId, 10),
+        uomId: form.uomId,
+        ItemQuantity: parseFloat(form.quantity),
+        Quantity: parseFloat(form.quantity),
         quantity: form.quantity,
-        Quantity: parseInt(form.quantity, 10),
-        itemName: selectedItem ? selectedItem.label : `Item ${form.itemId}`,
-        uomName: selectedUOM ? selectedUOM.label : `UOM ${form.uomId}`,
+        Rate: parseFloat(form.rate),
+        rate: form.rate,
+        Amount: parseFloat(form.amount),
+        amount: form.amount,
+        itemName: selectedItem ? selectedItem.label : "Unknown Item",
+        uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
         srNo: originalItem?.srNo || itemsList.length + 1,
         isModified: true,
-        CreatedByID: auth.personId ? parseInt(auth.personId, 10) : null,
-        SalesInvoiceID: parseInt(salesInvoiceId, 10),
+        CreatedByID: personId ? parseInt(personId, 10) : null,
       };
 
       // Save to backend
       if (form.editIndex !== undefined) {
-        // Update existing item
         await axios.put(
-          `${APIBASEURL}/sales-invoice-items/${newItemData.id}`,
+          `${APIBASEURL}/api/salesInvoiceParcel/${newItem.SalesInvoiceParcelID}`,
           {
-            SalesInvoiceID: newItemData.SalesInvoiceID,
-            ItemID: newItemData.ItemID,
-            UOMID: newItemData.UOMID,
-            Quantity: newItemData.Quantity,
-            CreatedByID: newItemData.CreatedByID,
+            SalesInvoiceID: salesInvoiceId,
+            ItemID: newItem.ItemID,
+            UOMID: newItem.UOMID,
+            ItemQuantity: newItem.ItemQuantity,
+            Rate: newItem.Rate,
+            Amount: newItem.Amount,
+            CreatedByID: newItem.CreatedByID,
           },
-          { headers: { Authorization: `Bearer ${auth.token}` } }
+          { headers }
         );
       } else {
-        // Create new item
         await axios.post(
-          `${APIBASEURL}/sales-invoice-items`,
+          `${APIBASEURL}/api/salesInvoiceParcel`,
           {
-            SalesInvoiceID: newItemData.SalesInvoiceID,
-            ItemID: newItemData.ItemID,
-            UOMID: newItemData.UOMID,
-            Quantity: newItemData.Quantity,
-            CreatedByID: newItemData.CreatedByID,
+            SalesInvoiceID: salesInvoiceId,
+            ItemID: newItem.ItemID,
+            UOMID: newItem.UOMID,
+            ItemQuantity: newItem.ItemQuantity,
+            Rate: newItem.Rate,
+            Amount: newItem.Amount,
+            CreatedByID: newItem.CreatedByID,
           },
-          { headers: { Authorization: `Bearer ${auth.token}` } }
+          { headers }
         );
       }
 
       const updatedItems =
         form.editIndex !== undefined
-          ? itemsList.map((i, index) => (index === form.editIndex ? newItemData : i))
-          : [...itemsList, newItemData];
+          ? itemsList.map((p, i) => (i === form.editIndex ? newItem : p))
+          : [...itemsList, newItem];
 
       setItemsList(updatedItems);
-      onItemsChange(updatedItems);
+      if (onItemsChange) {
+        onItemsChange(updatedItems);
+      }
       setItemForms((prev) => prev.filter((f) => f.id !== formId));
       toast.success("Item saved successfully.");
     } catch (error) {
@@ -325,11 +378,15 @@ const SalesInvoiceParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      toast.error("Failed to save item.");
+      if (error.message.includes("personId")) {
+        setError("Please log in to save items. Click below to log in.");
+      } else {
+        toast.error("Failed to save item: " + error.message);
+      }
     }
   };
 
-  // Handle delete item
+  // Handle deleting an item
   const handleDeleteItem = (id) => {
     setDeleteItemId(id);
     setDeleteConfirmOpen(true);
@@ -337,20 +394,20 @@ const SalesInvoiceParcelTab = ({
 
   const handleConfirmDelete = async () => {
     try {
-      const auth = getAuthHeader();
-      if (!auth) {
-        toast.error("Please log in to delete items.");
-        return;
+      const { headers } = getAuthHeader();
+      const itemToDelete = itemsList.find((p) => p.id === deleteItemId);
+      if (itemToDelete?.SalesInvoiceParcelID) {
+        await axios.delete(
+          `${APIBASEURL}/api/salesInvoiceParcel/${itemToDelete.SalesInvoiceParcelID}`,
+          { headers }
+        );
       }
 
-      // Delete from backend
-      await axios.delete(`${APIBASEURL}/sales-invoice-items/${deleteItemId}`, {
-        headers: { Authorization: `Bearer ${auth.token}` },
-      });
-
-      const updatedItems = itemsList.filter((i) => i.id !== deleteItemId);
+      const updatedItems = itemsList.filter((p) => p.id !== deleteItemId);
       setItemsList(updatedItems);
-      onItemsChange(updatedItems);
+      if (onItemsChange) {
+        onItemsChange(updatedItems);
+      }
       setDeleteConfirmOpen(false);
       setDeleteItemId(null);
       toast.success("Item deleted successfully.");
@@ -360,7 +417,11 @@ const SalesInvoiceParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      toast.error("Failed to delete item.");
+      if (error.message.includes("personId")) {
+        setError("Please log in to delete items. Click below to log in.");
+      } else {
+        toast.error("Failed to delete item: " + error.message);
+      }
     }
   };
 
@@ -369,16 +430,20 @@ const SalesInvoiceParcelTab = ({
     setDeleteItemId(null);
   };
 
+  const handleLoginRedirect = () => {
+    navigate("/login");
+  };
+
   return (
     <Box
       sx={{
         mt: 2,
-        flex: 1,
         display: "flex",
         flexDirection: "column",
         borderRadius: 1,
       }}
     >
+      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -393,25 +458,22 @@ const SalesInvoiceParcelTab = ({
             fontWeight: "bold",
             borderTop: "1px solid #e0e0e0",
             borderRight: "1px solid #e0e0e0",
-            borderLeft: "1py: 1.5",
-            px: 3,
-            fontWeight: "bold",
-            borderTop: "1px solid #e0e0e0",
-            borderRight: "1px solid #e0e0e0",
             borderLeft: "1px solid #e0e0e0",
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
               theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
             color: theme.palette.text.primary,
+            cursor: "pointer",
           }}
         >
           <Typography variant="h6" component="div">
-            Invoice Items
+            Items
           </Typography>
         </Box>
       </Box>
 
+      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -431,15 +493,18 @@ const SalesInvoiceParcelTab = ({
             <Button
               variant="contained"
               color="primary"
-              onClick={loadData}
+              onClick={error.includes("log in") ? handleLoginRedirect : loadData}
               sx={{ mt: 2 }}
             >
-              Retry
+              {error.includes("log in") ? "Log In" : "Retry"}
             </Button>
           </Box>
         ) : itemsList.length === 0 && itemForms.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-            <Typography variant="body1">No items are found</Typography>
+            <Typography variant="body1">
+              No items found.{" "}
+              {!readOnly && "Click 'Add Item' to add a new item."}
+            </Typography>
           </Box>
         ) : (
           <>
@@ -469,6 +534,7 @@ const SalesInvoiceParcelTab = ({
                 <Typography variant="subtitle1" gutterBottom>
                   {form.editIndex !== undefined ? "Edit Item" : "New Item"}
                 </Typography>
+
                 <Box
                   sx={{
                     display: "flex",
@@ -485,10 +551,11 @@ const SalesInvoiceParcelTab = ({
                       value={form.itemId}
                       onChange={(e) => handleChange(e, form.id)}
                       options={items}
-                      error={!!formErrors[form.id]?.itemId}
-                      helperText={formErrors[form.id]?.itemId}
+                      error={!!errors[form.id]?.itemId}
+                      helperText={errors[form.id]?.itemId}
                     />
                   </Box>
+
                   <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                     <FormSelect
                       name="uomId"
@@ -496,24 +563,54 @@ const SalesInvoiceParcelTab = ({
                       value={form.uomId}
                       onChange={(e) => handleChange(e, form.id)}
                       options={uoms}
-                      error={!!formErrors[form.id]?.uomId}
-                      helperText={formErrors[form.id]?.uomId}
+                      error={!!errors[form.id]?.uomId}
+                      helperText={errors[form.id]?.uomId}
                     />
                   </Box>
+
                   <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                     <FormInput
                       name="quantity"
                       label="Quantity"
                       value={form.quantity}
                       onChange={(e) => handleChange(e, form.id)}
-                      error={!!formErrors[form.id]?.quantity}
-                      helperText={formErrors[form.id]?.quantity}
+                      error={!!errors[form.id]?.quantity}
+                      helperText={errors[form.id]?.quantity}
                       type="number"
                     />
                   </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormInput
+                      name="rate"
+                      label="Rate"
+                      value={form.rate}
+                      onChange={(e) => handleChange(e, form.id)}
+                      error={!!errors[form.id]?.rate}
+                      helperText={errors[form.id]?.rate}
+                      type="number"
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormInput
+                      name="amount"
+                      label="Amount"
+                      value={form.amount}
+                      error={!!errors[form.id]?.amount}
+                      helperText={errors[form.id]?.amount}
+                      type="number"
+                      disabled
+                    />
+                  </Box>
                 </Box>
+
                 <Box
-                  sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
                 >
                   <Button
                     variant="outlined"
@@ -539,10 +636,12 @@ const SalesInvoiceParcelTab = ({
               <DataTable
                 rows={itemsList}
                 columns={columns}
-                pageSize={rowsPerPage}
                 page={page}
+                rowsPerPage={rowsPerPage}
                 onPageChange={(newPage) => setPage(newPage)}
-                onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
+                onRowsPerPageChange={(newPageSize) =>
+                  setRowsPerPage(newPageSize)
+                }
                 rowsPerPageOptions={[5, 10, 25]}
                 checkboxSelection={false}
                 disableSelectionOnClick
@@ -551,7 +650,7 @@ const SalesInvoiceParcelTab = ({
                 onEdit={!readOnly ? handleEditItem : undefined}
                 onDelete={!readOnly ? handleDeleteItem : undefined}
                 totalRows={itemsList.length}
-                pagination
+                isPagination={true}
               />
             )}
           </>
@@ -564,7 +663,7 @@ const SalesInvoiceParcelTab = ({
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"Confirm Deletion"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to remove this item? This action cannot be
@@ -574,7 +673,7 @@ const SalesInvoiceParcelTab = ({
         <DialogActions>
           <Button onClick={handleCancelDelete}>Cancel</Button>
           <Button onClick={handleConfirmDelete} color="error" autoFocus>
-            Confirm
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -582,4 +681,4 @@ const SalesInvoiceParcelTab = ({
   );
 };
 
-export default SalesInvoiceParcelTab;
+export default SalesInvoiceParcelsTab;

@@ -50,6 +50,61 @@ export const getAuthHeader = (user = null) => {
   }
 };
 
+export const fetchPurchaseOrders = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null,
+  searchTerm = null
+) => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+
+    let url = `${APIBASEURL}/po?pageNumber=${page}&pageSize=${pageSize}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+    console.log("Fetching POs with URL:", url);
+    const response = await axios.get(url, { headers });
+    console.log("Raw API response for PurchaseOrders:", response.data);
+
+    if (response.data && response.data.data) {
+      const processedData = response.data.data.map((item) => ({
+        ...item,
+        id: item.PurchaseOrderID || item.POID || item.id || "unknown",
+        Status: item.Status || item.status || "Pending",
+      }));
+
+      const totalRecords = response.data.totalRecords ?? processedData.length;
+      console.log(
+        "Processed POs:",
+        processedData,
+        "Total Records:",
+        totalRecords
+      );
+
+      return {
+        data: processedData,
+        totalRecords,
+      };
+    }
+
+    console.warn("No data found in response:", response.data);
+    return { data: [], totalRecords: 0 };
+  } catch (error) {
+    console.error(
+      "Error fetching PurchaseOrders:",
+      error.response?.data || error.message,
+      "Status:",
+      error.response?.status
+    );
+    throw error.response?.data || error;
+  }
+};
 export const fetchItems = async (user) => {
   try {
     if (cache.items) {
@@ -126,29 +181,6 @@ export const sendPurchaseOrderEmail = async (purchaseOrderId, user) => {
   } catch (error) {
     console.error(
       `Error sending purchase order email for PO ${purchaseOrderId}:`,
-      error.response?.data || error.message,
-      "Status:",
-      error.response?.status
-    );
-    throw error.response?.data || error;
-  }
-};
-
-export const fetchPurchaseOrders = async (page = 1, limit = 10, user) => {
-  try {
-    const { headers } = getAuthHeader(user);
-    console.log(
-      `Fetching POs page ${page}, limit ${limit} from: ${APIBASEURL}/po`
-    );
-    const response = await axios.get(`${APIBASEURL}/po`, {
-      params: { page, limit },
-      headers,
-    });
-    console.log("POs API Response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error(
-      "Error fetching POs:",
       error.response?.data || error.message,
       "Status:",
       error.response?.status

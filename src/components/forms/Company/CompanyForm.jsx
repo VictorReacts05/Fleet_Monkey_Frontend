@@ -7,10 +7,10 @@ import {
   fetchAllCurrencies,
 } from "./CompanyAPI";
 import { toast } from "react-toastify";
-import FormInput from "../../Common/FormInput";
-import FormSelect from "../../Common/FormSelect";
-import FormTextArea from "../../Common/FormTextArea";
-import FormPage from "../../Common/FormPage";
+import FormInput from "../../common/FormInput";
+import FormSelect from "../../common/FormSelect";
+import FormTextArea from "../../common/FormTextArea";
+import FormPage from "../../common/FormPage";
 
 const CompanyForm = ({ companyId, onClose, onSave }) => {
   const [formData, setFormData] = useState({

@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useParams, useNavigate } from "react-router-dom";
-import FormPage from "../../Common/FormPage";
+import FormPage from "../../common/FormPage.jsx";
 import StatusIndicator from "./StatusIndicator";
 import ParcelTab from "./ParcelTab.jsx";
 import { toast } from "react-toastify";
@@ -434,7 +434,7 @@ const SalesQuotationForm = ({
             }}
           >
             <Typography variant="h6">
-              {isEdit ? "Edit Sales Quotation" : "View Sales Quotation"}
+              {isEdit ? "Edit Estimate" : "View Estimate"}
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Fade in={true} timeout={500}>

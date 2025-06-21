@@ -84,21 +84,79 @@ export const fetchUOMs = async (user) => {
   }
 };
 
-export const fetchPurchaseInvoices = async (pageNumber = 1, pageSize = 10, user) => {
+// export const fetchPurchaseInvoices = async (pageNumber = 1, pageSize = 10, user) => {
+//   try {
+//     const { headers } = getAuthHeader(user);
+//     console.log(
+//       `Fetching Purchase Invoices page ${pageSize}, limit ${pageSize} from: ${APIBASEURL}/pInvoice`
+//     );
+//     const response = await axios.get(`${APIBASEURL}/pInvoice`, {
+//       params: { pageNumber, pageSize },
+//       headers,
+//     });
+//     console.log("Purchase Invoices API Response:", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error(
+//       "Error fetching Purchase Invoices:",
+//       error.response?.data || error.message,
+//       "Status:",
+//       error.response?.status
+//     );
+//     throw error.response?.data || error;
+//   }
+// };
+
+
+
+export const fetchPurchaseInvoices = async (
+  page = 1,
+  pageSize = 10,
+  fromDate = null,
+  toDate = null,
+  searchTerm = null
+) => {
   try {
-    const { headers } = getAuthHeader(user);
-    console.log(
-      `Fetching Purchase Invoices page ${pageSize}, limit ${pageSize} from: ${APIBASEURL}/pInvoice`
-    );
-    const response = await axios.get(`${APIBASEURL}/pInvoice`, {
-      params: { pageNumber, pageSize },
-      headers,
-    });
-    console.log("Purchase Invoices API Response:", response.data);
-    return response.data;
+    const user = JSON.parse(localStorage.getItem("user"));
+    const headers = user?.token
+      ? { Authorization: `Bearer ${user.token}` }
+      : {};
+
+    let url = `${APIBASEURL}/pInvoice?pageNumber=${page}&pageSize=${pageSize}`;
+    if (fromDate) url += `&fromDate=${fromDate}`;
+    if (toDate) url += `&toDate=${toDate}`;
+    if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+    console.log("Fetching POs with URL:", url);
+    const response = await axios.get(url, { headers });
+    console.log("Raw API response for PurchaseOrders:", response.data);
+
+    if (response.data && response.data.data) {
+      const processedData = response.data.data.map((item) => ({
+        ...item,
+        id: item.PurchaseOrderID || item.POID || item.id || "unknown",
+        Status: item.Status || item.status || "Pending",
+      }));
+
+      const totalRecords = response.data.totalRecords ?? processedData.length;
+      console.log(
+        "Processed POs:",
+        processedData,
+        "Total Records:",
+        totalRecords
+      );
+
+      return {
+        data: processedData,
+        totalRecords,
+      };
+    }
+
+    console.warn("No data found in response:", response.data);
+    return { data: [], totalRecords: 0 };
   } catch (error) {
     console.error(
-      "Error fetching Purchase Invoices:",
+      "Error fetching PurchaseOrders:",
       error.response?.data || error.message,
       "Status:",
       error.response?.status
@@ -543,7 +601,7 @@ export const createPurchaseInvoice = async (POID, user) => {
     );
     const response = await axios.post(
       `${APIBASEURL}/pInvoice`,
-      { POID: parseInt(POID, 10) },
+      { poid: parseInt(POID, 10) },
       { headers }
     );
     console.log("Create Purchase Invoice Response:", response.data);

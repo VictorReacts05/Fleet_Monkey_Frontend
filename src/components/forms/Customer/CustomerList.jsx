@@ -7,15 +7,15 @@ import {
   Tooltip, 
   IconButton 
 } from '@mui/material';
-import DataTable from '../../Common/DataTable';
+import DataTable from '../../common/DataTable';
 import CustomerModal from './CustomerModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
+import ConfirmDialog from '../../common/ConfirmDialog';
+import FormDatePicker from '../../common/FormDatePicker';
 import { fetchCustomers, deleteCustomer } from './CustomerAPI';
 import { toast } from 'react-toastify';
 import dayjs from 'dayjs';
 import { Add } from '@mui/icons-material';
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { showToast } from '../../toastNotification';
 
 
@@ -60,11 +60,11 @@ const CustomerList = () => {
       
       const formattedRows = customers.map((customer) => ({
         id: customer.CustomerID,
-        customerName: customer.CustomerName || "N/A",
-        companyName: customer.CompanyName || "N/A",
-        importCode: customer.ImportCode || "N/A",
-        currencyName: customer.CurrencyName || "N/A",
-        website: customer.Website || "N/A",
+        customerName: customer.CustomerName || "-",
+        companyName: customer.CompanyName || "-",
+        importCode: customer.ImportCode || "-",
+        currencyName: customer.CurrencyName || "-",
+        website: customer.Website || "-",
         createdDateTime:
           dayjs(customer.CreatedDateTime).format("YYYY-MM-DD HH:mm:ss") ||
           "N/A",

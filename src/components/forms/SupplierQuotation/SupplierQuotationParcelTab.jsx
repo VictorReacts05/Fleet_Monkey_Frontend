@@ -8,8 +8,8 @@ import {
   useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import FormSelect from "../../Common/FormSelect";
-import FormInput from "../../Common/FormInput";
+import FormSelect from "../../common/FormSelect";
+import FormInput from "../../common/FormInput";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Dialog from "@mui/material/Dialog";
@@ -19,7 +19,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { getAuthHeader } from "./SupplierQuotationAPI";
-import DataTable from "../../Common/DataTable";
+import DataTable from "../../common/DataTable";
 
 // Function to fetch items from API
 const fetchItems = async () => {

@@ -58,6 +58,9 @@ import PurchaseInvoicePage from "./components/forms/PurchaseInvoice/PurchaseInvo
 import SalesInvoiceList from "./components/forms/SalesInvoice/SalesInvoiceList";
 import SalesInvoiceForm from "./components/forms/SalesInvoice/SalesInvoiceForm";
 import SalesInvoicePage from "./components/forms/SalesInvoice/SalesInvoicePage";
+import AddressList from "./components/forms/Address/AddressList";
+import PendingApprovalsList from "./components/forms/PendingApprovals/PendingApprovalsList";
+import ItemList from "./components/forms/Item/ItemList";
 
 // Wrapper for Create Sales RFQ
 const CreateSalesRFQWrapper = () => {
@@ -204,6 +207,14 @@ function AppContent() {
           />
           <Route
             path="/sales-rfq/edit/:id"
+            element={
+              <ProtectedRoute>
+                <EditSalesRFQWrapper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sales-rfq/view/:id"
             element={
               <ProtectedRoute>
                 <EditSalesRFQWrapper />
@@ -375,6 +386,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <BankList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/items"
+            element={
+              <ProtectedRoute>
+                <ItemList />
               </ProtectedRoute>
             }
           />
@@ -575,6 +594,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SalesInvoiceList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pending-approvals"
+            element={
+              <ProtectedRoute>
+                <PendingApprovalsList />
               </ProtectedRoute>
             }
           />

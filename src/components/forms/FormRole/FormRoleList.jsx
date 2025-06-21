@@ -58,7 +58,7 @@ const FormRoleList = () => {
       );
       
       const formRoles = response.data || [];
-      const totalCount = response.pagination?.totalRecords || formRoles.length;
+      const totalCount = response.totalRecords || formRoles.length;
       
       const formattedRows = formRoles.map((formRole) => ({
         id: formRole.FormRoleID,

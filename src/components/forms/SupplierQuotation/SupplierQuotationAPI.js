@@ -40,10 +40,10 @@ const getAuthHeader = (() => {
 
 // Fetch all Supplier Quotations
 export const fetchSupplierQuotations = async (
-  page = 1,
-  pageSize = 10,
-  fromDate = null,
-  toDate = null
+  page ,
+  pageSize ,
+  fromDate ,
+  toDate 
 ) => {
   try {
     const { headers } = getAuthHeader();

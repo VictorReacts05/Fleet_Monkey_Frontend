@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Stack, Tooltip, IconButton } from "@mui/material";
-import DataTable from "../../Common/DataTable";
+import DataTable from "../../common/DataTable";
 import SubscriptionModal from "./SubscriptionModal";
-import ConfirmDialog from "../../Common/ConfirmDialog";
+import ConfirmDialog from "../../common/ConfirmDialog";
 import { fetchSubscriptionPlans, deleteSubscriptionPlan } from "./SubscriptionAPI";
-import SearchBar from "../../Common/SearchBar";
+import SearchBar from "../../common/SearchBar";
 import { Add } from "@mui/icons-material";
 import { toast } from "react-toastify";
 import { showToast } from "../../toastNotification";
-import FormDatePicker from "../../Common/FormDatePicker";
+import FormDatePicker from "../../common/FormDatePicker";
 import dayjs from "dayjs";
 
 const SubscriptionList = () => {
@@ -43,10 +43,10 @@ const SubscriptionList = () => {
       
       const formattedRows = subscriptions.map((subscription) => ({
         id: subscription.SubscriptionPlanID,
-        planName: subscription.SubscriptionPlanName || "N/A",
-        description: subscription.Description || "N/A",
-        fees: subscription.Fees ? parseFloat(subscription.Fees).toFixed(2) : "N/A",
-        billingType: subscription.BillingFrequencyName || "N/A",
+        planName: subscription.SubscriptionPlanName || "-",
+        description: subscription.Description || "-",
+        fees: subscription.Fees ? parseFloat(subscription.Fees).toFixed(2) : "-",
+        billingType: subscription.BillingFrequencyName || "-",
         billingFrequencyId: subscription.BillingFrequencyID,
         daysInFrequency: subscription.DaysInFrequency
       }));
