@@ -135,6 +135,9 @@ const PurchaseRFQForm = ({
         const rfqData = response.data;
         let formattedData = {
           ...rfqData,
+          Series: rfqData.Series
+            ? rfqData.Series.replace("Pur-RFQ", "Quot-Request")
+            : rfqData.Series || "-",
           DeliveryDate: rfqData.DeliveryDate
             ? new Date(rfqData.DeliveryDate)
             : null,
@@ -269,7 +272,10 @@ const PurchaseRFQForm = ({
       if (salesRFQsData && Array.isArray(salesRFQsData)) {
         const formattedSalesRFQs = salesRFQsData.map((rfq) => ({
           value: rfq.SalesRFQID.toString(),
-          label: rfq.Series || `Sales RFQ #${rfq.SalesRFQID}`,
+          // label: rfq.Series || `Sales RFQ #${rfq.SalesRFQID}`,
+          label: rfq.Series
+            ? rfq.Series.replace("Sales-RFQ", "Inquiry")
+            : `Inquiry #${rfq.SalesRFQID}`,
         }));
         setSalesRFQs(formattedSalesRFQs);
       }
@@ -732,7 +738,7 @@ const PurchaseRFQForm = ({
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
-            label="Sales RFQ"
+            label="Inquiry"
             value={
               salesRFQs.find((s) => s.value === formData.SalesRFQID?.toString())
                 ?.label ||

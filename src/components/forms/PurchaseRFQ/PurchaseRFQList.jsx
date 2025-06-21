@@ -42,7 +42,7 @@ const fetchPurchaseRFQs = async (
       : {};
 
     let url = `${APIBASEURL}/purchase-rfq?pageNumber=${page}&pageSize=${pageSize}`;
-
+    
     if (fromDate) {
       url += `&fromDate=${fromDate}`;
     }
@@ -60,6 +60,9 @@ const fetchPurchaseRFQs = async (
         ...item,
         id: item.PurchaseRFQID || item.id,
         Status: item.Status || item.status || "Pending",
+        Series: item.Series
+          ? item.Series.replace("Pur-RFQ", "Quot-Request")
+          : item.Series || "N/A",
       }));
 
       return {
