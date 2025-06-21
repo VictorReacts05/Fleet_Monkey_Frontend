@@ -28,7 +28,7 @@ const SalesRFQList = () => {
   const [purchaseRFQs, setPurchaseRFQs] = useState([]);
 
   const columns = [
-    { field: "series", headerName: "Series", flex: 1 },
+    // { field: "series", headerName: "Series", flex: 1 },
     { field: "customerName", headerName: "Customer Name", flex: 1 },
     // { field: "supplierName", headerName: "Supplier Name", flex: 1 },
     { 
