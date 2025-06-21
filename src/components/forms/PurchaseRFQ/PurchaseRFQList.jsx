@@ -91,7 +91,7 @@ const PurchaseRFQList = () => {
   const [totalRows, setTotalRows] = useState(0);
 
   const columns = [
-    { field: "Series", headerName: "Series", flex: 1 },
+    // { field: "Series", headerName: "Series", flex: 1 },
     {
       field: "CustomerName",
       headerName: "Customer",

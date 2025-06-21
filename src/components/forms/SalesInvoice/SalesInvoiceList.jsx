@@ -164,11 +164,11 @@ const SalesInvoiceList = () => {
  // Inside SalesInvoiceList.jsx
 
  const columns = [
-   {
-     field: "Series",
-     headerName: "Series",
-     flex: 1,
-   },
+  //  {
+  //    field: "Series",
+  //    headerName: "Series",
+  //    flex: 1,
+  //  },
    {
      field: "CustomerName",
      headerName: "Customer",

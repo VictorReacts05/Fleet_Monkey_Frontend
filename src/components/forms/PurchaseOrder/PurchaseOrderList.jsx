@@ -133,11 +133,11 @@ useEffect(() => {
 
   // Table columns definition
   const columns = [
-    {
+    /* {
       field: "Series",
       headerName: "Series",
       flex: 1,
-    },
+    }, */
     {
       field: "SupplierName",
       headerName: "Supplier",
