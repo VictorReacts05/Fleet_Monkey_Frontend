@@ -281,7 +281,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         value === null || value === undefined ? "-" : value;
 
       const formattedData = {
-        Series: displayValue(data.Series),
+        // Series: displayValue(data.Series),
+        Series: data.Series
+          ? data.Series.replace("Sales-RFQ", "Inquiry")
+          : displayValue(data.Series),
         CompanyID: DEFAULT_COMPANY.value,
         CustomerID: customers.find(
           (c) => String(c.value) === String(data.CustomerID)
