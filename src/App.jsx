@@ -213,6 +213,14 @@ function AppContent() {
             }
           />
           <Route
+            path="/sales-rfq/view/:id"
+            element={
+              <ProtectedRoute>
+                <EditSalesRFQWrapper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/purchase-rfq"
             element={
               <ProtectedRoute>

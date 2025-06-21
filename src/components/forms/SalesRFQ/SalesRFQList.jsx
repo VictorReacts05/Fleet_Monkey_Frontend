@@ -168,7 +168,7 @@ const SalesRFQList = () => {
   };
 
   const handleView = (id) => {
-    navigate(`/sales-rfq/edit/${id}?view=true`);
+    navigate(`/sales-rfq/view/${id}?view=true`);
   };
 
   const handleDeleteClick = (id) => {
