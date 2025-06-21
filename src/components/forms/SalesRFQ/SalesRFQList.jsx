@@ -117,16 +117,19 @@ const SalesRFQList = () => {
       const mappedRows = salesRFQs.map((salesRFQ) => {
         const salesRFQId = Number(salesRFQ.SalesRFQID);
         const hasPurchaseRFQ = purchaseRFQs.includes(salesRFQId);
+        const series = salesRFQ.Series
+          ? salesRFQ.Series.replace("Sales-RFQ", "Inquiry")
+          : "N/A";
         
         return {
           id: salesRFQId,
-          series: salesRFQ.Series || "N/A",
+          series: series,
           customerName: salesRFQ.CustomerName || "N/A",
           supplierName: salesRFQ.SupplierName || "N/A",
-          status: salesRFQ.Status || "Pending", 
+          status: salesRFQ.Status || "Pending",
           hasPurchaseRFQ: hasPurchaseRFQ,
           isEditable: !hasPurchaseRFQ,
-          isDeletable: !hasPurchaseRFQ
+          isDeletable: !hasPurchaseRFQ,
         };
       });
 
