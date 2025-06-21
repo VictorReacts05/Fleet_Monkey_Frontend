@@ -442,8 +442,8 @@ const SalesQuotationForm = ({
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    background:
-                      theme.palette.mode === "dark" ? "#90caf9" : "#121976d2",
+                  backgroundColor:
+                    theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
                     paddingRight: "10px",
                     height: "37px",
