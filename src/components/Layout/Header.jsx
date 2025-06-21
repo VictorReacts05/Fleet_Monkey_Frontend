@@ -308,7 +308,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               component="div"
               sx={{ fontWeight: "bold", display: { xs: "none", sm: "block" } }}
             >
-              Fleet Monkey
+              Fleet Monkeys
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
