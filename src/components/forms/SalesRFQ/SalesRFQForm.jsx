@@ -48,6 +48,23 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
+const responsiveWidth = () => ({
+  minWidth: {
+    xs: '100%',     // Mobile (1 per row)
+    sm: '48%',      // Small screen (2 per row with gap)
+    md: '31.33%',   // Medium screen (3 per row with margin)
+    lg: '23%',      // Large screen (4 per row with gap)
+    xl: '18.4%',    // Extra large screen (5 per row with spacing)
+  },
+  maxWidth: {
+    xs: '100%',
+    sm: '48%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+});
+
 const ReadOnlyField = ({ label, value }) => {
   return (
     <Box sx={{ mb: 2 }}>
@@ -856,7 +873,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             overflow: "hidden",
             border: "1px solid #ccc",
             borderRadius: "8px",
-            padding: "16px",
+            padding: "26px",
+           justifyContent:"space-around",
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
@@ -877,7 +895,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               )}
             </Grid>
           )} */}
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12}
+            md={3}  sx={{...responsiveWidth()}}>
             {isEditing ? (
               <FormSelect
                 name="CompanyID"
@@ -892,7 +911,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="ServiceTypeID"
@@ -911,7 +935,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="CustomerID"
@@ -930,7 +959,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="SupplierID"
@@ -952,7 +986,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormInput
                 name="ExternalRefNo"
@@ -970,7 +1009,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormDatePicker
                 name="DeliveryDate"
@@ -992,7 +1036,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormDatePicker
                 name="PostingDate"
@@ -1014,7 +1063,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormDatePicker
                 name="RequiredByDate"
@@ -1036,7 +1090,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormDatePicker
                 name="DateReceived"
@@ -1058,7 +1117,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="CollectionAddressID"
@@ -1081,7 +1145,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="DestinationAddressID"
@@ -1104,7 +1173,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="ShippingPriorityID"
@@ -1123,7 +1197,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormInput
                 name="Terms"
@@ -1138,7 +1217,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               <ReadOnlyField label="Terms" value={formData.Terms} />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormSelect
                 name="CurrencyID"
@@ -1162,7 +1246,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormControlLabel
                 control={
@@ -1182,7 +1271,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormControlLabel
                 control={
@@ -1202,7 +1296,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               />
             )}
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid
+            item
+            xs={12}
+            md={3}
+            sx={{...responsiveWidth()}}
+          >
             {isEditing ? (
               <FormControlLabel
                 control={
