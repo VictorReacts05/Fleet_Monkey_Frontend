@@ -457,7 +457,8 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     console.log(
-      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}pInvoiceParcel?pInvoiceID=${purchaseInvoiceId}`
+      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}pInvoiceParcel?pInvoiceId
+      =${purchaseInvoiceId}`
     );
     if (isNaN(parseInt(purchaseInvoiceId, 10))) {
       console.warn(

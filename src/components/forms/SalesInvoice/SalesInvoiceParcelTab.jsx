@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
@@ -71,7 +72,7 @@ const SalesInvoiceParcelsTab = ({
     const { headers } = getAuthHeader();
     console.log("Fetching sales invoice items for SalesInvoiceID:", salesInvoiceId);
     const response = await axios.get(
-      `${APIBASEURL}/salesInvoiceParcel?SalesinvoiceID=${salesInvoiceId}`, // Remove the extra /api/
+      `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`, // Remove the extra /api/
       { headers }
     );
     console.log("Raw API response in SalesInvoiceParcelsTab:", response.data);
