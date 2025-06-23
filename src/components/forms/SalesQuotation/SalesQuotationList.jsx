@@ -78,7 +78,7 @@ const SalesQuotationList = () => {
       console.log("User data from localStorage:", user);
       if (!user || !user.personId) {
         console.warn("Invalid user data, redirecting to home");
-        toast.error("Please log in to continue");
+        console.log("Please log in to continue");
         navigate("/");
         return;
       }
@@ -88,12 +88,12 @@ const SalesQuotationList = () => {
         console.log("PersonID Loaded:", personId);
       } else {
         console.warn("No personId found, redirecting to home");
-        toast.error("Please log in to continue");
+        console.log("Please log in to continue");
         navigate("/");
       }
     } catch (error) {
       console.error("Error checking auth or loading personId:", error);
-      toast.error("Failed to load user data. Please log in again.");
+      console.log("Failed to load user data. Please log in again.");
       navigate("/");
     }
   };
@@ -153,7 +153,7 @@ const SalesQuotationList = () => {
         error.response || error.message
       );
       if (isMounted) {
-        toast.error(errorMessage);
+        console.log(errorMessage);
         setError(errorMessage);
       }
     } finally {
@@ -178,7 +178,7 @@ const SalesQuotationList = () => {
       setPurchaseRFQs(formattedOptions);
     } catch (error) {
       console.error("Error fetching Purchase RFQs:", error);
-      toast.error("Failed to load Purchase data");
+      console.log("Failed to load Purchase data");
       setPurchaseRFQs([{ value: "", label: "No Purchase RFQs Available" }]);
     }
   };
@@ -208,7 +208,7 @@ const SalesQuotationList = () => {
       navigate(`/sales-quotation/view/${id}`);
     } else {
       console.error("Invalid Sales Quotation ID:", id);
-      toast.error("Cannot view Sales Quotation: Invalid ID");
+      console.log("Cannot view Sales Quotation: Invalid ID");
     }
   };
 
@@ -217,7 +217,7 @@ const SalesQuotationList = () => {
       navigate(`/sales-quotation/edit/${id}`);
     } else {
       console.error("Invalid Sales Quotation ID:", id);
-      toast.error("Cannot edit Sales Quotation: Invalid ID");
+      console.log("Cannot edit Sales Quotation: Invalid ID");
     }
   };
 
@@ -227,7 +227,7 @@ const SalesQuotationList = () => {
       setSelectedQuotation(id);
       setDeleteDialogOpen(true);
     } else {
-      toast.error("Item not found");
+      console.log("Item not found");
     }
   };
 
@@ -252,7 +252,7 @@ const SalesQuotationList = () => {
       fetchSalesQuotations();
     } catch (error) {
       console.error("Error deleting Sales Quotation:", error);
-      toast.error("Failed to delete Sales Quotation");
+      console.log("Failed to delete Sales Quotation");
     } finally {
       setLoading(false);
     }
@@ -274,7 +274,7 @@ const SalesQuotationList = () => {
 
   const handleCreateSalesQuotation = async () => {
     if (!validateForm()) {
-      toast.error("Please select a Purchase RFQ");
+      console.log("Please select a Purchase RFQ");
       return;
     }
 
@@ -297,7 +297,7 @@ const SalesQuotationList = () => {
     } catch (error) {
       const errorMessage = error.message || "Failed to create Sales Quotation";
       console.error("Error creating Sales Quotation:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
       if (errorMessage.includes("User not logged in")) {
         navigate("/");
       }
@@ -347,7 +347,7 @@ const SalesQuotationList = () => {
       >
         <Typography variant="h5">Estimate Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar onSearch={handleSearch} placeholder="Search Estimates..." />
+          <SearchBar onSearch={handleSearch} placeholder="Search Text..." />
           <Tooltip title="Add New Estimate">
             <IconButton
               color="primary"

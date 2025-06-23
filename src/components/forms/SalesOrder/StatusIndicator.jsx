@@ -82,7 +82,7 @@ const StatusIndicator = ({
 
   const updateStatus = async (newStatus) => {
     if (!salesOrderId || isNaN(parseInt(salesOrderId, 10))) {
-      toast.error("Invalid Sales Order ID");
+      console.log("Invalid Sales Order ID");
       setAnchorEl(null);
       return;
     }
@@ -124,7 +124,7 @@ const StatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.log(
         `Failed to update status: ${
           error.response?.data?.message || error.message || "Unknown"
         }`

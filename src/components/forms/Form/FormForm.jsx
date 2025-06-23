@@ -33,7 +33,7 @@ const FormForm = ({ formID, onClose, onSave }) => {
         RowVersionColumn: data.RowVersionColumn
       });
     } catch (error) {
-      toast.error("Failed to load form details: " + error.message);
+      console.log("Failed to load form details: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ const FormForm = ({ formID, onClose, onSave }) => {
     }
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -75,7 +75,7 @@ const FormForm = ({ formID, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
-      toast.error(
+      console.log(
         `Failed to ${formID ? "update" : "create"} form: ` + 
         (error.error || error.message || "Unknown error")
       );

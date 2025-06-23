@@ -88,7 +88,7 @@ const WarehouseList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading warehouses:', error);
-      toast.error('Failed to load warehouses: ' + error.message);
+      console.log('Failed to load warehouses: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ const WarehouseList = () => {
       setItemToDelete(null);
       loadWarehouses();
     } catch (error) {
-      toast.error('Failed to delete warehouse: ' + error.message);
+      console.log('Failed to delete warehouse: ' + error.message);
     }
   };
 
@@ -158,7 +158,7 @@ const WarehouseList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Warehouses..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

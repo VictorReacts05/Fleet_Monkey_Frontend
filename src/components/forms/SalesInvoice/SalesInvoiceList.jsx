@@ -114,7 +114,7 @@ const SalesInvoiceList = () => {
       setTotalRows(response.pagination?.totalRecords || 0);
     } catch (error) {
       console.error("Error fetching sales invoices:", error);
-      toast.error("Failed to fetch sales invoices: " + error.message);
+      console.log("Failed to fetch sales invoices: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -149,7 +149,7 @@ const SalesInvoiceList = () => {
         setCustomersLoaded(true);
       } catch (error) {
         console.error("Error fetching customers:", error);
-        toast.error("Failed to fetch customers: " + error.message);
+        console.log("Failed to fetch customers: " + error.message);
         setCustomersLoaded(true);
       }
     };
@@ -171,7 +171,7 @@ const SalesInvoiceList = () => {
         setSalesOrders(formattedSalesOrders);
       } catch (error) {
         console.error("Error fetching sales orders:", error);
-        toast.error("Failed to fetch sales orders: " + error.message);
+        console.log("Failed to fetch sales orders: " + error.message);
         setSalesOrders([{ value: "", label: "No Sales Orders Available" }]);
       }
     };
@@ -215,7 +215,7 @@ const SalesInvoiceList = () => {
       navigate(`/sales-invoice/view/${id}`);
     } else {
       console.error("Invalid Sales Invoice ID:", id);
-      toast.error("Cannot view Sales Invoice: Invalid ID");
+      console.log("Cannot view Sales Invoice: Invalid ID");
     }
   };
 
@@ -244,7 +244,7 @@ const SalesInvoiceList = () => {
       setDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting Sales Invoice:", error);
-      toast.error("Failed to delete Sales Invoice");
+      console.log("Failed to delete Sales Invoice");
     } finally {
       setLoading(false);
     }
@@ -257,7 +257,7 @@ const SalesInvoiceList = () => {
 
   const handleCreateSalesInvoice = async () => {
     if (!selectedSalesOrder) {
-      toast.error("Please select a Sales Order");
+      console.log("Please select a Sales Order");
       return;
     }
 
@@ -278,9 +278,7 @@ const SalesInvoiceList = () => {
       navigate(`/sales-invoice/view/${salesInvoiceId}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
-      toast.error(`Failed to create Sales Invoice: ${error.message}`);
-      handleDialogClose();
-      navigate("/sales-invoice"); // Fallback to list view
+      console.log("Failed to create Sales Invoice: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -298,7 +296,7 @@ const SalesInvoiceList = () => {
       >
         <Typography variant="h5">Invoice Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar onSearch={handleSearch} placeholder="Search Bills..." />
+          <SearchBar onSearch={handleSearch} placeholder="Search Text..." />
           <Tooltip title="Add New Sales Invoice">
             <IconButton
               color="primary"

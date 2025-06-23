@@ -73,13 +73,13 @@ const PurchaseOrderStatusIndicator = ({
 
   const updateStatus = async (newStatus) => {
     if (!purchaseOrderId || isNaN(parseInt(purchaseOrderId, 10))) {
-      toast.error("Invalid Purchase Order ID");
+      console.log("Invalid Purchase Order ID");
       setAnchorEl(null);
       return;
     }
 
     if (!user?.personId) {
-      toast.error("User not authenticated");
+      console.log("User not authenticated");
       setAnchorEl(null);
       return;
     }
@@ -130,7 +130,7 @@ const PurchaseOrderStatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.log(
         `Failed to update status: ${
           error.response?.data?.message || error.message
         }`

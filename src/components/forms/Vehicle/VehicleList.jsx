@@ -70,7 +70,7 @@ const VehicleList = (props) => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading vehicles:', error);
-      toast.error('Failed to load vehicles: ' + error.message);
+      console.log('Failed to load vehicles: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,7 @@ const VehicleList = (props) => {
       setItemToDelete(null);
       loadVehicles();
     } catch (error) {
-      toast.error('Failed to delete vehicle: ' + error.message);
+      console.log('Failed to delete vehicle: ' + error.message);
     }
   };
 
@@ -151,7 +151,7 @@ const VehicleList = (props) => {
         <Stack direction="row" spacing={1}>
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Vehicles..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

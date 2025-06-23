@@ -183,7 +183,7 @@ const SalesInvoiceParcelsTab = ({
       setError("Please log in to view items. Click below to log in.");
     } else if (!error.response?.status === 404) { // Avoid overwriting the 404 error message
       setError("Failed to load items. Please try again.");
-      toast.error("Failed to load items: " + error.message);
+      console.log("Failed to load items: " + error.message);
     }
   } finally {
     setLoading(false);
@@ -382,7 +382,7 @@ const SalesInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to save items. Click below to log in.");
       } else {
-        toast.error("Failed to save item: " + error.message);
+        console.log("Failed to save item: " + error.message);
       }
     }
   };
@@ -421,7 +421,7 @@ const SalesInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to delete items. Click below to log in.");
       } else {
-        toast.error("Failed to delete item: " + error.message);
+        console.log("Failed to delete item: " + error.message);
       }
     }
   };

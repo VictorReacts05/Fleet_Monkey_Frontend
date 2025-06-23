@@ -104,7 +104,7 @@ const SupplierQuotationList = () => {
       setTotalRows(response.totalRecords || quotations.length);
     } catch (error) {
       console.error("Error loading Supplier Quotations:", error);
-      toast.error("Failed to load Supplier Quotations");
+      console.log("Failed to load Supplier Quotations");
     } finally {
       setLoading(false);
     }
@@ -153,7 +153,7 @@ const SupplierQuotationList = () => {
       navigate(`/supplier-quotation/view/${id}`);
     } else {
       console.error("Invalid Supplier Quotation ID:", id);
-      toast.error("Cannot view Supplier Quotation: Invalid ID");
+      console.log("Cannot view Supplier Quotation: Invalid ID");
     }
   };
 
@@ -163,7 +163,7 @@ const SupplierQuotationList = () => {
       navigate(`/supplier-quotation/edit/${id}`);
     } else {
       console.error("Invalid Supplier Quotation ID:", id);
-      toast.error("Cannot edit Supplier Quotation: Invalid ID");
+      console.log("Cannot edit Supplier Quotation: Invalid ID");
     }
   };
 
@@ -180,7 +180,7 @@ const SupplierQuotationList = () => {
       fetchQuotations();
     } catch (error) {
       console.error("Error deleting Supplier Quotation:", error);
-      toast.error("Failed to delete Supplier Quotation");
+      console.log("Failed to delete Supplier Quotation");
     } finally {
       setLoading(false);
       setDeleteDialogOpen(false);
@@ -209,7 +209,7 @@ const SupplierQuotationList = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onClear={() => setSearchTerm("")}
-            placeholder="Search Supplier Quotations..."
+            placeholder="Search Text..."
           />
         </Stack>
       </Box>

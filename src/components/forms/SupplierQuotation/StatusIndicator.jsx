@@ -61,7 +61,7 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
           message: error.message,
           stack: error.stack,
         });
-        toast.error("Unable to load approval status");
+        console.log("Unable to load approval status");
         setStatus("Pending");
       } finally {
         setLoading(false);
@@ -91,7 +91,7 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(`Failed to approve: ${error.message || "Unknown error"}`);
+      console.log(`Failed to approve: ${error.message || "Unknown error"}`);
     } finally {
       setLoading(false);
       setAnchorEl(null);

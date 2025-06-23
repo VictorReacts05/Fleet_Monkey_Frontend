@@ -68,7 +68,7 @@ const BankList = () => {
         status: error.response?.status,
         data: error.response?.data,
       });
-      toast.error("Failed to load bank accounts");
+      console.log("Failed to load bank accounts");
     } finally {
       setLoading(false);
     }
@@ -90,12 +90,12 @@ const BankList = () => {
 
   const handleDeleteClick = (id) => {
     if (!id) {
-      toast.error("Invalid bank account ID");
+      console.log("Invalid bank account ID");
       return;
     }
     const row = rows.find((r) => r.id === id);
     if (!row) {
-      toast.error("Bank account not found");
+      console.log("Bank account not found");
       return;
     }
     setItemToDelete({ id, accountName: row.accountName });
@@ -104,7 +104,7 @@ const BankList = () => {
 
   const confirmDelete = async () => {
     if (!itemToDelete?.id) {
-      toast.error("Invalid bank account ID");
+      console.log("Invalid bank account ID");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       return;
@@ -119,7 +119,7 @@ const BankList = () => {
         status: error.response?.status,
         data: error.response?.data,
       }); // Detailed debug log
-      toast.error(error.message || "Failed to delete bank account");
+      console.log(error.message || "Failed to delete bank account");
     } finally {
       setDeleteDialogOpen(false);
       setItemToDelete(null);
@@ -145,7 +145,7 @@ const BankList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Banks..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

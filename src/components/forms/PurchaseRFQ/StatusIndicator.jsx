@@ -100,7 +100,7 @@ const StatusIndicator = ({
 
   const updateStatus = async (newStatus) => {
     if (!purchaseRFQId || isNaN(parseInt(purchaseRFQId, 10))) {
-      toast.error("Invalid Purchase RFQ ID");
+      console.log("Invalid Purchase RFQ ID");
       setAnchorEl(null);
       return;
     }
@@ -140,7 +140,7 @@ const StatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.log(
         `Failed to update status: ${
           error.response?.data?.message || error.message
         }`

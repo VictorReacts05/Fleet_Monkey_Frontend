@@ -56,7 +56,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
         }))
       );
     } catch (error) {
-      toast.error("Failed to load dropdown data: " + error.message);
+      console.log("Failed to load dropdown data: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
         Write: data.Write || false,
       });
     } catch (error) {
-      toast.error("Failed to load form role details: " + error.message);
+      console.log("Failed to load form role details: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
     }
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -120,7 +120,7 @@ const FormRoleForm = ({ formRoleID, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
-      toast.error(
+      console.log(
         `Failed to ${formRoleID ? "update" : "create"} form role: ` +
           (error.error || error.message || "Unknown error")
       );

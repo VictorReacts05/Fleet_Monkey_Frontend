@@ -74,7 +74,7 @@ const FormRoleList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading form roles:', error);
-      toast.error('Failed to load form roles: ' + error.message);
+      console.log('Failed to load form roles: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ const FormRoleList = () => {
       setItemToDelete(null);
       loadFormRoles();
     } catch (error) {
-      toast.error('Failed to delete form role: ' + error.message);
+      console.log('Failed to delete form role: ' + error.message);
     }
   };
 
@@ -141,7 +141,7 @@ const FormRoleList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Form Roles..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

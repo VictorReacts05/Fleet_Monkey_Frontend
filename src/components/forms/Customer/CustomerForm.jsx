@@ -41,7 +41,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
           setCurrencies(currenciesResponse.data);
         } else {
           console.error("Failed to load currencies:", currenciesResponse.error);
-          toast.error("Failed to load currencies");
+          console.log("Failed to load currencies");
         }
 
         // Fetch companies from the company table
@@ -52,7 +52,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
           setCompanies(companiesResponse.data);
         } else {
           console.error("Failed to load companies:", companiesResponse.error);
-          toast.error("Failed to load companies");
+          console.log("Failed to load companies");
         }
 
         // If editing, fetch customer data
@@ -72,7 +72,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
         }
       } catch (error) {
         console.error("Error loading form data:", error);
-        toast.error("Failed to load form data");
+        console.log("Failed to load form data");
       } finally {
         setLoading(false);
       }
@@ -224,7 +224,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
 
     if (hasErrors) {
       setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -241,7 +241,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving customer:", error);
-      toast.error(
+      console.log(
         `Failed to ${customerId ? "update" : "create"} customer: ${
           error.message || error
         }`

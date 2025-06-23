@@ -124,11 +124,11 @@ const SupplierQuotationParcelTab = ({
         setLoading(true);
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
-            toast.error("Failed to load items");
+            console.log("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
-            toast.error("Failed to load UOMs");
+            console.log("Failed to load UOMs");
             return [];
           }),
         ]);
@@ -152,7 +152,7 @@ const SupplierQuotationParcelTab = ({
         setItems(itemOptions);
         setUOMs(uomOptions);
       } catch (error) {
-        toast.error("Failed to load dropdown data: " + error.message);
+        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -182,7 +182,7 @@ const SupplierQuotationParcelTab = ({
       (p) => p.SupplierQuotationParcelID === id
     );
     if (!parcelToEdit) {
-      toast.error("Parcel not found for editing");
+      console.log("Parcel not found for editing");
       return;
     }
 

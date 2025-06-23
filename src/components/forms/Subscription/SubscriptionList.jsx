@@ -55,7 +55,7 @@ const SubscriptionList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading subscriptions:', error);
-      toast.error('Failed to load subscriptions: ' + error.message);
+      console.log('Failed to load subscriptions: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ const SubscriptionList = () => {
       setItemToDelete(null);
       loadSubscriptions();
     } catch (error) {
-      toast.error('Failed to delete subscription plan: ' + error.message);
+      console.log('Failed to delete subscription plan: ' + error.message);
     }
   };
 
@@ -122,7 +122,7 @@ const SubscriptionList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Subscriptions..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",
