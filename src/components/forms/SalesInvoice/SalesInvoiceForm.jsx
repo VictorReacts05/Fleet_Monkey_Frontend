@@ -649,9 +649,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         }}
       >
         {salesInvoiceId && (
-          {/* <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Series" value={formData.Series} />
-          </Grid> */}
+          </Grid>
         )}
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company" value={formData.CompanyName} />
