@@ -239,7 +239,7 @@ const PurchaseInvoiceList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Invoice Management</Typography>
+        <Typography variant="h5">Bill Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}

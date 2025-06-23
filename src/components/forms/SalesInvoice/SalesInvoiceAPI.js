@@ -163,7 +163,7 @@ export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/salesInvoiceParcel?SalesinvoiceID=${salesInvoiceId}`,
+      `${APIBASEURL}/salesInvoiceParcel?salesinvoiceId=${salesInvoiceId}`,
       getAuthHeader()
     );
 

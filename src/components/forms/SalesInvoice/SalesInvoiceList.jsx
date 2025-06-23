@@ -301,7 +301,7 @@ const SalesInvoiceList = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">Bill Management</Typography>
+        <Typography variant="h5">Invoice Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar onSearch={handleSearch} placeholder="Search Bills..." />
           <Tooltip title="Add New Sales Invoice">
