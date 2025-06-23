@@ -467,7 +467,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     const response = await axios.get(
-      `${APIBASEURL}/pInvoiceParcel?PInvoiceID=${purchaseInvoiceId}`,
+      `${APIBASEURL}/pInvoiceParcel?pInvoiceId=${purchaseInvoiceId}`,
       { headers }
     );
     console.log("Purchase Invoice Items API Response:", response.data);
