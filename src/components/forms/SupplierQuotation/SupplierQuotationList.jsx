@@ -38,7 +38,7 @@ const SupplierQuotationList = () => {
 
   // Define columns for the data table
   const columns = [
-    { field: "Series", headerName: "Series", flex: 1 },
+    // { field: "Series", headerName: "Series", flex: 1 },
     {
       field: "PurchaseRFQID",
       headerName: "Purchase RFQ ID",

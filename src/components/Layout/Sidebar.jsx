@@ -6,7 +6,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Box,
   Menu,
   MenuItem,
 } from "@mui/material";
@@ -42,7 +41,6 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 
-
 const drawerWidth = 240;
 
 const menuItems = [
@@ -70,11 +68,11 @@ const menuItems = [
     path: "/purchase-order",
   },
   {
-    text: "Invoice",
+    text: "Bill",
     icon: <ReceiptIcon />,
     path: "/purchase-invoice",
   },
-  { text: "Bill", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
+  { text: "Invoice", icon: <ReceiptLongIcon />, path: "/sales-invoice" },
   {
     text: "Pending Approvals",
     icon: <HourglassTopIcon />,
@@ -82,7 +80,6 @@ const menuItems = [
   },
   { text: "Addresses", icon: <HomeIcon />, path: "/addresses" },
   { text: "Address Type", icon: <HomeIcon />, path: "/address-types" },
-  // { text: "Banks", icon: <AccountBalanceIcon />, path: "/banks" },
   { text: "Certifications", icon: <VerifiedIcon />, path: "/certifications" },
   { text: "Cities", icon: <LocationCityIcon />, path: "/cities" },
   { text: "Companies", icon: <BusinessIcon />, path: "/companies" },
@@ -97,7 +94,6 @@ const menuItems = [
     path: "/form-role-approvers",
   },
   { text: "Items", icon: <CategoryIcon />, path: "/items" },
-  // { text: "Persons", icon: <PersonIcon />, path: "/persons" },
   { text: "Roles", icon: <PersonIcon />, path: "/roles" },
   {
     text: "Subscriptions",
@@ -114,36 +110,47 @@ const Sidebar = ({ open, variant, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useMuiTheme();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorElMasters, setAnchorElMasters] = useState(null);
+  const [anchorElSales, setAnchorElSales] = useState(null);
+  const [anchorElPurchase, setAnchorElPurchase] = useState(null);
 
   const handleMastersClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    setAnchorElMasters(event.currentTarget);
+  };
+
+  const handleSalesClick = (event) => {
+    setAnchorElSales(event.currentTarget);
+  };
+
+  const handlePurchaseClick = (event) => {
+    setAnchorElPurchase(event.currentTarget);
   };
 
   const handleMastersClose = () => {
-    setAnchorEl(null);
+    setAnchorElMasters(null);
+  };
+
+  const handleSalesClose = () => {
+    setAnchorElSales(null);
+  };
+
+  const handlePurchaseClose = () => {
+    setAnchorElPurchase(null);
   };
 
   const handleMenuItemClick = (path) => {
     navigate(path);
     handleMastersClose();
+    handleSalesClose();
+    handlePurchaseClose();
   };
 
   const mainMenuItems = [
     menuItems.find((item) => item.text === "Dashboard"),
-    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true },
-    ...menuItems.filter(
-      (item) =>
-        item.text === "Inquiry" ||
-        item.text === "Quotation Request" ||
-        item.text === "Supplier Quotation" ||
-        item.text === "Estimate" ||
-        item.text === "Approved Estimate" ||
-        item.text === "Purchase Order" ||
-        item.text === "Invoice" ||
-        item.text === "Bill" ||
-        item.text === "Pending Approvals"
-    ),
+    { text: "Masters", icon: <SettingsApplicationsIcon />, isDropdown: true, onClick: handleMastersClick, anchorEl: anchorElMasters },
+    { text: "Sales", icon: <ShoppingBagIcon />, isDropdown: true, onClick: handleSalesClick, anchorEl: anchorElSales },
+    { text: "Purchase", icon: <ShoppingCartIcon />, isDropdown: true, onClick: handlePurchaseClick, anchorEl: anchorElPurchase },
+    menuItems.find((item) => item.text === "Pending Approvals"),
   ];
 
   const mastersItems = menuItems.filter(
@@ -155,9 +162,25 @@ const Sidebar = ({ open, variant, onClose }) => {
       item.text !== "Estimate" &&
       item.text !== "Approved Estimate" &&
       item.text !== "Purchase Order" &&
-      item.text !== "Invoice" &&
       item.text !== "Bill" &&
+      item.text !== "Invoice" &&
       item.text !== "Pending Approvals"
+  );
+
+  const salesItems = menuItems.filter(
+    (item) =>
+      item.text === "Inquiry" ||
+      item.text === "Estimate" ||
+      item.text === "Approved Estimate" ||
+      item.text === "Invoice"
+  );
+
+  const purchaseItems = menuItems.filter(
+    (item) =>
+      item.text === "Quotation Request" ||
+      item.text === "Supplier Quotation" ||
+      item.text === "Purchase Order" ||
+      item.text === "Bill"
   );
 
   return (
@@ -191,11 +214,7 @@ const Sidebar = ({ open, variant, onClose }) => {
         {mainMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
-              onClick={
-                item.isDropdown
-                  ? handleMastersClick
-                  : () => handleMenuItemClick(item.path)
-              }
+              onClick={item.isDropdown ? item.onClick : () => handleMenuItemClick(item.path)}
               selected={location.pathname === item.path}
             >
               <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
@@ -207,8 +226,8 @@ const Sidebar = ({ open, variant, onClose }) => {
       </List>
 
       <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
+        anchorEl={anchorElMasters}
+        open={Boolean(anchorElMasters)}
         onClose={handleMastersClose}
         sx={{
           "& .MuiPaper-root": {
@@ -223,6 +242,62 @@ const Sidebar = ({ open, variant, onClose }) => {
         }}
       >
         {mastersItems.map((item) => (
+          <MenuItem
+            key={item.text}
+            onClick={() => handleMenuItemClick(item.path)}
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu
+        anchorEl={anchorElSales}
+        open={Boolean(anchorElSales)}
+        onClose={handleSalesClose}
+        sx={{
+          "& .MuiPaper-root": {
+            width: 240,
+            "& .MuiMenuItem-root": {
+              height: 48,
+              minHeight: 48,
+            },
+            maxHeight: 250,
+            overflowY: "auto",
+          },
+        }}
+      >
+        {salesItems.map((item) => (
+          <MenuItem
+            key={item.text}
+            onClick={() => handleMenuItemClick(item.path)}
+            sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </MenuItem>
+        ))}
+      </Menu>
+
+      <Menu
+        anchorEl={anchorElPurchase}
+        open={Boolean(anchorElPurchase)}
+        onClose={handlePurchaseClose}
+        sx={{
+          "& .MuiPaper-root": {
+            width: 240,
+            "& .MuiMenuItem-root": {
+              height: 48,
+              minHeight: 48,
+            },
+            maxHeight: 250,
+            overflowY: "auto",
+          },
+        }}
+      >
+        {purchaseItems.map((item) => (
           <MenuItem
             key={item.text}
             onClick={() => handleMenuItemClick(item.path)}

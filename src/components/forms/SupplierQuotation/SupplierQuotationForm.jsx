@@ -787,7 +787,7 @@ const SupplierQuotationForm = ({
           }}
         >
           <Grid container spacing={1}>
-            <Grid sx={{ width: "24%" }}>
+            {/* <Grid sx={{ width: "24%" }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="Series"
@@ -801,7 +801,7 @@ const SupplierQuotationForm = ({
               ) : (
                 <ReadOnlyField label="Series" value={formData.Series} />
               )}
-            </Grid>
+            </Grid> */}
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
                 <ReadOnlyField

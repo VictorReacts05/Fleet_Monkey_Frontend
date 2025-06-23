@@ -664,9 +664,9 @@ const SalesOrderForm = ({ onClose }) => {
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        <Grid xs={12} md={3} sx={{ width: "24%" }}>
+        {/* <Grid xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Series" value={formData.Series} />
-        </Grid>
+        </Grid> */}
         <Grid xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company Name" value={formData.CompanyName} />
         </Grid>
