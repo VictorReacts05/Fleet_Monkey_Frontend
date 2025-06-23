@@ -236,7 +236,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       }
     } catch (error) {
       console.error("Error loading Sales Invoice data:", error);
-      toast.error("Failed to load Sales Invoice data");
+      console.log("Failed to load Sales Invoice data");
     } finally {
       setLoading(false);
     }
@@ -296,7 +296,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       }
     } catch (error) {
       console.error("Error fetching suppliers:", error);
-      toast.error("Failed to load suppliers");
+      console.log("Failed to load suppliers");
     } finally {
       setLoadingSuppliers(false);
     }
@@ -346,7 +346,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       setConfirmDialogOpen(true);
     } catch (error) {
       console.error("Error preparing to send Sales Invoice:", error);
-      toast.error("Failed to prepare sending: " + error.message);
+      console.log("Failed to prepare sending: " + error.message);
     }
   };
 
@@ -476,7 +476,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(`An error occurred: ${error.response?.data?.message || error.message}`);
+      console.log(`An error occurred: ${error.response?.data?.message || error.message}`);
       setEmailSendingStatus({
         sending: false,
         progress: 0,
@@ -741,7 +741,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           <Box sx={{ mb: 2 }}>
             <TextField
               fullWidth
-              placeholder="Search suppliers..."
+              placeholder="Search Text..."
               value={supplierSearchTerm}
               onChange={(e) => setSupplierSearchTerm(e.target.value)}
               InputProps={{

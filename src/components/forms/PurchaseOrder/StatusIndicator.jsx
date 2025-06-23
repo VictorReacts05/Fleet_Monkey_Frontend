@@ -80,7 +80,7 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
 
   const updateStatus = async (newStatus) => { 
     if (!purchaseOrderId || isNaN(parseInt(purchaseOrderId, 10))) { 
-      toast.error("Invalid Purchase Order ID"); 
+      console.log("Invalid Purchase Order ID"); 
       setAnchorEl(null); 
       return; 
     } 
@@ -140,7 +140,7 @@ const StatusIndicator = ({ status, purchaseOrderId, onStatusChange, readOnly }) 
         response: error.response?.data, 
         status: error.response?.status, 
       }); 
-      toast.error(`Failed to update status: ${error.response?.data?.message || error.message}`); 
+      console.log(`Failed to update status: ${error.response?.data?.message || error.message}`); 
     } finally { 
       setLoading(false); 
       setAnchorEl(null); 

@@ -68,7 +68,7 @@ const CurrencyList = ({ userId }) => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading currencies:", error);
-      toast.error("Failed to load currencies: " + error.message);
+      console.log("Failed to load currencies: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -114,7 +114,7 @@ const CurrencyList = ({ userId }) => {
       }, 500);
     } catch (error) {
       console.error("Error deleting currency:", error);
-      toast.error(
+      console.log(
         "Failed to delete currency: " + (error.message || "Unknown error")
       );
 
@@ -152,7 +152,7 @@ const CurrencyList = ({ userId }) => {
         <Stack direction="row" spacing={2} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Currencies..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

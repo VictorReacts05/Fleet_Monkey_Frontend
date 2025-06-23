@@ -58,7 +58,7 @@ const PurchaseInvoiceList = () => {
         setSuppliersLoaded(true);
       } catch (error) {
         console.error("Error fetching suppliers:", error);
-        toast.error("Failed to fetch suppliers: " + error.message);
+        // console.log("Failed to fetch suppliers: " + error.message);
         setSuppliersLoaded(true);
       }
     };
@@ -103,7 +103,7 @@ const PurchaseInvoiceList = () => {
       setTotalRows(response.totalRecords || 0); // Updated to use totalRecords
     } catch (error) {
       console.error("Error fetching purchase invoices:", error);
-      toast.error("Failed to fetch purchase invoices: " + error.message);
+      // console.log("Failed to fetch purchase invoices: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -187,7 +187,7 @@ const PurchaseInvoiceList = () => {
       navigate(`/purchase-invoice/view/${id}`);
     } else {
       console.error("Invalid Purchase Invoice ID:", id);
-      toast.error("Cannot view Purchase Invoice: Invalid ID");
+      // console.log("Cannot view Purchase Invoice: Invalid ID");
     }
   };
 
@@ -214,7 +214,7 @@ const PurchaseInvoiceList = () => {
       setDeleteDialogOpen(false);
     } catch (error) {
       console.error("Error deleting Purchase Invoice:", error);
-      toast.error("Failed to delete Purchase Invoice");
+      // console.log("Failed to delete Purchase Invoice");
     } finally {
       setLoading(false);
     }
@@ -243,7 +243,7 @@ const PurchaseInvoiceList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Invoices..."
+            placeholder="Search Text..."
           />
         </Stack>
       </Box>

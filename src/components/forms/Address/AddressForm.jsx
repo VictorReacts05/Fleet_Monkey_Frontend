@@ -130,7 +130,7 @@ const AddressForm = ({ addressId = null, onSave, onClose }) => {
         }
       } catch (error) {
         console.error("Error fetching form data:", error);
-        toast.error(
+        console.log(
           `Failed to load form data: ${error.message || "Unknown error"}`
         );
       } finally {
@@ -224,7 +224,7 @@ const AddressForm = ({ addressId = null, onSave, onClose }) => {
 
     if (Object.values(validationErrors).some((error) => error !== "")) {
       setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -242,7 +242,7 @@ const AddressForm = ({ addressId = null, onSave, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving address:", error);
-      toast.error(
+      console.log(
         `Failed to ${addressId ? "update" : "create"} address: ${
           error.message || "Unknown error"
         }`

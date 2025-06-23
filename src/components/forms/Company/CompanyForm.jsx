@@ -34,7 +34,7 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
         }));
         setCurrencies(formattedCurrencies);
       } catch (error) {
-        toast.error("Failed to load currencies: " + error.message);
+        console.log("Failed to load currencies: " + error.message);
       }
     };
 
@@ -57,7 +57,7 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
         companyNotes: data.CompanyNotes || data.companyNotes || "",
       });
     } catch (error) {
-      toast.error("Failed to load company: " + error.message);
+      console.log("Failed to load company: " + error.message);
     }
   };
 
@@ -122,7 +122,7 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
     }
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -153,7 +153,7 @@ const CompanyForm = ({ companyId, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
-      toast.error(
+      console.log(
         `Failed to ${companyId ? "update" : "create"} company: ${
           error.message || "Unknown error"
         }`

@@ -40,12 +40,12 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
               countryName: country.CountryOfOrigin || '',
             });
           } else {
-            toast.error('Country not found');
+            console.log('Country not found');
           }
         }
       } catch (error) {
         console.error('Error loading country:', error);
-        toast.error(error.message || 'Failed to load country details');
+        console.log(error.message || 'Failed to load country details');
       } finally {
         setLoading(false);
       }
@@ -127,7 +127,7 @@ const CountryModal = ({ open, onClose, countryId, onSave, initialData }) => {
       setTimeout(() => onSave(), 300);
     } catch (error) {
       console.error('Error saving country:', error);
-      toast.error(error.response?.data?.message || error.message || 'Failed to save country');
+      console.log(error.response?.data?.message || error.message || 'Failed to save country');
       setLoading(false);
     }
   };

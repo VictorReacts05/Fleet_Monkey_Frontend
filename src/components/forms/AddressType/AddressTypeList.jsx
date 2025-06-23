@@ -61,7 +61,7 @@ const AddressTypeList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading address types:", error);
-      toast.error(
+      console.log(
         `Failed to load address types: ${error.message || "Unknown error"}`
       );
     } finally {
@@ -98,7 +98,7 @@ const AddressTypeList = () => {
       loadAddressTypes();
     } catch (error) {
       console.error("Error deleting address type:", error);
-      toast.error(
+      console.log(
         `Failed to delete address type: ${error.message || "Unknown error"}`
       );
     }
@@ -133,7 +133,7 @@ const AddressTypeList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Address Types..."
+            placeholder="Search Text..."
           />
           <Tooltip title="Add Address Type">
             <IconButton

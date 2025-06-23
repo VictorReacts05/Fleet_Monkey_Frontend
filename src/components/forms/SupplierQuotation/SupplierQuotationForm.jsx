@@ -169,27 +169,27 @@ const SupplierQuotationForm = ({
           customersData,
         ] = await Promise.all([
           fetchSuppliers().catch((err) => {
-            toast.error("Failed to load suppliers");
+            console.log("Failed to load suppliers");
             return [];
           }),
           fetchPurchaseRFQs().catch((err) => {
-            toast.error("Failed to load purchase RFQs");
+            console.log("Failed to load purchase RFQs");
             return [];
           }),
           fetchCurrencies().catch((err) => {
-            toast.error("Failed to load currencies");
+            console.log("Failed to load currencies");
             return [];
           }),
           fetchServiceTypes().catch((err) => {
-            toast.error("Failed to load service types");
+            console.log("Failed to load service types");
             return [];
           }),
           fetchAddresses().catch((err) => {
-            toast.error("Failed to load addresses");
+            console.log("Failed to load addresses");
             return [];
           }),
           fetchCustomers().catch((err) => {
-            toast.error("Failed to load customers");
+            console.log("Failed to load customers");
             return [];
           }),
         ]);
@@ -248,7 +248,7 @@ const SupplierQuotationForm = ({
 
         setDropdownsLoaded(true);
       } catch (error) {
-        toast.error("Failed to load dropdown data: " + error.message);
+        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -399,7 +399,7 @@ const SupplierQuotationForm = ({
           : "An unexpected error occurred. Please try again.",
       });
       if (!toastDisplayed) {
-        toast.error(
+        console.log(
           error.response?.data?.message?.includes("parameter '@SupplierID'")
             ? "Failed to load supplier quotation due to missing supplier data"
             : "Error loading supplier quotation",
@@ -473,7 +473,7 @@ const SupplierQuotationForm = ({
 
   const handleSave = async () => {
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -594,7 +594,7 @@ const SupplierQuotationForm = ({
       await loadSupplierQuotationData();
       navigate("/supplier-quotation");
     } catch (error) {
-      toast.error(
+      console.log(
         `Failed to save: ${error.response?.data?.message || error.message}`
       );
     } finally {

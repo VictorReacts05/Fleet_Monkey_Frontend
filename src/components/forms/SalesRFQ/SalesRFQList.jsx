@@ -137,7 +137,7 @@ const SalesRFQList = () => {
       setTotalRows(response.totalRecords || salesRFQs.length);
     } catch (error) {
       console.error("Error loading SalesRFQs:", error);
-      toast.error("Failed to load SalesRFQs");
+      console.log("Failed to load SalesRFQs");
     } finally {
       setLoading(false);
     }
@@ -176,7 +176,7 @@ const SalesRFQList = () => {
   const handleDeleteClick = (id) => {
     const item = rows.find((row) => row.id === id);
     if (!item) {
-      toast.error("Item not found");
+      console.log("Item not found");
       return;
     }
     
@@ -199,7 +199,7 @@ const SalesRFQList = () => {
       setItemToDelete(null);
       loadSalesRFQs();
     } catch (error) {
-      toast.error("Failed to delete SalesRFQ: " + error.message);
+      console.log("Failed to delete SalesRFQ: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -224,7 +224,7 @@ const SalesRFQList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Inquiries..."
+            placeholder="Search Text ..."
           />
           <Tooltip title="Add New Inquiry" arrow>
             <IconButton

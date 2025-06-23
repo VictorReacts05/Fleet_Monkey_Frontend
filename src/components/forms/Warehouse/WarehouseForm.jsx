@@ -38,7 +38,7 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
       }
     } catch (error) {
       console.error('Error loading warehouse:', error);
-      toast.error('Failed to load warehouse details');
+      console.log('Failed to load warehouse details');
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         const personId = user?.personId || user?.id || user?.userId;
         if (!personId) {
-          toast.error("You must be logged in to save a warehouse");
+          console.log("You must be logged in to save a warehouse");
           setLoading(false);
           return;
         }
@@ -98,7 +98,7 @@ const WarehouseForm = ({ warehouseId, onSave, onClose }) => {
         if (onClose) onClose();
       } catch (error) {
         console.error('Error saving warehouse:', error);
-        toast.error(`Failed to save warehouse: ${error.message || 'Unknown error'}`);
+        console.log(`Failed to save warehouse: ${error.message || 'Unknown error'}`);
       } finally {
         setLoading(false);
       }

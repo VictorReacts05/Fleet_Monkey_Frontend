@@ -82,12 +82,12 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
-            toast.error("Failed to load items");
+            console.log("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Failed to fetch UOMs:", err);
-            toast.error("Failed to load UOMs");
+            console.log("Failed to load UOMs");
             return [];
           }),
         ]);
@@ -125,7 +125,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
         setUOMs(uomOptions);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
-        toast.error("Failed to load form data: " + error.message);
+        console.log("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -180,7 +180,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
         }
       } catch (error) {
         console.error("Error loading Sales Order parcels:", error);
-        toast.error("Failed to load Sales Order parcels: " + error.message);
+        console.log("Failed to load Sales Order parcels: " + error.message);
         setParcels([]);
       } finally {
         setLoadingExistingParcels(false);
@@ -361,7 +361,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
       });
     } catch (error) {
       console.error("Error saving parcel:", error);
-      toast.error(
+      console.log(
         "Failed to save parcel: " +
           (error.response?.data?.message || error.message)
       );
@@ -378,7 +378,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
     try {
       const parcelToDelete = parcels.find((p) => p.id === deleteParcelId);
       if (!parcelToDelete) {
-        toast.error("Parcel not found");
+        console.log("Parcel not found");
         setDeleteConfirmOpen(false);
         setDeleteParcelId(null);
         return;
@@ -400,7 +400,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false }) => {
       }
     } catch (error) {
       console.error("Error deleting parcel:", error);
-      toast.error(
+      console.log(
         "Failed to delete parcel: " +
           (error.response?.data?.message || error.message)
       );

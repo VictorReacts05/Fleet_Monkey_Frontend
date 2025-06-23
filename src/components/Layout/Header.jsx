@@ -383,14 +383,14 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Typography>
             </Box>
             <Divider />
-            <MenuItem onClick={handleMenuClose}>
+            {/* <MenuItem onClick={handleMenuClose}>
               <AccountCircleIcon fontSize="small" sx={{ mr: 2 }} />
               Profile
             </MenuItem>
             <MenuItem onClick={handleSettings}>
               <SettingsIcon fontSize="small" sx={{ mr: 2 }} />
               Settings
-            </MenuItem>
+            </MenuItem> */}
             <Divider />
             <MenuItem onClick={handleLogout}>
               <LogoutIcon fontSize="small" sx={{ mr: 2 }} />

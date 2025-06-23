@@ -59,7 +59,7 @@ const ItemList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading items:", error);
-      toast.error("Failed to load items: " + error.message);
+      console.log("Failed to load items: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ const ItemList = () => {
       setItemToDelete(null);
       loadItems();
     } catch (error) {
-      toast.error("Failed to delete item: " + error.message);
+      console.log("Failed to delete item: " + error.message);
     }
   };
 

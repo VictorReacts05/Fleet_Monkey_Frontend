@@ -44,12 +44,12 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
               warehouseAddressId: warehouse.WarehouseAddressID || 1, // Ensure this is set from warehouse data
             });
           } else {
-            toast.error('Warehouse not found');
+            console.log('Warehouse not found');
           }
         }
       } catch (error) {
         console.error('Error loading warehouse:', error);
-        toast.error('Failed to load warehouse details');
+        console.log('Failed to load warehouse details');
       } finally {
         setLoading(false);
       }
@@ -96,7 +96,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
 
     if (!validateForm()) {
       console.log('Validation failed, errors:', errors);
-      toast.error('Please fix the form errors');
+      console.log('Please fix the form errors');
       return;
     }
 
@@ -105,7 +105,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
     const personId = user?.personId || user?.id || user?.userId;
     
     if (!personId) {
-      toast.error('You must be logged in to save a warehouse');
+      console.log('You must be logged in to save a warehouse');
       return;
     }
 
@@ -145,7 +145,7 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
       if (errorMessage.toLowerCase().includes('warehouse name')) {
         setErrors({ warehouseName: errorMessage });
       } else {
-        toast.error('Failed to save warehouse: ' + errorMessage);
+        console.log('Failed to save warehouse: ' + errorMessage);
       }
       setLoading(false);
     }

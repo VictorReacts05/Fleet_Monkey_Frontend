@@ -67,7 +67,7 @@ const CertificationList = () => {
       }
     } catch (error) {
       console.error("Error loading certifications:", error);
-      toast.error("Failed to load certifications");
+      console.log("Failed to load certifications");
       setRows([]);
       setTotalRows(
         Number(localStorage.getItem("certificationTotalRecords")) || 0
@@ -103,7 +103,7 @@ const CertificationList = () => {
       toast.success("Certification deleted successfully");
       loadCertifications();
     } catch (error) {
-      toast.error("Failed to delete certification");
+      console.log("Failed to delete certification");
     }
     setDeleteDialogOpen(false);
   };
@@ -132,7 +132,7 @@ const CertificationList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Certifications..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

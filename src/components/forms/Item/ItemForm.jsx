@@ -30,7 +30,7 @@ const ItemForm = ({ itemId, onClose, onSave }) => {
         }
       } catch (error) {
         console.error("Error loading item data:", error);
-        toast.error("Failed to load item data");
+        console.log("Failed to load item data");
       } finally {
         setLoading(false);
       }
@@ -110,7 +110,7 @@ const ItemForm = ({ itemId, onClose, onSave }) => {
 
     if (hasErrors) {
       setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -127,7 +127,7 @@ const ItemForm = ({ itemId, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving item:", error);
-      toast.error(
+      console.log(
         `Failed to ${itemId ? "update" : "create"} item: ${
           error.message || error
         }`

@@ -49,7 +49,7 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
       });
     } catch (error) {
       console.error("Error loading address type:", error);
-      toast.error(
+      console.log(
         error.message ||
           "Failed to load address type details. Please try again."
       );
@@ -163,7 +163,7 @@ const AddressTypeForm = ({ addressTypeId, onSave, onClose }) => {
           status: error.response?.status,
           url: error.config?.url,
         });
-        toast.error(
+        console.log(
           `Failed to ${
             addressTypeId ? "update" : "create"
           } address type: ${errorMessage}`

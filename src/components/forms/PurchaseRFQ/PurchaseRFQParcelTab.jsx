@@ -227,7 +227,7 @@ const PurchaseRFQParcelTab = ({
         data: error.response?.data,
       });
       setError("Failed to load parcels. Please try again.");
-      toast.error("Failed to load parcels");
+      console.log("Failed to load parcels");
     } finally {
       setLoading(false);
     }
@@ -325,7 +325,7 @@ const PurchaseRFQParcelTab = ({
       );
       const salesRFQId = rfqResponse.data.data?.SalesRFQID;
       if (!salesRFQId) {
-        toast.error("No associated Sales RFQ found.");
+        console.log("No associated Sales RFQ found.");
         return;
       }
 
@@ -394,7 +394,7 @@ const PurchaseRFQParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      toast.error("Failed to save parcel.");
+      console.log("Failed to save parcel.");
     }
   };
 
@@ -408,7 +408,7 @@ const PurchaseRFQParcelTab = ({
     try {
       const auth = getAuthHeader();
       if (!auth) {
-        toast.error("Please log in to delete parcels.");
+        console.log("Please log in to delete parcels.");
         return;
       }
 
@@ -429,7 +429,7 @@ const PurchaseRFQParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      toast.error("Failed to delete parcel.");
+      console.log("Failed to delete parcel.");
     }
   };
 

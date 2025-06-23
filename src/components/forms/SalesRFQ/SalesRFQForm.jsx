@@ -153,37 +153,37 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         ] = await Promise.all([
           fetchCompanies().catch((err) => {
             console.error("Failed to fetch companies:", err);
-            toast.error("Failed to load companies");
+            console.log("Failed to load companies");
             return [];
           }),
           fetchCustomers().catch((err) => {
             console.error("Failed to fetch customers:", err);
-            toast.error("Failed to load customers");
+            console.log("Failed to load customers");
             return [];
           }),
           fetchSuppliers().catch((err) => {
             console.error("Failed to fetch suppliers:", err);
-            toast.error("Failed to load suppliers");
+            console.log("Failed to load suppliers");
             return [];
           }),
           fetchServiceTypes().catch((err) => {
             console.error("Failed to fetch service types:", err);
-            toast.error("Failed to load service types");
+            console.log("Failed to load service types");
             return [];
           }),
           fetchAddresses().catch((err) => {
             console.error("Failed to fetch addresses:", err);
-            toast.error("Failed to load addresses");
+            console.log("Failed to load addresses");
             return [];
           }),
           fetchMailingPriorities().catch((err) => {
             console.error("Failed to fetch mailing priorities:", err);
-            toast.error("Failed to load mailing priorities");
+            console.log("Failed to load mailing priorities");
             return [];
           }),
           fetchCurrencies().catch((err) => {
             console.error("Failed to fetch currencies:", err);
-            toast.error("Failed to load currencies");
+            console.log("Failed to load currencies");
             return [];
           }),
         ]);
@@ -259,7 +259,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Error in loadDropdownData:", error);
-        toast.error("Failed to load dropdown data: " + error.message);
+        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -364,7 +364,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       console.log("Formatted formData:", formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
-      toast.error("Failed to load SalesRFQ: " + error.message);
+      console.log("Failed to load SalesRFQ: " + error.message);
     }
   }, [
     salesRFQId,
@@ -394,7 +394,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       setStatus(status);
     } catch (error) {
       console.error("Error loading SalesRFQ status:", error);
-      toast.error(
+      console.log(
         "Failed to load SalesRFQ status: " + (error.message || "Unknown error")
       );
       setStatus("Pending"); // Fallback to Pending
@@ -444,7 +444,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -492,7 +492,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      toast.error(
+      console.log(
         `Failed to ${salesRFQId ? "update" : "create"} SalesRFQ: ` +
           (error.message || "Unknown error")
       );
@@ -701,7 +701,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           "Purchase RFQ created, but ID is unavailable:",
           response.data
         );
-        toast.error("Purchase RFQ created, but ID is unavailable");
+        console.log("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
@@ -709,7 +709,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         responseData: error.response?.data,
         salesRFQId,
       });
-      toast.error(`Failed to create Purchase RFQ: ${error.message}`);
+      console.log(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
       setPurchaseRFQDialogOpen(false);
@@ -733,7 +733,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           error
         );
         setStatus("Pending");
-        toast.error("Failed to load status information");
+        console.log("Failed to load status information");
       }
     };
 

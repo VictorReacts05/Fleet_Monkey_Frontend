@@ -52,7 +52,7 @@ const PurchaseOrderList = () => {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated || !user) {
-      toast.error("Please log in to view purchase orders");
+      console.log("Please log in to view purchase orders");
       navigate("/");
     }
   }, [isAuthenticated, user, navigate]);
@@ -95,7 +95,7 @@ useEffect(() => {
       setTotalRows(totalRecords);
     } catch (error) {
       console.error("Fetch Error:", error);
-      toast.error("Failed to load Purchase Orders");
+      console.log("Failed to load Purchase Orders");
       setPurchaseOrders([]);
       setTotalRows(0);
       setError(error.message || "Failed to load purchase orders");
@@ -123,7 +123,7 @@ useEffect(() => {
         setSalesOrders(formattedOptions);
       } catch (error) {
         console.error("Error fetching sales orders:", error);
-        toast.error("Failed to load sales orders");
+        console.log("Failed to load sales orders");
         setSalesOrders([{ value: "", label: "No Sales Orders Available" }]);
       }
     };
@@ -182,7 +182,7 @@ useEffect(() => {
       navigate(`/purchase-order/view/${id}`);
     } else {
       console.error("Invalid Purchase Order ID:", id);
-      toast.error("Cannot view Purchase Order: Invalid ID");
+      console.log("Cannot view Purchase Order: Invalid ID");
     }
   };
 
@@ -193,7 +193,7 @@ useEffect(() => {
       setDeleteDialogOpen(true);
     } else {
       console.error("Invalid Purchase Order ID for deletion:", id);
-      toast.error("Cannot delete Purchase Order: Invalid ID");
+      console.log("Cannot delete Purchase Order: Invalid ID");
     }
   };
 
@@ -233,7 +233,7 @@ useEffect(() => {
       setTotalRows(searchTerm ? filteredData.length : totalRecords);
     } catch (error) {
       console.error("Error deleting Purchase Order:", error);
-      toast.error("Failed to delete purchase order");
+      console.log("Failed to delete purchase order");
     } finally {
       setLoading(false);
     }
@@ -265,7 +265,7 @@ useEffect(() => {
       salesOrders,
     });
     if (!validateForm()) {
-      toast.error("Please select a valid Sales Order");
+      console.log("Please select a valid Sales Order");
       return;
     }
 
@@ -310,7 +310,7 @@ useEffect(() => {
         error.message ||
         "Failed to create Purchase Order";
       console.error("Error creating Purchase Order:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
       if (
         errorMessage.includes("User not authenticated") ||
         errorMessage.includes("No token found") ||
@@ -366,7 +366,7 @@ useEffect(() => {
               })
               .catch((err) => {
                 console.error("Retry Fetch Error:", err);
-                toast.error("Failed to load Purchase Orders");
+                console.log("Failed to load Purchase Orders");
                 setPurchaseOrders([]);
                 setTotalRows(0);
                 setError(err.message || "Failed to load purchase orders");
@@ -395,7 +395,7 @@ useEffect(() => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Purchase Orders..."
+            placeholder="Search Text..."
           />
           <Tooltip title="Add New Purchase Order">
             <IconButton

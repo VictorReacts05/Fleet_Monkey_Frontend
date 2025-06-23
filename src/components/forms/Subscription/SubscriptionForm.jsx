@@ -88,7 +88,7 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
         }
       } catch (error) {
         console.error("Error loading form data:", error);
-        toast.error(
+        console.log(
           "Failed to load dropdown data: " + (error.message || "Unknown error")
         );
 
@@ -210,7 +210,7 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
 
     if (hasErrors) {
       setErrors(validationErrors);
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -252,7 +252,7 @@ const SubscriptionForm = ({ subscriptionId, onSave, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving subscription plan:", error);
-      toast.error(
+      console.log(
         `Failed to ${subscriptionId ? "update" : "create"} subscription plan: ${
           error.message
         }`
