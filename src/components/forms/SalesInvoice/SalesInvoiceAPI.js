@@ -6,7 +6,6 @@ export const getAuthHeader = (user = null) => {
     let token = null;
     let personId = null;
 
-    // Try to get token and personId from user object
     if (user) {
       personId =
         user?.personId ||
@@ -18,7 +17,6 @@ export const getAuthHeader = (user = null) => {
       token = user?.token || user?.Token;
     }
 
-    // Fall back to localStorage if token or personId is missing
     if (!token || !personId) {
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
       const storedToken = localStorage.getItem("token");
@@ -114,6 +112,67 @@ export const fetchSalesInvoices = async (
     return { data: [], pagination: { totalRecords: 0 } };
   }
 };
+
+export const fetchCompanyById = async (id) => {
+  try {
+    if (!id) {
+      return { CompanyName: "Unknown Company" };
+    }
+    const response = await axios.get(
+      `${APIBASEURL}/companies/${id}`,
+      getAuthHeader()
+    );
+    return response.data.data || { CompanyName: "Unknown Company" };
+  } catch (error) {
+    console.error("fetchCompanyById error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    return { CompanyName: "Unknown Company" };
+  }
+};
+
+export const fetchCustomerById = async (id) => {
+  try {
+    if (!id) {
+      return { CustomerName: "Unknown Customer" };
+    }
+    const response = await axios.get(
+      `${APIBASEURL}/customers/${id}`,
+      getAuthHeader()
+    );
+    return response.data.data || { CustomerName: "Unknown Customer" };
+  } catch (error) {
+    console.error("fetchCustomerById error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    return { CustomerName: "Unknown Customer" };
+  }
+};
+
+export const fetchSupplierById = async (id) => {
+  try {
+    if (!id) {
+      return { SupplierName: "Unknown Supplier" };
+    }
+    const response = await axios.get(
+      `${APIBASEURL}/suppliers/${id}`,
+      getAuthHeader()
+    );
+    return response.data.data || { SupplierName: "Unknown Supplier" };
+  } catch (error) {
+    console.error("fetchSupplierById error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    return { SupplierName: "Unknown Supplier" };
+  }
+};
+
 export const fetchSalesInvoiceById = async (id) => {
   try {
     if (!id || id === "undefined" || id === "create") {
@@ -126,7 +185,20 @@ export const fetchSalesInvoiceById = async (id) => {
     );
 
     if (response.data && response.data.data) {
-      return response.data.data;
+      const invoiceData = response.data.data;
+
+      const [company, customer, supplier] = await Promise.all([
+        fetchCompanyById(invoiceData.CompanyID),
+        fetchCustomerById(invoiceData.CustomerID),
+        fetchSupplierById(invoiceData.SupplierID),
+      ]);
+
+      return {
+        ...invoiceData,
+        CompanyName: company.CompanyName || "Unknown Company",
+        CustomerName: customer.CustomerName || "Unknown Customer",
+        SupplierName: supplier.SupplierName || "Unknown Supplier",
+      };
     }
     throw new Error("Invalid Sales Invoice data format");
   } catch (error) {
@@ -158,7 +230,7 @@ export const deleteSalesInvoice = async (id) => {
 
 export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
   try {
-    if (!salesInvoiceId) {
+    if (!salesInvoiceId || salesInvoiceId === "undefined") {
       throw new Error("Invalid Sales Invoice ID");
     }
 
@@ -316,7 +388,24 @@ export const createSalesInvoice = async (data) => {
     const response = await axios.post(`${APIBASEURL}/salesInvoice`, payload, {
       headers,
     });
-    return response.data;
+    console.log("Create Sales Invoice API Response:", response.data);
+
+    // Check for SalesInvoiceID at multiple levels
+    const salesInvoiceId =
+      response.data?.data?.SalesInvoiceID ||
+      response.data?.SalesInvoiceID ||
+      null;
+
+    if (!salesInvoiceId) {
+      throw new Error("Sales Invoice ID not found in response");
+    }
+
+    return {
+      success: response.data.success,
+      data: {
+        SalesInvoiceID: salesInvoiceId,
+      },
+    };
   } catch (error) {
     console.error("createSalesInvoice error:", {
       message: error.message,

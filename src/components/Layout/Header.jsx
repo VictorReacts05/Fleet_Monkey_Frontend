@@ -190,18 +190,18 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
       !newUser.password ||
       !newUser.role
     ) {
-      showNotification('Please fill all required fields', 'error');
+      showNotification("Please fill all required fields", "error");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newUser.emailId)) {
-      showNotification('Please enter a valid email address', 'error');
+      showNotification("Please enter a valid email address", "error");
       return;
     }
 
     if (newUser.password.length < 8) {
-      showNotification('Password must be at least 8 characters long', 'error');
+      showNotification("Password must be at least 8 characters long", "error");
       return;
     }
 
@@ -210,7 +210,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
       const userData = {
         FirstName: newUser.firstName,
-        MiddleName: newUser.middleName || '',
+        MiddleName: newUser.middleName || "",
         LastName: newUser.lastName,
         EmailID: newUser.emailId,
         LoginID: newUser.loginId,
@@ -224,23 +224,24 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         userData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
       showNotification(
-        'User created successfully! A confirmation email has been sent.',
-        'success'
+        "User created successfully! A confirmation email has been sent.",
+        "success"
       );
 
       await fetchUsers();
       handleCloseUserModal();
     } catch (error) {
-      console.error('Error creating user:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to create user';
-      showNotification(errorMessage, 'error');
+      console.error("Error creating user:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to create user";
+      showNotification(errorMessage, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -315,7 +316,33 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               <Button
                 variant="contained"
                 color="primary"
-                sx={{ mr: 1, textTransform: 'none' }}
+                sx={{
+                  mr: 1,
+                  textTransform: 'none',
+                  fontSize: {
+                    xs: '0.75rem', // Smaller font on mobile
+                    sm: '0.875rem', // Default font on small screens
+                    md: '1rem', // Larger font on medium screens
+                  },
+                  padding: {
+                    
+                    xs: '2px 4px', // Compact padding on mobile
+                    sm: '6px 12px', // Default padding
+                    md: '8px 16px', // Larger padding on desktop
+                  },
+                  minWidth: {
+                    xs: '100px', // Minimum width for mobile
+                    sm: '120px',
+                    md: '140px',
+                  },
+                  height: {
+                    xs: '30px', 
+                    sm: '36px',
+                    md: '40px',
+                  },
+                  
+                  borderRadius: '8px', // Consistent border radius
+                }}
                 onClick={handleOpenUserModal}
               >
                 Create New User

@@ -68,7 +68,11 @@ const ReadOnlyField = ({ label, value }) => {
   );
 };
 
-const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnly = true }) => {
+const SalesInvoiceForm = ({
+  salesInvoiceId: propSalesInvoiceId,
+  onClose,
+  readOnly = true,
+}) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -77,11 +81,8 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
   const [formData, setFormData] = useState({
     Series: "",
     CompanyID: "",
-    CompanyName: "",
     SupplierID: "",
-    SupplierName: "",
     CustomerID: "",
-    CustomerName: "",
     ExternalRefNo: "",
     DeliveryDate: null,
     PostingDate: null,
@@ -134,10 +135,18 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       if (response) {
         let formattedData = {
           ...response,
-          DeliveryDate: response.DeliveryDate ? new Date(response.DeliveryDate) : null,
-          PostingDate: response.PostingDate ? new Date(response.PostingDate) : null,
-          RequiredByDate: response.RequiredByDate ? new Date(response.RequiredByDate) : null,
-          DateReceived: response.DateReceived ? new Date(response.DateReceived) : null,
+          DeliveryDate: response.DeliveryDate
+            ? new Date(response.DeliveryDate)
+            : null,
+          PostingDate: response.PostingDate
+            ? new Date(response.PostingDate)
+            : null,
+          RequiredByDate: response.RequiredByDate
+            ? new Date(response.RequiredByDate)
+            : null,
+          DateReceived: response.DateReceived
+            ? new Date(response.DateReceived)
+            : null,
           ServiceType: "Unknown Service Type",
         };
 
@@ -149,13 +158,17 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
               `${APIBASEURL}/addresses/${response.CollectionAddressID}`,
               {
                 headers: {
-                  Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.personId}`,
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
                 },
               }
             );
             if (collectionAddressResponse.data?.data) {
               const addressData = collectionAddressResponse.data.data;
-              formattedData.CollectionAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`;
+              formattedData.CollectionAddress = `${
+                addressData.AddressLine1 || ""
+              }, ${addressData.City || ""}`;
             }
           }
 
@@ -165,13 +178,17 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
               `${APIBASEURL}/addresses/${response.DestinationAddressID}`,
               {
                 headers: {
-                  Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.personId}`,
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
                 },
               }
             );
             if (destinationAddressResponse.data?.data) {
               const addressData = destinationAddressResponse.data.data;
-              formattedData.DestinationAddress = `${addressData.AddressLine1 || ""}, ${addressData.City || ""}`;
+              formattedData.DestinationAddress = `${
+                addressData.AddressLine1 || ""
+              }, ${addressData.City || ""}`;
             }
           }
 
@@ -183,11 +200,18 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                 ? prioritiesResponse
                 : prioritiesResponse.data || [];
               const matchingPriority = priorities.find(
-                (p) => parseInt(p.ShippingPriorityID || p.MailingPriorityID) === parseInt(response.ShippingPriorityID)
+                (p) =>
+                  parseInt(p.ShippingPriorityID || p.MailingPriorityID) ===
+                  parseInt(response.ShippingPriorityID)
               );
-              formattedData.ShippingPriorityName = matchingPriority?.PriorityName || `Unknown Priority (${response.ShippingPriorityID})`;
+              formattedData.ShippingPriorityName =
+                matchingPriority?.PriorityName ||
+                `Unknown Priority (${response.ShippingPriorityID})`;
             } catch (priorityError) {
-              console.error("Failed to fetch shipping priority:", priorityError);
+              console.error(
+                "Failed to fetch shipping priority:",
+                priorityError
+              );
               formattedData.ShippingPriorityName = `Error: Failed to fetch priority`;
             }
           }
@@ -200,9 +224,12 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                 ? serviceTypesResponse
                 : serviceTypesResponse.data || [];
               const matchingServiceType = serviceTypes.find(
-                (s) => parseInt(s.ServiceTypeID) === parseInt(response.ServiceTypeID)
+                (s) =>
+                  parseInt(s.ServiceTypeID) === parseInt(response.ServiceTypeID)
               );
-              formattedData.ServiceType = matchingServiceType?.ServiceType || `Unknown Service Type (${response.ServiceTypeID})`;
+              formattedData.ServiceType =
+                matchingServiceType?.ServiceType ||
+                `Unknown Service Type (${response.ServiceTypeID})`;
             } catch (serviceTypeError) {
               console.error("Failed to fetch service type:", serviceTypeError);
               formattedData.ServiceType = `Error: Failed to fetch service type (${response.ServiceTypeID})`;
@@ -219,7 +246,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
               const matchingCurrency = currencies.find(
                 (c) => parseInt(c.CurrencyID) === parseInt(response.CurrencyID)
               );
-              formattedData.CurrencyName = matchingCurrency?.CurrencyName || `Unknown Currency (${response.CurrencyID})`;
+              formattedData.CurrencyName =
+                matchingCurrency?.CurrencyName ||
+                `Unknown Currency (${response.CurrencyID})`;
             } catch (currencyError) {
               console.error("Failed to fetch currency:", currencyError);
             }
@@ -261,7 +290,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       setApprovalRecord(response.data);
 
       if (response.data.success && response.data.data) {
-        const approved = Number(response.data.data.ApprovedStatus) === 1 || response.data.data.ApprovedStatus === "true";
+        const approved =
+          Number(response.data.data.ApprovedStatus) === 1 ||
+          response.data.data.ApprovedStatus === "true";
         setApprovalStatus(approved ? "approved" : "disapproved");
       } else {
         setApprovalStatus(null);
@@ -280,7 +311,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
   }, [salesInvoiceId, loadSalesInvoiceData, loadApprovalStatus]);
 
   const handleItemsChange = (updatedItems) => {
-    setItems(updatedItems); // Update the items state in SalesInvoiceForm
+    setItems(updatedItems);
   };
 
   const fetchSuppliers = async () => {
@@ -288,7 +319,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       setLoadingSuppliers(true);
       const response = await axios.get(`${APIBASEURL}/suppliers`, {
         headers: {
-          Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.personId}`,
+          Authorization: `Bearer ${
+            JSON.parse(localStorage.getItem("user"))?.personId
+          }`,
         },
       });
       if (response.data && Array.isArray(response.data.data)) {
@@ -334,7 +367,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
   const handleSendSalesInvoice = async () => {
     try {
       if (selectedSuppliers.length === 0) {
-        toast.warning("Please select suppliers before sending the Sales Invoice");
+        toast.warning(
+          "Please select suppliers before sending the Sales Invoice"
+        );
         handleOpenSuppliersDialog();
         return;
       }
@@ -359,7 +394,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
-              Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.personId}`,
+              Authorization: `Bearer ${
+                JSON.parse(localStorage.getItem("user"))?.personId
+              }`,
             },
           }
         );
@@ -376,7 +413,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
-              Authorization: `Bearer ${JSON.parse(localStorage.getItem("user"))?.personId}`,
+              Authorization: `Bearer ${
+                JSON.parse(localStorage.getItem("user"))?.personId
+              }`,
             },
           }
         );
@@ -390,7 +429,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       } else if (confirmAction === "send") {
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
-        const supplierIDs = selectedSuppliers.map((supplier) => supplier.SupplierID);
+        const supplierIDs = selectedSuppliers.map(
+          (supplier) => supplier.SupplierID
+        );
 
         setEmailSendingStatus({
           sending: true,
@@ -430,10 +471,17 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         let successCount = 0;
         let failCount = 0;
 
-        if (response.data && response.data.success && Array.isArray(response.data.results)) {
+        if (
+          response.data &&
+          response.data.success &&
+          Array.isArray(response.data.results)
+        ) {
           response.data.results.forEach((result) => {
-            const supplier = selectedSuppliers.find((s) => s.SupplierID === result.supplierID);
-            const supplierName = supplier?.SupplierName || `Supplier ID ${result.supplierID}`;
+            const supplier = selectedSuppliers.find(
+              (s) => s.SupplierID === result.supplierID
+            );
+            const supplierName =
+              supplier?.SupplierName || `Supplier ID ${result.supplierID}`;
 
             if (result.success) {
               successCount++;
@@ -453,14 +501,18 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           });
 
           if (successCount > 0) {
-            toast.success(`Sent invoice to ${successCount} suppliers successfully`);
+            toast.success(
+              `Sent invoice to ${successCount} suppliers successfully`
+            );
           }
 
           if (failCount > 0) {
             toast.warning(`Failed to send invoice to ${failCount} suppliers`);
           }
         } else {
-          throw new Error(response.data?.message || "Invalid response from server");
+          throw new Error(
+            response.data?.message || "Invalid response from server"
+          );
         }
 
         setEmailSendingStatus({
@@ -476,7 +528,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(`An error occurred: ${error.response?.data?.message || error.message}`);
+      toast.error(
+        `An error occurred: ${error.response?.data?.message || error.message}`
+      );
       setEmailSendingStatus({
         sending: false,
         progress: 0,
@@ -499,7 +553,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       Status: newStatus,
     }));
     setConfirmAction(newStatus.toLowerCase());
-    setConfirmMessage(`Are you sure you want to ${newStatus.toLowerCase()} this Sales Invoice?`);
+    setConfirmMessage(
+      `Are you sure you want to ${newStatus.toLowerCase()} this Sales Invoice?`
+    );
     setConfirmDialogOpen(false);
   };
 
@@ -531,7 +587,8 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  background: theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                  background:
+                    theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
                   padding: "0px 10px",
                   height: "37px",
@@ -579,7 +636,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
               variant="contained"
               color="secondary"
               onClick={handleSendSalesInvoice}
-              disabled={formData.Status !== "Approved" || selectedSuppliers.length === 0}
+              disabled={
+                formData.Status !== "Approved" || selectedSuppliers.length === 0
+              }
               sx={{
                 fontWeight: "bold",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
@@ -592,7 +651,11 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                   <CircularProgress
                     size={24}
                     color="inherit"
-                    sx={{ position: "absolute", left: "50%", marginLeft: "-12px" }}
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      marginLeft: "-12px",
+                    }}
                   />
                   <span style={{ visibility: "hidden" }}>Send</span>
                 </>
@@ -627,7 +690,11 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
             Sending Invoice to suppliers... This may take some time.
           </Typography>
           <Box sx={{ width: "100%", display: "flex", alignItems: "center" }}>
-            <CircularProgress variant="indeterminate" size={24} sx={{ mr: 2 }} />
+            <CircularProgress
+              variant="indeterminate"
+              size={24}
+              sx={{ mr: 2 }}
+            />
             <Typography variant="body2">
               Please wait while we process your request. Do not close this page.
             </Typography>
@@ -666,7 +733,10 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           <ReadOnlyField label="Supplier" value={formData.SupplierName} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="External Ref No" value={formData.ExternalRefNo} />
+          <ReadOnlyField
+            label="External Ref No"
+            value={formData.ExternalRefNo}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Delivery Date" value={formData.DeliveryDate} />
@@ -675,19 +745,31 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Required By Date" value={formData.RequiredByDate} />
+          <ReadOnlyField
+            label="Required By Date"
+            value={formData.RequiredByDate}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Date Received" value={formData.DateReceived} />
         </Grid>
         <Grid item xs={12} md={6} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collection Address" value={formData.CollectionAddress} />
+          <ReadOnlyField
+            label="Collection Address"
+            value={formData.CollectionAddress}
+          />
         </Grid>
         <Grid item xs={12} md={6} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Destination Address" value={formData.DestinationAddress} />
+          <ReadOnlyField
+            label="Destination Address"
+            value={formData.DestinationAddress}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Shipping Priority" value={formData.ShippingPriorityName} />
+          <ReadOnlyField
+            label="Shipping Priority"
+            value={formData.ShippingPriorityName}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Terms" value={formData.Terms} />
@@ -699,19 +781,31 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
           <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Taxes and Other Charges" value={formData.TaxesAndOtherCharges} />
+          <ReadOnlyField
+            label="Taxes and Other Charges"
+            value={formData.TaxesAndOtherCharges}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Total" value={formData.Total} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Collect From Supplier" value={formData.CollectFromSupplierYN} />
+          <ReadOnlyField
+            label="Collect From Supplier"
+            value={formData.CollectFromSupplierYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Packaging Required" value={formData.PackagingRequiredYN} />
+          <ReadOnlyField
+            label="Packaging Required"
+            value={formData.PackagingRequiredYN}
+          />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Form Completed" value={formData.FormCompletedYN} />
+          <ReadOnlyField
+            label="Form Completed"
+            value={formData.FormCompletedYN}
+          />
         </Grid>
       </Grid>
 
@@ -808,7 +902,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                           </ListItemIcon>
                           <ListItemText
                             primary={supplier.SupplierName}
-                            secondary={supplier.ContactPerson || "No contact person"}
+                            secondary={
+                              supplier.ContactPerson || "No contact person"
+                            }
                           />
                         </ListItem>
                         <Divider />
@@ -852,7 +948,9 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
                 color="warning.main"
                 sx={{ mt: 2, fontWeight: "medium" }}
               >
-                Note: Email sending may take several minutes depending on the number of suppliers. Please do not close this page during the process.
+                Note: Email sending may take several minutes depending on the
+                number of suppliers. Please do not close this page during the
+                process.
               </Typography>
             )}
           </DialogContentText>
@@ -862,7 +960,7 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
             Cancel
           </Button>
           <Button
-            // onClick={handleConfirmAction}
+            onClick={handleConfirmAction}
             color="primary"
             autoFocus
             disabled={loading}
@@ -874,8 +972,8 @@ const SalesInvoiceForm = ({ salesInvoiceId: propSalesInvoiceId, onClose, readOnl
       </Dialog>
 
       <SalesInvoiceParcelsTab
-        salesInvoiceId={salesInvoiceId} // Fixed: Correct prop name
-        onItemsChange={handleItemsChange} // Uncommented and defined
+        salesInvoiceId={salesInvoiceId}
+        onItemsChange={handleItemsChange}
         readOnly={readOnly}
       />
     </FormPage>
