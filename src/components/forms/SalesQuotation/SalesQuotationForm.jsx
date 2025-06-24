@@ -384,7 +384,7 @@ const SalesQuotationForm = ({
     console.log("customerEmail updated:", customerEmail);
   }, [customerEmail]);
 
-  if (loading) {
+  if (loading||!formData) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
@@ -405,16 +405,7 @@ const SalesQuotationForm = ({
     );
   }
 
-  if (!formData) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">
-          No Sales Quotation Parcel data available
-        </Typography>
-      </Box>
-    );
-  }
-
+ 
   console.log("Rendering SalesQuotationForm with formData:", formData);
   console.log("Passing to FormPage:", {
     isEdit,

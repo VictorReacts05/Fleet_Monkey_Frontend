@@ -266,16 +266,12 @@ const SalesInvoiceList = () => {
       const response = await createSalesInvoice({
         salesOrderId: parseInt(selectedSalesOrder),
       });
-      console.log("Create Sales Invoice Response:", response);
-      const salesInvoiceId = response?.data?.SalesInvoiceID;
-      if (!salesInvoiceId) {
-        throw new Error("Sales Invoice ID not returned in response");
-      }
+       console.log("Create SAAAAALES Response:", response);
       toast.success("Sales Invoice created successfully");
       // Refresh invoice list
       await loadSalesInvoices();
       handleDialogClose();
-      navigate(`/sales-invoice/view/${salesInvoiceId}`);
+      navigate(`/sales-invoice/view/${response?.salesInvoiceId}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
       console.log("Failed to create Sales Invoice: " + error.message);

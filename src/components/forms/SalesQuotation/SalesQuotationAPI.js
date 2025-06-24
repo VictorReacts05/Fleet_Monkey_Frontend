@@ -364,7 +364,7 @@ export const createSalesQuotation = async (data) => {
 
     const payload = {
       ...data,
-      CreatedByID: Number(personId),
+      createdById: Number(personId),
     };
 
     console.log("Creating Sales Quotation with data:", payload);
