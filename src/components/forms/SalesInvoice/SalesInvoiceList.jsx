@@ -283,7 +283,7 @@ const SalesInvoiceList = () => {
        console.log("Create SAAAAALES Response:", response);
       toast.success("Sales Invoice created successfully");
       handleDialogClose();
-      navigate(`/sales-invoice/view/${response?.salesInvoiceId}`);
+      navigate(`/sales-invoice/view/${response?.data?.salesInvoiceId}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
       console.log("Failed to create Sales Invoice: " + error.message);
