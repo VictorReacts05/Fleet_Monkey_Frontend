@@ -69,7 +69,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       setFormData(formattedData);
     } catch (error) {
       console.error("Failed to load UOM:", error);
-      console.log("Failed to load UOM: " + error.message);
+      toast.error("Failed to load UOM: " + error.message);
     }
   };
 
@@ -88,7 +88,7 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      console.log("Please fix the form errors");
+      toast.error("Please fix the form errors");
       return;
     }
 
@@ -126,9 +126,9 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       // Check for duplicate key error
       if (error.response && error.response.data && error.response.data.message && 
           error.response.data.message.includes("UNIQUE KEY constraint")) {
-        console.log(`This Unit of Measurement already exists. Please use a different name.`);
+        toast.error(`This Unit of Measurement already exists. Please use a different name.`);
       } else {
-        console.log(
+        toast.error(
           `Failed to ${uomId ? "update" : "create"} UOM: ` +
             (error.message || "Unknown error")
         );

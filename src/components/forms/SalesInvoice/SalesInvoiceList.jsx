@@ -290,7 +290,7 @@ const SalesInvoiceList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   return (
     <Box>

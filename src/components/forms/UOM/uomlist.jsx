@@ -57,7 +57,7 @@ const UOMList = () => {
       setTotalRows(actualTotalCount);
     } catch (error) {
       console.error('Error loading UOMs:', error);
-      console.log('Failed to load UOMs: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to load UOMs: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ const UOMList = () => {
       setItemToDelete(null);
       loadUOMs();
     } catch (error) {
-      console.log('Failed to delete UOM: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to delete UOM: ' + (error.message || 'Unknown error'));
     }
   };
 

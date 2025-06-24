@@ -39,7 +39,7 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
       });
     } catch (error) {
       console.error('Error loading UOM:', error);
-      console.log('Failed to load UOM: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to load UOM: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
       }
     } catch (error) {
       console.error('Error saving UOM:', error);
-      console.log('Failed to save UOM: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to save UOM: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
