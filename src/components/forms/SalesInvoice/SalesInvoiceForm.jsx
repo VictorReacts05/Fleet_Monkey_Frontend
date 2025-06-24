@@ -578,7 +578,7 @@ const SalesInvoiceForm = ({
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             <Typography variant="h6">
-              {readOnly ? "View Bill" : "Edit Bill"}
+              {readOnly ? "View Invoice" : "Edit Invoice"}
             </Typography>
             {salesInvoiceId && (
               <Box

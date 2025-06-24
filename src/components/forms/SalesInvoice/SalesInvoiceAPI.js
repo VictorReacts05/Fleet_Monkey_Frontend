@@ -377,40 +377,57 @@ export const createSalesInvoice = async (data) => {
   try {
     const { headers } = getAuthHeader();
     const salesOrderId = parseInt(data.salesOrderId);
+    console.log("createSalesInvoice: Input data", { salesOrderId, headers });
+
     if (isNaN(salesOrderId) || salesOrderId <= 0) {
+      console.error("createSalesInvoice: Invalid Sales Order ID", salesOrderId);
       throw new Error("Invalid Sales Order ID provided");
     }
 
     const payload = {
       salesOrderId: salesOrderId,
     };
+    console.log("createSalesInvoice: Sending payload", payload);
 
     const response = await axios.post(`${APIBASEURL}/salesInvoice`, payload, {
       headers,
     });
-    console.log("Create Sales Invoice API Response:", response.data);
+    console.log("createSalesInvoice: Raw API Response", response.data);
 
-    // Check for SalesInvoiceID at multiple levels
+    // Check for SalesInvoiceID in multiple possible locations, including lowercase
     const salesInvoiceId =
       response.data?.data?.SalesInvoiceID ||
+      response.data?.data?.salesInvoiceId || // Added to handle lowercase 'salesInvoiceId'
       response.data?.SalesInvoiceID ||
+      response.data?.id ||
       null;
 
+    console.log("createSalesInvoice: Extracted SalesInvoiceID", salesInvoiceId);
+
     if (!salesInvoiceId) {
+      console.error(
+        "createSalesInvoice: Sales Invoice ID not found in response",
+        response.data
+      );
       throw new Error("Sales Invoice ID not found in response");
     }
 
-    return {
-      success: response.data.success,
+    const formattedResponse = {
+      success: true,
+      message: "Sales Invoice inserted successfully",
       data: {
         SalesInvoiceID: salesInvoiceId,
       },
     };
+    console.log("createSalesInvoice: Formatted Response", formattedResponse);
+
+    return formattedResponse;
   } catch (error) {
     console.error("createSalesInvoice error:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
+      stack: error.stack,
     });
     throw error;
   }

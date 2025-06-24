@@ -271,7 +271,7 @@ const SalesInvoiceList = () => {
       // Refresh invoice list
       await loadSalesInvoices();
       handleDialogClose();
-      navigate(`/sales-invoice/view/${response?.data?.salesInvoiceId}`);
+      navigate(`/sales-invoice/view/${response?.data?.SalesInvoiceID}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
       console.log("Failed to create Sales Invoice: " + error.message);
