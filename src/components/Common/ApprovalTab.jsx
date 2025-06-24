@@ -55,7 +55,7 @@ const ApprovalTab = ({ moduleType, moduleId, apiEndpoint }) => {
     } catch (err) {
       console.error(`Error fetching approval status for ${moduleType}:`, err);
       setError(err.message || "Failed to load approval status");
-      toast.error(`Failed to load approval status: ${err.message}`);
+      // console.log(`Failed to load approval status: ${err.message}`);
     } finally {
       setLoading(false);
     }

@@ -280,9 +280,10 @@ const SalesInvoiceList = () => {
       const response = await createSalesInvoice({
         salesOrderId: parseInt(selectedSalesOrder),
       });
+       console.log("Create SAAAAALES Response:", response);
       toast.success("Sales Invoice created successfully");
       handleDialogClose();
-      navigate(`/sales-invoice/view/${response.data.SalesInvoiceID}`);
+      navigate(`/sales-invoice/view/${response?.salesInvoiceId}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
       console.log("Failed to create Sales Invoice: " + error.message);
