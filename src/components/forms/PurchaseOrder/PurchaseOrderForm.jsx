@@ -403,6 +403,8 @@ const PurchaseOrderForm = ({
                   color="primary"
                   onClick={handleSendToSupplier}
                   sx={{ mr: 2 }}
+                  // disabled={status !== "Approved"}
+                  disabled={formData.Status !== "Approved"}
                 >
                   Send to Supplier
                 </Button>
@@ -412,7 +414,8 @@ const PurchaseOrderForm = ({
                 variant="contained"
                 color="secondary"
                 onClick={handleCreatePurchaseInvoice}
-                // disabled={status !== "Approved" }
+                // disabled={status !== "Approved"}
+                disabled={formData.Status !== "Approved"}
               >
                 Create Purchase Invoice
               </Button>
