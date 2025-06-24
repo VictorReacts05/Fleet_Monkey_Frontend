@@ -57,7 +57,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
           console.log("No approval record exists yet for this Sales Invoice");
           setStatus("Pending");
         } else {
-          toast.error("Unable to load approval status");
+          console.log("Unable to load approval status");
           setStatus("Pending");
         }
       } finally {
@@ -70,7 +70,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
 
   const handleApprove = async () => {
     if (!salesInvoiceId || isNaN(parseInt(salesInvoiceId, 10))) {
-      toast.error("Invalid Sales Invoice ID");
+      console.log("Invalid Sales Invoice ID");
       setAnchorEl(null);
       return;
     }
@@ -101,7 +101,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
       }
     } catch (error) {
       console.error("Approval error:", error);
-      toast.error(`Failed to approve: ${error.message}`);
+      console.log(`Failed to approve: ${error.message}`);
     } finally {
       setLoading(false);
       setAnchorEl(null);

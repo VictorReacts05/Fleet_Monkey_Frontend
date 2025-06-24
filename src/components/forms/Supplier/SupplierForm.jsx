@@ -38,7 +38,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
       });
     } catch (error) {
       console.error("Error loading supplier:", error);
-      toast.error(
+      console.log(
         "Failed to load supplier: " + (error.message || "Unknown error")
       );
     } finally {
@@ -80,7 +80,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -108,7 +108,7 @@ const SupplierForm = ({ supplierId, onClose, onSave }) => {
         `Failed to ${supplierId ? "update" : "create"} supplier:`,
         error
       );
-      toast.error(
+      console.log(
         `Failed to ${supplierId ? "update" : "create"} supplier: ${
           error.response?.data?.message || error.message
         }`

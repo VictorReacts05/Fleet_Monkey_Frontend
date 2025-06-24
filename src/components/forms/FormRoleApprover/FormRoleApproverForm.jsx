@@ -47,7 +47,7 @@ const FormRoleApproverForm = ({ approverID, onClose, onSave }) => {
           await loadApprover();
         }
       } catch (error) {
-        toast.error("Failed to load dropdown data: " + error.message);
+        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -68,7 +68,7 @@ const FormRoleApproverForm = ({ approverID, onClose, onSave }) => {
         RowVersionColumn: data.RowVersionColumn
       });
     } catch (error) {
-      toast.error("Failed to load approver details: " + error.message);
+      console.log("Failed to load approver details: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ const FormRoleApproverForm = ({ approverID, onClose, onSave }) => {
     }
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -114,7 +114,7 @@ const FormRoleApproverForm = ({ approverID, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
-      toast.error(
+      console.log(
         `Failed to ${approverID ? "update" : "create"} form role approver: ` + 
         (error.error || error.message || "Unknown error")
       );

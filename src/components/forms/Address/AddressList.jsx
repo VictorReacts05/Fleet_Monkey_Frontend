@@ -74,7 +74,7 @@ const AddressList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading addresses:", error);
-      toast.error(
+      console.log(
         `Failed to load addresses: ${error.message || "Unknown error"}`
       );
     } finally {
@@ -111,7 +111,7 @@ const AddressList = () => {
       loadAddresses();
     } catch (error) {
       console.error("Error deleting address:", error);
-      toast.error(
+      console.log(
         `Failed to delete address: ${error.message || "Unknown error"}`
       );
     }
@@ -146,7 +146,7 @@ const AddressList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Addresses..."
+            placeholder="Search Text..."
           />
           <Tooltip title="Add Address">
             <IconButton

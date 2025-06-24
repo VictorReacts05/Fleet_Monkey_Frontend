@@ -281,7 +281,7 @@ const PurchaseRFQForm = ({
       }
     } catch (error) {
       console.error("Error loading Purchase RFQ data:", error);
-      toast.error("Failed to load Purchase RFQ data");
+      console.log("Failed to load Purchase RFQ data");
     } finally {
       setLoading(false);
       setParcelLoading(false);
@@ -347,7 +347,7 @@ const PurchaseRFQForm = ({
       return response.data.data;
     } catch (error) {
       console.error("Error adding supplier:", error);
-      toast.error("Failed to add supplier: " + error.message);
+      console.log("Failed to add supplier: " + error.message);
       throw error;
     }
   };
@@ -478,7 +478,7 @@ const PurchaseRFQForm = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.log(
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
       setEmailSendingStatus({
@@ -519,7 +519,7 @@ const PurchaseRFQForm = ({
       }
     } catch (error) {
       console.error("Error fetching suppliers:", error);
-      toast.error("Failed to load suppliers");
+      console.log("Failed to load suppliers");
     } finally {
       setLoadingSuppliers(false);
     }
@@ -571,7 +571,7 @@ const PurchaseRFQForm = ({
       setConfirmDialogOpen(true);
     } catch (error) {
       console.error("Error preparing to send Purchase RFQ:", error);
-      toast.error("Failed to prepare sending: " + error.message);
+      console.log("Failed to prepare sending: " + error.message);
     }
   };
 
@@ -889,7 +889,7 @@ const PurchaseRFQForm = ({
           <Box sx={{ mb: 2 }}>
             <TextField
               fullWidth
-              placeholder="Search suppliers..."
+              placeholder="Search Text..."
               value={supplierSearchTerm}
               onChange={(e) => setSupplierSearchTerm(e.target.value)}
               InputProps={{

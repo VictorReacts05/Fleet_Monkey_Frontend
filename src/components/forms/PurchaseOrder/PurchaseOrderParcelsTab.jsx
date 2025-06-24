@@ -71,7 +71,7 @@ const PurchaseOrderParcelsTab = ({
 
   const loadDropdownData = useCallback(async () => {
     if (!user) {
-      toast.error("Please log in to access this page");
+      console.log("Please log in to access this page");
       navigate("/login");
       return;
     }
@@ -85,12 +85,12 @@ const PurchaseOrderParcelsTab = ({
       const [itemsData, uomsData] = await Promise.all([
         fetchItems(user).catch((err) => {
           console.error("Failed to fetch items:", err);
-          toast.error("Failed to load items");
+          console.log("Failed to load items");
           return [];
         }),
         fetchUOMs(user).catch((err) => {
           console.error("Failed to fetch UOMs:", err);
-          toast.error("Failed to load UOMs");
+          console.log("Failed to load UOMs");
           return [];
         }),
       ]);
@@ -143,7 +143,7 @@ const PurchaseOrderParcelsTab = ({
       isDropdownLoaded.current = true;
     } catch (error) {
       console.error("Error loading dropdown data:", error);
-      toast.error("Failed to load form data");
+      console.log("Failed to load form data");
     } finally {
       setLoading(false);
     }
@@ -206,7 +206,7 @@ const PurchaseOrderParcelsTab = ({
       isParcelsLoaded.current = true;
     } catch (error) {
       console.error("Error loading parcels:", error);
-      toast.error("Failed to load parcels");
+      console.log("Failed to load parcels");
       setParcels([]);
       isParcelsLoaded.current = false; // Allow retry on error
     } finally {
@@ -241,7 +241,7 @@ const PurchaseOrderParcelsTab = ({
   const handleEditParcel = (id) => {
     const parcelToEdit = parcels.find((p) => p.id === id);
     if (!parcelToEdit) {
-      toast.error("Parcel not found");
+      console.log("Parcel not found");
       return;
     }
 
@@ -327,7 +327,7 @@ const PurchaseOrderParcelsTab = ({
     }
 
     if (!user?.personId) {
-      toast.error("User authentication data missing. Please log in");
+      console.log("User authentication data missing. Please log in");
       navigate("/login");
       return;
     }
@@ -402,7 +402,7 @@ const PurchaseOrderParcelsTab = ({
       toast.success("Parcel saved successfully");
     } catch (error) {
       console.error("Error saving parcel:", error);
-      toast.error("Failed to save parcel");
+      console.log("Failed to save parcel");
     }
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
@@ -434,7 +434,7 @@ const PurchaseOrderParcelsTab = ({
       toast.success("Parcel deleted successfully");
     } catch (error) {
       console.error("Error deleting parcel:", error);
-      toast.error("Failed to delete parcel");
+      console.log("Failed to delete parcel");
     } finally {
       setDeleteConfirmOpen(false);
       setDeleteParcelId(null);

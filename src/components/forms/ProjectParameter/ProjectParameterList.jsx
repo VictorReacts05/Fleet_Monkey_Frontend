@@ -102,7 +102,7 @@ const ProjectParameterList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Project Parameters..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

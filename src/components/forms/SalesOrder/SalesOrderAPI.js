@@ -815,7 +815,7 @@ export const fetchSalesQuotations = async () => {
       "Error fetching Sales Quotations:",
       error.response?.data || error.message
     );
-    toast.error(
+    console.log(
       "Failed to load Sales Quotations: " +
         (error.response?.data?.message || error.message)
     );

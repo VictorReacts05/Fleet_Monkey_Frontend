@@ -75,7 +75,7 @@ const CompanyList = () => {
       setTotalRows(response.totalRecords || companies.length);
     } catch (error) {
       console.error("Error loading companies:", error);
-      toast.error("Failed to load companies");
+      console.log("Failed to load companies");
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ const CompanyList = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const personId = user?.personId || user?.id || user?.userId;
   if (!personId) {
-    toast.error("You must be logged in to delete a company.");
+    console.log("You must be logged in to delete a company.");
     return;
   }
   const item = rows.find((row) => row.id === id);
@@ -112,7 +112,7 @@ const CompanyList = () => {
     setItemToDelete(item);
     setDeleteDialogOpen(true);
   } else {
-    toast.error("Company not found");
+    console.log("Company not found");
   }
 };
 
@@ -130,7 +130,7 @@ const handleDeleteConfirm = async () => {
     loadCompanies();
   } catch (error) {
     console.error("Error deleting company:", error);
-    toast.error(error.message || "Failed to delete company");
+    console.log(error.message || "Failed to delete company");
   } finally {
     setLoading(false);
     setDeleteDialogOpen(false);
@@ -161,7 +161,7 @@ const handleDeleteConfirm = async () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Companies..."
+            placeholder="Search Text..."
             sx={{ width: "100%", marginLeft: "auto" }}
           />
           <Tooltip title="Add Company">

@@ -38,7 +38,7 @@ const CountryForm = ({ countryId, onSave, onClose }) => {
       }
     } catch (error) {
       console.error('Error loading country:', error);
-      toast.error('Failed to load country details');
+      console.log('Failed to load country details');
       
     } finally {
       setLoading(false);
@@ -90,7 +90,7 @@ const CountryForm = ({ countryId, onSave, onClose }) => {
         if (onClose) onClose();
       } catch (error) {
         console.error('Error saving country:', error);
-        toast.error(`Failed to save country: ${error.message || 'Unknown error'}`);
+        console.log(`Failed to save country: ${error.message || 'Unknown error'}`);
       } finally {
         setLoading(false);
       }

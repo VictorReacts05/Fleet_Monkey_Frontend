@@ -128,7 +128,7 @@ const PersonList = () => {
         <Stack direction="row" spacing={1}>
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Persons..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

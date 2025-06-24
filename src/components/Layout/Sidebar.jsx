@@ -216,8 +216,17 @@ const Sidebar = ({ open, variant, onClose }) => {
             <ListItemButton
               onClick={item.isDropdown ? item.onClick : () => handleMenuItemClick(item.path)}
               selected={location.pathname === item.path}
+               sx={{
+    backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.1)' : 'transparent',
+    '&:hover': {
+      backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    color: location.pathname === item.path ? '#ffffff' : '#e0e0e0',
+  }}
             >
-              <ListItemIcon sx={{ color: "#fff" }}>{item.icon}</ListItemIcon>
+              <ListItemIcon  sx={{
+    color: location.pathname === item.path ? '#ffffff' : '#e0e0e0',
+  }}>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
               {item.isDropdown && <ArrowDropDownIcon />}
             </ListItemButton>
@@ -242,11 +251,26 @@ const Sidebar = ({ open, variant, onClose }) => {
         }}
       >
         {mastersItems.map((item) => (
-          <MenuItem
-            key={item.text}
-            onClick={() => handleMenuItemClick(item.path)}
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
+         <MenuItem
+  key={item.text}
+  onClick={() => handleMenuItemClick(item.path)}
+  selected={location.pathname === item.path}
+  sx={(theme) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    backgroundColor:
+      location.pathname === item.path ? theme.palette.action.selected : "transparent",
+    color:
+      location.pathname === item.path
+        ? theme.palette.text.primary
+        : theme.palette.text.secondary,
+    "&:hover": {
+      backgroundColor: theme.palette.action.hover,
+    },
+  })}
+>
+
             <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </MenuItem>
@@ -271,10 +295,25 @@ const Sidebar = ({ open, variant, onClose }) => {
       >
         {salesItems.map((item) => (
           <MenuItem
-            key={item.text}
-            onClick={() => handleMenuItemClick(item.path)}
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
+  key={item.text}
+  onClick={() => handleMenuItemClick(item.path)}
+  selected={location.pathname === item.path}
+  sx={(theme) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    backgroundColor:
+      location.pathname === item.path ? theme.palette.action.selected : "transparent",
+    color:
+      location.pathname === item.path
+        ? theme.palette.text.primary
+        : theme.palette.text.secondary,
+    "&:hover": {
+      backgroundColor: theme.palette.action.hover,
+    },
+  })}
+>
+
             <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </MenuItem>
@@ -298,11 +337,26 @@ const Sidebar = ({ open, variant, onClose }) => {
         }}
       >
         {purchaseItems.map((item) => (
-          <MenuItem
-            key={item.text}
-            onClick={() => handleMenuItemClick(item.path)}
-            sx={{ display: "flex", alignItems: "center", gap: 1 }}
-          >
+         <MenuItem
+  key={item.text}
+  onClick={() => handleMenuItemClick(item.path)}
+  selected={location.pathname === item.path}
+  sx={(theme) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    backgroundColor:
+      location.pathname === item.path ? theme.palette.action.selected : "transparent",
+    color:
+      location.pathname === item.path
+        ? theme.palette.text.primary
+        : theme.palette.text.secondary,
+    "&:hover": {
+      backgroundColor: theme.palette.action.hover,
+    },
+  })}
+>
+
             <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </MenuItem>

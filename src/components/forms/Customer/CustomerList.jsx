@@ -74,7 +74,7 @@ const CustomerList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading customers:', error);
-      toast.error('Failed to load customers: ' + error.message);
+      console.log('Failed to load customers: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ const CustomerList = () => {
       setItemToDelete(null);
       loadCustomers();
     } catch (error) {
-      toast.error('Failed to delete customer: ' + error.message);
+      console.log('Failed to delete customer: ' + error.message);
     }
   };
 
@@ -141,7 +141,7 @@ const CustomerList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Customers..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

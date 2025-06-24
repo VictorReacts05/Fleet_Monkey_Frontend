@@ -79,7 +79,7 @@ const PurchaseOrderForm = ({
         user,
       });
       setError("Please log in to view");
-      toast.error("Please log in");
+      console.log("Please log in");
       setLoading(false);
       navigate("/");
       return;
@@ -170,7 +170,7 @@ const PurchaseOrderForm = ({
         : `Failed to fetch data: ${error.message}`;
       console.error("Error in fetchData:", error);
       setError(errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -204,7 +204,7 @@ const PurchaseOrderForm = ({
 
   const handleSendToSupplier = async () => {
     if (!isAuthenticated || !user) {
-      toast.error("Please log in to send the purchase order");
+      console.log("Please log in to send the purchase order");
       navigate("/");
       return;
     }
@@ -219,13 +219,13 @@ const PurchaseOrderForm = ({
           }`
         : `Failed to send purchase order: ${error.message}`;
       console.error("Error sending purchase order:", error);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     }
   };
 
   const handleCreatePurchaseInvoice = async () => {
     if (!isAuthenticated || !user) {
-      toast.error("Please log in to create a purchase invoice");
+      console.log("Please log in to create a purchase invoice");
       navigate("/");
       return;
     }
@@ -259,7 +259,7 @@ const PurchaseOrderForm = ({
           }`
         : `Error creating purchase invoice: ${error.message}`;
       console.error("Error creating purchase invoice:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     }
   };
 
@@ -276,7 +276,7 @@ const PurchaseOrderForm = ({
     } else {
       setError("No purchase order ID provided");
       setLoading(false);
-      toast.error("No purchase order ID provided");
+      console.log("No purchase order ID provided");
       navigate("/");
     }
   }, [purchaseOrderId, isAuthenticated, user, navigate]);
@@ -403,6 +403,8 @@ const PurchaseOrderForm = ({
                   color="primary"
                   onClick={handleSendToSupplier}
                   sx={{ mr: 2 }}
+                  // disabled={status !== "Approved"}
+                  disabled={formData.Status !== "Approved"}
                 >
                   Send to Supplier
                 </Button>
@@ -412,7 +414,8 @@ const PurchaseOrderForm = ({
                 variant="contained"
                 color="secondary"
                 onClick={handleCreatePurchaseInvoice}
-                // disabled={status !== "Approved" }
+                // disabled={status !== "Approved"}
+                disabled={formData.Status !== "Approved"}
               >
                 Create Purchase Invoice
               </Button>

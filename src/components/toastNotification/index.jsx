@@ -11,7 +11,7 @@ export const showToast = (message, type, duration = 3000) => {
       toast.success(message, { duration });
       break;
     case 'error':
-      toast.error(message, { duration });
+      console.log(message, { duration });
       break;
     case 'loading':
       toast.loading(message, { duration });

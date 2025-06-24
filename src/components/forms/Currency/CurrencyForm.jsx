@@ -38,7 +38,7 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
         RowVersionColumn: currency.RowVersionColumn || ''
         });
       } catch (error) {
-        toast.error('Failed to load currency details');
+        console.log('Failed to load currency details');
       } finally {
         setLoading(false);
       }
@@ -112,7 +112,7 @@ const CurrencyForm = ({ currencyId, onSave, onClose }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error('Error saving currency:', error);
-      toast.error(`Error saving currency: ${error.message || 'Unknown error'}`);
+      console.log(`Error saving currency: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }

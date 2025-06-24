@@ -95,7 +95,7 @@ const SalesOrderList = () => {
       console.log("User data from localStorage:", user);
       if (!user || !user.personId) {
         console.warn("Invalid user data, redirecting to home");
-        toast.error("Please log in to continue");
+        console.log("Please log in to continue");
         navigate("/");
         return;
       }
@@ -105,12 +105,12 @@ const SalesOrderList = () => {
         console.log("PersonID Loaded:", personId);
       } else {
         console.warn("No personId found, redirecting to home");
-        toast.error("Please log in to continue");
+        console.log("Please log in to continue");
         navigate("/");
       }
     } catch (error) {
       console.error("Error checking auth or loading personId:", error);
-      toast.error("Failed to load user data. Please log in again.");
+      console.log("Failed to load user data. Please log in again.");
       navigate("/");
     }
   };
@@ -172,7 +172,7 @@ const SalesOrderList = () => {
       );
 
       if (isMounted) {
-        toast.error(errorMessage);
+        console.log(errorMessage);
         setError(errorMessage);
       }
     } finally {
@@ -197,7 +197,7 @@ const SalesOrderList = () => {
       setSalesQuotations(formattedOptions);
     } catch (error) {
       console.error("Error fetching Sales Quotations:", error);
-      toast.error("Failed to load Sales Quotation data");
+      console.log("Failed to load Sales Quotation data");
       setSalesQuotations([
         { value: "", label: "No Sales Quotations Available" },
       ]);
@@ -233,7 +233,7 @@ const SalesOrderList = () => {
       navigate(`/sales-order/detail/${id}`);
     } else {
       console.error("Invalid Sales Order ID:", id);
-      toast.error("Cannot view Sales Order: Invalid ID");
+      console.log("Cannot view Sales Order: Invalid ID");
     }
   };
 
@@ -243,7 +243,7 @@ const SalesOrderList = () => {
       setSelectedOrder(id);
       setDeleteDialogOpen(true);
     } else {
-      toast.error("Item not found");
+      console.log("Item not found");
     }
   };
 
@@ -264,7 +264,7 @@ const SalesOrderList = () => {
       fetchSalesOrdersList();
     } catch (error) {
       console.error("Error deleting Sales Order:", error);
-      toast.error("Failed to delete Sales Order");
+      console.log("Failed to delete Sales Order");
     } finally {
       setLoading(false);
     }
@@ -296,7 +296,7 @@ const SalesOrderList = () => {
     });
     if (!validateForm()) {
       console.log("Validation failed, button should be disabled");
-      toast.error("Please select a valid Sales Quotation");
+      console.log("Please select a valid Sales Quotation");
       return;
     }
 
@@ -324,7 +324,7 @@ const SalesOrderList = () => {
       const errorMessage =
         error.message || error?.data?.message || "Failed to create Sales Order";
       console.error("Error creating Sales Order:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
       if (
         errorMessage.includes("User not authenticated") ||
         errorMessage.includes("No token found") ||
@@ -391,7 +391,7 @@ const SalesOrderList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Approved Estimates..."
+            placeholder="Search Text..."
           />
           <Tooltip title="Add New Approved Estimate">
             <IconButton

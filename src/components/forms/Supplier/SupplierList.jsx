@@ -73,7 +73,7 @@ const loadSuppliers = async () => {
     setTotalRows(totalCount);
   } catch (error) {
     console.error("Error loading suppliers:", error);
-    toast.error("Failed to load suppliers: " + error.message);
+    console.log("Failed to load suppliers: " + error.message);
   } finally {
     setLoading(false);
   }
@@ -109,7 +109,7 @@ useEffect(() => {
       setItemToDelete(null);
       loadSuppliers();
     } catch (error) {
-      toast.error('Failed to delete supplier: ' + error.message);
+      console.log('Failed to delete supplier: ' + error.message);
     }
   };
 
@@ -142,7 +142,7 @@ useEffect(() => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Suppliers..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

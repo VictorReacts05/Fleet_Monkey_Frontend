@@ -190,7 +190,7 @@ const SalesQuotationForm = ({
             : `Failed to fetch parcels: ${parcelErr.message}`;
           console.error("Parcel fetch error:", parcelErrorMessage);
           setParcelError(parcelErrorMessage);
-          toast.error(parcelErrorMessage);
+          console.log(parcelErrorMessage);
 
           setFormData({
             Series: quotation.Series,
@@ -245,7 +245,7 @@ const SalesQuotationForm = ({
         : `Failed to fetch data: ${error.message}`;
       console.error("Error in fetchData:", error);
       setError(errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -299,7 +299,7 @@ const SalesQuotationForm = ({
       const errorMessage =
         error.response?.data?.message || "Failed to save sales quotation";
       console.error("Error saving sales quotation:", error);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -315,7 +315,7 @@ const SalesQuotationForm = ({
 
     if (!customerEmail) {
       console.log("No customer email available, showing toast");
-      toast.error("No customer email address available");
+      console.log("No customer email address available");
       return;
     }
 
@@ -329,7 +329,7 @@ const SalesQuotationForm = ({
       const errorMessage =
         error.message || "Failed to send sales quotation email";
       console.error("Error sending sales quotation email:", error);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setSending(false);
     }
@@ -363,7 +363,7 @@ const SalesQuotationForm = ({
       setStatus(status);
     } catch (err) {
       console.error("Error loading SalesQuotation status:", err);
-      toast.error("Error loading status: " + (err.message || "Unknown error"));
+      console.log("Error loading status: " + (err.message || "Unknown error"));
       setStatus("Pending");
     } finally {
       setLoading(false);
@@ -384,7 +384,7 @@ const SalesQuotationForm = ({
     console.log("customerEmail updated:", customerEmail);
   }, [customerEmail]);
 
-  if (loading) {
+  if (loading||!formData) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
@@ -405,16 +405,7 @@ const SalesQuotationForm = ({
     );
   }
 
-  if (!formData) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">
-          No Sales Quotation Parcel data available
-        </Typography>
-      </Box>
-    );
-  }
-
+ 
   console.log("Rendering SalesQuotationForm with formData:", formData);
   console.log("Passing to FormPage:", {
     isEdit,

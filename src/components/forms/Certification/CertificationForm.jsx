@@ -27,7 +27,7 @@ const CertificationForm = ({ certificationId, onSave, onClose }) => {
           });
         } catch (error) {
           console.error('Error loading certification:', error);
-          toast.error('Failed to load certification');
+          console.log('Failed to load certification');
         } finally {
           setLoading(false);
         }
@@ -79,7 +79,7 @@ const CertificationForm = ({ certificationId, onSave, onClose }) => {
       onSave();
       onClose();
     } catch (error) {
-      toast.error(`Failed to ${certificationId ? 'update' : 'create'} certification: ${error.message}`);
+      console.log(`Failed to ${certificationId ? 'update' : 'create'} certification: ${error.message}`);
     } finally {
       setLoading(false);
     }

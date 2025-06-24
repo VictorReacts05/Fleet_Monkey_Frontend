@@ -94,7 +94,7 @@ const CountryList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading countries:", error);
-      toast.error("Failed to load countries: " + error.message);
+      console.log("Failed to load countries: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ const CountryList = () => {
       setItemToDelete(null);
       loadCountries();
     } catch (error) {
-      toast.error("Failed to delete country: " + error.message);
+      console.log("Failed to delete country: " + error.message);
     }
   };
 
@@ -160,7 +160,7 @@ const CountryList = () => {
         <Stack direction="row" spacing={1}>
         <SearchBar
           onSearch={handleSearch}
-          placeholder="Search Countries..."
+          placeholder="Search Text..."
           sx={{
             width: "100%",
             marginLeft: "auto",

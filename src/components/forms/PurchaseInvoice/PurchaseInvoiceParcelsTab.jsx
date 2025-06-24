@@ -136,7 +136,7 @@ const PurchaseInvoiceParcelsTab = ({
         setError("Please log in to view items. Click below to log in.");
       } else {
         setError("Failed to load items. Please try again.");
-        toast.error("Failed to load items");
+        // console.log("Failed to load items");
       }
     } finally {
       setLoading(false);
@@ -335,7 +335,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to save items. Click below to log in.");
       } else {
-        toast.error("Failed to save item.");
+        console.log("Failed to save item.");
       }
     }
   };
@@ -374,7 +374,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to delete items. Click below to log in.");
       } else {
-        toast.error("Failed to delete item.");
+        console.log("Failed to delete item.");
       }
     }
   };

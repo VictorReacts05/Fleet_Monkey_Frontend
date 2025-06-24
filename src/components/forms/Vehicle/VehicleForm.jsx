@@ -90,7 +90,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
         }
       } catch (error) {
         console.error("Error loading form data:", error);
-        toast.error(
+        console.log(
           "Failed to load dropdown data: " + (error.message || "Unknown error")
         );
 
@@ -314,7 +314,7 @@ const VehicleForm = ({ vehicleId, onSave, onClose }) => {
       onSave?.();
     } catch (error) {
       console.error('Error saving vehicle:', error);
-      toast.error(error.message || 'Failed to save vehicle');
+      console.log(error.message || 'Failed to save vehicle');
     }
   };
 

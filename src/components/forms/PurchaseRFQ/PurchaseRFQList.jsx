@@ -130,7 +130,7 @@ const PurchaseRFQList = () => {
         setPurchaseRFQs(data);
         setTotalRows(totalRecords);
       } catch (error) {
-        toast.error("Failed to load Purchase RFQs");
+        console.log("Failed to load Purchase RFQs");
         setPurchaseRFQs([]);
         setTotalRows(0);
       } finally {
@@ -156,7 +156,7 @@ const PurchaseRFQList = () => {
       navigate(`/purchase-rfq/view/${id}`);
     } else {
       console.error("Invalid Purchase RFQ ID:", id);
-      toast.error("Cannot view Purchase RFQ: Invalid ID");
+      console.log("Cannot view Purchase RFQ: Invalid ID");
     }
   };
 
@@ -167,7 +167,7 @@ const PurchaseRFQList = () => {
       setSelectedRFQ(id);
       setDeleteDialogOpen(true);
     } else {
-      toast.error("Item not found");
+      console.log("Item not found");
     }
   };
 
@@ -197,7 +197,7 @@ const PurchaseRFQList = () => {
       setTotalRows(totalRecords);
     } catch (error) {
       console.error("Error deleting Purchase RFQ:", error);
-      toast.error("Failed to delete Purchase RFQ");
+      console.log("Failed to delete Purchase RFQ");
     } finally {
       setLoading(false);
     }
@@ -224,7 +224,7 @@ const PurchaseRFQList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Quotation Requests..."
+            placeholder="Search Text..."
           />
         </Stack>
       </Box>

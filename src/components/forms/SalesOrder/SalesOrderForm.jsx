@@ -93,7 +93,7 @@ const SalesOrderForm = ({ onClose }) => {
     FormCompletedYN: false,
     SalesAmount: 0,
     TaxAmount: 0,
-    Total: 0,
+    Total: "",
     PaymentTerms: "",
     PaymentStatus: "",
     DeliveryStatus: "",
@@ -136,7 +136,7 @@ const SalesOrderForm = ({ onClose }) => {
             })
             .catch((err) => {
               console.error("Failed to load currencies:", err);
-              toast.error("Failed to load currencies");
+              console.log("Failed to load currencies");
               return [];
             }),
           axios
@@ -147,7 +147,7 @@ const SalesOrderForm = ({ onClose }) => {
             })
             .catch((err) => {
               console.error("Failed to load suppliers:", err);
-              toast.error("Failed to load suppliers");
+              console.log("Failed to load suppliers");
               return [];
             }),
           axios
@@ -158,7 +158,7 @@ const SalesOrderForm = ({ onClose }) => {
             })
             .catch((err) => {
               console.error("Failed to load customers:", err);
-              toast.error("Failed to load customers");
+              console.log("Failed to load customers");
               return [];
             }),
           axios
@@ -169,7 +169,7 @@ const SalesOrderForm = ({ onClose }) => {
             })
             .catch((err) => {
               console.error("Failed to load service types:", err);
-              toast.error("Failed to load service types");
+              console.log("Failed to load service types");
               return [];
             }),
           axios
@@ -180,7 +180,7 @@ const SalesOrderForm = ({ onClose }) => {
             })
             .catch((err) => {
               console.error("Failed to load addresses:", err);
-              toast.error("Failed to load addresses");
+              console.log("Failed to load addresses");
               return [];
             }),
         ]);
@@ -237,7 +237,7 @@ const SalesOrderForm = ({ onClose }) => {
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
-        toast.error("Failed to load dropdown data: " + error.message);
+        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -338,7 +338,7 @@ const SalesOrderForm = ({ onClose }) => {
           FormCompletedYN: !!order.SalesOrderCompletedYN,
           SalesAmount: parseFloat(order.SalesAmount) || 0,
           TaxAmount: parseFloat(order.TaxesAndOtherCharges) || 0,
-          Total: parseFloat(order.data || order.TotalAmount) || 0,
+          Total: parseFloat(order.data || order.Total) || 0,
           PaymentTerms: order.PaymentTerms || "",
           PaymentStatus: order.PaymentStatus || "Unmodified",
           DeliveryStatus: order.DeliveryStatus || "Pending",
@@ -367,7 +367,7 @@ const SalesOrderForm = ({ onClose }) => {
             : `Failed to fetch parcels: ${error.message}`;
           console.error("Parcel fetch error:", errorMessage);
           setParcelError(errorMessage);
-          toast.error(errorMessage);
+          console.log(errorMessage);
         }
       } else {
         throw new Error("No Sales Order data returned");
@@ -380,7 +380,7 @@ const SalesOrderForm = ({ onClose }) => {
         : `Failed to fetch data: ${error.message}`;
       console.error("Error in fetchData:", error);
       setError(errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -428,7 +428,7 @@ const SalesOrderForm = ({ onClose }) => {
       setStatus(fetchedStatus);
     } catch (error) {
       console.error("Error loading SalesOrder status:", error);
-      toast.error(
+      console.log(
         "Failed to load status: " + (error.message || "Unknown error")
       );
       setStatus("Pending");
@@ -485,7 +485,7 @@ const SalesOrderForm = ({ onClose }) => {
           }`
         : `Failed to create Purchase Order: ${error.message}`;
       console.error("Error creating Purchase Order:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setIsCreatingPO(false);
     }
@@ -511,7 +511,7 @@ const SalesOrderForm = ({ onClose }) => {
           }`
         : `Failed to approve Sales Order: ${error.message}`;
       console.error("Error approving Sales Order:", errorMessage);
-      toast.error(errorMessage);
+      console.log(errorMessage);
     } finally {
       setIsApproving(false);
     }

@@ -34,7 +34,7 @@ const CityModal = ({ open, onClose, cityId, onSave, initialData }) => {
         setCountries(response.data || []);
       } catch (error) {
         console.error("Error loading countries:", error);
-        toast.error("Failed to load countries");
+        console.log("Failed to load countries");
       }
     };
 
@@ -71,12 +71,12 @@ const CityModal = ({ open, onClose, cityId, onSave, initialData }) => {
               countryId: city.CountryID || "",
             });
           } else {
-            toast.error("City not found");
+            console.log("City not found");
           }
         }
       } catch (error) {
         console.error("Error loading city:", error);
-        toast.error("Failed to load city details");
+        console.log("Failed to load city details");
       } finally {
         setLoading(false);
       }
@@ -151,7 +151,7 @@ const CityModal = ({ open, onClose, cityId, onSave, initialData }) => {
       setTimeout(() => onSave(), 300);
     } catch (error) {
       console.error("Error saving city:", error);
-      toast.error(
+      console.log(
         "Failed to save city: " +
           (error.response?.data?.message || error.message)
       );

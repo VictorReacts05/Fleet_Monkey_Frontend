@@ -59,7 +59,7 @@ const FormRoleApproverList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading form role approvers:', error);
-      toast.error('Failed to load form role approvers: ' + error.message);
+      console.log('Failed to load form role approvers: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ const FormRoleApproverList = () => {
       setItemToDelete(null);
       loadApprovers();
     } catch (error) {
-      toast.error('Failed to delete form role approver: ' + error.message);
+      console.log('Failed to delete form role approver: ' + error.message);
     }
   };
 
@@ -126,7 +126,7 @@ const FormRoleApproverList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Approvers..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",
