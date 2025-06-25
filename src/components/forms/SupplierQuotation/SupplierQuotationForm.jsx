@@ -839,7 +839,7 @@ const SupplierQuotationForm = ({
               {isEditing ? (
                 <ReadOnlyField
                   name="PurchaseRFQID"
-                  label="Purchase RFQ"
+                  label="Quotation Request"
                   value={formData.PurchaseRFQID || ""}
                   onChange={handleChange}
                   options={purchaseRFQs}
@@ -850,7 +850,7 @@ const SupplierQuotationForm = ({
                 />
               ) : (
                 <ReadOnlyField
-                  label="Purchase RFQ"
+                  label="Quotation Request"
                   value={formData.PurchaseRFQID}
                 />
               )}

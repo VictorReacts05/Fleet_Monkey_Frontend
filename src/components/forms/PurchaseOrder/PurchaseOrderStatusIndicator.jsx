@@ -131,7 +131,7 @@ const PurchaseOrderStatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.error(
         `Failed to update status: ${
           error.response?.data?.message || error.message
         }`

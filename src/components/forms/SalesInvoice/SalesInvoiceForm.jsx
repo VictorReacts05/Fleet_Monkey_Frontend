@@ -615,53 +615,6 @@ const SalesInvoiceForm = ({
               </Box>
             )}
           </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleOpenSuppliersDialog}
-              disabled={formData.Status !== "Approved"}
-              sx={{
-                fontWeight: "bold",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
-                marginLeft: "24px",
-              }}
-            >
-              Select Suppliers
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={handleSendSalesInvoice}
-              disabled={
-                formData.Status !== "Approved" || selectedSuppliers.length === 0
-              }
-              sx={{
-                fontWeight: "bold",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.3)" },
-                position: "relative",
-              }}
-            >
-              {emailSendingStatus.sending ? (
-                <>
-                  <CircularProgress
-                    size={24}
-                    color="inherit"
-                    sx={{
-                      position: "absolute",
-                      left: "50%",
-                      marginLeft: "-12px",
-                    }}
-                  />
-                  <span style={{ visibility: "hidden" }}>Send</span>
-                </>
-              ) : (
-                "Send"
-              )}
-            </Button>
-          </Box>
         </Box>
       }
       onCancel={handleCancel}

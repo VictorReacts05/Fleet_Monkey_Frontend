@@ -709,7 +709,7 @@ const PurchaseRFQForm = ({
               size={24}
               sx={{ mr: 2 }}
             />
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{textAlign: "center", width: "100%"}}>
               Please wait while we process your request. Do not close this page.
             </Typography>
           </Box>
