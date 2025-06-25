@@ -376,7 +376,7 @@ const PurchaseInvoiceForm = ({
           </Fade>
           <Button
             onClick={handleApprove}
-            sx={{ background: "#66bb6a", color: "black", fontWeight: "bold" }}
+            sx={{ background: "#66bb6a", color: "black", fontWeight: "bold", ml: 2 }}
           >
             Approve
           </Button>
