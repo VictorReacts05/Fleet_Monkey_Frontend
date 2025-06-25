@@ -60,7 +60,7 @@ const fetchUOMs = async () => {
   }
 };
 
-const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
+const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshApprovals}) => {
   const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
@@ -724,7 +724,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           )
         ) : (
           salesRFQId && (
-            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} />
+            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} refreshTrigger={refreshApprovals}  />
           )
         )}
       </Box>

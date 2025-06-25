@@ -12,16 +12,61 @@ const CustomSelect = styled(Select)(({ theme }) => ({
   height: 38,
   display: "flex",
   alignItems: "center",
-
   "& .MuiSelect-select": {
     padding: "0 14px",
     display: "flex",
     alignItems: "center",
     height: "100%",
     boxSizing: "border-box",
-    lineHeight: "38px",
-    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff", // <-- updated to be mode-aware
+    fontSize: "0.875rem",
+    color:
+      theme.palette.mode === "light"
+        ? theme.palette.text.primary
+        : theme.palette.common.white,
+    backgroundColor:
+      theme.palette.mode === "light"
+        ? theme.palette.background.paper
+        : theme.palette.grey[800],
   },
+  "& .MuiOutlinedInput-root": {
+    height: 38,
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    borderRadius: theme.shape.borderRadius,
+    "& fieldset": {
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[400]
+          : "#8a8a8a",
+    },
+    "&:hover fieldset": {
+      borderColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[600]
+          : "#a0a0a0",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: theme.palette.primary.main,
+    },
+    "&.Mui-disabled": {
+      backgroundColor:
+        theme.palette.mode === "light"
+          ? theme.palette.grey[200]
+          : theme.palette.grey[900],
+      opacity: 0.5,
+    },
+  },
+  "& .MuiInputBase-input": {
+    paddingLeft: "14px",
+  },
+  "& .MuiSelect-icon": {
+    color:
+      theme.palette.mode === "light"
+        ? theme.palette.text.secondary
+        : theme.palette.common.white,
+  },
+  // Autofill handling (though less common for selects, included for consistency)
   "& input:-webkit-autofill": {
     boxShadow: `0 0 0 1000px ${
       theme.palette.mode === "light"
@@ -34,72 +79,31 @@ const CustomSelect = styled(Select)(({ theme }) => ({
         : "white !important",
     transition: "background-color 9999s ease-out 0s",
   },
-  "& .MuiOutlinedInput-root": {
-    height: 38,
-    padding: 0,
-    display: "flex",
-    alignItems: "center",
-    borderRadius: theme.shape.borderRadius * 1.5,
-    "& fieldset": {
-      // Dynamic border color
-      borderColor:
-        theme.palette.mode === "light"
-          ? theme.palette.grey[400] // Light mode: lighter border
-          : "#8a8a8a", // Dark mode: keep as is
-    },
-    "&:hover fieldset": {
-      borderColor:
-        theme.palette.mode === "light"
-          ? theme.palette.grey[600] // Light mode: darker on hover
-          : "#a0a0a0", // Dark mode: keep as is
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main, // Same for both modes
-    },
-    "&.Mui-disabled": {
-      backgroundColor:
-        theme.palette.mode === "light"
-          ? theme.palette.grey[200] // Light mode: disabled background
-          : theme.palette.grey[900], // Dark mode: disabled background
-      opacity: 0.5,
-    },
-  },
-  "& .MuiInputBase-input": {
-    paddingLeft: "14px",
-  },
-  "& .MuiSelect-icon": {
-    // Dynamic icon color (dropdown arrow)
-    color:
-      theme.palette.mode === "light"
-        ? theme.palette.text.secondary // Light mode: gray icon
-        : theme.palette.common.white, // Dark mode: white icon
-  },
 }));
 
 const CustomInputLabel = styled(InputLabel)(({ theme }) => ({
-  top: "19px", // Adjusted to center vertically within 38px height
-  transform: "translate(14px, -50%)",
+  top: "-6px",
   fontSize: "0.875rem",
-  // Dynamic label color
   color:
     theme.palette.mode === "light"
-      ? theme.palette.text.secondary // Light mode: gray label
-      : "#dcdcdc", // Dark mode: light grey
+      ? theme.palette.text.secondary
+      : "#dcdcdc",
   "&.MuiInputLabel-shrink": {
     top: 0,
     transform: "translate(14px, -8px) scale(0.75)",
   },
   "&.Mui-focused": {
-    color: theme.palette.primary.main, // Same for both modes
+    color: theme.palette.primary.main,
   },
   "&.Mui-error": {
-    color: theme.palette.error.main, // Same for both modes
+    color: theme.palette.error.main,
   },
 }));
 
 const CustomFormHelperText = styled(FormHelperText)(({ theme }) => ({
   marginTop: 0,
-  // Dynamic helper text color (for errors)
+  marginBottom: 0,
+  height: "auto",
   color: theme.palette.error.main,
 }));
 
@@ -113,7 +117,7 @@ const FormSelect = ({
   ...props
 }) => {
   return (
-    <FormControl fullWidth margin="dense" error={error} sx={{ my: 0.5, ...props.sx }}>
+    <FormControl fullWidth margin="none" error={Boolean(error)} sx={{ my: 0.5, ...props.sx }}>
       <CustomInputLabel>{label}</CustomInputLabel>
       <CustomSelect value={value} label={label} onChange={onChange} {...props}>
         {options.map((option) => (
@@ -121,6 +125,29 @@ const FormSelect = ({
             key={option.value}
             value={option.value}
             disabled={option.value === ""}
+            sx={{
+              fontSize: "0.875rem",
+              color: (theme) =>
+                theme.palette.mode === "light"
+                  ? theme.palette.text.primary
+                  : theme.palette.common.white,
+              backgroundColor: (theme) =>
+                theme.palette.mode === "light"
+                  ? theme.palette.background.paper
+                  : theme.palette.grey[800],
+              "&.Mui-selected": {
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? theme.palette.action.selected
+                    : theme.palette.grey[700],
+              },
+              "&:hover": {
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "light"
+                    ? theme.palette.action.hover
+                    : theme.palette.grey[600],
+              },
+            }}
           >
             {option.label}
           </MenuItem>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import DataTable from "../../common/DataTable";
-import ConfirmDialog from "../../common/ConfirmDialog";
+import DataTable from "../../Common/DataTable";
+import ConfirmDialog from "../../Common/ConfirmDialog";
 import { fetchSalesRFQs, deleteSalesRFQ } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";

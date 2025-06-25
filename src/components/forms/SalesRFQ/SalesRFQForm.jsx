@@ -116,6 +116,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [status, setStatus] = useState("");
   const [userStatus, setUserStatus] = useState("Pending");
   const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
+  const [refreshApprovals, setRefreshApprovals] = useState(0); // State to trigger approval refresh
   const [fieldDisabled, setFieldDisabled] = useState({
     Series: true,
     CompanyID: true,
@@ -746,6 +747,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     console.log("User approval status changed to:", newStatus);
     setUserStatus(newStatus);
     await loadSalesRFQStatus();
+    setRefreshApprovals((prev) => prev + 1);
   };
 
   console.log("StatusIndicator props", {
@@ -1227,6 +1229,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           salesRFQId={salesRFQId}
           onParcelsChange={handleParcelsChange}
           readOnly={!isEditing || status === "Approved"}
+          refreshApprovals={refreshApprovals}
         />
         <Dialog
           open={purchaseRFQDialogOpen}
