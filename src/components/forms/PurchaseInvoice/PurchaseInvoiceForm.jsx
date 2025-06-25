@@ -330,7 +330,7 @@ const PurchaseInvoiceForm = ({
           }}
         >
           <Typography variant="h6">
-            {readOnly ? "View Invoice" : "Edit Invoice"}
+            {readOnly ? "View Bill" : "Edit Bill"}
           </Typography>
           <Fade in={true} timeout={500}>
             <Box

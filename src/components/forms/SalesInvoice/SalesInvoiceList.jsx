@@ -58,24 +58,38 @@ const SalesInvoiceList = () => {
   const [customersLoaded, setCustomersLoaded] = useState(false);
   const [salesOrders, setSalesOrders] = useState([]);
   const [selectedSalesOrder, setSelectedSalesOrder] = useState("");
-  
- useEffect(() => {
+
+  const navigate = useNavigate();
+
   const loadSalesInvoices = async () => {
     setLoading(true);
     try {
-      const response = await fetchSalesInvoices(page + 1, rowsPerPage, null, null, searchTerm);
+      const response = await fetchSalesInvoices(
+        page + 1,
+        rowsPerPage,
+        null,
+        null,
+        searchTerm
+      );
       const invoices = response.data || [];
-      console.log("Fetched Sales Invoices (length):", invoices.length, "Data:", invoices, "Full Response:", response);
+      console.log(
+        "Fetched Sales Invoices (length):",
+        invoices.length,
+        "Data:",
+        invoices,
+        "Full Response:",
+        response
+      );
 
-      // Map invoices with CustomerName using customers list
       const mappedInvoices = invoices.map((invoice, index) => {
         const customer = customers.find(
           (c) => String(c.id) === String(invoice.CustomerID)
         );
         const invoiceId =
-          invoice.SalesInvoiceID !== undefined && invoice.SalesInvoiceID !== null
+          invoice.SalesInvoiceID !== undefined &&
+          invoice.SalesInvoiceID !== null
             ? invoice.SalesInvoiceID
-            : `fallback-${index}`; // Fallback if SalesInvoiceID is missing
+            : `fallback-${index}`;
         return {
           id: `${invoiceId}`,
           Series: invoice.Series || "-",
@@ -90,9 +104,14 @@ const SalesInvoiceList = () => {
         };
       });
 
-      console.log("Mapped Sales Invoices (length):", mappedInvoices.length, "Data:", mappedInvoices);
+      console.log(
+        "Mapped Sales Invoices (length):",
+        mappedInvoices.length,
+        "Data:",
+        mappedInvoices
+      );
       setSalesInvoices(mappedInvoices);
-      setTotalRows(response.pagination?.totalRecords || 0); // Updated to use pagination.totalRecords
+      setTotalRows(response.pagination?.totalRecords || 0);
     } catch (error) {
       console.error("Error fetching sales invoices:", error);
       console.log("Failed to fetch sales invoices: " + error.message);
@@ -101,11 +120,12 @@ const SalesInvoiceList = () => {
     }
   };
 
-  if (customersLoaded) {
-    loadSalesInvoices();
-  }
-}, [page, rowsPerPage, searchTerm, customers, customersLoaded]);
-  // Fetch customers list
+  useEffect(() => {
+    if (customersLoaded) {
+      loadSalesInvoices();
+    }
+  }, [page, rowsPerPage, searchTerm, customers, customersLoaded]);
+
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -137,7 +157,6 @@ const SalesInvoiceList = () => {
     fetchCustomers();
   }, []);
 
-  // Fetch sales orders for dropdown
   useEffect(() => {
     const loadSalesOrders = async () => {
       try {
@@ -160,60 +179,27 @@ const SalesInvoiceList = () => {
     loadSalesOrders();
   }, []);
 
-  // Fetch sales invoices and map CustomerID to CustomerName
- // Inside SalesInvoiceList.jsx
-
- const columns = [
-  //  {
-  //    field: "Series",
-  //    headerName: "Series",
-  //    flex: 1,
-  //  },
-   {
-     field: "CustomerName",
-     headerName: "Customer",
-     flex: 1.5,
-     valueGetter: (params) => params.row.CustomerName || "-",
-   },
-   {
-     field: "Status",
-     headerName: "Status",
-     flex: 1,
-     renderCell: (params) => {
-       const status = params.value || "Pending";
-       let color = "default";
-       if (status === "Approved") color = "success";
-       else if (status === "Rejected") color = "error";
-       else if (status === "Pending") color = "warning";
-       return <Chip label={status} color={color} size="small" />;
-     },
-   },
-   {
-     field: "Total",
-     headerName: "Total",
-     flex: 1,
-     valueGetter: (params) =>
-       params.row.Total ? `$${params.row.Total.toFixed(2)}` : "$0.00",
-   },
- ];
-// Update DataTable usage
-
-
-  // Filter sales invoices based on search term
-  const filteredSalesInvoices = salesInvoices.filter((invoice) => {
-    const searchString = searchTerm.toLowerCase();
-    return (
-      invoice.Series?.toLowerCase().includes(searchString) ||
-      invoice.CustomerName?.toLowerCase().includes(searchString) ||
-      invoice.SupplierName?.toLowerCase().includes(searchString) ||
-      invoice.ServiceType?.toLowerCase().includes(searchString) ||
-      invoice.Status?.toLowerCase().includes(searchString)
-    );
-  });
-
-  // Table columns definition
-
-  const navigate = useNavigate();
+  const columns = [
+    {
+      field: "CustomerName",
+      headerName: "Customer",
+      flex: 1.5,
+      valueGetter: (params) => params.row.CustomerName || "-",
+    },
+    {
+      field: "Status",
+      headerName: "Status",
+      flex: 1,
+      renderCell: (params) => {
+        const status = params.value || "Pending";
+        let color = "default";
+        if (status === "Approved") color = "success";
+        else if (status === "Rejected") color = "error";
+        else if (status === "Pending") color = "warning";
+        return <Chip label={status} color={color} size="small" />;
+      },
+    },
+  ];
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
@@ -282,8 +268,10 @@ const SalesInvoiceList = () => {
       });
        console.log("Create SAAAAALES Response:", response);
       toast.success("Sales Invoice created successfully");
+      // Refresh invoice list
+      await loadSalesInvoices();
       handleDialogClose();
-      navigate(`/sales-invoice/view/${response?.data?.salesInvoiceId}`);
+      navigate(`/sales-invoice/view/${response?.data?.SalesInvoiceID}`);
     } catch (error) {
       console.error("Error creating Sales Invoice:", error);
       console.log("Failed to create Sales Invoice: " + error.message);
@@ -330,25 +318,26 @@ const SalesInvoiceList = () => {
       </Box>
 
       <DataTable
-  rows={salesInvoices} // Use unfiltered salesInvoices for server-side pagination
-  columns={columns}
-  loading={loading}
-  getRowId={(row) => row.id}
-  page={page}
-  rowsPerPage={rowsPerPage}
-  totalRows={totalRows}
-  onPageChange={handlePageChange}
-  onRowsPerPageChange={handleRowsPerPageChange}
-  onView={handleView}
-  onDelete={handleDeleteClick}
-  paginationMode="server" // Explicitly set to server-side
-/>
+        rows={salesInvoices}
+        columns={columns}
+        loading={loading}
+        getRowId={(row) => row.id}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={totalRows}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        onView={handleView}
+        onDelete={handleDeleteClick}
+        paginationMode="server"
+      />
 
       <Dialog
         open={viewDialogOpen}
         onClose={handleDialogClose}
         fullWidth
         maxWidth="lg"
+        disableEnforceFocus
       >
         <DialogTitle>View Sales Invoice</DialogTitle>
         <DialogContent>
@@ -370,6 +359,7 @@ const SalesInvoiceList = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        disableEnforceFocus
       >
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
@@ -393,6 +383,7 @@ const SalesInvoiceList = () => {
         onClose={handleDialogClose}
         fullWidth
         maxWidth="sm"
+        disableEnforceFocus
       >
         <DialogTitle>Create New Sales Invoice</DialogTitle>
         <DialogContent>

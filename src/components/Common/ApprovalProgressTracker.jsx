@@ -72,8 +72,8 @@ const StepIconRoot = styled('div')(({ theme, ownerState }) => ({
 }));
 
 const CustomStepLabel = styled(StepLabel)(({ theme, ownerState }) => ({
-  '& .MuiStepLabel-label': {
-    fontSize: '14px',
+  "& .MuiStepLabel-label": {
+    fontSize: "14px",
     fontWeight: ownerState.active ? 600 : ownerState.completed ? 500 : 400,
     color: ownerState.active
       ? theme.palette.primary.main
