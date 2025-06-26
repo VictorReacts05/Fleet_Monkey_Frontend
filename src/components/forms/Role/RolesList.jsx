@@ -84,7 +84,7 @@ const RolesList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error("Error loading roles:", error);
-      toast.error("Failed to load roles: " + error.message);
+      console.log("Failed to load roles: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ const RolesList = () => {
       );
       loadRoles();
     } catch (error) {
-      toast.error("Failed to update access: " + error.message);
+      console.log("Failed to update access: " + error.message);
     }
   };
 
@@ -141,7 +141,7 @@ const RolesList = () => {
       setItemToDelete(null);
       loadRoles();
     } catch (error) {
-      toast.error("Failed to delete role: " + error.message);
+      console.log("Failed to delete role: " + error.message);
     }
   };
 
@@ -173,7 +173,7 @@ const RolesList = () => {
       >
         <Typography variant="h5">Role Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SearchBar onSearch={handleSearch} placeholder="Search roles..." />
+          <SearchBar onSearch={handleSearch} placeholder="Search Text..." />
           <Tooltip title="Add Role">
             <IconButton
               onClick={handleCreate}

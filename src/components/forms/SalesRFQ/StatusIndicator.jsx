@@ -43,7 +43,7 @@ const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
         setStatus(userStatus);
       } catch (error) {
         console.error("Failed to fetch user approval status:", error);
-        toast.error("Unable to load approval status");
+        console.log("Unable to load approval status");
         setStatus("Pending");
       } finally {
         setLoading(false);
@@ -69,7 +69,7 @@ const StatusIndicator = ({ salesRFQId, onStatusChange, readOnly }) => {
       }
     } catch (error) {
       console.error("Approval error:", error);
-      toast.error(`Failed to approve: ${error.message}`);
+      console.log(`Failed to approve: ${error.message}`);
     } finally {
       setLoading(false);
       setAnchorEl(null);

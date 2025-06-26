@@ -100,12 +100,12 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
-            toast.error("Failed to load items");
+            console.log("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Failed to fetch UOMs:", err);
-            toast.error("Failed to load UOMs");
+            console.log("Failed to load UOMs");
             return [];
           }),
         ]);
@@ -143,7 +143,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
         setUOMs(uomOptions);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
-        toast.error("Failed to load form data: " + error.message);
+        console.log("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -408,7 +408,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
 
     const { personId } = getAuthHeader();
     if (!personId) {
-      toast.error("User authentication data missing. Please log in again.");
+      console.log("User authentication data missing. Please log in again.");
       navigate("/login");
       return;
     }

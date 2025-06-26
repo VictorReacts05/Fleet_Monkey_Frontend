@@ -156,14 +156,14 @@ const PurchaseInvoiceForm = ({
               }`
             : `Failed to fetch items: ${itemErr.message}`;
           console.error("Item fetch error:", itemErrorMessage);
-          toast.error(itemErrorMessage);
+          // console.log(itemErrorMessage);
         }
       } else {
         const errorMessage =
           "No Purchase Invoice data returned for the given ID";
         console.error(errorMessage);
         setError(errorMessage);
-        toast.error(errorMessage);
+        // console.log(errorMessage);
       }
     } catch (error) {
       const errorMessage = error.response
@@ -173,7 +173,7 @@ const PurchaseInvoiceForm = ({
         : `Failed to fetch data: ${error.message}`;
       console.error("Error in fetchData:", error);
       setError(errorMessage);
-      toast.error(errorMessage);
+      // console.log(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -245,7 +245,7 @@ const PurchaseInvoiceForm = ({
 
   const updateStatus = async (newStatus) => {
     if (!purchaseInvoiceId || isNaN(parseInt(purchaseInvoiceId, 10))) {
-      toast.error("Invalid Purchase Invoice ID");
+      // console.log("Invalid Purchase Invoice ID");
       setAnchorEl(null);
       return;
     }
@@ -291,11 +291,11 @@ const PurchaseInvoiceForm = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
-        `Failed to update status: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      // console.log(
+      //   `Failed to update status: ${
+      //     error.response?.data?.message || error.message
+      //   }`
+      // );
     } finally {
       setLoading(false);
       setAnchorEl(null);
@@ -330,7 +330,7 @@ const PurchaseInvoiceForm = ({
           }}
         >
           <Typography variant="h6">
-            {readOnly ? "View Invoice" : "Edit Invoice"}
+            {readOnly ? "View Bill" : "Edit Bill"}
           </Typography>
           <Fade in={true} timeout={500}>
             <Box
@@ -376,7 +376,7 @@ const PurchaseInvoiceForm = ({
           </Fade>
           <Button
             onClick={handleApprove}
-            sx={{ background: "#66bb6a", color: "black", fontWeight: "bold" }}
+            sx={{ background: "#66bb6a", color: "black", fontWeight: "bold", ml: 2 }}
           >
             Approve
           </Button>

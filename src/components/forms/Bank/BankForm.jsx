@@ -55,7 +55,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
           });
         } catch (error) {
           console.error("Load bank error:", error);
-          toast.error("Failed to load bank details");
+          console.log("Failed to load bank details");
         } finally {
           setLoading(false);
         }
@@ -159,7 +159,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
     setSubmitted(true);
 
     if (!validateForm()) {
-      toast.error("Please fix the validation errors");
+      console.log("Please fix the validation errors");
       return;
     }
 
@@ -190,7 +190,7 @@ const BankForm = ({ bankId, onSave, onClose }) => {
       onClose?.();
     } catch (error) {
       console.error("API error:", error);
-      toast.error(
+      console.log(
         `Failed to ${bankId ? "update" : "create"} bank account: ${
           error.message || "Unknown error"
         }`

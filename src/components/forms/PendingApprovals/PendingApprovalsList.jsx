@@ -78,7 +78,7 @@ const fetchPendingApprovals = async () => {
     setAvailableFormNames(getUniqueFormNames(data));
   } catch (error) {
     console.error("Failed to fetch pending approvals:", error);
-    toast.error("Error fetching pending approvals.");
+    console.log("Error fetching pending approvals.");
   } finally {
     setLoading(false);
   }
@@ -103,7 +103,7 @@ useEffect(() => {
  const handleView = (id, formName) => {
   console.log("handleView called with:", { id, formName }); // Debug log
   if (!id || !formName) {
-    toast.error("Invalid record selected.");
+    console.log("Invalid record selected.");
     return;
   }
 
@@ -149,7 +149,7 @@ useEffect(() => {
       setTotalRows((prev) => prev - 1);
       toast.success("Deleted successfully.");
     } catch (error) {
-      toast.error("Failed to delete approval.");
+      console.log("Failed to delete approval.");
     } finally {
       setLoading(false);
       setDeleteDialogOpen(false);
@@ -212,7 +212,7 @@ useEffect(() => {
           />
           <SearchBar
             onSearch={setSearchTerm}
-            placeholder="Search approvals..."
+            placeholder="Search Text..."
             style={{ minWidth: 250 }}
           />
         </Box>

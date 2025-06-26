@@ -34,7 +34,7 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
         RowVersionColumn: data.RowVersionColumn
       });
     } catch (error) {
-      toast.error("Failed to load role details: " + error.message);
+      console.log("Failed to load role details: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
     }
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -76,7 +76,7 @@ const RolesForm = ({ roleId, onClose, onSave }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("API Error:", error);
-      toast.error(
+      console.log(
         `Failed to ${roleId ? "update" : "create"} role: ` + 
         (error.error || error.message || "Unknown error")
       );

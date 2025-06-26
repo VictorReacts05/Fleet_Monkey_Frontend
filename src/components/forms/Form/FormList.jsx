@@ -71,7 +71,7 @@ const FormList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading forms:', error);
-      toast.error('Failed to load forms: ' + error.message);
+      console.log('Failed to load forms: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ const FormList = () => {
       setItemToDelete(null);
       loadForms();
     } catch (error) {
-      toast.error('Failed to delete form: ' + error.message);
+      console.log('Failed to delete form: ' + error.message);
     }
   };
 
@@ -138,7 +138,7 @@ const FormList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search forms..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

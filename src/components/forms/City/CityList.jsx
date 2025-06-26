@@ -113,7 +113,7 @@ const CityList = () => {
       setTotalRows(totalCount);
     } catch (error) {
       console.error('Error loading cities:', error);
-      toast.error('Failed to load cities: ' + error.message);
+      console.log('Failed to load cities: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -169,7 +169,7 @@ const CityList = () => {
       
     } catch (error) {
       console.error('Error deleting city:', error);
-      toast.error('Failed to delete city: ' + (error.message || 'Unknown error'));
+      console.log('Failed to delete city: ' + (error.message || 'Unknown error'));
       
       // If delete failed, reload to restore the item
       loadCities();
@@ -206,7 +206,7 @@ const CityList = () => {
         <Stack direction="row" spacing={1}>
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Cities..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

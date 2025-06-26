@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'r
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Box, CssBaseline } from '@mui/material';
 import React from 'react';
+import { useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Sidebar from './components/Layout/Sidebar';
@@ -61,6 +62,10 @@ import SalesInvoicePage from "./components/forms/SalesInvoice/SalesInvoicePage";
 import AddressList from "./components/forms/Address/AddressList";
 import PendingApprovalsList from "./components/forms/PendingApprovals/PendingApprovalsList";
 import ItemList from "./components/forms/Item/ItemList";
+import {useTheme} from "@mui/material";
+import { useMediaQuery } from '@mui/material';
+
+
 
 // Wrapper for Create Sales RFQ
 const CreateSalesRFQWrapper = () => {
@@ -149,20 +154,34 @@ const ViewSalesOrderWrapper = () => {
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const isAuthPage = [
     "/",
     "/forgot-password",
     "/reset-password",
     "/signup",
   ].includes(location.pathname);
+  const handleDrawerToggle = () => {
+    setSidebarOpen((prev) => !prev);
+  };
+
+  const handleDrawerClose = () => {
+    setSidebarOpen(false);
+  };
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      {!isAuthPage && <Header />}
+      {!isAuthPage && <Header isMobile={isMobile} onDrawerToggle={handleDrawerToggle} />}
       {isAuthenticated && !isAuthPage && (
-        <Sidebar variant="permanent" open={true} />
-      )}
+        <Sidebar
+          variant={isMobile ? 'temporary' : 'persistent'}
+          
+          open={sidebarOpen}
+          onClose={handleDrawerClose}
+        />)}
       <Box
         component="main"
         sx={{
@@ -635,6 +654,10 @@ function AppContent() {
     </Box>
   );
 }
+
+
+
+  
 
 function App() {
   return (

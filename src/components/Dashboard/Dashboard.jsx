@@ -77,7 +77,7 @@ const Dashboard = () => {
         }));
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch data from APIs. Please ensure the backend server is running on localhost:7000.');
+        setError('Failed to fetch data from APIs.');
         setLoading(false);
         console.error(err);
       }

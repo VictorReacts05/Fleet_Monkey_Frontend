@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Typography, 
-  Box, 
-  Button, 
-  Stack, 
-  Tooltip, 
-  IconButton 
-} from '@mui/material';
-import DataTable from '../../common/DataTable';
-import CustomerModal from './CustomerModal';
-import ConfirmDialog from '../../common/ConfirmDialog';
-import FormDatePicker from '../../common/FormDatePicker';
-import { fetchCustomers, deleteCustomer } from './CustomerAPI';
-import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
-import { Add } from '@mui/icons-material';
+import React, { useState, useEffect } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Stack,
+  Tooltip,
+  IconButton,
+} from "@mui/material";
+import DataTable from "../../common/DataTable";
+import CustomerModal from "./CustomerModal";
+import ConfirmDialog from "../../common/ConfirmDialog";
+import FormDatePicker from "../../common/FormDatePicker";
+import { fetchCustomers, deleteCustomer } from "./CustomerAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
+import { Add } from "@mui/icons-material";
 import SearchBar from "../../common/SearchBar";
-import { showToast } from '../../toastNotification';
-
+import { showToast } from "../../toastNotification";
 
 const CustomerList = () => {
   const [rows, setRows] = useState([]);
@@ -34,6 +33,7 @@ const CustomerList = () => {
 
   const columns = [
     { field: "customerName", headerName: "Customer Name", flex: 1 },
+    { field: "customerEmail", headerName: "Email", flex: 1 },
     { field: "companyName", headerName: "Company", flex: 1 },
     { field: "importCode", headerName: "Import Code", flex: 1 },
     { field: "currencyName", headerName: "Currency", flex: 1 },
@@ -45,22 +45,27 @@ const CustomerList = () => {
     try {
       setLoading(true);
       // Format dates to start of day and end of day
-      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      
+      const formattedFromDate = fromDate
+        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+      const formattedToDate = toDate
+        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:MM:ss")
+        : null;
+
       const response = await fetchCustomers(
         page + 1,
         rowsPerPage,
         formattedFromDate,
         formattedToDate
       );
-      
+
       const customers = response.data || [];
       const totalCount = response.pagination?.totalRecords || customers.length;
-      
+
       const formattedRows = customers.map((customer) => ({
         id: customer.CustomerID,
         customerName: customer.CustomerName || "-",
+        customerEmail: customer.CustomerEmail || "-",
         companyName: customer.CompanyName || "-",
         importCode: customer.ImportCode || "-",
         currencyName: customer.CurrencyName || "-",
@@ -73,8 +78,8 @@ const CustomerList = () => {
       setRows(formattedRows);
       setTotalRows(totalCount);
     } catch (error) {
-      console.error('Error loading customers:', error);
-      toast.error('Failed to load customers: ' + error.message);
+      console.error("Error loading customers:", error);
+      console.log("Failed to load customers: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -95,7 +100,7 @@ const CustomerList = () => {
   };
 
   const handleDelete = (id) => {
-    const customer = rows.find(row => row.id === id);
+    const customer = rows.find((row) => row.id === id);
     setItemToDelete(customer);
     setDeleteDialogOpen(true);
   };
@@ -103,12 +108,12 @@ const CustomerList = () => {
   const confirmDelete = async () => {
     try {
       await deleteCustomer(itemToDelete.id);
-      toast.success('Customer deleted successfully');
+      toast.success("Customer deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadCustomers();
     } catch (error) {
-      toast.error('Failed to delete customer: ' + error.message);
+      console.log("Failed to delete customer: " + error.message);
     }
   };
 
@@ -141,7 +146,7 @@ const CustomerList = () => {
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
             onSearch={handleSearch}
-            placeholder="Search Customers..."
+            placeholder="Search Text..."
             sx={{
               width: "100%",
               marginLeft: "auto",

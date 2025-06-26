@@ -64,7 +64,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
         setCountries(countryOptions);
       } catch (error) {
         console.error("Error loading countries:", error);
-        toast.error("Failed to load countries");
+        console.log("Failed to load countries");
       } finally {
         setLoading(false);
       }
@@ -90,7 +90,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       });
     } catch (error) {
       console.error("Error loading city:", error);
-      toast.error("Failed to load city details");
+      console.log("Failed to load city details");
     } finally {
       setLoading(false);
     }
@@ -151,7 +151,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
       setSubmitted(true);
   
       if (!validateForm()) {
-        toast.error("Please fix the errors in the form");
+        console.log("Please fix the errors in the form");
         return;
       }
   
@@ -190,7 +190,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
         });
     
         if (isDuplicate) {
-          toast.error("A city with this name already exists in the selected country");
+          console.log("A city with this name already exists in the selected country");
           setLoading(false);
           return;
         }
@@ -213,7 +213,7 @@ const CityForm = ({ cityId, onSave, onClose }) => {
         onClose?.();
       } catch (error) {
         console.error("Error saving city:", error);
-        toast.error(`Failed to save city: ${error.message || "Unknown error"}`);
+        console.log(`Failed to save city: ${error.message || "Unknown error"}`);
       } finally {
         setLoading(false);
       }

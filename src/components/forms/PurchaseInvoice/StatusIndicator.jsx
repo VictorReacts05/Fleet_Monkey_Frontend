@@ -103,7 +103,7 @@ const StatusIndicator = ({
         console.log("No approval record exists for this Purchase Invoice");
       }
       setLocalStatus("Pending");
-      toast.error("Failed to load approval status");
+      console.log("Failed to load approval status");
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ const StatusIndicator = ({
 
   const updateStatus = async (newStatus) => {
     if (!purchaseInvoiceId || isNaN(parseInt(purchaseInvoiceId, 10))) {
-      toast.error("Invalid Purchase Invoice ID");
+      console.log("Invalid Purchase Invoice ID");
       setAnchorEl(null);
       return;
     }
@@ -157,7 +157,7 @@ const StatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      toast.error(
+      console.log(
         `Failed to update status: ${
           error.response?.data?.message || error.message
         }`

@@ -86,7 +86,7 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
     setIsSubmitted(true);
 
     if (!validateForm()) {
-      toast.error("Please fix the form errors");
+      console.log("Please fix the form errors");
       return;
     }
 
@@ -95,7 +95,7 @@ const ProjectParameterForm = ({ parameterId, onSave, onClose }) => {
       toast.success(parameterId ? "Parameter updated successfully" : "Parameter added successfully");
       onSave();
     } catch (error) {
-      toast.error("Error saving parameter: " + error.message);
+      console.log("Error saving parameter: " + error.message);
     }
   };
 
