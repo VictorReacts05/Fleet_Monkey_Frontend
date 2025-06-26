@@ -29,12 +29,21 @@ const FormPage = ({
     }
   };
 
+  const responsiveDirection = () => ({
+  display: 'flex', 
+  marginRight:"0px",
+  flexDirection: {
+    xs: 'column',   // vertical stack on mobile
+    sm: 'row',      // horizontal on tablet and up
+  },
+  })
+
   return (
     <Box sx={{ p: 2, maxWidth: "100%" }}>
       {/* Render header only if title is provided */}
       {title && (
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Typography variant="h5">{title}</Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, ...responsiveDirection(), }}>
+          <Typography variant="h5" sx={{width: "100%"}}>{title}</Typography>
           <Box>
             
             {onEdit && (
@@ -42,7 +51,10 @@ const FormPage = ({
                 variant="contained"
                 color="primary"
                 onClick={onEdit}
-                sx={{ mr: 1 }}
+                sx={{ 
+                  marginLeft: "16px",
+                  sm:{width:"11.55rem"}
+                   }}
               >
                 Edit
               </Button>

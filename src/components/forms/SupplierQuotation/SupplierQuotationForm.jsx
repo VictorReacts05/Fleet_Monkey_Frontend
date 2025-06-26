@@ -37,6 +37,42 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
+const responsiveWidth = () => ({
+  minWidth: {
+    xs: '50%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+  maxWidth: {
+    xs: '100%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+});
+
+  const responsiveDirection = () => ({
+  display: 'flex', 
+  marginRight:"0px",
+  flexDirection: {
+    xs: 'column',   // vertical stack on mobile
+    sm: 'row',      // horizontal on tablet and up
+  },
+  fontSize: {
+    sm:"15px",
+    md:"20px",
+  },
+  gap: 2, // optional spacing between items
+  justifyContent: {
+    xs:"center",
+    sm:"center",
+    md:"start"
+  },
+});
+
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
 
@@ -684,7 +720,7 @@ const SupplierQuotationForm = ({
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <FormPage
         title={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ ...responsiveDirection(), textAlign:"center"}}>
             <Typography variant="h6" component="span">
               {isEditing
                 ? "Edit Supplier Quotation"
@@ -696,6 +732,8 @@ const SupplierQuotationForm = ({
               <Fade in={true} timeout={500}>
                 <Box
                   sx={{
+                    width:"fit-content",
+                    justifyContent:"center",
                     display: "flex",
                     alignItems: "center",
                     background:
@@ -706,6 +744,7 @@ const SupplierQuotationForm = ({
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
                     marginLeft: "16px",
+                    marginBottom:"18px",
                     "&:hover": {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
                       transform: "scale(1.02)",
@@ -716,11 +755,12 @@ const SupplierQuotationForm = ({
                     label={
                       <Typography
                         variant="body2"
-                        sx={{
+                        sx={{                       
                           fontWeight: "700",
                           color:
                             theme.palette.mode === "light" ? "white" : "black",
                           fontSize: "0.9rem",
+                          
                         }}
                       >
                         Status:
@@ -728,6 +768,7 @@ const SupplierQuotationForm = ({
                     }
                     sx={{
                       backgroundColor: "transparent",
+                      
                     }}
                   />
                   <StatusIndicator
@@ -752,7 +793,7 @@ const SupplierQuotationForm = ({
           <Alert
             severity="error"
             action={
-              <Box sx={{ display: "flex", gap: 1 }}>
+              <Box sx={{ display: "flex", gap: 1, }}>
                 <Button
                   color="inherit"
                   size="small"
@@ -802,7 +843,7 @@ const SupplierQuotationForm = ({
                 <ReadOnlyField label="Series" value={formData.Series} />
               )}
             </Grid> */}
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="CompanyName"
@@ -818,7 +859,7 @@ const SupplierQuotationForm = ({
                 <ReadOnlyField label="Company" value={formData.CompanyName} />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="SupplierName"
@@ -835,7 +876,7 @@ const SupplierQuotationForm = ({
                 <ReadOnlyField label="Supplier" value={formData.SupplierName} />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="PurchaseRFQID"
@@ -855,7 +896,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="CustomerName"
@@ -872,7 +913,7 @@ const SupplierQuotationForm = ({
                 <ReadOnlyField label="Customer" value={formData.CustomerName} />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="External Ref No."
@@ -885,7 +926,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Service Type"
@@ -898,7 +939,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Delivery Date"
@@ -919,7 +960,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Posting Date"
@@ -940,7 +981,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Required By Date"
@@ -961,7 +1002,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Date Received"
@@ -982,7 +1023,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Valid Till Date"
@@ -1003,7 +1044,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Collection Address"
@@ -1016,7 +1057,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Destination Address"
@@ -1029,21 +1070,21 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField label="Terms" value={formData.Terms} />
               ) : (
                 <ReadOnlyField label="Terms" value={formData.Terms} />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField label="Currency" value={formData.CurrencyName} />
               ) : (
                 <ReadOnlyField label="Currency" value={formData.CurrencyName} />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="SalesAmount"
@@ -1062,7 +1103,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Taxes and Other Charges"
@@ -1083,7 +1124,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   name="Total"
@@ -1100,7 +1141,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Packaging Required"
@@ -1113,7 +1154,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Collect From Supplier"
@@ -1126,7 +1167,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Form Completed"
@@ -1139,7 +1180,7 @@ const SupplierQuotationForm = ({
                 />
               )}
             </Grid>
-            <Grid sx={{ width: "24%" }}>
+            <Grid sx={{ ...responsiveWidth() }}>
               {isEditing ? (
                 <ReadOnlyField
                   label="Quotation Received"

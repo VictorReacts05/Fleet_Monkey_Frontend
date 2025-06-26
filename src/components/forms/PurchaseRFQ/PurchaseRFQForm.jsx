@@ -38,6 +38,44 @@ import SearchIcon from "@mui/icons-material/Search";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import PurchaseRFQParcelTab from "./PurchaseRFQParcelTab";
 
+const responsiveWidth = () => ({
+  minWidth: {
+    xs: '50%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+  maxWidth: {
+    xs: '100%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+});
+
+
+export const responsiveDirection = () => ({
+  display: 'flex', 
+  marginRight:"0px",
+  flexDirection: {
+    xs: 'column',   // vertical stack on mobile
+    sm: 'row',      // horizontal on tablet and up
+  },
+  fontSize: {
+    sm:"15px",
+    md:"20px",
+  },
+  gap: 2, // optional spacing between items
+  justifyContent: {
+    xs:"center",
+    sm:"center",
+    md:"start"
+  },
+});
+
+
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
 
@@ -584,19 +622,19 @@ const PurchaseRFQForm = ({
       title={
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
+            ...responsiveDirection()
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-            <Typography variant="h6">View Quotation Request</Typography>
+          <Box sx={{ ...responsiveDirection() }}>
+            <Typography variant="h6" sx={{textAlign: "center", ...responsiveDirection()}}>View Quotation Request</Typography>
             {purchaseRFQId && (
               <Box
                 sx={{
+                  
+                  textAlign:"center",
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   background:
                     useTheme().palette.mode === "dark" ? "#90caf9" : "#1976d2",
                   borderRadius: "4px",
@@ -608,12 +646,13 @@ const PurchaseRFQForm = ({
               >
                 <Typography
                   variant="body2"
-                  sx={{
+                  sx={{  
                     fontWeight: "700",
                     marginRight: "8px",
                     color:
                       useTheme().palette.mode === "light" ? "white" : "black",
                     fontSize: "0.9rem",
+                    
                   }}
                 >
                   Status:{" "}
@@ -627,7 +666,7 @@ const PurchaseRFQForm = ({
               </Box>
             )}
           </Box>
-          <Box sx={{ display: "flex", gap: 2 }}>
+          <Box sx={{ ...responsiveDirection() }}>
             <Button
               variant="contained"
               color="primary"
@@ -639,7 +678,7 @@ const PurchaseRFQForm = ({
                 "&:hover": {
                   boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
                 },
-                marginLeft: "24px",
+                
               }}
             >
               Select Suppliers
@@ -709,7 +748,10 @@ const PurchaseRFQForm = ({
               size={24}
               sx={{ mr: 2 }}
             />
-            <Typography variant="body2" sx={{textAlign: "center", width: "100%"}}>
+            <Typography
+              variant="body2"
+              sx={{ textAlign: "center", width: "100%" }}
+            >
               Please wait while we process your request. Do not close this page.
             </Typography>
           </Box>
@@ -734,14 +776,14 @@ const PurchaseRFQForm = ({
             <ReadOnlyField label="Series" value={formData.Series} />
           </Grid>
         )} */}
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Company"
             value={formData.CompanyName || DEFAULT_COMPANY.label}
           />
         </Grid>
         {/* changes sales rfq to inquiry */}
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Inquiry"
             value={
@@ -751,25 +793,25 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Service Type"
             value={formData.ServiceType || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Customer Name"
             value={formData.CustomerName || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="External Ref No."
             value={formData.ExternalRefNo || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Delivery Date"
             value={
@@ -779,7 +821,7 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Posting Date"
             value={
@@ -789,7 +831,7 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Required By Date"
             value={
@@ -799,7 +841,7 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Date Received"
             value={
@@ -809,46 +851,46 @@ const PurchaseRFQForm = ({
             }
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Collection Address"
             value={formData.CollectionAddressID || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddressID || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Shipping Priority"
             value={formData.ShippingPriorityName || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Currency"
             value={formData.CurrencyName || "-"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Collect From Supplier"
             value={formData.CollectFromSupplierYN ? "Yes" : "No"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Packaging Required"
             value={formData.PackagingRequiredYN ? "Yes" : "No"}
           />
         </Grid>
-        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+        <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Form Completed"
             value={formData.FormCompletedYN ? "Yes" : "No"}
@@ -1000,5 +1042,5 @@ const PurchaseRFQForm = ({
     </FormPage>
   );
 };
-// 
+//
 export default PurchaseRFQForm;

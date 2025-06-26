@@ -86,6 +86,42 @@ const SalesQuotationForm = ({
     status,
   });
 
+  const responsiveWidth = () => ({
+  minWidth: {
+    xs: '50%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+  maxWidth: {
+    xs: '100%',
+    sm: '30%',
+    md: '31.33%',
+    lg: '23%',
+    xl: '18.4%',
+  },
+});
+
+ const responsiveDirection = () => ({
+  display: 'flex', 
+  marginRight:"0px",
+  flexDirection: {
+    xs: 'column',   // vertical stack on mobile
+    sm: 'row',      // horizontal on tablet and up
+  },
+  fontSize: {
+    sm:"15px",
+    md:"20px",
+  },
+  gap: 2, // optional spacing between items
+  justifyContent: {
+    xs:"center",
+    sm:"center",
+    md:"start"
+  },
+});
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -418,19 +454,17 @@ const SalesQuotationForm = ({
         title={
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
+              ...responsiveDirection()
             }}
           >
             <Typography variant="h6">
               {isEdit ? "Edit Estimate" : "View Estimate"}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ ...responsiveDirection()}}>
               <Fade in={true} timeout={500}>
                 <Box
-                  sx={{
+                  sx={{  
+                    width:"fit-content",
                     display: "flex",
                     alignItems: "center",
                   backgroundColor:
@@ -508,94 +542,94 @@ const SalesQuotationForm = ({
           {/* <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             <ReadOnlyField label="Series" value={formData.Series} />
           </Grid> */}
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Company" value={formData.CompanyName} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Service Type" value={formData.ServiceType} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Customer" value={formData.CustomerName} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="External Ref No."
               value={formData.ExternalRefNo}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Delivery Date"
               value={formData.DeliveryDate}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Posting Date" value={formData.PostingDate} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Required By Date"
               value={formData.RequiredByDate}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Date Received"
               value={formData.DateReceived}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Collection Address"
               value={formData.CollectionAddress}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Destination Address"
               value={formData.DestinationAddress}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Shipping Priority"
               value={formData.ShippingPriorityName}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Terms" value={formData.Terms} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Currency" value={formData.CurrencyName} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Sales Amount" value={formData.SalesAmount} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Taxes and Payments"
               value={formData.TaxAmount}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Total" value={formData.Total} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField label="Profit" value={formData.Profit} />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Collect From Customer"
               value={formData.CollectFromCustomerYN}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Packaging Required"
               value={formData.PackagingRequiredYN}
             />
           </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
               label="Form Completed"
               value={formData.FormCompletedYN}
