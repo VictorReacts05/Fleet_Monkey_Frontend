@@ -1,4 +1,4 @@
-// PurchaseRFQParcelTab.jsx
+// src/components/forms/PurchaseRFQ/PurchaseRFQParcelTab.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
@@ -19,7 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { fetchServiceTypes } from "./PurchaseRFQAPI";
+import ApprovalTab from "../../Common/ApprovalTab"; // Import ApprovalTab
 
 // Function to fetch items from API
 const fetchItems = async (token) => {
@@ -120,6 +120,7 @@ const PurchaseRFQParcelTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
+  const [activeView, setActiveView] = useState("items"); // State to track active tab
   const theme = useTheme();
   const isMounted = useRef(true);
 
@@ -241,6 +242,13 @@ const PurchaseRFQParcelTab = ({
     };
   }, [loadData]);
 
+  // Reset activeView to "items" when in create mode
+  useEffect(() => {
+    if (!purchaseRFQId) {
+      setActiveView("items");
+    }
+  }, [purchaseRFQId]);
+
   // Handle add parcel form
   const handleAddParcel = () => {
     const newFormId = Date.now();
@@ -350,9 +358,8 @@ const PurchaseRFQParcelTab = ({
         SalesRFQID: parseInt(salesRFQId, 10),
       };
 
-      // Save to backend (assuming Sales RFQ parcels endpoint)
+      // Save to backend
       if (form.editIndex !== undefined) {
-        // Update existing parcel
         await axios.put(
           `${APIBASEURL}/sales-rfq-parcels/${newParcelData.id}`,
           {
@@ -365,7 +372,6 @@ const PurchaseRFQParcelTab = ({
           { headers: { Authorization: `Bearer ${auth.token}` } }
         );
       } else {
-        // Create new parcel
         await axios.post(
           `${APIBASEURL}/sales-rfq-parcels`,
           {
@@ -412,7 +418,6 @@ const PurchaseRFQParcelTab = ({
         return;
       }
 
-      // Delete from backend
       await axios.delete(`${APIBASEURL}/sales-rfq-parcels/${deleteParcelId}`, {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
@@ -448,6 +453,7 @@ const PurchaseRFQParcelTab = ({
         borderRadius: 1,
       }}
     >
+      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -466,16 +472,61 @@ const PurchaseRFQParcelTab = ({
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              activeView === "items"
+                ? theme.palette.mode === "dark"
+                  ? "#37474f"
+                  : "#e0f7fa"
+                : theme.palette.mode === "dark"
+                ? "#1f2529"
+                : "#f3f8fd",
             color: theme.palette.text.primary,
+            cursor: "pointer",
           }}
         >
-          <Typography variant="h6" component="div">
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ cursor: "pointer" }}
+            onClick={() => setActiveView("items")}
+          >
             Items
           </Typography>
         </Box>
+        {purchaseRFQId && (
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                activeView === "approvals"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
+              onClick={() => setActiveView("approvals")}
+            >
+              Approvals
+            </Typography>
+          </Box>
+        )}
       </Box>
 
+      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -485,140 +536,150 @@ const PurchaseRFQParcelTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
-            <Typography variant="body1">{error}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={loadData}
-              sx={{ mt: 2 }}
-            >
-              Retry
-            </Button>
-          </Box>
-        ) : parcels.length === 0 && parcelForms.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-            <Typography variant="body1">No parcels are found</Typography>
-          </Box>
-        ) : (
-          <>
-            {!readOnly && (
+        {activeView === "items" ? (
+          loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
+              <Typography variant="body1">{error}</Typography>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddParcel}
-                sx={{ mb: 2 }}
-                disabled={items.length <= 1 || uoms.length <= 1}
+                color="primary"
+                onClick={loadData}
+                sx={{ mt: 2 }}
               >
-                Add Parcel
+                Retry
               </Button>
-            )}
+            </Box>
+          ) : parcels.length === 0 && parcelForms.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Typography variant="body1">No parcels are found</Typography>
+            </Box>
+          ) : (
+            <>
+              {!readOnly && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddParcel}
+                  sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1}
+                >
+                  Add Parcel
+                </Button>
+              )}
 
-            {parcelForms.map((form) => (
-              <Box
-                key={form.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
-                </Typography>
+              {parcelForms.map((form) => (
                 <Box
+                  key={form.id}
                   sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 2,
+                    mt: 2,
                     mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
                   }}
                 >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="itemId"
-                      label="Item"
-                      value={form.itemId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={items}
-                      error={!!formErrors[form.id]?.itemId}
-                      helperText={formErrors[form.id]?.itemId}
-                    />
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined
+                      ? "Edit Parcel"
+                      : "New Parcel"}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="itemId"
+                        label="Item"
+                        value={form.itemId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={items}
+                        error={!!formErrors[form.id]?.itemId}
+                        helperText={formErrors[form.id]?.itemId}
+                      />
+                    </Box>
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="uomId"
+                        label="UOM"
+                        value={form.uomId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={uoms}
+                        error={!!formErrors[form.id]?.uomId}
+                        helperText={formErrors[form.id]?.uomId}
+                      />
+                    </Box>
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="quantity"
+                        label="Quantity"
+                        value={form.quantity}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!formErrors[form.id]?.quantity}
+                        helperText={formErrors[form.id]?.quantity}
+                        type="number"
+                      />
+                    </Box>
                   </Box>
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="uomId"
-                      label="UOM"
-                      value={form.uomId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={uoms}
-                      error={!!formErrors[form.id]?.uomId}
-                      helperText={formErrors[form.id]?.uomId}
-                    />
-                  </Box>
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="quantity"
-                      label="Quantity"
-                      value={form.quantity}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!formErrors[form.id]?.quantity}
-                      helperText={formErrors[form.id]?.quantity}
-                      type="number"
-                    />
+                  <Box
+                    sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        setParcelForms((prev) =>
+                          prev.filter((f) => f.id !== form.id)
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSave(form.id)}
+                    >
+                      Save Items
+                    </Button>
                   </Box>
                 </Box>
-                <Box
-                  sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      setParcelForms((prev) =>
-                        prev.filter((f) => f.id !== form.id)
-                      )
-                    }
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSave(form.id)}
-                  >
-                    Save Items
-                  </Button>
-                </Box>
-              </Box>
-            ))}
+              ))}
 
-            {parcels.length > 0 && (
-              <DataTable
-                rows={parcels}
-                columns={columns}
-                pageSize={rowsPerPage}
-                page={page}
-                onPageChange={(newPage) => setPage(newPage)}
-                onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
-                rowsPerPageOptions={[5, 10, 25]}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                autoHeight
-                hideActions={readOnly}
-                onEdit={!readOnly ? handleEditParcel : undefined}
-                onDelete={!readOnly ? handleDeleteParcel : undefined}
-                totalRows={parcels.length}
-                pagination
-              />
-            )}
-          </>
+              {parcels.length > 0 && (
+                <DataTable
+                  rows={parcels}
+                  columns={columns}
+                  pageSize={rowsPerPage}
+                  page={page}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onPageSizeChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  autoHeight
+                  hideActions={readOnly}
+                  onEdit={!readOnly ? handleEditParcel : undefined}
+                  onDelete={!readOnly ? handleDeleteParcel : undefined}
+                  totalRows={parcels.length}
+                  pagination
+                />
+              )}
+            </>
+          )
+        ) : (
+          purchaseRFQId && (
+            <ApprovalTab moduleType="purchase-rfq" moduleId={purchaseRFQId} />
+          )
         )}
       </Box>
 

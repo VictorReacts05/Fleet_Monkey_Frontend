@@ -390,7 +390,7 @@ const SalesInvoiceForm = ({
       setLoading(true);
       if (confirmAction === "approve") {
         const response = await axios.post(
-          `${APIBASEURL}/sales-invoice/approve`,
+          `${APIBASEURL}/salesInvoice/approve`,
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
@@ -409,7 +409,7 @@ const SalesInvoiceForm = ({
         }
       } else if (confirmAction === "disapprove") {
         const response = await axios.post(
-          `${APIBASEURL}/sales-invoice/disapprove`,
+          `${APIBASEURL}/salesInvoice/disapprove`,
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
