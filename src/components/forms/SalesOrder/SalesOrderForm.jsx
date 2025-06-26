@@ -394,6 +394,7 @@ const SalesOrderForm = ({ onClose }) => {
     addresses,
     currencies,
   ]);
+  
 
   useEffect(() => {
     console.log("useEffect for fetchData check:", {
@@ -442,6 +443,9 @@ const SalesOrderForm = ({ onClose }) => {
       loadSalesOrderStatus();
     }
   }, [salesOrderId, dropdownsLoaded, loadSalesOrderStatus]);
+  const handleRefreshApprovals = () => {
+    fetchSalesOrder(); // Re-fetch data, including approvalStatus
+  };
 
   const handleCancel = () => {
     console.log("Cancel clicked, navigating to Sales Order");
@@ -773,6 +777,7 @@ const SalesOrderForm = ({ onClose }) => {
         parcels={parcels}
         readOnly={true}
         error={parcelError}
+        refreshApprovals={handleRefreshApprovals}
       />
     </FormPage>
   );

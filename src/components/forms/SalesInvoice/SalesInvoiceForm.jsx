@@ -314,6 +314,10 @@ const SalesInvoiceForm = ({
     setItems(updatedItems);
   };
 
+  const handleRefreshApprovals = () => {
+    fetchSalesInvoiceById(); // Re-fetch data, including approvalStatus
+  };
+
   const fetchSuppliers = async () => {
     try {
       setLoadingSuppliers(true);
@@ -973,6 +977,7 @@ const SalesInvoiceForm = ({
         salesInvoiceId={salesInvoiceId}
         onItemsChange={handleItemsChange}
         readOnly={readOnly}
+         refreshApprovals={handleRefreshApprovals}
       />
     </FormPage>
   );

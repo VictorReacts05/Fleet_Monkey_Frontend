@@ -760,7 +760,7 @@ const PurchaseRFQForm = ({
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
             label="Customer Name"
-            value={formData.CustomerName || "-"}
+            value={"Dung Beetle Logistics" || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>

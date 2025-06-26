@@ -111,7 +111,7 @@ const PurchaseOrderStatusIndicator = ({
       const headers = user?.token
         ? { Authorization: `Bearer ${user.token}` }
         : {};
-      const poResponse = await fetch(`${APIBASEURL}/po/${purchaseOrderId}`, {
+      const poResponse = await fetch(`${APIBASEURL}/purchase-Order/${purchaseOrderId}`, {
         headers,
       });
       const poData = await poResponse.json();
