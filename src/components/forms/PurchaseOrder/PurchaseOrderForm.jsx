@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Grid,
   Box,
@@ -59,7 +59,8 @@ const PurchaseOrderForm = ({
   const navigate = useNavigate();
   const purchaseOrderId = propPurchaseOrderId || id;
   const { isAuthenticated } = useAuth();
-  const user = useSelector((state) => state.loginReducer?.loginDetails?.user);
+  const userFromStore = useSelector((state) => state.loginReducer?.loginDetails?.user);
+  const user = useMemo(() => userFromStore, [userFromStore]); // Memoize user to prevent new references
 
   const [formData, setFormData] = useState(null);
   const [parcels, setParcels] = useState([]);
@@ -68,9 +69,10 @@ const PurchaseOrderForm = ({
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshApprovals, setRefreshApprovals] = useState(0);
 
   const fetchData = useCallback(async () => {
-    console.log("fetchData called", { purchaseOrderId, isAuthenticated, user });
+    console.log("fetchData called", { purchaseOrderId, isAuthenticated, user, refreshApprovals });
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     if (!isAuthenticated || !user) {
@@ -150,6 +152,7 @@ const PurchaseOrderForm = ({
             PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
             POID: purchaseOrderId,
           }));
+          console.log("Fetched parcels in fetchData:", mappedParcels);
           setParcels(mappedParcels);
         } catch (err) {
           const parcelErrorMessage = err.response
@@ -174,7 +177,7 @@ const PurchaseOrderForm = ({
     } finally {
       setLoading(false);
     }
-  }, [purchaseOrderId, isAuthenticated, user, navigate]);
+  }, [purchaseOrderId, isAuthenticated, user, navigate, refreshApprovals]);
 
   const loadPurchaseOrderStatus = useCallback(async () => {
     if (!isAuthenticated || !user || !purchaseOrderId) return;
@@ -201,6 +204,14 @@ const PurchaseOrderForm = ({
       setStatus("Pending");
     }
   }, [isAuthenticated, user, purchaseOrderId]);
+
+  const handleApprovalChange = useCallback(() => {
+    setRefreshApprovals((prev) => {
+      const newValue = prev + 1;
+      console.log("New refreshApprovals value:", newValue);
+      return newValue;
+    });
+  }, []);
 
   const handleSendToSupplier = async () => {
     if (!isAuthenticated || !user) {
@@ -269,6 +280,7 @@ const PurchaseOrderForm = ({
       readOnly,
       isAuthenticated,
       user,
+      refreshApprovals,
     });
     if (purchaseOrderId) {
       fetchData();
@@ -279,9 +291,10 @@ const PurchaseOrderForm = ({
       console.log("No purchase order ID provided");
       navigate("/");
     }
-  }, [purchaseOrderId, isAuthenticated, user, navigate]);
+  }, [purchaseOrderId, isAuthenticated, user, navigate, fetchData, loadPurchaseOrderStatus, refreshApprovals]);
 
   const handleParcelsChange = (updatedParcels) => {
+    console.log("handleParcelsChange called with:", updatedParcels);
     setParcels(updatedParcels);
   };
 
@@ -473,7 +486,6 @@ const PurchaseOrderForm = ({
                   color="primary"
                   onClick={handleSendToSupplier}
                   sx={{ mr: 2 }}
-                  // disabled={status !== "Approved"}
                   disabled={formData.Status !== "Approved"}
                 >
                   Send to Supplier
@@ -484,7 +496,6 @@ const PurchaseOrderForm = ({
                 variant="contained"
                 color="secondary"
                 onClick={handleCreatePurchaseInvoice}
-                // disabled={status !== "Approved"}
                 disabled={formData.Status !== "Approved"}
               >
                 Create Purchase Invoice
@@ -508,9 +519,6 @@ const PurchaseOrderForm = ({
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {/* <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Series" value={formData.Series} />
-        </Grid> */}
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company" value={formData.CompanyName} />
         </Grid>
@@ -602,6 +610,8 @@ const PurchaseOrderForm = ({
         onParcelsChange={handleParcelsChange}
         readOnly={readOnly}
         user={user}
+        refreshApprovals={refreshApprovals}
+        onApprovalChange={handleApprovalChange}
       />
     </FormPage>
   );

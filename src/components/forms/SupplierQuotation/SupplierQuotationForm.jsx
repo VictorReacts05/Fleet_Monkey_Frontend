@@ -36,6 +36,7 @@ import SupplierQuotationParcelTab from "./SupplierQuotationParcelTab";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import { fetchSalesQuotationStatus } from "../SalesQuotation/SalesQuotationAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -470,6 +471,11 @@ const SupplierQuotationForm = ({
 
     return Object.keys(newErrors).length === 0;
   };
+
+  const handleRefreshApprovals = () => {
+      fetchSalesQuotationStatus(); // Re-fetch data, including approvalStatus
+    };
+  
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -1161,6 +1167,7 @@ const SupplierQuotationForm = ({
           onParcelsChange={handleParcelsChange}
           readOnly={readOnly}
           isEditing={isEditing}
+          refreshApprovals={handleRefreshApprovals}
         />
       </FormPage>
     </LocalizationProvider>

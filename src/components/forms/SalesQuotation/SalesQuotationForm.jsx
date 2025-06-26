@@ -267,6 +267,11 @@ const SalesQuotationForm = ({
     setParcels(updatedParcels);
   };
 
+
+  const handleRefreshApprovals = () => {
+    fetchSalesQuotationStatus(); // Re-fetch data, including approvalStatus
+  };
+
   const handleSave = async () => {
     console.log("handleSave Triggered for SalesQuotationID:", salesQuotationId);
     setLoading(true);
@@ -610,6 +615,7 @@ const SalesQuotationForm = ({
           isEdit={isEdit}
           error={parcelError}
           onSalesRateChange={handleSalesRateChange}
+          refreshApprovals={handleRefreshApprovals}
         />
       </FormPage>
     );

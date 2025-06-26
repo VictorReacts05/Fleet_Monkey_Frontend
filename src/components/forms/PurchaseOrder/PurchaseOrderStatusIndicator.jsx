@@ -114,8 +114,15 @@ const PurchaseOrderStatusIndicator = ({
       // Update local approval status
       setUserApprovalStatus(newStatus);
 
-      // Extract the overall status from the updated PO
-      const overallStatus = updatedPO?.Status || "Pending";
+      // Fetch updated PO status
+      const headers = user?.token
+        ? { Authorization: `Bearer ${user.token}` }
+        : {};
+      const poResponse = await fetch(`${APIBASEURL}/purchase-Order/${purchaseOrderId}`, {
+        headers,
+      });
+      const poData = await poResponse.json();
+      const overallStatus = poData.data?.Status || "Pending";
 
       // Notify parent component of status change and updated PO data
       if (onStatusChange && (overallStatus !== status || updatedPO)) {

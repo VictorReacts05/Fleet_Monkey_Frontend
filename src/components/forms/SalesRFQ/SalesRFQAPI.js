@@ -43,7 +43,7 @@ export const fetchSalesRFQs = async (
   try {
     const user = JSON.parse(localStorage.getItem("user"));
     const headers = user?.token
-      ? { Authorization: `Bearer ${user.token}` }
+      ? { Authorization: `Bearer ${user.token}` } 
       : {};
 
     let url = `${APIBASEURL}/sales-rfq?pageNumber=${page}&pageSize=${pageSize}`;

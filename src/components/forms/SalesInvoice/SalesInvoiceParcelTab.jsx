@@ -41,6 +41,7 @@ const SalesInvoiceParcelsTab = ({
   salesInvoiceId,
   onItemsChange,
   readOnly = false,
+  refreshApprovals,
 }) => {
   const navigate = useNavigate();
   const [itemsList, setItemsList] = useState([]);
@@ -57,6 +58,13 @@ const SalesInvoiceParcelsTab = ({
   const [activeView, setActiveView] = useState("items"); // State to track active tab
   const theme = useTheme();
   const isMounted = useRef(true);
+
+  // Reset activeView to "items" when in create mode (salesInvoiceId is undefined/null)
+  useEffect(() => {
+    if (!salesInvoiceId) {
+      setActiveView("items");
+    }
+  }, [salesInvoiceId]);
 
   // Define columns for DataTable
   const columns = [
@@ -491,6 +499,7 @@ const SalesInvoiceParcelsTab = ({
             color: theme.palette.text.primary,
             cursor: "pointer",
           }}
+          onClick={() => setActiveView("items")}
         >
           <Typography
             variant="h6"

@@ -80,10 +80,12 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     DateReceived: null,
     ServiceTypeID: "",
     ServiceType: "",
+    OriginWarehouseAddressID: "", // New field
     CollectionAddressID: "",
     CollectionAddressTitle: "",
     DestinationAddressID: "",
     DestinationAddressTitle: "",
+    DestinationWarehouseAddressID: "", // New field
     ShippingPriorityID: "",
     ShippingPriority: "",
     Terms: "",
@@ -104,7 +106,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [addresses, setAddresses] = useState([]);
+  const [addresses, setAddresses] = useState([]); // Used for both warehouse and regular addresses
   const [mailingPriorities, setMailingPriorities] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [errors, setErrors] = useState({});
@@ -116,6 +118,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [status, setStatus] = useState("");
   const [userStatus, setUserStatus] = useState("Pending");
   const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
+  const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Controls save button state
   const [fieldDisabled, setFieldDisabled] = useState({
     Series: true,
     CompanyID: true,
@@ -127,8 +130,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     RequiredByDate: true,
     DateReceived: true,
     ServiceTypeID: false,
+    OriginWarehouseAddressID: true, // New field
     CollectionAddressID: true,
     DestinationAddressID: true,
+    DestinationWarehouseAddressID: true, // New field
     ShippingPriorityID: true,
     Terms: true,
     CurrencyID: true,
@@ -136,6 +141,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     PackagingRequiredYN: true,
     FormCompletedYN: true,
   });
+  const [validationMessage, setValidationMessage] = useState(""); // For parcel validation
 
   // Load dropdown data
   useEffect(() => {
@@ -151,115 +157,26 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           prioritiesData,
           currenciesData,
         ] = await Promise.all([
-          fetchCompanies().catch((err) => {
-            console.error("Failed to fetch companies:", err);
-            console.log("Failed to load companies");
-            return [];
-          }),
-          fetchCustomers().catch((err) => {
-            console.error("Failed to fetch customers:", err);
-            console.log("Failed to load customers");
-            return [];
-          }),
-          fetchSuppliers().catch((err) => {
-            console.error("Failed to fetch suppliers:", err);
-            console.log("Failed to load suppliers");
-            return [];
-          }),
-          fetchServiceTypes().catch((err) => {
-            console.error("Failed to fetch service types:", err);
-            console.log("Failed to load service types");
-            return [];
-          }),
-          fetchAddresses().catch((err) => {
-            console.error("Failed to fetch addresses:", err);
-            console.log("Failed to load addresses");
-            return [];
-          }),
-          fetchMailingPriorities().catch((err) => {
-            console.error("Failed to fetch mailing priorities:", err);
-            console.log("Failed to load mailing priorities");
-            return [];
-          }),
-          fetchCurrencies().catch((err) => {
-            console.error("Failed to fetch currencies:", err);
-            console.log("Failed to load currencies");
-            return [];
-          }),
+          fetchCompanies().catch(() => []),
+          fetchCustomers().catch(() => []),
+          fetchSuppliers().catch(() => []),
+          fetchServiceTypes().catch(() => []),
+          fetchAddresses().catch(() => []), // Fetch all addresses for warehouses and other uses
+          fetchMailingPriorities().catch(() => []),
+          fetchCurrencies().catch(() => []),
         ]);
 
-        const companiesOptions = [
-          { value: "", label: "Select an option" },
-          ...companiesData.map((company) => ({
-            value: String(company.CompanyID),
-            label: company.CompanyName,
-          })),
-        ];
-        const customersOptions = [
-          { value: "", label: "Select an option" },
-          ...customersData.map((customer) => ({
-            value: String(customer.CustomerID),
-            label: customer.CustomerName,
-          })),
-        ];
-        const suppliersOptions = [
-          { value: "", label: "Select an option" },
-          ...suppliersData.map((supplier) => ({
-            value: String(supplier.SupplierID),
-            label: supplier.SupplierName,
-          })),
-        ];
-        const serviceTypesOptions = [
-          { value: "", label: "Select an option" },
-          ...serviceTypesData.map((type) => ({
-            value: String(type.ServiceTypeID),
-            label:
-              type.ServiceType ||
-              type.ServiceTypeName ||
-              "Unknown Service Type",
-          })),
-        ];
-        const addressesOptions = [
-          { value: "", label: "Select an option" },
-          ...addressesData.map((address) => ({
-            value: String(address.AddressID),
-            label: `${address.AddressLine1 || "Unknown Address"}, ${
-              address.City || "Unknown City"
-            }`,
-            title: address.AddressTitle || address.Title || "",
-          })),
-        ];
-        const prioritiesOptions = [
-          { value: "", label: "Select an option" },
-          ...prioritiesData.map((priority) => ({
-            value: String(priority.MailingPriorityID),
-            label:
-              priority.PriorityName ||
-              priority.MailingPriorityName ||
-              "Unknown Priority",
-          })),
-        ];
-        const currenciesOptions = [
-          { value: "", label: "Select an option" },
-          ...currenciesData.map((currency) => ({
-            value: String(currency.CurrencyID),
-            label: currency.CurrencyName,
-          })),
-        ];
-
-        console.log("Currencies options:", currenciesOptions);
-        setCompanies(companiesOptions);
-        setCustomers(customersOptions);
-        setSuppliers(suppliersOptions);
-        setServiceTypes(serviceTypesOptions);
-        setAddresses(addressesOptions);
-        setMailingPriorities(prioritiesOptions);
-        setCurrencies(currenciesOptions);
+        setCompanies([{ value: "", label: "Select an option" }, ...companiesData.map((company) => ({ value: String(company.CompanyID), label: company.CompanyName || "-" }))]);
+        setCustomers([{ value: "", label: "Select an option" }, ...customersData.map((customer) => ({ value: String(customer.CustomerID), label: customer.CustomerName || "-"}))]);
+        setSuppliers([{ value: "", label: "Select an option" }, ...suppliersData.map((supplier) => ({ value: String(supplier.SupplierID), label: supplier.SupplierName|| "-" }))]);
+        setServiceTypes([{ value: "", label: "Select an option" }, ...serviceTypesData.map((type) => ({ value: String(type.ServiceTypeID), label: type.ServiceType || type.ServiceTypeName || "-" }))]);
+        setAddresses([{ value: "", label: "Select an option" }, ...addressesData.map((address) => ({ value: String(address.AddressID), label: `${address.AddressLine1 || "Unknown Address"}, ${address.City || "Unknown City"}`, title: address.AddressTitle || address.Title || "" }))]);
+        setMailingPriorities([{ value: "", label: "Select an option" }, ...prioritiesData.map((priority) => ({ value: String(priority.MailingPriorityID), label: priority.PriorityName || priority.MailingPriorityName || "-" }))]);
+        setCurrencies([{ value: "", label: "Select an option" }, ...currenciesData.map((currency) => ({ value: String(currency.CurrencyID), label: currency.CurrencyName || "-"}))]);
 
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Error in loadDropdownData:", error);
-        console.log("Failed to load dropdown data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -281,7 +198,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         value === null || value === undefined ? "-" : value;
 
       const formattedData = {
-        // Series: displayValue(data.Series),
         Series: data.Series
           ? data.Series.replace("Sales-RFQ", "Inquiry")
           : displayValue(data.Series),
@@ -290,13 +206,13 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           (c) => String(c.value) === String(data.CustomerID)
         )
           ? String(data.CustomerID)
-          : "",
+          : "-",
         CustomerName: displayValue(data.CustomerName),
         SupplierID: suppliers.find(
           (s) => String(s.value) === String(data.SupplierID)
         )
           ? String(data.SupplierID)
-          : "",
+          : "-",
         ExternalRefNo: displayValue(data.ExternalRefNo),
         DeliveryDate: data.DeliveryDate ? dayjs(data.DeliveryDate) : null,
         PostingDate: data.PostingDate ? dayjs(data.PostingDate) : null,
@@ -306,53 +222,63 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           (st) => String(st.value) === String(data.ServiceTypeID)
         )
           ? String(data.ServiceTypeID)
-          : "",
+          : "-",
         ServiceType: displayValue(data.ServiceType),
+        OriginWarehouseAddressID: addresses.find(
+          (a) => String(a.value) === String(data.OriginWarehouseAddressID)
+        )
+          ? String(data.OriginWarehouseAddressID)
+          : "-",
         CollectionAddressID: addresses.find(
           (a) => String(a.value) === String(data.CollectionAddressID)
         )
           ? String(data.CollectionAddressID)
-          : "",
+          : "-",
         CollectionAddressTitle:
           addresses.find(
             (a) => String(a.value) === String(data.CollectionAddressID)
           )?.label ||
-          displayValue(data.AddressLine1) ||
+          displayValue(data.CollectionAddressLine1) ||
           "-",
         DestinationAddressID: addresses.find(
           (a) => String(a.value) === String(data.DestinationAddressID)
         )
           ? String(data.DestinationAddressID)
-          : "",
+          : "-",
         DestinationAddressTitle:
           addresses.find(
             (a) => String(a.value) === String(data.DestinationAddressID)
           )?.label ||
           displayValue(data.DestinationAddressLine1) ||
           "-",
+        DestinationWarehouseAddressID: addresses.find(
+          (a) => String(a.value) === String(data.DestinationWarehouseAddressID)
+        )
+          ? String(data.DestinationWarehouseAddressID)
+          : "-",
         ShippingPriorityID: mailingPriorities.find(
           (p) => String(p.value) === String(data.ShippingPriorityID)
         )
           ? String(data.ShippingPriorityID)
-          : "",
+          : "-",
         ShippingPriority: displayValue(data.ShippingPriority),
         Terms: displayValue(data.Terms),
         CurrencyID: currencies.find(
           (c) => String(c.value) === String(data.CurrencyID || data.currencyId)
         )
           ? String(data.CurrencyID || data.currencyId)
-          : "",
+          : "-",
         CurrencyName: displayValue(
           data.CurrencyName || data.currencyName || data.Currency?.CurrencyName
         ),
-        CollectFromSupplierID: Boolean(data.CustomerID),
+        CollectFromSupplierYN: Boolean(data.CollectFromSupplierYN),
         PackagingRequiredYN: Boolean(data.PackagingRequiredYN),
         FormCompletedYN: Boolean(data.FormCompletedYN),
         CreatedByID: displayValue(data.CreatedByID),
         CreatedDateTime: data.CreatedDateTime
           ? dayjs(data.CreatedDateTime)
           : null,
-        IsDeleted: data.Boolean || false,
+        IsDeleted: data.IsDeleted || false,
         DeletedDateTime: data.DeletedDateTime
           ? dayjs(data.DeletedDateTime)
           : null,
@@ -361,10 +287,11 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       };
 
       setFormData(formattedData);
+      setParcels(data.parcels || []); // Load parcels if available from API
+      setIsSaveDisabled((data.parcels || []).length === 0); // Set initial save button state
       console.log("Formatted formData:", formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
-      console.log("Failed to load SalesRFQ: " + error.message);
     }
   }, [
     salesRFQId,
@@ -394,10 +321,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       setStatus(status);
     } catch (error) {
       console.error("Error loading SalesRFQ status:", error);
-      console.log(
-        "Failed to load SalesRFQ status: " + (error.message || "Unknown error")
-      );
-      setStatus("Pending"); // Fallback to Pending
+      setStatus("Pending");
     } finally {
       setLoading(false);
     }
@@ -438,68 +362,84 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       newErrors.CurrencyID = "Currency is required";
     }
 
+    console.log("Validation errors:", newErrors); // Debug log
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      console.log("Please fix the form errors");
-      return;
+const handleSubmit = async () => {
+  // Step 1: Validate form fields
+  const isFormValid = validateForm();
+  console.log("Form validation result - Is valid:", isFormValid, "Errors:", errors);
+
+  // Step 2: Validate parcels
+  let parcelValidationMessage = "";
+  if (parcels.length === 0) {
+    parcelValidationMessage = "No parcels added yet. Click 'Add Parcel' to add a new parcel.";
+    console.log("Parcel validation failed - Message:", parcelValidationMessage);
+  } else {
+    console.log("Parcel validation passed - Parcels count:", parcels.length);
+  }
+
+  // Step 3: Combine and display all validation errors
+  if (!isFormValid || parcelValidationMessage) {
+    console.log("Validation failed - Form valid:", isFormValid, "Parcel message:", parcelValidationMessage);
+    if (!isFormValid) {
+      console.log("Form errors detected:", errors);
+    }
+    setValidationMessage((prev) => {
+      const newMessage = parcelValidationMessage || prev;
+      console.log("Setting validation message:", newMessage);
+      return newMessage;
+    });
+    setIsSaveDisabled(true);
+    return;
+  }
+
+  // Clear validation message if all validations pass
+  console.log("All validations passed - Proceeding to submit");
+  setValidationMessage("");
+  setIsSaveDisabled(false);
+
+  try {
+    setLoading(true);
+    const apiData = {
+      ...formData,
+      Series: formData.Series === "-" ? null : formData.Series,
+      ExternalRefNo: formData.ExternalRefNo === "-" ? null : formData.ExternalRefNo,
+      Terms: formData.Terms === "-" ? null : formData.Terms,
+      CreatedByID: formData.CreatedByID === "-" ? null : formData.CreatedByID,
+      DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
+      RowVersionColumn: formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
+      DeliveryDate: formData.DeliveryDate ? formData.DeliveryDate.toISOString() : null,
+      PostingDate: formData.PostingDate ? formData.PostingDate.toISOString() : null,
+      RequiredByDate: formData.RequiredByDate ? formData.RequiredByDate.toISOString() : null,
+      DateReceived: formData.DateReceived ? formData.DateReceived.toISOString() : null,
+      CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
+      PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
+      FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
+      parcels: parcels,
+    };
+
+    console.log("Submitting with parcels data:", apiData.parcels);
+
+    if (salesRFQId) {
+      await updateSalesRFQ(salesRFQId, apiData);
+      toast.success("SalesRFQ updated successfully");
+    } else {
+      const result = await createSalesRFQ(apiData);
+      toast.success("SalesRFQ created successfully");
     }
 
-    try {
-      setLoading(true);
-      const apiData = {
-        ...formData,
-        Series: formData.Series === "-" ? null : formData.Series,
-        ExternalRefNo:
-          formData.ExternalRefNo === "-" ? null : formData.ExternalRefNo,
-        Terms: formData.Terms === "-" ? null : formData.Terms,
-        CreatedByID: formData.CreatedByID === "-" ? null : formData.CreatedByID,
-        DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
-        RowVersionColumn:
-          formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
-        DeliveryDate: formData.DeliveryDate
-          ? formData.DeliveryDate.toISOString()
-          : null,
-        PostingDate: formData.PostingDate
-          ? formData.PostingDate.toISOString()
-          : null,
-        RequiredByDate: formData.RequiredByDate
-          ? formData.RequiredByDate.toISOString()
-          : null,
-        DateReceived: formData.DateReceived
-          ? formData.DateReceived.toISOString()
-          : null,
-        CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
-        PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
-        FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
-        parcels: parcels,
-      };
+    if (onSave) onSave();
+    if (onClose) onClose();
+  } catch (error) {
+    console.error("Error in handleSubmit:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      console.log("Submitting with parcels data:", parcels);
-
-      if (salesRFQId) {
-        await updateSalesRFQ(salesRFQId, apiData);
-        toast.success("SalesRFQ updated successfully");
-      } else {
-        const result = await createSalesRFQ(apiData);
-        toast.success("SalesRFQ created successfully");
-      }
-
-      if (onSave) onSave();
-      if (onClose) onClose();
-    } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      console.log(
-        `Failed to ${salesRFQId ? "update" : "create"} SalesRFQ: ` +
-          (error.message || "Unknown error")
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -533,8 +473,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           RequiredByDate: !isEditing,
           DateReceived: !isEditing,
           ServiceTypeID: false,
+          OriginWarehouseAddressID: !isEditing, // New field
           CollectionAddressID: !isEditing,
           DestinationAddressID: !isEditing,
+          DestinationWarehouseAddressID: !isEditing, // New field
           ShippingPriorityID: !isEditing,
           Terms: !isEditing,
           CurrencyID: !isEditing,
@@ -555,8 +497,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           RequiredByDate: !isEditing,
           DateReceived: !isEditing,
           ServiceTypeID: false,
+          OriginWarehouseAddressID: !isEditing, // New field
           CollectionAddressID: !isEditing,
           DestinationAddressID: !isEditing,
+          DestinationWarehouseAddressID: !isEditing, // New field
           ShippingPriorityID: !isEditing,
           Terms: !isEditing,
           CurrencyID: !isEditing,
@@ -577,8 +521,10 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           RequiredByDate: true,
           DateReceived: true,
           ServiceTypeID: false,
+          OriginWarehouseAddressID: true, // New field
           CollectionAddressID: true,
           DestinationAddressID: true,
+          DestinationWarehouseAddressID: true, // New field
           ShippingPriorityID: true,
           Terms: true,
           CurrencyID: true,
@@ -603,6 +549,19 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       ...prevData,
       [field]: dayjsDate,
     }));
+  };
+
+  const handleParcelsChange = (newParcels) => {
+    setParcels(newParcels);
+    setIsSaveDisabled(newParcels.length === 0); // Update save button state
+    if (newParcels.length > 0) {
+      setValidationMessage(""); // Clear message if parcels are added
+    }
+  };
+
+
+  const handleRefreshApprovals = () => {
+    fetchSalesRFQStatus(); // Re-fetch data, including approvalStatus
   };
 
   const checkPurchaseRFQExists = useCallback(async () => {
@@ -643,10 +602,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       return;
     }
     setIsEditing(!isEditing);
-  };
-
-  const handleParcelsChange = (newParcels) => {
-    setParcels(newParcels);
   };
 
   const handleCreatePurchaseRFQ = () => {
@@ -701,7 +656,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           "Purchase RFQ created, but ID is unavailable:",
           response.data
         );
-        console.log("Purchase RFQ created, but ID is unavailable");
       }
     } catch (error) {
       console.error("Error creating Purchase RFQ:", {
@@ -709,7 +663,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
         responseData: error.response?.data,
         salesRFQId,
       });
-      console.log(`Failed to create Purchase RFQ: ${error.message}`);
     } finally {
       setCreatingPurchaseRFQ(false);
       setPurchaseRFQDialogOpen(false);
@@ -733,7 +686,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           error
         );
         setStatus("Pending");
-        console.log("Failed to load status information");
       }
     };
 
@@ -754,6 +706,22 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     readOnly: userStatus === "Approved" || readOnly,
     salesRFQId,
   });
+
+  // Custom styling for the save button based on isSaveDisabled
+  const saveButtonSx = {
+    ...(isSaveDisabled && {
+      backgroundColor: "#757575", // Dark gray when disabled
+      "&:hover": {
+        backgroundColor: "#757575", // No hover effect when disabled
+      },
+    }),
+    ...(!isSaveDisabled && {
+      backgroundColor: "#1976d2", // Light blue when enabled
+      "&:hover": {
+        backgroundColor: "#1565c0", // Darker shade on hover when enabled
+      },
+    }),
+  };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -836,7 +804,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           </Box>
         }
         onCancel={onClose}
-        onSubmit={isEditing ? handleSubmit : null}
+        onSubmit={handleSubmit }
         loading={loading}
         readOnly={!isEditing}
         onEdit={salesRFQId && !isEditing ? toggleEdit : null}
@@ -846,6 +814,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             : null
         }
         isApproved={status === "Approved"}
+        sx={saveButtonSx}
       >
         <Grid
           container
@@ -860,23 +829,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           }}
         >
-          {/* {salesRFQId && (
-            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-              {isEditing ? (
-                <FormInput
-                  name="Series"
-                  label="Series"
-                  value={formData.Series || ""}
-                  onChange={handleChange}
-                  error={!!errors.Series}
-                  helperText={errors.Series}
-                  disabled={fieldDisabled.Series}
-                />
-              ) : (
-                <ReadOnlyField label="Series" value={formData.Series} />
-              )}
-            </Grid>
-          )} */}
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
@@ -887,9 +839,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 options={[DEFAULT_COMPANY]}
                 disabled={fieldDisabled.CompanyID}
                 readOnly={true}
+                error={!!errors.CompanyID}
+                helperText={errors.CompanyID}
               />
             ) : (
-              <ReadOnlyField label="Company" value={DEFAULT_COMPANY.label} />
+              <ReadOnlyField
+                label="Company"
+                value={formData.CompanyID ? DEFAULT_COMPANY.label : "-"}
+              />
             )}
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -966,7 +923,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
             ) : (
               <ReadOnlyField
                 label="External Ref No."
-                value={formData.ExternalRefNo}
+                value={formData.ExternalRefNo || "-"}
               />
             )}
           </Grid>
@@ -1061,6 +1018,29 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
+                name="OriginWarehouseAddressID"
+                label="Origin Warehouse"
+                value={formData.OriginWarehouseAddressID || ""}
+                onChange={handleChange}
+                options={addresses}
+                error={!!errors.OriginWarehouseAddressID}
+                helperText={errors.OriginWarehouseAddressID}
+                disabled={fieldDisabled.OriginWarehouseAddressID}
+              />
+            ) : (
+              <ReadOnlyField
+                label="Origin Warehouse"
+                value={
+                  addresses.find(
+                    (a) => a.value === formData.OriginWarehouseAddressID
+                  )?.label || "-"
+                }
+              />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormSelect
                 name="CollectionAddressID"
                 label="Collection Address"
                 value={formData.CollectionAddressID || ""}
@@ -1107,6 +1087,29 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
+                name="DestinationWarehouseAddressID"
+                label="Destination Warehouse"
+                value={formData.DestinationWarehouseAddressID || ""}
+                onChange={handleChange}
+                options={addresses}
+                error={!!errors.DestinationWarehouseAddressID}
+                helperText={errors.DestinationWarehouseAddressID}
+                disabled={fieldDisabled.DestinationWarehouseAddressID}
+              />
+            ) : (
+              <ReadOnlyField
+                label="Destination Warehouse"
+                value={
+                  addresses.find(
+                    (a) => a.value === formData.DestinationWarehouseAddressID
+                  )?.label || "-"
+                }
+              />
+            )}
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormSelect
                 name="ShippingPriorityID"
                 label="Shipping Priority"
                 value={formData.ShippingPriorityID || ""}
@@ -1135,7 +1138,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                 disabled={fieldDisabled.Terms}
               />
             ) : (
-              <ReadOnlyField label="Terms" value={formData.Terms} />
+              <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
             )}
           </Grid>
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
@@ -1227,7 +1230,17 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           salesRFQId={salesRFQId}
           onParcelsChange={handleParcelsChange}
           readOnly={!isEditing || status === "Approved"}
+          refreshApprovals={handleRefreshApprovals}
         />
+        {validationMessage && (
+          <Typography
+            variant="body2"
+            color="error"
+            sx={{ mt: 1, ml: 2 }}
+          >
+            {validationMessage}
+          </Typography>
+        )}
         <Dialog
           open={purchaseRFQDialogOpen}
           onClose={() =>

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import ApprovalProgressTracker from "./ApprovalProgressTracker";
 import APIBASEURL from "../../utils/apiBaseUrl";
 
-const ApprovalTab = ({ moduleType, moduleId, apiEndpoint }) => {
+const ApprovalTab = ({ moduleType, moduleId, apiEndpoint, refreshTrigger }) => {
   const [approvalData, setApprovalData] = useState({
     approvers: [],
     activeStep: 0,
@@ -29,7 +29,7 @@ const ApprovalTab = ({ moduleType, moduleId, apiEndpoint }) => {
     setError(null);
 
     try {
-      const { headers } = getAuthHeader();
+      const headers = getAuthHeader();
       const response = await axios.get(
         `${
           apiEndpoint ||
@@ -64,7 +64,7 @@ const ApprovalTab = ({ moduleType, moduleId, apiEndpoint }) => {
 
   useEffect(() => {
     fetchApprovalStatus();
-  }, [fetchApprovalStatus]);
+  }, [fetchApprovalStatus, refreshTrigger]); // Add refreshTrigger to dependencies
 
   if (error) {
     return (
