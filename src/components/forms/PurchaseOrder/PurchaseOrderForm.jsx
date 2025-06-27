@@ -23,6 +23,8 @@ import {
 } from "./PurchaseOrderAPI";
 import { createPurchaseInvoice } from "../PurchaseInvoice/PurchaseInvoiceAPI";
 import { useAuth } from "../../../context/AuthContext";
+import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -114,6 +116,8 @@ const PurchaseOrderForm = ({
           CollectionAddress: po.CollectionAddressTitle || "-",
           DestinationAddressID: po.DestinationAddressID || "-",
           DestinationAddress: po.DestinationAddressTitle || "-",
+          DestinationWarehouseAddressID: po.DestinationWarehouseAddressID || "-", // Added
+          OriginWarehouseAddressID: po.OriginWarehouseAddressID || "-", // Added
           ShippingPriorityID: po.ShippingPriorityID || "-",
           ShippingPriorityName: po.ShippingPriorityID
             ? `Priority ID: ${po.ShippingPriorityID}`
@@ -129,6 +133,53 @@ const PurchaseOrderForm = ({
           Total: parseFloat(po.Total) || 0,
           Status: po.Status || "Pending",
         };
+
+        // Fetch Destination Warehouse
+        if (po.DestinationWarehouseAddressID) {
+          try {
+            const destinationWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${po.DestinationWarehouseAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${user.personId}`,
+                },
+              }
+            );
+            if (destinationWarehouseResponse.data?.data) {
+              const warehouseData = destinationWarehouseResponse.data.data;
+              formData.DestinationWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Destination Warehouse:", error);
+            formData.DestinationWarehouse = "-";
+          }
+        }
+
+        // Fetch Origin Warehouse
+        if (po.OriginWarehouseAddressID) {
+          try {
+            const originWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${po.OriginWarehouseAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${user.personId}`,
+                },
+              }
+            );
+            if (originWarehouseResponse.data?.data) {
+              const warehouseData = originWarehouseResponse.data.data;
+              formData.OriginWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Origin Warehouse:", error);
+            formData.OriginWarehouse = "-";
+          }
+        }
+
         console.log("Set formData:", {
           ...formData,
           SupplierID: formData.SupplierID,
@@ -489,6 +540,18 @@ const PurchaseOrderForm = ({
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Origin Warehouse"
+            value={formData.OriginWarehouse}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Warehouse"
+            value={formData.DestinationWarehouse}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>

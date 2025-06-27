@@ -1018,29 +1018,6 @@ const handleSubmit = async () => {
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
-                name="OriginWarehouseAddressID"
-                label="Origin Warehouse"
-                value={formData.OriginWarehouseAddressID || ""}
-                onChange={handleChange}
-                options={addresses}
-                error={!!errors.OriginWarehouseAddressID}
-                helperText={errors.OriginWarehouseAddressID}
-                disabled={fieldDisabled.OriginWarehouseAddressID}
-              />
-            ) : (
-              <ReadOnlyField
-                label="Origin Warehouse"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.OriginWarehouseAddressID
-                  )?.label || "-"
-                }
-              />
-            )}
-          </Grid>
-          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-            {isEditing ? (
-              <FormSelect
                 name="CollectionAddressID"
                 label="Collection Address"
                 value={formData.CollectionAddressID || ""}
@@ -1061,6 +1038,7 @@ const handleSubmit = async () => {
               />
             )}
           </Grid>
+        
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
@@ -1102,6 +1080,29 @@ const handleSubmit = async () => {
                 value={
                   addresses.find(
                     (a) => a.value === formData.DestinationWarehouseAddressID
+                  )?.label || "-"
+                }
+              />
+            )}
+          </Grid>
+            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            {isEditing ? (
+              <FormSelect
+                name="OriginWarehouseAddressID"
+                label="Origin Warehouse"
+                value={formData.OriginWarehouseAddressID || ""}
+                onChange={handleChange}
+                options={addresses}
+                error={!!errors.OriginWarehouseAddressID}
+                helperText={errors.OriginWarehouseAddressID}
+                disabled={fieldDisabled.OriginWarehouseAddressID}
+              />
+            ) : (
+              <ReadOnlyField
+                label="Origin Warehouse"
+                value={
+                  addresses.find(
+                    (a) => a.value === formData.OriginWarehouseAddressID
                   )?.label || "-"
                 }
               />
