@@ -357,10 +357,80 @@ const PurchaseOrderForm = ({
     }
   };
 
-  const handleStatusChange = (newStatus) => {
-    console.log("Status changed to:", newStatus);
+  const handleStatusChange = (newStatus, updatedPO) => {
+    console.log("Status changed to:", newStatus, "Updated PO:", updatedPO);
     setStatus(newStatus);
-    setFormData((prev) => ({ ...prev, Status: newStatus }));
+
+    if (updatedPO) {
+      // Update formData with the new PO data
+      const updatedFormData = {
+        Series: updatedPO.Series || "-",
+        CompanyID: updatedPO.CompanyID || "-",
+        CompanyName: updatedPO.CompanyName || "-",
+        SupplierID: updatedPO.SupplierID || "-",
+        SupplierName: updatedPO.SupplierName || "-",
+        CustomerID: updatedPO.CustomerID || "-",
+        CustomerName: updatedPO.CustomerName || "-",
+        ExternalRefNo: updatedPO.ExternalRefNo || "-",
+        DeliveryDate: updatedPO.DeliveryDate
+          ? new Date(updatedPO.DeliveryDate)
+          : null,
+        PostingDate: updatedPO.PostingDate
+          ? new Date(updatedPO.PostingDate)
+          : null,
+        RequiredByDate: updatedPO.RequiredByDate
+          ? new Date(updatedPO.RequiredByDate)
+          : null,
+        DateReceived: updatedPO.DateReceived
+          ? new Date(updatedPO.DateReceived)
+          : null,
+        ServiceTypeID: updatedPO.ServiceTypeID || "-",
+        ServiceType: updatedPO.ServiceTypeName || "-",
+        CollectionAddressID: updatedPO.CollectionAddressID || "-",
+        CollectionAddress: updatedPO.CollectionAddressTitle || "-",
+        DestinationAddressID: updatedPO.DestinationAddressID || "-",
+        DestinationAddress: updatedPO.DestinationAddressTitle || "-",
+        ShippingPriorityID: updatedPO.ShippingPriorityID || "-",
+        ShippingPriorityName: updatedPO.ShippingPriorityID
+          ? `Priority ID: ${updatedPO.ShippingPriorityID}`
+          : "-",
+        Terms: updatedPO.Terms || "-",
+        CurrencyID: updatedPO.CurrencyID || "-",
+        CurrencyName: updatedPO.CurrencyName || "-",
+        CollectFromSupplierYN: !!updatedPO.CollectFromSupplierYN,
+        PackagingRequiredYN: !!updatedPO.PackagingRequiredYN,
+        FormCompletedYN: !!updatedPO.FormStatus,
+        SalesAmount: parseFloat(updatedPO.SalesAmount) || 0,
+        TaxesAndOtherCharges: parseFloat(updatedPO.TaxesAndOtherCharges) || 0,
+        Total: parseFloat(updatedPO.Total) || 0,
+        Status: newStatus || updatedPO.Status || "Pending",
+      };
+      console.log("Updated formData:", updatedFormData);
+      setFormData(updatedFormData);
+
+      // Optionally refresh parcels if needed
+      fetchPurchaseOrderParcels(purchaseOrderId, user)
+        .then((fetchedParcels) => {
+          const mappedParcels = fetchedParcels.map((parcel, index) => ({
+            id: parcel.PurchaseOrderParcelID || `Parcel-${index + 1}`,
+            itemName: parcel.ItemName || "Unknown Item",
+            uomName: parcel.UOMName || "-",
+            quantity: String(parseFloat(parcel.ItemQuantity) || 0),
+            rate: String(parseFloat(parcel.Rate) || 0),
+            amount: String(parseFloat(parcel.Amount) || 0),
+            itemId: String(parcel.ItemID || ""),
+            uomId: String(parcel.UOMID || ""),
+            PurchaseOrderParcelID: parcel.PurchaseOrderParcelID,
+            POID: purchaseOrderId,
+          }));
+          setParcels(mappedParcels);
+        })
+        .catch((err) => {
+          console.error("Error refreshing parcels:", err);
+        });
+    } else {
+      setFormData((prev) => ({ ...prev, Status: newStatus }));
+    }
   };
 
   // Debug button rendering conditions

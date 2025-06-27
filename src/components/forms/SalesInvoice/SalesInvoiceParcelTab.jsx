@@ -20,8 +20,22 @@ import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { fetchItems, fetchUOMs } from "./SalesInvoiceAPI";
 import { useNavigate } from "react-router-dom";
-import ApprovalTab from "../../Common/ApprovalTab"; // Adjusted path as needed
-import { getAuthHeader } from "./SalesInvoiceAPI";
+import ApprovalTab from "../../Common/ApprovalTab"; // Import ApprovalTab
+
+const getAuthHeader = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const personId = user?.personId;
+  if (!personId) {
+    throw new Error("No personId found in localStorage");
+  }
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${personId}`,
+    },
+    personId,
+  };
+};
 
 const SalesInvoiceParcelsTab = ({
   salesInvoiceId,
@@ -41,9 +55,9 @@ const SalesInvoiceParcelsTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [activeView, setActiveView] = useState("items"); // State to track active tab
   const theme = useTheme();
   const isMounted = useRef(true);
-  const [activeView, setActiveView] = useState("items");
 
   // Reset activeView to "items" when in create mode (salesInvoiceId is undefined/null)
   useEffect(() => {
@@ -65,9 +79,12 @@ const SalesInvoiceParcelsTab = ({
   const fetchSalesInvoiceItems = async (salesInvoiceId) => {
     try {
       const { headers } = getAuthHeader();
-      console.log("Fetching sales invoice items for SalesInvoiceID:", salesInvoiceId);
+      console.log(
+        "Fetching sales invoice items for SalesInvoiceID:",
+        salesInvoiceId
+      );
       const response = await axios.get(
-        `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`, // Remove the extra /api/
+        `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`,
         { headers }
       );
       console.log("Raw API response in SalesInvoiceParcelsTab:", response.data);
@@ -131,7 +148,10 @@ const SalesInvoiceParcelsTab = ({
       try {
         parcelData = await fetchSalesInvoiceItems(salesInvoiceId);
       } catch (error) {
-        console.warn("Failed to fetch sales invoice items, defaulting to empty array:", error.message);
+        console.warn(
+          "Failed to fetch sales invoice items, defaulting to empty array:",
+          error.message
+        );
         if (error.response?.status === 404) {
           setError("Sales Invoice not found. It may have been deleted.");
         }
@@ -149,8 +169,12 @@ const SalesInvoiceParcelsTab = ({
           id: item.SalesInvoiceParcelID || Date.now() + index,
           itemId,
           uomId,
-          quantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
-          ItemQuantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
+          quantity: parseFloat(
+            item.ItemQuantity || item.Quantity || "0"
+          ).toString(),
+          ItemQuantity: parseFloat(
+            item.ItemQuantity || item.Quantity || "0"
+          ).toString(),
           rate: parseFloat(item.Rate || "0").toString(),
           Rate: parseFloat(item.Rate || "0").toString(),
           amount: parseFloat(item.Amount || "0").toString(),
@@ -176,7 +200,7 @@ const SalesInvoiceParcelsTab = ({
       });
       if (error.message.includes("personId")) {
         setError("Please log in to view items. Click below to log in.");
-      } else if (error.response?.status !== 404) {
+      } else if (!error.response?.status === 404) {
         setError("Failed to load items. Please try again.");
         console.log("Failed to load items: " + error.message);
       }
@@ -192,6 +216,13 @@ const SalesInvoiceParcelsTab = ({
       isMounted.current = false;
     };
   }, [loadData]);
+
+  // Reset activeView to "items" when in create mode
+  useEffect(() => {
+    if (!salesInvoiceId) {
+      setActiveView("items");
+    }
+  }, [salesInvoiceId]);
 
   // Handle adding a new item form
   const handleAddItem = () => {
@@ -329,7 +360,7 @@ const SalesInvoiceParcelsTab = ({
       // Save to backend
       if (form.editIndex !== undefined) {
         await axios.put(
-          `${APIBASEURL}/api/salesInvoiceParcel/${newItem.SalesInvoiceParcelID}`,
+          `${APIBASEURL}/salesInvoiceParcel/${newItem.SalesInvoiceParcelID}`,
           {
             SalesInvoiceID: salesInvoiceId,
             ItemID: newItem.ItemID,
@@ -343,7 +374,7 @@ const SalesInvoiceParcelsTab = ({
         );
       } else {
         await axios.post(
-          `${APIBASEURL}/api/salesInvoiceParcel`,
+          `${APIBASEURL}/salesInvoiceParcel`,
           {
             SalesInvoiceID: salesInvoiceId,
             ItemID: newItem.ItemID,
@@ -394,7 +425,7 @@ const SalesInvoiceParcelsTab = ({
       const itemToDelete = itemsList.find((p) => p.id === deleteItemId);
       if (itemToDelete?.SalesInvoiceParcelID) {
         await axios.delete(
-          `${APIBASEURL}/api/salesInvoiceParcel/${itemToDelete.SalesInvoiceParcelID}`,
+          `${APIBASEURL}/salesInvoiceParcel/${itemToDelete.SalesInvoiceParcelID}`,
           { headers }
         );
       }
@@ -470,7 +501,12 @@ const SalesInvoiceParcelsTab = ({
           }}
           onClick={() => setActiveView("items")}
         >
-          <Typography variant="h6" component="div">
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ cursor: "pointer" }}
+            onClick={() => setActiveView("items")}
+          >
             Items
           </Typography>
         </Box>
@@ -496,9 +532,12 @@ const SalesInvoiceParcelsTab = ({
               color: theme.palette.text.primary,
               cursor: "pointer",
             }}
-            onClick={() => setActiveView("approvals")}
           >
-            <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
+              onClick={() => setActiveView("approvals")}
+            >
               Approvals
             </Typography>
           </Box>
@@ -526,7 +565,9 @@ const SalesInvoiceParcelsTab = ({
               <Button
                 variant="contained"
                 color="primary"
-                onClick={error.includes("log in") ? handleLoginRedirect : loadData}
+                onClick={
+                  error.includes("log in") ? handleLoginRedirect : loadData
+                }
                 sx={{ mt: 2 }}
               >
                 {error.includes("log in") ? "Log In" : "Retry"}
@@ -688,9 +729,11 @@ const SalesInvoiceParcelsTab = ({
               )}
             </>
           )
-        ) : salesInvoiceId ? (
-          <ApprovalTab moduleType="salesinvoice" moduleId={salesInvoiceId} refreshTrigger={refreshApprovals} />
-        ) : null}
+        ) : (
+          salesInvoiceId && (
+            <ApprovalTab moduleType="salesInvoice" moduleId={salesInvoiceId} />
+          )
+        )}
       </Box>
 
       <Dialog

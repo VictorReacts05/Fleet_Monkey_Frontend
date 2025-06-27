@@ -298,7 +298,7 @@ const SalesQuotationList = () => {
     } catch (error) {
       const errorMessage = error.message || "Failed to create Sales Quotation";
       console.error("Error creating Sales Quotation:", errorMessage);
-      toast.error(errorMessage);
+      console.error(errorMessage);
       if (errorMessage.includes("User not logged in")) {
         navigate("/");
       }

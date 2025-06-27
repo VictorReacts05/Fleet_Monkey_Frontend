@@ -41,7 +41,7 @@ const SupplierQuotationList = () => {
     // { field: "Series", headerName: "Series", flex: 1 },
     {
       field: "PurchaseRFQID",
-      headerName: "Purchase RFQ ID",
+      headerName: "Quotation Request ID",
       flex: 1,
       valueGetter: (params) => params.row.SupplierName || "-",
     },

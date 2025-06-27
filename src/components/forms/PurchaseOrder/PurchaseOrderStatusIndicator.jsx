@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import {
   fetchPurchaseOrderApprovalStatus,
   approvePurchaseOrder,
+  fetchPurchaseOrder, // Import fetchPurchaseOrder
 } from "./PurchaseOrderAPI";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 
@@ -91,6 +92,7 @@ const PurchaseOrderStatusIndicator = ({
         `Updating approval status to: ${newStatus} for PurchaseOrderId: ${purchaseOrderId}`
       );
 
+      // Approve or disapprove the purchase order
       const response = await approvePurchaseOrder(
         purchaseOrderId,
         isApproved,
@@ -105,6 +107,11 @@ const PurchaseOrderStatusIndicator = ({
         );
       }
 
+      // Fetch the updated purchase order data
+      const updatedPO = await fetchPurchaseOrder(purchaseOrderId, user);
+      console.log("Fetched updated PO:", updatedPO);
+
+      // Update local approval status
       setUserApprovalStatus(newStatus);
 
       // Fetch updated PO status
@@ -117,8 +124,9 @@ const PurchaseOrderStatusIndicator = ({
       const poData = await poResponse.json();
       const overallStatus = poData.data?.Status || "Pending";
 
-      if (onStatusChange && overallStatus !== status) {
-        onStatusChange(overallStatus);
+      // Notify parent component of status change and updated PO data
+      if (onStatusChange && (overallStatus !== status || updatedPO)) {
+        onStatusChange(overallStatus, updatedPO); // Pass updated PO data
       }
 
       toast.success(
@@ -130,7 +138,7 @@ const PurchaseOrderStatusIndicator = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      console.log(
+      console.error(
         `Failed to update status: ${
           error.response?.data?.message || error.message
         }`
