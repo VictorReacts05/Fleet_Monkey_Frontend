@@ -102,6 +102,8 @@ const PurchaseInvoiceForm = ({
           CollectionAddress: invoice.CollectionAddressTitle || "-",
           DestinationAddressID: invoice.DestinationAddressID || "-",
           DestinationAddress: invoice.DestinationAddressTitle || "-",
+          DestinationWarehouseAddressID: invoice.DestinationWarehouseAddressID || "-", // Added     
+          OriginWarehouseAddressID: invoice.OriginWarehouseAddressID || "-", // Added
           BillingAddressID: invoice.BillingAddressID || "-",
           BillingAddress: invoice.BillingAddressTitle || "-",
           ShippingPriorityID: invoice.ShippingPriorityID || "-",
@@ -117,6 +119,47 @@ const PurchaseInvoiceForm = ({
           TaxAmount: parseFloat(invoice.TaxesAndOtherCharges) || 0,
           Total: parseFloat(invoice.Total) || 0,
         };
+
+        // Fetch Destination Warehouse
+        if (invoice.DestinationWarehouseAddressID) {
+          try {
+            const { headers } = getAuthHeader();
+            const destinationWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${invoice.DestinationWarehouseAddressID}`,
+              { headers }
+            );
+            if (destinationWarehouseResponse.data?.data) {
+              const warehouseData = destinationWarehouseResponse.data.data;
+              formData.DestinationWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Destination Warehouse:", error);
+            formData.DestinationWarehouse = "-";
+          }
+        }
+
+        // Fetch Origin Warehouse
+        if (invoice.OriginWarehouseAddressID) {
+          try {
+            const { headers } = getAuthHeader();
+            const originWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${invoice.OriginWarehouseAddressID}`,
+              { headers }
+            );
+            if (originWarehouseResponse.data?.data) {
+              const warehouseData = originWarehouseResponse.data.data;
+              formData.OriginWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Origin Warehouse:", error);
+            formData.OriginWarehouse = "-";
+          }
+        }
+
         console.log("Form Data:", {
           CurrencyID: formData.CurrencyID,
           CurrencyName: formData.CurrencyName,
@@ -444,6 +487,18 @@ const PurchaseInvoiceForm = ({
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Origin Warehouse"
+            value={formData.OriginWarehouse}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Warehouse"
+            value={formData.DestinationWarehouse}
           />
         </Grid>
         <Grid item xs={12} md={4} sx={{ width: "24%" }}>

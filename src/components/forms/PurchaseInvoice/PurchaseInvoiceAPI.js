@@ -122,7 +122,7 @@ export const fetchPurchaseInvoices = async (
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `${APIBASEURL}/pInvoice?pageNumber=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/purchase-Invoice?pageNumber=${page}&pageSize=${pageSize}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
@@ -169,10 +169,10 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching Purchase Invoice ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice/${purchaseInvoiceId}`
+      `Fetching Purchase Invoice ID ${purchaseInvoiceId} from: ${APIBASEURL}/purchase-Invoice/${purchaseInvoiceId}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/pInvoice/${purchaseInvoiceId}`,
+      `${APIBASEURL}/purchase-Invoice/${purchaseInvoiceId}`,
       {
         headers,
       }
