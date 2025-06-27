@@ -65,6 +65,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  // Set PostingDate to current date (June 27, 2025, 03:38 PM IST) on initialization
+  const currentDate = dayjs(); // Adjust timezone to IST
   const DEFAULT_COMPANY = { value: 48, label: "Dung Beetle Logistics" };
 
   const [formData, setFormData] = useState({
@@ -75,17 +77,17 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     SupplierID: "",
     ExternalRefNo: "",
     DeliveryDate: null,
-    PostingDate: null,
+    PostingDate: currentDate, // Autofill with current date and time
     RequiredByDate: null,
     DateReceived: null,
     ServiceTypeID: "",
     ServiceType: "",
-    OriginWarehouseAddressID: "", // New field
+    OriginWarehouseAddressID: "",
     CollectionAddressID: "",
     CollectionAddressTitle: "",
     DestinationAddressID: "",
     DestinationAddressTitle: "",
-    DestinationWarehouseAddressID: "", // New field
+    DestinationWarehouseAddressID: "",
     ShippingPriorityID: "",
     ShippingPriority: "",
     Terms: "",
@@ -106,7 +108,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [addresses, setAddresses] = useState([]); // Used for both warehouse and regular addresses
+  const [addresses, setAddresses] = useState([]);
   const [mailingPriorities, setMailingPriorities] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [errors, setErrors] = useState({});
@@ -118,7 +120,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   const [status, setStatus] = useState("");
   const [userStatus, setUserStatus] = useState("Pending");
   const [purchaseRFQExists, setPurchaseRFQExists] = useState(false);
-  const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Controls save button state
+  const [isSaveDisabled, setIsSaveDisabled] = useState(true);
   const [fieldDisabled, setFieldDisabled] = useState({
     Series: true,
     CompanyID: true,
@@ -126,14 +128,14 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     SupplierID: true,
     ExternalRefNo: true,
     DeliveryDate: true,
-    PostingDate: true,
+    PostingDate: true, // Disable PostingDate
     RequiredByDate: true,
     DateReceived: true,
     ServiceTypeID: false,
-    OriginWarehouseAddressID: true, // New field
+    OriginWarehouseAddressID: true,
     CollectionAddressID: true,
     DestinationAddressID: true,
-    DestinationWarehouseAddressID: true, // New field
+    DestinationWarehouseAddressID: true,
     ShippingPriorityID: true,
     Terms: true,
     CurrencyID: true,
@@ -141,9 +143,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     PackagingRequiredYN: true,
     FormCompletedYN: true,
   });
-  const [validationMessage, setValidationMessage] = useState(""); // For parcel validation
+  const [validationMessage, setValidationMessage] = useState("");
 
-  // Load dropdown data
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -161,18 +162,18 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           fetchCustomers().catch(() => []),
           fetchSuppliers().catch(() => []),
           fetchServiceTypes().catch(() => []),
-          fetchAddresses().catch(() => []), // Fetch all addresses for warehouses and other uses
+          fetchAddresses().catch(() => []),
           fetchMailingPriorities().catch(() => []),
           fetchCurrencies().catch(() => []),
         ]);
 
         setCompanies([{ value: "", label: "Select an option" }, ...companiesData.map((company) => ({ value: String(company.CompanyID), label: company.CompanyName || "-" }))]);
-        setCustomers([{ value: "", label: "Select an option" }, ...customersData.map((customer) => ({ value: String(customer.CustomerID), label: customer.CustomerName || "-"}))]);
-        setSuppliers([{ value: "", label: "Select an option" }, ...suppliersData.map((supplier) => ({ value: String(supplier.SupplierID), label: supplier.SupplierName|| "-" }))]);
+        setCustomers([{ value: "", label: "Select an option" }, ...customersData.map((customer) => ({ value: String(customer.CustomerID), label: customer.CustomerName || "-" }))]);
+        setSuppliers([{ value: "", label: "Select an option" }, ...suppliersData.map((supplier) => ({ value: String(supplier.SupplierID), label: supplier.SupplierName || "-" }))]);
         setServiceTypes([{ value: "", label: "Select an option" }, ...serviceTypesData.map((type) => ({ value: String(type.ServiceTypeID), label: type.ServiceType || type.ServiceTypeName || "-" }))]);
         setAddresses([{ value: "", label: "Select an option" }, ...addressesData.map((address) => ({ value: String(address.AddressID), label: `${address.AddressLine1 || "Unknown Address"}, ${address.City || "Unknown City"}`, title: address.AddressTitle || address.Title || "" }))]);
         setMailingPriorities([{ value: "", label: "Select an option" }, ...prioritiesData.map((priority) => ({ value: String(priority.MailingPriorityID), label: priority.PriorityName || priority.MailingPriorityName || "-" }))]);
-        setCurrencies([{ value: "", label: "Select an option" }, ...currenciesData.map((currency) => ({ value: String(currency.CurrencyID), label: currency.CurrencyName || "-"}))]);
+        setCurrencies([{ value: "", label: "Select an option" }, ...currenciesData.map((currency) => ({ value: String(currency.CurrencyID), label: currency.CurrencyName || "-" }))]);
 
         setDropdownsLoaded(true);
       } catch (error) {
@@ -185,7 +186,6 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     loadDropdownData();
   }, []);
 
-  // Load SalesRFQ data
   const loadSalesRFQ = useCallback(async () => {
     if (!salesRFQId) return;
 
@@ -215,7 +215,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
           : "-",
         ExternalRefNo: displayValue(data.ExternalRefNo),
         DeliveryDate: data.DeliveryDate ? dayjs(data.DeliveryDate) : null,
-        PostingDate: data.PostingDate ? dayjs(data.PostingDate) : null,
+        PostingDate: data.PostingDate ? dayjs(data.PostingDate) : currentDate, // Use current date if no data
         RequiredByDate: data.RequiredByDate ? dayjs(data.RequiredByDate) : null,
         DateReceived: data.DateReceived ? dayjs(data.DateReceived) : null,
         ServiceTypeID: serviceTypes.find(
@@ -287,8 +287,8 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       };
 
       setFormData(formattedData);
-      setParcels(data.parcels || []); // Load parcels if available from API
-      setIsSaveDisabled((data.parcels || []).length === 0); // Set initial save button state
+      setParcels(data.parcels || []);
+      setIsSaveDisabled((data.parcels || []).length === 0);
       console.log("Formatted formData:", formattedData);
     } catch (error) {
       console.error("Failed to load SalesRFQ:", error);
@@ -302,15 +302,15 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
     mailingPriorities,
     currencies,
     DEFAULT_COMPANY.value,
+    currentDate,
   ]);
 
   useEffect(() => {
     if (salesRFQId && dropdownsLoaded) {
       loadSalesRFQ();
     }
-  }, [salesRFQId, dropdownsLoaded, loadSalesRFQ]);
+  }, [salesRFQId, dropdownsLoaded]);
 
-  // Load SalesRFQ status
   const loadSalesRFQStatus = useCallback(async () => {
     if (!salesRFQId) return;
 
@@ -362,84 +362,92 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
       newErrors.CurrencyID = "Currency is required";
     }
 
+    // Validate DeliveryDate is greater than PostingDate
+    if (formData.DeliveryDate && formData.PostingDate) {
+      if (formData.DeliveryDate.isBefore(formData.PostingDate, "day")) {
+        newErrors.DeliveryDate = "Delivery Date must be after Posting Date";
+      }
+     if(formData.DeliveryDate.isAfter(formData.RequiredByDate, "day")) {
+        newErrors.DeliveryDate = "Delivery Date must be Before Required By Date";
+      }
+    }
+   
+    // Validate RequiredByDate is greater than PostingDate
+    if (formData.RequiredByDate && formData.PostingDate) {
+      if (formData.RequiredByDate.isBefore(formData.PostingDate, "day")) {
+        newErrors.RequiredByDate = "Required By Date must be after Posting Date";
+      }
+    }
+
     console.log("Validation errors:", newErrors); // Debug log
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async () => {
-  // Step 1: Validate form fields
-  const isFormValid = validateForm();
-  console.log("Form validation result - Is valid:", isFormValid, "Errors:", errors);
+  const handleSubmit = async () => {
+    const isFormValid = validateForm();
+    console.log("Form validation result - Is valid:", isFormValid, "Errors:", errors);
 
-  // Step 2: Validate parcels
-  let parcelValidationMessage = "";
-  if (parcels.length === 0) {
-    parcelValidationMessage = "No parcels added yet. Click 'Add Parcel' to add a new parcel.";
-    console.log("Parcel validation failed - Message:", parcelValidationMessage);
-  } else {
-    console.log("Parcel validation passed - Parcels count:", parcels.length);
-  }
-
-  // Step 3: Combine and display all validation errors
-  if (!isFormValid || parcelValidationMessage) {
-    console.log("Validation failed - Form valid:", isFormValid, "Parcel message:", parcelValidationMessage);
-    if (!isFormValid) {
-      console.log("Form errors detected:", errors);
-    }
-    setValidationMessage((prev) => {
-      const newMessage = parcelValidationMessage || prev;
-      console.log("Setting validation message:", newMessage);
-      return newMessage;
-    });
-    setIsSaveDisabled(true);
-    return;
-  }
-
-  // Clear validation message if all validations pass
-  console.log("All validations passed - Proceeding to submit");
-  setValidationMessage("");
-  setIsSaveDisabled(false);
-
-  try {
-    setLoading(true);
-    const apiData = {
-      ...formData,
-      Series: formData.Series === "-" ? null : formData.Series,
-      ExternalRefNo: formData.ExternalRefNo === "-" ? null : formData.ExternalRefNo,
-      Terms: formData.Terms === "-" ? null : formData.Terms,
-      CreatedByID: formData.CreatedByID === "-" ? null : formData.CreatedByID,
-      DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
-      RowVersionColumn: formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
-      DeliveryDate: formData.DeliveryDate ? formData.DeliveryDate.toISOString() : null,
-      PostingDate: formData.PostingDate ? formData.PostingDate.toISOString() : null,
-      RequiredByDate: formData.RequiredByDate ? formData.RequiredByDate.toISOString() : null,
-      DateReceived: formData.DateReceived ? formData.DateReceived.toISOString() : null,
-      CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
-      PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
-      FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
-      parcels: parcels,
-    };
-
-    console.log("Submitting with parcels data:", apiData.parcels);
-
-    if (salesRFQId) {
-      await updateSalesRFQ(salesRFQId, apiData);
-      toast.success("SalesRFQ updated successfully");
+    let parcelValidationMessage = "";
+    if (parcels.length === 0) {
+      parcelValidationMessage = "No parcels added yet. Click 'Add Parcel' to add a new parcel.";
+      console.log("Parcel validation failed - Message:", parcelValidationMessage);
     } else {
-      const result = await createSalesRFQ(apiData);
-      toast.success("SalesRFQ created successfully");
+      console.log("Parcel validation passed - Parcels count:", parcels.length);
     }
 
-    if (onSave) onSave();
-    if (onClose) onClose();
-  } catch (error) {
-    console.error("Error in handleSubmit:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!isFormValid || parcelValidationMessage) {
+      console.log("Validation failed - Form valid:", isFormValid, "Parcel message:", parcelValidationMessage);
+      if (!isFormValid) {
+        console.log("Form errors detected:", errors);
+      }
+      setValidationMessage(parcelValidationMessage || "");
+      setIsSaveDisabled(true);
+      return;
+    }
 
+    console.log("All validations passed - Proceeding to submit");
+    setValidationMessage("");
+    setIsSaveDisabled(false);
+
+    try {
+      setLoading(true);
+      const apiData = {
+        ...formData,
+        Series: formData.Series === "-" ? null : formData.Series,
+        ExternalRefNo: formData.ExternalRefNo === "-" ? null : formData.ExternalRefNo,
+        Terms: formData.Terms === "-" ? null : formData.Terms,
+        CreatedByID: formData.CreatedByID === "-" ? null : formData.CreatedByID,
+        DeletedByID: formData.DeletedByID === "-" ? null : formData.DeletedByID,
+        RowVersionColumn: formData.RowVersionColumn === "-" ? null : formData.RowVersionColumn,
+        DeliveryDate: formData.DeliveryDate ? formData.DeliveryDate.toISOString() : null,
+        PostingDate: formData.PostingDate ? formData.PostingDate.toISOString() : null,
+        RequiredByDate: formData.RequiredByDate ? formData.RequiredByDate.toISOString() : null,
+        DateReceived: formData.DateReceived ? formData.DateReceived.toISOString() : null,
+        CollectFromSupplierYN: formData.CollectFromSupplierYN ? 1 : 0,
+        PackagingRequiredYN: formData.PackagingRequiredYN ? 1 : 0,
+        FormCompletedYN: formData.FormCompletedYN ? 1 : 0,
+        parcels: parcels,
+      };
+
+      console.log("Submitting with parcels data:", apiData.parcels);
+
+      if (salesRFQId) {
+        await updateSalesRFQ(salesRFQId, apiData);
+        toast.success("SalesRFQ updated successfully");
+      } else {
+        const result = await createSalesRFQ(apiData);
+        toast.success("SalesRFQ created successfully");
+      }
+
+      if (onSave) onSave();
+      if (onClose) onClose();
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -456,11 +464,7 @@ const handleSubmit = async () => {
       const serviceTypeLabel =
         serviceTypes.find((st) => st.value === value)?.label || "";
 
-      if (
-        ["International Procurement", "Local Procurement"].includes(
-          serviceTypeLabel
-        )
-      ) {
+      if (["International Procurement", "Local Procurement"].includes(serviceTypeLabel)) {
         setFieldDisabled({
           ...fieldDisabled,
           Series: !isEditing,
@@ -469,14 +473,14 @@ const handleSubmit = async () => {
           SupplierID: true,
           ExternalRefNo: !isEditing,
           DeliveryDate: !isEditing,
-          PostingDate: !isEditing,
+          PostingDate: true, // Keep PostingDate disabled
           RequiredByDate: !isEditing,
           DateReceived: !isEditing,
           ServiceTypeID: false,
-          OriginWarehouseAddressID: !isEditing, // New field
+          OriginWarehouseAddressID: !isEditing,
           CollectionAddressID: !isEditing,
           DestinationAddressID: !isEditing,
-          DestinationWarehouseAddressID: !isEditing, // New field
+          DestinationWarehouseAddressID: !isEditing,
           ShippingPriorityID: !isEditing,
           Terms: !isEditing,
           CurrencyID: !isEditing,
@@ -493,14 +497,14 @@ const handleSubmit = async () => {
           SupplierID: !isEditing,
           ExternalRefNo: !isEditing,
           DeliveryDate: !isEditing,
-          PostingDate: !isEditing,
+          PostingDate: true, // Keep PostingDate disabled
           RequiredByDate: !isEditing,
           DateReceived: !isEditing,
           ServiceTypeID: false,
-          OriginWarehouseAddressID: !isEditing, // New field
+          OriginWarehouseAddressID: !isEditing,
           CollectionAddressID: !isEditing,
           DestinationAddressID: !isEditing,
-          DestinationWarehouseAddressID: !isEditing, // New field
+          DestinationWarehouseAddressID: !isEditing,
           ShippingPriorityID: !isEditing,
           Terms: !isEditing,
           CurrencyID: !isEditing,
@@ -517,14 +521,14 @@ const handleSubmit = async () => {
           SupplierID: true,
           ExternalRefNo: true,
           DeliveryDate: true,
-          PostingDate: true,
+          PostingDate: true, // Keep PostingDate disabled
           RequiredByDate: true,
           DateReceived: true,
           ServiceTypeID: false,
-          OriginWarehouseAddressID: true, // New field
+          OriginWarehouseAddressID: true,
           CollectionAddressID: true,
           DestinationAddressID: true,
-          DestinationWarehouseAddressID: true, // New field
+          DestinationWarehouseAddressID: true,
           ShippingPriorityID: true,
           Terms: true,
           CurrencyID: true,
@@ -553,15 +557,14 @@ const handleSubmit = async () => {
 
   const handleParcelsChange = (newParcels) => {
     setParcels(newParcels);
-    setIsSaveDisabled(newParcels.length === 0); // Update save button state
+    setIsSaveDisabled(newParcels.length === 0);
     if (newParcels.length > 0) {
-      setValidationMessage(""); // Clear message if parcels are added
+      setValidationMessage("");
     }
   };
 
-
   const handleRefreshApprovals = () => {
-    fetchSalesRFQStatus(); // Re-fetch data, including approvalStatus
+    fetchSalesRFQStatus();
   };
 
   const checkPurchaseRFQExists = useCallback(async () => {
@@ -707,18 +710,17 @@ const handleSubmit = async () => {
     salesRFQId,
   });
 
-  // Custom styling for the save button based on isSaveDisabled
   const saveButtonSx = {
     ...(isSaveDisabled && {
-      backgroundColor: "#757575", // Dark gray when disabled
+      backgroundColor: "#757575",
       "&:hover": {
-        backgroundColor: "#757575", // No hover effect when disabled
+        backgroundColor: "#757575",
       },
     }),
     ...(!isSaveDisabled && {
-      backgroundColor: "#1976d2", // Light blue when enabled
+      backgroundColor: "#1976d2",
       "&:hover": {
-        backgroundColor: "#1565c0", // Darker shade on hover when enabled
+        backgroundColor: "#1565c0",
       },
     }),
   };
@@ -804,7 +806,7 @@ const handleSubmit = async () => {
           </Box>
         }
         onCancel={onClose}
-        onSubmit={handleSubmit }
+        onSubmit={handleSubmit}
         loading={loading}
         readOnly={!isEditing}
         onEdit={salesRFQId && !isEditing ? toggleEdit : null}
@@ -934,18 +936,14 @@ const handleSubmit = async () => {
                 label="Delivery Date"
                 value={formData.DeliveryDate}
                 onChange={(date) => handleDateChange("DeliveryDate", date)}
-                error={!!errors.DeliveryDate}
-                helperText={errors.DeliveryDate}
+                error={errors.DeliveryDate}
+                helperText={errors.DeliveryDate || null}
                 disabled={fieldDisabled.DeliveryDate}
               />
             ) : (
               <ReadOnlyField
                 label="Delivery Date"
-                value={
-                  formData.DeliveryDate
-                    ? formData.DeliveryDate.format("MM/DD/YYYY")
-                    : "-"
-                }
+                value={formData.DeliveryDate ? formData.DeliveryDate.format("MM/DD/YYYY") : "-"}
               />
             )}
           </Grid>
@@ -956,18 +954,14 @@ const handleSubmit = async () => {
                 label="Posting Date"
                 value={formData.PostingDate}
                 onChange={(date) => handleDateChange("PostingDate", date)}
-                error={!!errors.PostingDate}
-                helperText={errors.PostingDate}
-                disabled={fieldDisabled.PostingDate}
+                error={errors.PostingDate}
+                helperText={errors.PostingDate || null}
+                disabled={fieldDisabled.PostingDate} // Disabled to prevent editing
               />
             ) : (
               <ReadOnlyField
                 label="Posting Date"
-                value={
-                  formData.PostingDate
-                    ? formData.PostingDate.format("MM/DD/YYYY")
-                    : "-"
-                }
+                value={formData.PostingDate ? formData.PostingDate.format("MM/DD/YYYY HH:mm") : "-"} // Show time as well
               />
             )}
           </Grid>
@@ -978,18 +972,14 @@ const handleSubmit = async () => {
                 label="Required By Date"
                 value={formData.RequiredByDate}
                 onChange={(date) => handleDateChange("RequiredByDate", date)}
-                error={!!errors.RequiredByDate}
-                helperText={errors.RequiredByDate}
+                error={errors.RequiredByDate}
+                helperText={errors.RequiredByDate || null}
                 disabled={fieldDisabled.RequiredByDate}
               />
             ) : (
               <ReadOnlyField
                 label="Required By Date"
-                value={
-                  formData.RequiredByDate
-                    ? formData.RequiredByDate.format("MM/DD/YYYY")
-                    : "-"
-                }
+                value={formData.RequiredByDate ? formData.RequiredByDate.format("MM/DD/YYYY") : "-"}
               />
             )}
           </Grid>
@@ -1000,18 +990,14 @@ const handleSubmit = async () => {
                 label="Date Received"
                 value={formData.DateReceived}
                 onChange={(date) => handleDateChange("DateReceived", date)}
-                error={!!errors.DateReceived}
-                helperText={errors.DateReceived}
+                error={errors.DateReceived}
+                helperText={errors.DateReceived || null}
                 disabled={fieldDisabled.DateReceived}
               />
             ) : (
               <ReadOnlyField
                 label="Date Received"
-                value={
-                  formData.DateReceived
-                    ? formData.DateReceived.format("MM/DD/YYYY")
-                    : "-"
-                }
+                value={formData.DateReceived ? formData.DateReceived.format("MM/DD/YYYY") : "-"}
               />
             )}
           </Grid>
@@ -1030,15 +1016,10 @@ const handleSubmit = async () => {
             ) : (
               <ReadOnlyField
                 label="Collection Address"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.CollectionAddressID
-                  )?.label || "-"
-                }
+                value={addresses.find((a) => a.value === formData.CollectionAddressID)?.label || "-"}
               />
             )}
           </Grid>
-        
           <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
@@ -1054,11 +1035,7 @@ const handleSubmit = async () => {
             ) : (
               <ReadOnlyField
                 label="Destination Address"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.DestinationAddressID
-                  )?.label || "-"
-                }
+                value={addresses.find((a) => a.value === formData.DestinationAddressID)?.label || "-"}
               />
             )}
           </Grid>
@@ -1077,15 +1054,11 @@ const handleSubmit = async () => {
             ) : (
               <ReadOnlyField
                 label="Destination Warehouse"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.DestinationWarehouseAddressID
-                  )?.label || "-"
-                }
+                value={addresses.find((a) => a.value === formData.DestinationWarehouseAddressID)?.label || "-"}
               />
             )}
           </Grid>
-            <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
             {isEditing ? (
               <FormSelect
                 name="OriginWarehouseAddressID"
@@ -1100,11 +1073,7 @@ const handleSubmit = async () => {
             ) : (
               <ReadOnlyField
                 label="Origin Warehouse"
-                value={
-                  addresses.find(
-                    (a) => a.value === formData.OriginWarehouseAddressID
-                  )?.label || "-"
-                }
+                value={addresses.find((a) => a.value === formData.OriginWarehouseAddressID)?.label || "-"}
               />
             )}
           </Grid>
@@ -1159,8 +1128,7 @@ const handleSubmit = async () => {
                 label="Currency"
                 value={
                   formData.CurrencyID
-                    ? currencies.find((c) => c.value === formData.CurrencyID)
-                        ?.label || "-"
+                    ? currencies.find((c) => c.value === formData.CurrencyID)?.label || "-"
                     : formData.CurrencyName || "-"
                 }
               />
@@ -1244,9 +1212,7 @@ const handleSubmit = async () => {
         )}
         <Dialog
           open={purchaseRFQDialogOpen}
-          onClose={() =>
-            !creatingPurchaseRFQ && setPurchaseRFQDialogOpen(false)
-          }
+          onClose={() => !creatingPurchaseRFQ && setPurchaseRFQDialogOpen(false)}
         >
           <DialogTitle>Create Purchase RFQ</DialogTitle>
           <DialogContent>

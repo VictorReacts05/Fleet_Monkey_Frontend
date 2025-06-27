@@ -6,6 +6,7 @@ import {
   CircularProgress,
   useTheme,
   alpha,
+  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../common/DataTable";
@@ -147,7 +148,7 @@ const ParcelTab = ({
 
       try {
         setLoadingExistingParcels(true);
-        // const response = await axios.get(`${APIBASEURL}/sales-quotation/${salesQuotationId}/parcels`);
+        const response = await axios.get(`${APIBASEURL}/sales-Quotation-Parcel/?salesQuotationId=${salesQuotationId}`);
         const parcelData = response.data?.data || response.data || [];
         const formattedParcels = parcelData.map((parcel, index) => ({
           id: parcel.ParcelID || `parcel-${index}`,
@@ -305,8 +306,20 @@ const ParcelTab = ({
             value={params.row.salesRate || ""}
             onChange={(e) => onSalesRateChange(params.row.id, e.target.value)}
             size="small"
-            inputProps={{ min: 0, step: 0.01 }}
-            sx={{ width: "100px" }}
+            sx={{
+              width: "100px",
+              textAlign: "center",
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
+              "& input[type=number]": {
+                "-moz-appearance": "textfield",
+              },
+            }}
+            inputProps={{ min: 0, step: "0.01" }}
+            placeholder="0.00"
           />
         ) : Number(params.row.salesRate).toFixed(6),
     },
@@ -369,11 +382,7 @@ const ParcelTab = ({
             </Box>
           ) : activeView === "items" ? (
             <>
-              {!readOnly && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddParcel} sx={{ mb: 2 }}>
-                  Add Parcel
-                </Button>
-              )}
+              
               {parcels.length === 0 && parcelForms.length === 0 && (
                 <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
                   <Typography variant="body1">No parcels added yet. {!readOnly && "Click 'Add Parcel' to add a new parcel."}</Typography>
@@ -393,10 +402,24 @@ const ParcelTab = ({
                       <FormInput name="quantity" label="Quantity" value={form.quantity} onChange={(e) => handleChange(e, form.id)} error={!!errors[form.id]?.quantity} helperText={errors[form.id]?.quantity} type="number" />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput name="rate" label="Supplier Rate" value={form.rate} onChange={(e) => handleChange(e, form.id)} error={!!errors[form.id]?.rate} helperText={errors[form.id]?.rate} type="number" />
+                      <FormInput 
+                      name="rate" 
+                      label="Supplier Rate" value={form.rate} 
+                      onChange={(e) => handleChange(e, form.id)} 
+                      error={!!errors[form.id]?.rate} 
+                      helperText={errors[form.id]?.rate}
+                       type="number" />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput name="salesRate" label="Sales Rate" value={form.salesRate} onChange={(e) => handleChange(e, form.id)} error={!!errors[form.id]?.salesRate} helperText={errors[form.id]?.salesRate} type="number" />
+                      <FormInput 
+                      name="salesRate" 
+                      label="Sales Rate" 
+                      value={form.salesRate} 
+                      onChange={(e) => handleChange(e, form.id)} 
+                      error={!!errors[form.id]?.salesRate} 
+                      helperText={errors[form.id]?.salesRate}
+                       type="number"
+                      />
                     </Box>
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
@@ -417,7 +440,7 @@ const ParcelTab = ({
                   checkboxSelection={false}
                   disableSelectionOnClick
                   autoHeight
-                  hideActions={readOnly}
+                  hideActions={true}
                   onEdit={!readOnly ? handleEditParcel : undefined}
                   onDelete={!readOnly ? handleDeleteParcel : undefined}
                   totalRows={parcels.length}
