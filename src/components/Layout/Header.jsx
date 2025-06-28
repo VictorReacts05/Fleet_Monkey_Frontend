@@ -356,13 +356,13 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
                   {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Notifications">
+              {/* <Tooltip title="Notifications">
                 <IconButton onClick={handleNotificationMenuOpen} sx={{ ml: 1 }}>
                   <Badge badgeContent={3} color="error">
                     <NotificationsIcon />
                   </Badge>
                 </IconButton>
-              </Tooltip>
+              </Tooltip> */}
               <Tooltip title="Account">
                 <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 1 }}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>

@@ -206,7 +206,7 @@ const CurrencyList = ({ userId }) => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete currency ${itemToDelete?.currencyName}?`}
+        message={<>Are you sure you want to delete currency <strong>{itemToDelete?.currencyName}</strong> ? </>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

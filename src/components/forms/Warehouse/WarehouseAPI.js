@@ -52,7 +52,7 @@ export const fetchWarehouses = async (
 export const fetchAddresses = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/addresses`, { headers });
+    const response = await axios.get(`${APIBASEURL}/addresses?pageSize=500`, { headers });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

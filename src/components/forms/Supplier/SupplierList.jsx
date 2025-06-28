@@ -195,7 +195,7 @@ useEffect(() => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete supplier ${itemToDelete?.supplierName}?`}
+        message={<>Are you sure you want to delete supplier <strong>{itemToDelete?.supplierName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

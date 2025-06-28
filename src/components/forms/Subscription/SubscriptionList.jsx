@@ -170,7 +170,7 @@ const SubscriptionList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete subscription plan ${itemToDelete?.planName}?`}
+        message={<>Are you sure you want to delete subscription plan <strong>{itemToDelete?.planName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

@@ -20,6 +20,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import moment from "moment"; // Import moment.js
 
 const DataTable = ({
   columns,
@@ -92,7 +93,19 @@ const DataTable = ({
     };
   };
 
+  const isNumericField = (column, value) => {
+    // Check if the value is a number (excluding strings that represent numbers like IDs)
+    return (
+      value !== null &&
+      value !== undefined &&
+      !isNaN(value) &&
+      typeof value !== "string" &&
+      value !== "-" // Exclude fallback "-"
+    );
+  };
+
   const renderCellContent = (row, column, rowIndex) => {
+    console.log("renderCellContent called for column:", column.field || column.id, "value:", row[column.field || column.id]); // Debug log
     // If the column has a renderCell function, use it
     if (column.renderCell) {
       return column.renderCell({
@@ -134,7 +147,12 @@ const DataTable = ({
       );
     }
 
-    // Handle date fields
+    // Handle date fields with valueFormatter if available
+    if (fieldName.toLowerCase().includes("date") && column.valueFormatter) {
+      return column.valueFormatter({ value: row[fieldName], row, field: fieldName }) || value || "—";
+    }
+
+    // Handle date fields without valueFormatter (fallback)
     if (fieldName.toLowerCase().includes("date") && value) {
       return value;
     }
@@ -148,7 +166,10 @@ const DataTable = ({
       .map((_, index) => (
         <TableRow key={`skeleton-${index}`}>
           {allColumns.map((column, colIndex) => (
-            <TableCell key={`skeleton-cell-${colIndex}`} align="center">
+            <TableCell
+              key={`skeleton-cell-${colIndex}`}
+              align={isNumericField(column, null) ? "right" : "left"}
+            >
               <Skeleton animation="wave" height={24} />
             </TableCell>
           ))}
@@ -194,7 +215,7 @@ const DataTable = ({
     >
       <TableContainer sx={{ maxHeight: "calc(100vh - 250px)" }}>
         <Table stickyHeader aria-label="data table">
-          <TableHead>
+          <TableHead >
             <TableRow>
               {allColumns.map((column, index) => (
                 <TableCell
@@ -207,9 +228,12 @@ const DataTable = ({
                     zIndex: 10,
                     position: "sticky",
                     top: 0,
-                    textAlign: "center",
+                    textAlign: isNumericField(column, null) ? "left" : "left",
+                    "&:first-child": {
+                paddingLeft: "64px", // Adjust the value as needed
+              },
                   }}
-                  align="center"
+                  align={isNumericField(column, null) ? "left" : "left"}
                 >
                   {column.headerName || column.label}
                 </TableCell>
@@ -233,118 +257,114 @@ const DataTable = ({
               )}
             </TableRow>
           </TableHead>
-          <TableBody>
-            {loading ? (
-              renderLoadingSkeleton()
-            ) : rows.length > 0 ? (
-              rows.map((row, rowIndex) => (
-                <TableRow
-                  hover
-                  key={row.id || `row-${rowIndex}`}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                    },
-                    textAlign: "center",
-                  }}
-                >
-                  {allColumns.map((column, colIndex) => (
-                    <TableCell
-                      key={`cell-${rowIndex}-${colIndex}`}
-                      sx={{
-                        textAlign: "center",
-                      }}
-                      align="center"
-                    >
-                      {renderCellContent(row, column, rowIndex)}
-                    </TableCell>
-                  ))}
-                  {!hideActions && (
-                    <TableCell sx={{ textAlign: "center" }} align="center">
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 1,
-                          justifyContent: "center",
-                          width: "100%",
-                        }}
-                      >
-                        {onView && (
-                          <Tooltip title="View">
-                            <IconButton
-                              size="small"
-                              onClick={() => onView(row.id)}
-                              sx={{
-                                color: theme.palette.info.main,
-                                "&:hover": {
-                                  backgroundColor: alpha(
-                                    theme.palette.info.main,
-                                    0.1
-                                  ),
-                                },
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onEdit && (
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={() => onEdit(row.id)}
-                              sx={{
-                                color: theme.palette.primary.main,
-                                "&:hover": {
-                                  backgroundColor: alpha(
-                                    theme.palette.primary.main,
-                                    0.1
-                                  ),
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onDelete && (
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={() => onDelete(row.id)}
-                              sx={{
-                                color: theme.palette.error.main,
-                                "&:hover": {
-                                  backgroundColor: alpha(
-                                    theme.palette.error.main,
-                                    0.1
-                                  ),
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={allColumns.length + (hideActions ? 0 : 1)}
-                  align="center"
-                  sx={{ py: 8, textAlign: "center" }}
-                >
-                  <Typography variant="body1" color="text.secondary">
-                    {emptyMessage}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+         <TableBody>
+  {loading ? (
+    renderLoadingSkeleton()
+  ) : rows.length > 0 ? (
+    rows.map((row, rowIndex) => (
+      <TableRow
+        hover
+        key={row.id || `row-${rowIndex}`}
+        sx={{
+          "&:hover": {
+            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+          },
+        }}
+      >
+        {allColumns.map((column, colIndex) => (
+          <TableCell
+            key={`cell-${rowIndex}-${colIndex}`}
+            sx={{
+              textAlign: isNumericField(column, row[column.field || column.id])
+                ? "left"
+                : "left",
+              // Add padding-left to the first child TableCell
+              "&:first-child": {
+                paddingLeft: "64px", // Adjust the value as needed
+              },
+            }}
+            align={isNumericField(column, row[column.field || column.id]) ? "right" : "left"}
+          >
+            {renderCellContent(row, column, rowIndex)}
+          </TableCell>
+        ))}
+        {!hideActions && (
+          <TableCell sx={{ textAlign: "center" }} align="center">
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              {onView && (
+                <Tooltip title="View">
+                  <IconButton
+                    size="small"
+                    onClick={() => onView(row.id)}
+                    sx={{
+                      color: theme.palette.info.main,
+                      "&:hover": {
+                        backgroundColor: alpha(theme.palette.info.main, 0.1),
+                      },
+                    }}
+                  >
+                    <VisibilityIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onEdit && (
+                <Tooltip title="Edit">
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit(row.id)}
+                    sx={{
+                      color: theme.palette.primary.main,
+                      "&:hover": {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                      },
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onDelete && (
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    onClick={() => onDelete(row.id)}
+                    sx={{
+                      color: theme.palette.error.main,
+                      "&:hover": {
+                        backgroundColor: alpha(theme.palette.error.main, 0.1),
+                      },
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </TableCell>
+        )}
+      </TableRow>
+    ))
+  ) : (
+    <TableRow>
+      <TableCell
+        colSpan={allColumns.length + (hideActions ? 0 : 1)}
+        align="center"
+        sx={{ py: 8 }}
+      >
+        <Typography variant="body1" color="text.secondary">
+          {emptyMessage}
+        </Typography>
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
         </Table>
       </TableContainer>
 

@@ -389,7 +389,7 @@ const SalesQuotationForm = ({
       console.log("Calling sendSalesQuotation with ID:", salesQuotationId);
       const response = await sendSalesQuotation(salesQuotationId);
       console.log("sendSalesQuotation response:", response);
-      toast.success(response.message || "Sales quotation sent successfully");
+      toast.success("Sales quotation sent successfully");
     } catch (error) {
       const errorMessage =
         error.message || "Failed to send sales quotation email";
@@ -486,6 +486,7 @@ const SalesQuotationForm = ({
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
+              gap:2
             }}
           >
             <Typography variant="h6">
@@ -544,7 +545,7 @@ const SalesQuotationForm = ({
                   startIcon={
                     sending ? <CircularProgress size={24} /> : <EmailIcon />
                   }
-                  sx={{ ml: 2, pointerEvents: "auto" }}
+                  sx={{  pointerEvents: "auto" }}
                 >
                   Send
                 </Button>
