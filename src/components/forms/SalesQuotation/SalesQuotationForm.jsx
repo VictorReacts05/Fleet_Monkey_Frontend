@@ -117,7 +117,7 @@ const SalesQuotationForm = ({
   gap: 2, // optional spacing between items
   justifyContent: {
     xs:"center",
-    sm:"center",
+    sm:"start",
     md:"start"
   },
 });
@@ -453,7 +453,7 @@ const SalesQuotationForm = ({
       <FormPage
         title={
           <Box
-            sx={{
+            sx={{alignItems: "center",
               ...responsiveDirection()
             }}
           >
@@ -514,7 +514,7 @@ const SalesQuotationForm = ({
                   startIcon={
                     sending ? <CircularProgress size={24} /> : <EmailIcon />
                   }
-                  sx={{ ml: 2, pointerEvents: "auto" }}
+                  sx={{ width:{xs:"12rem",sm:"97px"}, pointerEvents: "auto" }}
                 >
                   Send
                 </Button>

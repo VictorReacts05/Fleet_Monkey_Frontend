@@ -720,7 +720,7 @@ const SupplierQuotationForm = ({
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <FormPage
         title={
-          <Box sx={{ ...responsiveDirection(), textAlign:"center"}}>
+          <Box sx={{ ...responsiveDirection(), textAlign:"center",}}>
             <Typography variant="h6" component="span">
               {isEditing
                 ? "Edit Supplier Quotation"
@@ -733,9 +733,9 @@ const SupplierQuotationForm = ({
                 <Box
                   sx={{
                     width:"fit-content",
-                    justifyContent:"center",
                     display: "flex",
                     alignItems: "center",
+                    
                     background:
                       theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
@@ -743,7 +743,6 @@ const SupplierQuotationForm = ({
                     height: "37px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "all 0.3s ease-in-out",
-                    marginLeft: "16px",
                     marginBottom:"18px",
                     "&:hover": {
                       boxShadow: "0 6px 16px rgba(19, 16, 16, 0.2)",
@@ -754,21 +753,19 @@ const SupplierQuotationForm = ({
                   <Chip
                     label={
                       <Typography
-                        variant="body2"
-                        sx={{                       
-                          fontWeight: "700",
-                          color:
-                            theme.palette.mode === "light" ? "white" : "black",
-                          fontSize: "0.9rem",
-                          
-                        }}
+                       variant="body2"
+                      sx={{
+                        fontWeight: "700",
+                        fontSize: "0.9rem",
+                        color:
+                          theme.palette.mode === "light" ? "white" : "black",
+                      }}
                       >
                         Status:
                       </Typography>
                     }
                     sx={{
                       backgroundColor: "transparent",
-                      
                     }}
                   />
                   <StatusIndicator
@@ -793,7 +790,7 @@ const SupplierQuotationForm = ({
           <Alert
             severity="error"
             action={
-              <Box sx={{ display: "flex", gap: 1, }}>
+              <Box sx={{ display: "flex", gap: 1,}}>
                 <Button
                   color="inherit"
                   size="small"
