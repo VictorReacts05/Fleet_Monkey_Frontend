@@ -38,7 +38,7 @@ export const fetchFormRoleApprovers = async (
   searchTerm = ''
 ) => {
   try {
-    let url = `${APIBASEURL}/formRoleApproval?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/formRoleApprover?pageNumber=${pageNumber}&pageSize=${pageSize}`;
     if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
 
     const response = await axios.get(url, getAxiosConfig());

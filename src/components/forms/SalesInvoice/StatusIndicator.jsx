@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Chip,
   CircularProgress,
@@ -18,9 +18,13 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
   // Fetch user approval status when component mounts or salesInvoiceId changes
-  React.useEffect(() => {
+  useEffect(() => {
     const loadStatus = async () => {
-      if (!salesInvoiceId) return;
+      if (!salesInvoiceId) {
+        console.log("No salesInvoiceId provided, setting status to Pending");
+        setStatus("Pending");
+        return;
+      }
 
       setLoading(true);
       try {
@@ -29,7 +33,10 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
 
         if (!approverId) {
           console.error("No personId found in localStorage");
-          throw new Error("User not authenticated");
+          console.err("User not authenticated");
+          setStatus("Pending");
+          setLoading(false);
+          return;
         }
 
         console.log("Fetching user approval status", {
@@ -43,21 +50,32 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
         );
         console.log("Fetched approval record:", response.data);
 
-        const userStatus =
+        // Check if approval record exists and ApprovedYN is 1
+        if (
           response.data.success &&
           response.data.data &&
-          response.data.data.ApprovedYN === 1
-            ? "Approved"
-            : "Pending";
-        console.log("Fetched user status:", userStatus);
-        setStatus(userStatus);
+          Array.isArray(response.data.data) &&
+          response.data.data.length > 0 &&
+          response.data.data[0].ApprovedYN === 1
+        ) {
+          console.log(
+            "Approval record found with ApprovedYN=1, setting status to Approved"
+          );
+          setStatus("Approved");
+        } else {
+          console.log(
+            "No approval record found or not approved, setting status to Pending"
+          );
+          setStatus("Pending");
+        }
       } catch (error) {
         console.error("Failed to fetch user approval status:", error);
         if (error.response && error.response.status === 404) {
-          console.log("No approval record exists yet for this Sales Invoice");
+          console.log("No approval record exists for this Sales Invoice");
           setStatus("Pending");
         } else {
-          console.log("Unable to load approval status");
+          console.log("Error fetching approval status:", error.message);
+          console.error("Unable to load approval status");
           setStatus("Pending");
         }
       } finally {
@@ -71,6 +89,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
   const handleApprove = async () => {
     if (!salesInvoiceId || isNaN(parseInt(salesInvoiceId, 10))) {
       console.log("Invalid Sales Invoice ID");
+      console.error("Invalid Sales Invoice ID");
       setAnchorEl(null);
       return;
     }
@@ -83,6 +102,10 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
       const { headers } = getAuthHeader();
       const approveData = {
         SalesInvoiceID: parseInt(salesInvoiceId, 10),
+        ApproverID: parseInt(
+          JSON.parse(localStorage.getItem("user"))?.personId,
+          10
+        ),
       };
 
       const response = await axios.post(
@@ -90,7 +113,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
         approveData,
         { headers }
       );
-      console.log("Approval response:", response);
+      console.log("Approval response:", response.data);
 
       if (response.data.success) {
         toast.success("Approval recorded successfully");
@@ -101,7 +124,7 @@ const StatusIndicator = ({ salesInvoiceId, onStatusChange, readOnly }) => {
       }
     } catch (error) {
       console.error("Approval error:", error);
-      console.log(`Failed to approve: ${error.message}`);
+      console.error(`Failed to approve: ${error.message}`);
     } finally {
       setLoading(false);
       setAnchorEl(null);

@@ -26,6 +26,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     BillingCurrencyID: "",
     Website: "",
     CustomerNotes: "",
+    CustomerEmail: "",
   });
 
   useEffect(() => {
@@ -66,6 +67,7 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
               BillingCurrencyID: customerData.BillingCurrencyID || "",
               Website: customerData.Website || "",
               CustomerNotes: customerData.CustomerNotes || "",
+              CustomerEmail: customerData.CustomerEmail || "",
               RowVersionColumn: customerData.RowVersionColumn || null,
             });
           }
@@ -156,6 +158,19 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
         }
         break;
 
+      case "CustomerEmail":
+        if (!value) {
+          error = "Email is required";
+        } else {
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(value)) {
+            error = "Invalid email format";
+          } else if (value.length > 100) {
+            error = "Email must be 100 characters or less";
+          }
+        }
+        break;
+
       default:
         break;
     }
@@ -172,7 +187,6 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     }
   };
 
-  // Add handleBlur function to validate fields on blur
   const handleBlur = (e) => {
     const { name, value } = e.target;
     validateField(name, value);
@@ -217,6 +231,12 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
     )
       ? ""
       : errors.CustomerNotes || "Customer Notes are required";
+    validationErrors.CustomerEmail = validateField(
+      "CustomerEmail",
+      formData.CustomerEmail
+    )
+      ? ""
+      : errors.CustomerEmail || "Email is required";
 
     const hasErrors = Object.values(validationErrors).some(
       (error) => error !== ""
@@ -277,6 +297,17 @@ const CustomerForm = ({ customerId, onClose, onSave }) => {
             onChange={handleChange}
             onBlur={handleBlur}
             error={errors.CustomerName}
+          />
+        </Grid>
+        <Grid item xs={12} sx={{ width: "47%" }}>
+          <FormInput
+            required
+            label="Customer Email"
+            name="CustomerEmail"
+            value={formData.CustomerEmail}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={errors.CustomerEmail}
           />
         </Grid>
         <Grid item xs={12} sx={{ width: "47%" }}>

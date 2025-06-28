@@ -68,6 +68,7 @@ export const fetchCustomers = async (
         id: customer.CustomerID || customer.customerId,
         CustomerID: customer.CustomerID || customer.customerId,
         CustomerName: customer.CustomerName || customer.customerName || "",
+        CustomerEmail: customer.CustomerEmail || customer.customerEmail || "",
         CompanyID: customer.CompanyID || customer.companyId,
         CompanyName: customer.CompanyName || customer.companyName || "",
         ImportCode: customer.ImportCode || customer.importCode || "",

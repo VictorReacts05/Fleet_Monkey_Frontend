@@ -63,7 +63,7 @@ export const fetchPurchaseOrders = async (
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `${APIBASEURL}/po?pageNumber=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/purchase-Order?pageNumber=${page}&pageSize=${pageSize}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
@@ -193,9 +193,9 @@ export const fetchPurchaseOrder = async (purchaseOrderId, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching PO ID ${purchaseOrderId} from: ${APIBASEURL}/po/${purchaseOrderId}`
+      `Fetching PO ID ${purchaseOrderId} from: ${APIBASEURL}/purchase-Order/${purchaseOrderId}`
     );
-    const response = await axios.get(`${APIBASEURL}/po/${purchaseOrderId}`, {
+    const response = await axios.get(`${APIBASEURL}/purchase-Order/${purchaseOrderId}`, {
       headers,
     });
     console.log("PO API Response:", response.data);
@@ -641,7 +641,7 @@ export const approvePurchaseOrder = async (
   try {
     const { headers } = getAuthHeader(user);
     const endpoint = isApproved
-      ? `${APIBASEURL}/po/approve`
+      ? `${APIBASEURL}/purchase-Order/approve`
       : `${APIBASEURL}/po/disapprove`;
 
     const response = await axios.post(

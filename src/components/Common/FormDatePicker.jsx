@@ -3,7 +3,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 import { styled, TextField, Box } from '@mui/material';
 
-// Add styled TextField to match the height and styling of other form components
+// Styled component for input field
 const CustomTextField = styled(TextField)(({ theme }) => ({
   backgroundColor: theme.palette.mode === "dark" ? "#595959 !important" : "#fff !important",
   borderRadius: theme.shape.borderRadius * 1.5,
@@ -12,33 +12,29 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
     padding: 0,
     borderRadius: theme.shape.borderRadius * 1.5,
     boxSizing: "border-box",
-    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff",
+    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff", // Ensure background color persists
     "& input": {
       padding: "0 14px",
       height: "100%",
       boxSizing: "border-box",
       color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
     },
-    // Add this block for placeholder color
     "& input::placeholder": {
       color: theme.palette.mode === "dark" ? "#fff" : "#757575",
       opacity: 1,
     },
     "& fieldset": {
-      // Dynamic border color
-      borderColor:
-        theme.palette.mode === "light"
-          ? theme.palette.grey[400] // Light mode: lighter border
-          : "#8a8a8a", // Dark mode: keep as is
+      borderColor: theme.palette.mode === "light" ? theme.palette.grey[400] : "#8a8a8a",
     },
     "&:hover fieldset": {
-      borderColor:
-        theme.palette.mode === "light"
-          ? theme.palette.grey[600] // Light mode: darker on hover
-          : "#a0a0a0", // Dark mode: keep as is
+      borderColor: theme.palette.mode === "light" ? theme.palette.grey[600] : "#a0a0a0",
     },
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main, // Same for both modes
+      borderColor: theme.palette.primary.main,
+    },
+    "&.Mui-error fieldset": {
+      borderColor: theme.palette.error.main, // Red border for errors
+      backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff", // Maintain background on error
     },
     "& input:-webkit-autofill": {
       boxShadow: `0 0 0 1000px ${theme.palette.mode === "dark" ? "#595959" : "#fff"} inset !important`,
@@ -63,16 +59,23 @@ const CustomTextField = styled(TextField)(({ theme }) => ({
   },
   "& .MuiInputLabel-root": {
     top: "-6px",
-    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.primary,
+    color: theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.text.secondary,
     "&.MuiInputLabel-shrink": {
       top: 0,
+    },
+    "&.Mui-focused": {
+      color: theme.palette.primary.main,
+    },
+    "&.Mui-error": {
+      color: theme.palette.error.main, // Red label for errors
     },
   },
   "& .MuiFormHelperText-root": {
     marginTop: 0,
     marginBottom: 0,
     height: "auto",
-    color: theme.palette.error.main,
+    color: theme.palette.error.main, // Red helper text for errors
+    backgroundColor: "transparent", // Ensure helper text background is transparent
   },
 }));
 
@@ -89,7 +92,7 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
       sx={{
         marginTop: "4px",
         marginBottom: "4px",
-        backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff",
+        backgroundColor: "transparent", // Ensure the Box doesn't interfere with input background
         borderRadius: 2,
         ...(props.sx || {})
       }}
@@ -103,23 +106,25 @@ const FormDatePicker = ({ name, label, value, onChange, error, helperText, disab
           textField: {
             name,
             fullWidth: true,
-            error,
-            helperText,
+            error: Boolean(error), // Enable error state
+            helperText: error || helperText, // Display error or custom helper text
             variant: "outlined",
             margin: "none",
             InputLabelProps: {
               shrink: true,
             },
-            // Inline style for the input root
             InputProps: {
               sx: {
                 height: 38,
-                backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff", // <-- mode-aware background
+                backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff", // Consistent background
               }
             },
             sx: {
               "& .MuiInputBase-root": {
                 height: 38,
+              },
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: theme => theme.palette.mode === "dark" ? "#595959" : "#fff", // Reinforce background
               }
             }
           },

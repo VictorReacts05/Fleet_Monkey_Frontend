@@ -20,7 +20,10 @@ const CustomSelect = styled(Select)(({ theme }) => ({
     height: "100%",
     boxSizing: "border-box",
     lineHeight: "38px",
-    backgroundColor: theme.palette.mode === "dark" ? "#595959" : "#fff", // <-- updated to be mode-aware
+    backgroundColor:
+      theme.palette.mode === "light"
+        ? theme.palette.background.paper
+        : theme.palette.grey[800],
   },
   "& input:-webkit-autofill": {
     boxShadow: `0 0 0 1000px ${
@@ -113,7 +116,12 @@ const FormSelect = ({
   ...props
 }) => {
   return (
-    <FormControl fullWidth margin="dense" error={error} sx={{ my: 0.5, ...props.sx }}>
+    <FormControl
+      fullWidth
+      margin="dense"
+      error={error}
+      sx={{ my: 0.5, ...props.sx }}
+    >
       <CustomInputLabel>{label}</CustomInputLabel>
       <CustomSelect value={value} label={label} onChange={onChange} {...props}>
         {options.map((option) => (

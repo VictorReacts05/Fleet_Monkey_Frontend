@@ -290,14 +290,15 @@ const SalesQuotationList = () => {
       if (newSalesQuotationId) {
         toast.success("Sales Quotation created successfully");
         handleDialogClose();
-        // navigate(`/sales-quotation`);
+        // Refresh the sales quotations list by calling fetchSalesQuotations
+        await fetchSalesQuotations();
       } else {
         throw new Error("No Sales Quotation ID returned");
       }
     } catch (error) {
       const errorMessage = error.message || "Failed to create Sales Quotation";
       console.error("Error creating Sales Quotation:", errorMessage);
-      console.log(errorMessage);
+      console.error(errorMessage);
       if (errorMessage.includes("User not logged in")) {
         navigate("/");
       }

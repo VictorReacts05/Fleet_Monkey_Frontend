@@ -36,6 +36,7 @@ import SupplierQuotationParcelTab from "./SupplierQuotationParcelTab";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import APIBASEURL from "../../../utils/apiBaseUrl";
+import { fetchSalesQuotationStatus } from "../SalesQuotation/SalesQuotationAPI";
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -110,6 +111,10 @@ const SupplierQuotationForm = ({
     CollectionAddress: "",
     DestinationAddressID: "",
     DestinationAddress: "",
+    DestinationWarehouse: "", // Added
+    DestinationWarehouseAddressID: "", // Added
+    OriginWarehouse: "", // Added
+    OriginWarehouseAddressID: "", // Added
     PackagingRequiredYN: false,
     ValidTillDate: null,
     QuotationReceivedYN: false,
@@ -284,7 +289,7 @@ const SupplierQuotationForm = ({
 
       const formattedData = {
         Series: displayValue(quotationData.Series),
-        SupplierID: String(quotationData.SupplierID || ""), // Use raw SupplierID from API
+        SupplierID: String(quotationData.SupplierID || ""),
         SupplierName: displayValue(quotationData.SupplierName),
         CustomerID:
           customers.find(
@@ -341,6 +346,14 @@ const SupplierQuotationForm = ({
               String(a.value) === String(quotationData.DestinationAddressID)
           )?.value || String(quotationData.DestinationAddressID || ""),
         DestinationAddress: displayValue(quotationData.DestinationAddress),
+        DestinationWarehouse: "", // Added
+        DestinationWarehouseAddressID: String( // Added
+          quotationData.DestinationWarehouseAddressID || ""
+        ),
+        OriginWarehouse: "", // Added
+        OriginWarehouseAddressID: String( // Added
+          quotationData.OriginWarehouseAddressID || ""
+        ),
         PackagingRequiredYN: Boolean(quotationData.PackagingRequiredYN),
         ValidTillDate: quotationData.ValidTillDate
           ? dayjs(quotationData.ValidTillDate)
@@ -359,6 +372,56 @@ const SupplierQuotationForm = ({
         DeletedByID: displayValue(quotationData.DeletedByID),
         RowVersionColumn: displayValue(quotationData.RowVersionColumn),
       };
+
+      // Fetch Destination Warehouse
+      if (quotationData.DestinationWarehouseAddressID) {
+        try {
+          const destinationWarehouseResponse = await axios.get(
+            `${APIBASEURL}/addresses/${quotationData.DestinationWarehouseAddressID}`,
+            {
+              headers: {
+                Authorization: `Bearer ${
+                  JSON.parse(localStorage.getItem("user"))?.personId
+                }`,
+              },
+            }
+          );
+          if (destinationWarehouseResponse.data?.data) {
+            const warehouseData = destinationWarehouseResponse.data.data;
+            formattedData.DestinationWarehouse = `${
+              warehouseData.AddressLine1 || ""
+            }, ${warehouseData.City || ""}`.trim() || "-";
+          }
+        } catch (error) {
+          console.error("Error fetching Destination Warehouse:", error);
+          formattedData.DestinationWarehouse = "-";
+        }
+      }
+
+      // Fetch Origin Warehouse
+      if (quotationData.OriginWarehouseAddressID) {
+        try {
+          const originWarehouseResponse = await axios.get(
+            `${APIBASEURL}/addresses/${quotationData.OriginWarehouseAddressID}`,
+            {
+              headers: {
+                Authorization: `Bearer ${
+                  JSON.parse(localStorage.getItem("user"))?.personId
+                }`,
+              },
+            }
+          );
+          if (originWarehouseResponse.data?.data) {
+            const warehouseData = originWarehouseResponse.data.data;
+            formattedData.OriginWarehouse = `${
+              warehouseData.AddressLine1 || ""
+            }, ${warehouseData.City || ""}`.trim() || "-";
+          }
+        } catch (error) {
+          console.error("Error fetching Origin Warehouse:", error);
+          formattedData.OriginWarehouse = "-";
+        }
+      }
 
       console.log("Loaded formData:", formattedData); // Debug log
 
@@ -469,6 +532,10 @@ const SupplierQuotationForm = ({
     }
 
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleRefreshApprovals = () => {
+    fetchSalesQuotationStatus(); // Re-fetch data, including approvalStatus
   };
 
   const handleSave = async () => {
@@ -839,7 +906,7 @@ const SupplierQuotationForm = ({
               {isEditing ? (
                 <ReadOnlyField
                   name="PurchaseRFQID"
-                  label="Purchase RFQ"
+                  label="Quotation Request"
                   value={formData.PurchaseRFQID || ""}
                   onChange={handleChange}
                   options={purchaseRFQs}
@@ -850,7 +917,7 @@ const SupplierQuotationForm = ({
                 />
               ) : (
                 <ReadOnlyField
-                  label="Purchase RFQ"
+                  label="Quotation Request"
                   value={formData.PurchaseRFQID}
                 />
               )}
@@ -1031,6 +1098,32 @@ const SupplierQuotationForm = ({
             </Grid>
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
+                <ReadOnlyField
+                  label="Origin Warehouse"
+                  value={formData.OriginWarehouse}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Origin Warehouse"
+                  value={formData.OriginWarehouse}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
+                <ReadOnlyField
+                  label="Destination Warehouse"
+                  value={formData.DestinationWarehouse}
+                />
+              ) : (
+                <ReadOnlyField
+                  label="Destination Warehouse"
+                  value={formData.DestinationWarehouse}
+                />
+              )}
+            </Grid>
+            <Grid sx={{ width: "24%" }}>
+              {isEditing ? (
                 <ReadOnlyField label="Terms" value={formData.Terms} />
               ) : (
                 <ReadOnlyField label="Terms" value={formData.Terms} />
@@ -1161,6 +1254,7 @@ const SupplierQuotationForm = ({
           onParcelsChange={handleParcelsChange}
           readOnly={readOnly}
           isEditing={isEditing}
+          refreshApprovals={handleRefreshApprovals}
         />
       </FormPage>
     </LocalizationProvider>
