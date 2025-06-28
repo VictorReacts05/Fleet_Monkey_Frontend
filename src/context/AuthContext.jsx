@@ -7,7 +7,7 @@ import {
   setLogoutNull,
 } from "../redux/actions/login/loginActions";
 import APIBASEURL from "../utils/apiBaseUrl";
-import accessMenusReducer from "../redux/reducers/accessMenus/accessmenu.reducers";
+import { setAccessMenuDetails } from "../redux/actions/accessMenu/accessMenuActions";
 
 const AuthContext = createContext();
 
@@ -60,14 +60,14 @@ export const AuthProvider = ({ children }) => {
         finalResponse.masterTables.length > 0 ||
         finalResponse.tables.length > 0
       ) {
-        dispatch(accessMenusReducer(finalResponse));
+        dispatch(setAccessMenuDetails(finalResponse));
 
         navigate("/dashboard");
 
         return { success: true };
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("error:", error);
     }
   };
 

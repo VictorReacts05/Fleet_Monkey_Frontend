@@ -5,6 +5,6 @@ import accessMenusReducer from "./accessMenus/accessmenu.reducers";
 
 export default combineReducers({
   loginReducer,
-  customer: customerReducer,
   accessMenu: accessMenusReducer,
+  customer: customerReducer,
 });

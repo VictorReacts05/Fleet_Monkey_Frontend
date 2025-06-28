@@ -1,47 +1,56 @@
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { Box, CssBaseline } from '@mui/material';
-import React from 'react';
-import { useState } from 'react';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import Sidebar from './components/Layout/Sidebar';
-import Header from './components/Layout/Header';
-import SalesRFQForm from './components/forms/SalesRFQ/SalesRFQForm';
-import SalesRFQList from './components/forms/SalesRFQ/SalesRFQList';
-import SalesRFQPage from './components/forms/SalesRFQ/SalesRFQPage';
-import Dashboard from './components/Dashboard/Dashboard'; // Import the Dashboard component
-import { ToastContainer } from 'react-toastify'; // Add this import for ToastContainer
-import 'react-toastify/dist/ReactToastify.css'; // Also import the CSS for toast notifications
-import RolesList from './components/forms/Role/RolesList';
-import { FormRoleApproverList } from './components/forms/FormRoleApprover';
-import FormList from './components/forms/Form/FormList';
-import { FormRoleList } from './components/forms/FormRole';
-import PurchaseRFQList from './components/forms/PurchaseRFQ/PurchaseRFQList';
-import PurchaseRFQPage from './components/forms/PurchaseRFQ/PurchaseRFQPage';
-import PurchaseRFQForm from './components/forms/PurchaseRFQ/PurchaseRFQForm';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Box, CssBaseline } from "@mui/material";
+import React from "react";
+import { useState } from "react";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import Sidebar from "./components/Layout/Sidebar";
+import Header from "./components/Layout/Header";
+import SalesRFQForm from "./components/forms/SalesRFQ/SalesRFQForm";
+import SalesRFQList from "./components/forms/SalesRFQ/SalesRFQList";
+import SalesRFQPage from "./components/forms/SalesRFQ/SalesRFQPage";
+import Dashboard from "./components/Dashboard/Dashboard"; // Import the Dashboard component
+import { ToastContainer } from "react-toastify"; // Add this import for ToastContainer
+import "react-toastify/dist/ReactToastify.css"; // Also import the CSS for toast notifications
+import RolesList from "./components/forms/Role/RolesList";
+import { FormRoleApproverList } from "./components/forms/FormRoleApprover";
+import FormList from "./components/forms/Form/FormList";
+import { FormRoleList } from "./components/forms/FormRole";
+import PurchaseRFQList from "./components/forms/PurchaseRFQ/PurchaseRFQList";
+import PurchaseRFQPage from "./components/forms/PurchaseRFQ/PurchaseRFQPage";
+import PurchaseRFQForm from "./components/forms/PurchaseRFQ/PurchaseRFQForm";
 // Import Supplier Quotation components
-import { SupplierQuotationList, SupplierQuotationForm } from './components/forms/SupplierQuotation';
-import CustomerList from './components/forms/Customer/CustomerList';
-import CompanyList from './components/forms/Company/CompanyList';
-import SupplierList from './components/forms/Supplier/SupplierList';
-import SubscriptionList from './components/forms/Subscription/SubscriptionList';
-import CountryList from './components/forms/Country/CountryList';
-import CityList from './components/forms/City/CityList';
-import CurrencyList from './components/forms/Currency/CurrencyList';
-import CertificationList from './components/forms/Certification/CertificationList';
-import BankList from './components/forms/Bank/BankList';
-import ProjectParameterList from './components/forms/ProjectParameter/ProjectParameterList';
-import PersonList from './components/forms/Person/PersonList';
-import VehicleList from './components/forms/Vehicle/VehicleList';
-import WarehouseList from './components/forms/Warehouse/WarehouseList';
-import AddressTypeList from './components/forms/AddressType/AddressTypeList';
-import UOMList from './components/forms/UOM/uomlist';
-import Login from './pages/Login';
-import ProtectedRoute from './components/Common/ProtectedRoute';
-import { ThemeProvider } from './context/ThemeContext';
-import { useParams, useNavigate } from 'react-router-dom';
-import ToastNotification from './components/toastNotification';
+import {
+  SupplierQuotationList,
+  SupplierQuotationForm,
+} from "./components/forms/SupplierQuotation";
+import CustomerList from "./components/forms/Customer/CustomerList";
+import CompanyList from "./components/forms/Company/CompanyList";
+import SupplierList from "./components/forms/Supplier/SupplierList";
+import SubscriptionList from "./components/forms/Subscription/SubscriptionList";
+import CountryList from "./components/forms/Country/CountryList";
+import CityList from "./components/forms/City/CityList";
+import CurrencyList from "./components/forms/Currency/CurrencyList";
+import CertificationList from "./components/forms/Certification/CertificationList";
+import BankList from "./components/forms/Bank/BankList";
+import ProjectParameterList from "./components/forms/ProjectParameter/ProjectParameterList";
+import PersonList from "./components/forms/Person/PersonList";
+import VehicleList from "./components/forms/Vehicle/VehicleList";
+import WarehouseList from "./components/forms/Warehouse/WarehouseList";
+import AddressTypeList from "./components/forms/AddressType/AddressTypeList";
+import UOMList from "./components/forms/UOM/uomlist";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/Common/ProtectedRoute";
+import { ThemeProvider } from "./context/ThemeContext";
+import { useParams, useNavigate } from "react-router-dom";
+import ToastNotification from "./components/toastNotification";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -62,10 +71,9 @@ import SalesInvoicePage from "./components/forms/SalesInvoice/SalesInvoicePage";
 import AddressList from "./components/forms/Address/AddressList";
 import PendingApprovalsList from "./components/forms/PendingApprovals/PendingApprovalsList";
 import ItemList from "./components/forms/Item/ItemList";
-import {useTheme} from "@mui/material";
-import { useMediaQuery } from '@mui/material';
-
-
+import { useTheme } from "@mui/material";
+import { useMediaQuery } from "@mui/material";
+import NoAccess from "./pages/NoAccess";
 
 // Wrapper for Create Sales RFQ
 const CreateSalesRFQWrapper = () => {
@@ -155,7 +163,7 @@ function AppContent() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const isAuthPage = [
     "/",
@@ -172,16 +180,18 @@ function AppContent() {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      {!isAuthPage && <Header isMobile={isMobile} onDrawerToggle={handleDrawerToggle} />}
+      {!isAuthPage && (
+        <Header isMobile={isMobile} onDrawerToggle={handleDrawerToggle} />
+      )}
       {isAuthenticated && !isAuthPage && (
         <Sidebar
-          variant={isMobile ? 'temporary' : 'persistent'}
-          
+          variant={isMobile ? "temporary" : "persistent"}
           open={sidebarOpen}
           onClose={handleDrawerClose}
-        />)}
+        />
+      )}
       <Box
         component="main"
         sx={{
@@ -200,464 +210,171 @@ function AppContent() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-rfq"
-            element={
-              <ProtectedRoute>
-                <SalesRFQList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-rfq/create"
-            element={
-              <ProtectedRoute>
-                <CreateSalesRFQWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-rfq/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditSalesRFQWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-rfq/view/:id"
-            element={
-              <ProtectedRoute>
-                <EditSalesRFQWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/create"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/view/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-rfq/edit/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseRFQForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/supplier-quotation"
-            element={
-              <ProtectedRoute>
-                <SupplierQuotationList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/supplier-quotation/create"
-            element={
-              <ProtectedRoute>
-                <SupplierQuotationForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/supplier-quotation/view/:id"
-            element={
-              <ProtectedRoute>
-                <SupplierQuotationForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/supplier-quotation/edit/:id"
-            element={
-              <ProtectedRoute>
-                <SupplierQuotationForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-quotation"
-            element={
-              <ProtectedRoute>
-                <SalesQuotationList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-quotation/create"
-            element={
-              <ProtectedRoute>
-                <CreateSalesQuotationWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-quotation/view/:id"
-            element={
-              <ProtectedRoute>
-                <ViewSalesQuotationWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-quotation/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditSalesQuotationWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/customers"
-            element={
-              <ProtectedRoute>
-                <CustomerList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/companies"
-            element={
-              <ProtectedRoute>
-                <CompanyList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/suppliers"
-            element={
-              <ProtectedRoute>
-                <SupplierList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscriptions"
-            element={
-              <ProtectedRoute>
-                <SubscriptionList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/countries"
-            element={
-              <ProtectedRoute>
-                <CountryList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cities"
-            element={
-              <ProtectedRoute>
-                <CityList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/currencies"
-            element={
-              <ProtectedRoute>
-                <CurrencyList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/certifications"
-            element={
-              <ProtectedRoute>
-                <CertificationList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/banks"
-            element={
-              <ProtectedRoute>
-                <BankList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/items"
-            element={
-              <ProtectedRoute>
-                <ItemList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/project-parameters"
-            element={
-              <ProtectedRoute>
-                <ProjectParameterList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/persons"
-            element={
-              <ProtectedRoute>
-                <PersonList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vehicles"
-            element={
-              <ProtectedRoute>
-                <VehicleList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/warehouses"
-            element={
-              <ProtectedRoute>
-                <WarehouseList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/address-types"
-            element={
-              <ProtectedRoute>
-                <AddressTypeList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/addresses"
-            element={
-              <ProtectedRoute>
-                <AddressList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/uoms"
-            element={
-              <ProtectedRoute>
-                <UOMList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/form-role-approvers"
-            element={
-              <ProtectedRoute>
-                <FormRoleApproverList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/forms"
-            element={
-              <ProtectedRoute>
-                <FormList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/form-roles"
-            element={
-              <ProtectedRoute>
-                <FormRoleList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/roles"
-            element={
-              <ProtectedRoute>
-                <RolesList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-order"
-            element={
-              <ProtectedRoute>
-                <PurchaseOrderList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-order/add"
-            element={
-              <ProtectedRoute>
-                <PurchaseOrderForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-order/view/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseOrderForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-order/edit/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseOrderForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-order"
-            element={
-              <ProtectedRoute>
-                <SalesOrderList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-order/add"
-            element={
-              <ProtectedRoute>
-                <SalesOrderForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-order/view/:id"
-            element={
-              <ProtectedRoute>
-                <SalesOrderForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-order/edit/:id"
-            element={
-              <ProtectedRoute>
-                <SalesOrderForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-order/detail/:id"
-            element={
-              <ProtectedRoute>
-                <ViewSalesOrderWrapper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-invoice"
-            element={
-              <ProtectedRoute>
-                <PurchaseInvoiceList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-invoice/add"
-            element={
-              <ProtectedRoute>
-                <PurchaseInvoiceForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-invoice/view/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseInvoiceForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/purchase-invoice/edit/:id"
-            element={
-              <ProtectedRoute>
-                <PurchaseInvoiceForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-invoice"
-            element={
-              <ProtectedRoute>
-                <SalesInvoiceList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pending-approvals"
-            element={
-              <ProtectedRoute>
-                <PendingApprovalsList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-invoice/add"
-            element={
-              <ProtectedRoute>
-                <SalesInvoiceForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-invoice/view/:id"
-            element={
-              <ProtectedRoute>
-                <SalesInvoiceForm readOnly={true} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sales-invoice/edit/:id"
-            element={
-              <ProtectedRoute>
-                <SalesInvoiceForm readOnly={false} />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/no-access" element={<NoAccess />} />
+          {/* Proctected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/sales-rfq" element={<SalesRFQList />} />
+            <Route
+              path="/sales-rfq/create"
+              element={<CreateSalesRFQWrapper />}
+            />
+            <Route
+              path="/sales-rfq/edit/:id"
+              element={<EditSalesRFQWrapper />}
+            />
+            <Route
+              path="/sales-rfq/view/:id"
+              element={<EditSalesRFQWrapper />}
+            />
+            <Route path="/purchase-rfq" element={<PurchaseRFQList />} />
+            <Route
+              path="/purchase-rfq/create"
+              element={<PurchaseRFQForm readOnly={false} />}
+            />
+            <Route
+              path="/purchase-rfq/view/:id"
+              element={<PurchaseRFQForm readOnly={true} />}
+            />
+            <Route
+              path="/purchase-rfq/edit/:id"
+              element={<PurchaseRFQForm readOnly={false} />}
+            />
+            <Route
+              path="/supplier-quotation"
+              element={<SupplierQuotationList />}
+            />
+            <Route
+              path="/supplier-quotation/create"
+              element={<SupplierQuotationForm />}
+            />
+            <Route
+              path="/supplier-quotation/view/:id"
+              element={<SupplierQuotationForm readOnly={true} />}
+            />
+            <Route
+              path="/supplier-quotation/edit/:id"
+              element={<SupplierQuotationForm />}
+            />
+            <Route path="/sales-quotation" element={<SalesQuotationList />} />
+            <Route
+              path="/sales-quotation/create"
+              element={<CreateSalesQuotationWrapper />}
+            />
+            <Route
+              path="/sales-quotation/view/:id"
+              element={<ViewSalesQuotationWrapper />}
+            />
+            <Route
+              path="/sales-quotation/edit/:id"
+              element={<EditSalesQuotationWrapper />}
+            />
+
+            <Route
+              path="/project-parameters"
+              element={<ProjectParameterList />}
+            />
+
+            <Route path="/purchase-order" element={<PurchaseOrderList />} />
+            <Route
+              path="/purchase-order/add"
+              element={<PurchaseOrderForm readOnly={false} />}
+            />
+            <Route
+              path="/purchase-order/view/:id"
+              element={<PurchaseOrderForm readOnly={true} />}
+            />
+            <Route
+              path="/purchase-order/edit/:id"
+              element={<PurchaseOrderForm readOnly={false} />}
+            />
+            <Route path="/sales-order" element={<SalesOrderList />} />
+            <Route
+              path="/sales-order/add"
+              element={<SalesOrderForm readOnly={false} />}
+            />
+            <Route
+              path="/sales-order/view/:id"
+              element={<SalesOrderForm readOnly={true} />}
+            />
+            <Route
+              path="/sales-order/edit/:id"
+              element={<SalesOrderForm readOnly={false} />}
+            />
+            <Route
+              path="/sales-order/detail/:id"
+              element={<ViewSalesOrderWrapper />}
+            />
+            <Route path="/purchase-invoice" element={<PurchaseInvoiceList />} />
+            <Route
+              path="/purchase-invoice/add"
+              element={<PurchaseInvoiceForm readOnly={false} />}
+            />
+            <Route
+              path="/purchase-invoice/view/:id"
+              element={<PurchaseInvoiceForm readOnly={true} />}
+            />
+            <Route
+              path="/purchase-invoice/edit/:id"
+              element={<PurchaseInvoiceForm readOnly={false} />}
+            />
+            <Route path="/sales-invoice" element={<SalesInvoiceList />} />
+            <Route
+              path="/pending-approvals"
+              element={<PendingApprovalsList />}
+            />
+            <Route
+              path="/sales-invoice/add"
+              element={<SalesInvoiceForm readOnly={false} />}
+            />
+            <Route
+              path="/sales-invoice/view/:id"
+              element={<SalesInvoiceForm readOnly={true} />}
+            />
+            <Route
+              path="/sales-invoice/edit/:id"
+              element={<SalesInvoiceForm readOnly={false} />}
+            />
+          </Route>
+
+          {/* Masters Menus lists */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/master/addresses" element={<AddressList />} />
+            <Route path="/master/address-types" element={<AddressTypeList />} />
+            <Route
+              path="/master/certifications"
+              element={<CertificationList />}
+            />
+            <Route path="/master/countries" element={<CountryList />} />
+            <Route path="/master/cities" element={<CityList />} />
+            <Route path="/master/currencies" element={<CurrencyList />} />
+            <Route path="/master/companies" element={<CompanyList />} />
+            <Route path="/master/customers" element={<CustomerList />} />
+            <Route path="/master/forms" element={<FormList />} />
+            <Route path="/master/form-roles" element={<FormRoleList />} />
+            <Route
+              path="/master/form-role-approvers"
+              element={<FormRoleApproverList />}
+            />
+            <Route path="/master/items" element={<ItemList />} />
+            <Route path="/master/roles" element={<RolesList />} />
+            <Route
+              path="/master/subscriptions"
+              element={<SubscriptionList />}
+            />
+            <Route path="/master/suppliers" element={<SupplierList />} />
+            <Route path="/master/uoms" element={<UOMList />} />
+            <Route path="/master/vehicles" element={<VehicleList />} />
+            <Route path="/master/warehouses" element={<WarehouseList />} />
+            <Route path="/master/persons" element={<PersonList />} />
+            <Route path="/master/banks" element={<BankList />} />
+          </Route>
         </Routes>
       </Box>
       <ToastNotification />
     </Box>
   );
 }
-
-
-
-  
 
 function App() {
   return (
