@@ -61,7 +61,7 @@ const ApprovalTab = ({ moduleType, moduleId, apiEndpoint, refreshTrigger }) => {
       setLoading(false);
     }
   }, [moduleId, moduleType, apiEndpoint]);
-
+// 
   useEffect(() => {
     fetchApprovalStatus();
   }, [fetchApprovalStatus, refreshTrigger]); // Add refreshTrigger to dependencies
