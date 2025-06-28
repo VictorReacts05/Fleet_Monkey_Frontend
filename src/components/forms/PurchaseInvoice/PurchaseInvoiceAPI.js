@@ -598,10 +598,10 @@ export const createPurchaseInvoice = async (POID, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Creating Purchase Invoice for PO ${POID} at: ${APIBASEURL}/pInvoice`
+      `Creating Purchase Invoice for PO ${POID} at: ${APIBASEURL}/purchase-invoice`
     );
     const response = await axios.post(
-      `${APIBASEURL}/pInvoice`,
+      `${APIBASEURL}/purchase-invoice`,
       { poid: parseInt(POID, 10) },
       { headers }
     );

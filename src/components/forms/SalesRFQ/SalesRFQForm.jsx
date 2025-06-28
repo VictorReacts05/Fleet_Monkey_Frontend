@@ -29,6 +29,7 @@ import {
   fetchCurrencies,
   fetchSalesRFQStatus,
   fetchUserApprovalStatus,
+  fetchSalesRFQApprovalStatus,
 } from "./SalesRFQAPI";
 import { toast } from "react-toastify";
 import FormInput from "../../Common/FormInput";
@@ -564,7 +565,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
   };
 
   const handleRefreshApprovals = () => {
-    fetchSalesRFQStatus();
+    fetchUserApprovalStatus();
   };
 
   const checkPurchaseRFQExists = useCallback(async () => {

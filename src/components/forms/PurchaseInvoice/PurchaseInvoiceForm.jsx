@@ -302,7 +302,7 @@ const PurchaseInvoiceForm = ({
 
       const endpoint =
         newStatus === "Approved"
-          ? `${APIBASEURL}/pinvoice/approve`
+          ? `${APIBASEURL}/purchase-invoice/approve`
           : `${APIBASEURL}/purchase-invoice/disapprove/`;
       const approveData = {
         PInvoiceID: parseInt(purchaseInvoiceId, 10),

@@ -83,10 +83,10 @@ const SalesOrderForm = ({ onClose }) => {
     CollectionAddress: "",
     DestinationAddressID: "",
     DestinationAddress: "",
-    DestinationWarehouse: "", // Added
-    DestinationWarehouseAddressID: "", // Added
-    OriginWarehouse: "", // Added
-    OriginWarehouseAddressID: "", // Added
+    DestinationWarehouse: "",
+    DestinationWarehouseAddressID: "",
+    OriginWarehouse: "",
+    OriginWarehouseAddressID: "",
     ShippingPriorityID: "",
     ShippingPriorityName: "",
     Terms: "",
@@ -326,10 +326,10 @@ const SalesOrderForm = ({ onClose }) => {
             )?.label ||
             order.DestinationAddressTitle ||
             "",
-          DestinationWarehouse: "", // Added
-          DestinationWarehouseAddressID: String(order.DestinationWarehouseAddressID || ""), // Added
-          OriginWarehouse: "", // Added
-          OriginWarehouseAddressID: String(order.OriginWarehouseAddressID || ""), // Added
+          DestinationWarehouse: "",
+          DestinationWarehouseAddressID: String(order.DestinationWarehouseAddressID || ""),
+          OriginWarehouse: "",
+          OriginWarehouseAddressID: String(order.OriginWarehouseAddressID || ""),
           ShippingPriorityID: String(order.ShippingPriorityID || ""),
           ShippingPriorityName: order.ShippingPriorityID
             ? `Priority ID: ${order.ShippingPriorityID}`
@@ -501,6 +501,7 @@ const SalesOrderForm = ({ onClose }) => {
       loadSalesOrderStatus();
     }
   }, [salesOrderId, dropdownsLoaded, loadSalesOrderStatus]);
+
   const handleRefreshApprovals = () => {
     fetchSalesOrder(); // Re-fetch data, including approvalStatus
   };
@@ -526,9 +527,17 @@ const SalesOrderForm = ({ onClose }) => {
       const { headers } = getAuthHeader();
       console.log("Creating Purchase Order for SalesOrderID:", salesOrderId);
 
-      const payload = { salesOrderID: Number(salesOrderId) };
+      const payload = {
+        salesOrderID: Number(salesOrderId),
+        OriginWarehouseAddressID: formData.OriginWarehouseAddressID
+          ? Number(formData.OriginWarehouseAddressID)
+          : null,
+        DestinationWarehouseAddressID: formData.DestinationWarehouseAddressID
+          ? Number(formData.DestinationWarehouseAddressID)
+          : null,
+      };
       const response = await axios.post(
-        `${APIBASEURL}/po`,
+        `${APIBASEURL}/purchase-Order`,
         payload,
         { headers }
       );
@@ -695,7 +704,6 @@ const SalesOrderForm = ({ onClose }) => {
               onClick={handleCreatePurchaseOrder}
               disabled={
                 isCreatingPO ||
-                // status !== "Approved" ||
                 !salesOrderId ||
                 isNaN(parseInt(salesOrderId, 10))
               }
@@ -726,9 +734,6 @@ const SalesOrderForm = ({ onClose }) => {
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {/* <Grid xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Series" value={formData.Series} />
-        </Grid> */}
         <Grid xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company Name" value={formData.CompanyName} />
         </Grid>

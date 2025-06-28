@@ -58,7 +58,7 @@ const PurchaseOrderParcelsTab = ({
     if (!purchaseOrderId) {
       setActiveView("items");
     }
-  }, [purchaseOrderId]);
+  }, [purchaseOrderId,refreshApprovals]);
 
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },

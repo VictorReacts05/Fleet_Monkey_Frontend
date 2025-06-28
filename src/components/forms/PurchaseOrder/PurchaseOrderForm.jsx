@@ -262,7 +262,7 @@ const PurchaseOrderForm = ({
       console.log("New refreshApprovals value:", newValue);
       return newValue;
     });
-  }, []);
+  }, [setRefreshApprovals]);
 
   const handleSendToSupplier = async () => {
     if (!isAuthenticated || !user) {
@@ -285,45 +285,54 @@ const PurchaseOrderForm = ({
     }
   };
 
-  const handleCreatePurchaseInvoice = async () => {
-    if (!isAuthenticated || !user) {
-      console.log("Please log in to create a purchase invoice");
-      navigate("/");
-      return;
-    }
+const handleCreatePurchaseInvoice = async () => {
+  if (!isAuthenticated || !user) {
+    console.log("Please log in to create a purchase invoice");
+    navigate("/");
+    return;
+  }
 
-    try {
-      console.log("Creating Purchase Invoice for PO:", purchaseOrderId);
-      const response = await createPurchaseInvoice(purchaseOrderId, user);
-      console.log("Create Purchase Invoice response:", response);
-      console.log(
-        "Full response structure:",
-        JSON.stringify(response, null, 2)
-      );
-      const newPInvoiceID =
-        response?.data?.PInvoiceID ||
-        response?.data?.pInvoiceId ||
-        response?.data?.id ||
-        response?.data?.data?.id ||
-        response?.data?.newPurchaseInvoiceId ||
-        response?.newPInvoiceId ||
-        response?.data?.PurchaseInvoiceID;
-      if (newPInvoiceID) {
-        toast.success("Purchase Invoice created successfully");
-        navigate(`/purchase-invoice/view/${newPInvoiceID}`);
-      } else {
-        throw new Error("No Purchase Invoice ID returned");
-      }
-    } catch (error) {
-      const errorMessage = error.response
-        ? `Server error: ${error.response.status} - ${
-            error.response.data?.message || error.message
-          }`
-        : `Error creating purchase invoice: ${error.message}`;
-      console.error("Error creating purchase invoice:", errorMessage);
-      console.log(errorMessage);
+  try {
+    console.log("Creating Purchase Invoice for PO:", purchaseOrderId);
+    const payload = {
+      purchaseOrderId: Number(purchaseOrderId),
+      OriginWarehouseAddressID: formData.OriginWarehouseAddressID
+        ? Number(formData.OriginWarehouseAddressID)
+        : null,
+      DestinationWarehouseAddressID: formData.DestinationWarehouseAddressID
+        ? Number(formData.DestinationWarehouseAddressID)
+        : null,
+    };
+    const response = await createPurchaseInvoice(purchaseOrderId, user, payload);
+    console.log("Create Purchase Invoice response:", response);
+    console.log(
+      "Full response structure:",
+      JSON.stringify(response, null, 2)
+    );
+    const newPInvoiceID =
+      response?.data?.PInvoiceID ||
+      response?.data?.pInvoiceId ||
+      response?.data?.id ||
+      response?.data?.data?.id ||
+      response?.data?.newPurchaseInvoiceId ||
+      response?.newPInvoiceId ||
+      response?.data?.PurchaseInvoiceID;
+    if (newPInvoiceID) {
+      toast.success("Purchase Invoice created successfully");
+      navigate(`/purchase-invoice/view/${newPInvoiceID}`);
+    } else {
+      throw new Error("No Purchase Invoice ID returned");
     }
-  };
+  } catch (error) {
+    const errorMessage = error.response
+      ? `Server error: ${error.response.status} - ${
+          error.response.data?.message || error.message
+        }`
+      : `Error creating purchase invoice: ${error.message}`;
+    console.error("Error creating purchase invoice:", errorMessage);
+    console.log(errorMessage);
+  }
+};
 
   useEffect(() => {
     console.log("useEffect triggered:", {
