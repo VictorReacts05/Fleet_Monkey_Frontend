@@ -92,7 +92,7 @@ export const fetchCustomers = async (
 
 export const fetchCurrencies = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/currencies`);
+    const response = await axios.get(`${APIBASEURL}/currencies?pageSize=500`);
     console.log("Currencies API response:", response.data);
 
     let currenciesData = [];
@@ -119,7 +119,7 @@ export const fetchCurrencies = async () => {
 
 export const fetchCompanies = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/companies`);
+    const response = await axios.get(`${APIBASEURL}/companies?pageSize=500`);
     console.log("Companies API response:", response.data);
 
     let companiesData = [];

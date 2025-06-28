@@ -150,7 +150,7 @@ export const getFormRoleById = async (id) => {
 // Fetch all forms for dropdown
 export const fetchForms = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/forms`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/forms?pageSize=500`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch forms:", error);
@@ -161,7 +161,7 @@ export const fetchForms = async () => {
 // Fetch all roles for dropdown
 export const fetchRoles = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/roles`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/roles?pageSize=500`, getAxiosConfig());
     return response.data;
   } catch (error) {
     console.error("[ERROR] Failed to fetch roles:", error);

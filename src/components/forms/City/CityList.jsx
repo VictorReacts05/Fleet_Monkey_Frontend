@@ -258,7 +258,7 @@ const CityList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete city ${itemToDelete?.cityName}?`}
+        message={<>Are you sure you want to delete city <strong>{itemToDelete?.cityName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

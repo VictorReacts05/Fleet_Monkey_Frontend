@@ -176,7 +176,7 @@ const FormRoleApproverList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete this form role approver?`}
+        message={<>Are you sure you want to delete this form role approver  <strong>{itemToDelete?.roleName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

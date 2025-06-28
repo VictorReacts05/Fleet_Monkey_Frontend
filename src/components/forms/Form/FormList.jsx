@@ -188,7 +188,7 @@ const FormList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete the form "${itemToDelete?.formName}"?`}
+        message={<>Are you sure you want to delete the form <strong>{itemToDelete?.formName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

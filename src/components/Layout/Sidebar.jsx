@@ -221,7 +221,7 @@ const Sidebar = ({ open, variant, onClose }) => {
     '&:hover': {
       backgroundColor: 'rgba(255,255,255,0.15)',
     },
-    color: location.pathname === item.path ? '#ffffff' : '#e0e0e0',
+    color: location.pathname === item.path ? 'white' : 'white',
   }}
             >
               <ListItemIcon  sx={{

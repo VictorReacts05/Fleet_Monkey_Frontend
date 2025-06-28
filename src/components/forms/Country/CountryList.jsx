@@ -211,7 +211,7 @@ const CountryList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete country ${itemToDelete?.countryName}?`}
+        message={<>Are you sure you want to delete country <strong>{itemToDelete?.countryName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />
