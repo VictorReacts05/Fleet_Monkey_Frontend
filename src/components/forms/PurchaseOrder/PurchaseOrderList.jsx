@@ -145,6 +145,30 @@ useEffect(() => {
       valueGetter: (params) => params.row.SupplierName || "-",
     },
     {
+      field: "CustomerName",
+      headerName: "Customer Name",
+      flex: 1.5,
+      valueGetter: (params) => params.row.CustomerName || "-",
+    },
+    {
+      field: "SalesAmount",
+      headerName: "Sales Amount",
+      flex: 1.5,
+      valueGetter: (params) => params.row.SalesAmount || "-",
+    },
+    {
+      field: "ShippingPriority",
+      headerName: "Shipping Priority",
+      flex: 1.5,
+      valueGetter: (params) => params.row.ShippingPriority || "-",
+    },
+    {
+      field: "CurrencyName",
+      headerName: "Currency Name",
+      flex: 1.5,
+      valueGetter: (params) => params.row.CurrencyName || "-",
+    },
+    {
       field: "Status",
       headerName: "Status",
       flex: 1,
@@ -157,12 +181,12 @@ useEffect(() => {
         return <Chip label={status} color={color} size="small" />;
       },
     },
-    {
-      field: "POID",
-      headerName: "Purchase Order ID",
-      width: 100,
-      valueGetter: (params) => params.row.POID || params.row.id || "No ID",
-    },
+    // {
+    //   field: "POID",
+    //   headerName: "Purchase Order ID",
+    //   width: 100,
+    //   valueGetter: (params) => params.row.POID || params.row.id || "No ID",
+    // },
   ];
 
   const handlePageChange = (newPage) => {
@@ -295,8 +319,10 @@ useEffect(() => {
                 order.SupplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.ServiceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.Status?.toLowerCase().includes(searchTerm.toLowerCase())
-            )
+                order.Status?.toLowerCase().includes(searchTerm.toLowerCase())  ||
+                order.SalesAmount?.toLowerCase().includes(searchTerm.toLowerCase())  ||
+                order.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase())  
+              )
           : data;
         setPurchaseOrders(filteredData);
         setTotalRows(searchTerm ? filteredData.length : totalRecords);
