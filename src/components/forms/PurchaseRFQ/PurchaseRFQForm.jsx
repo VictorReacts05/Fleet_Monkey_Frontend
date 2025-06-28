@@ -124,11 +124,11 @@ const PurchaseRFQForm = ({
   const [confirmMessage, setConfirmMessage] = useState("");
   const [parcelLoading, setParcelLoading] = useState(false);
   const [emailSendingStatus, setEmailSendingStatus] = useState({
-    sending: false,
     progress: 0,
     totalSuppliers: 0,
     completedSuppliers: 0,
   });
+  const [sending, setSending] = useState(false);
 
   const loadPurchaseRFQData = useCallback(async () => {
     if (!purchaseRFQId) return;
@@ -435,6 +435,8 @@ const PurchaseRFQForm = ({
           throw new Error(response.message || "Disapproval failed");
         }
       } else if (confirmAction === "send") {
+      setSending(true);
+
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
         const supplierIDs = selectedSuppliers.map(
@@ -442,11 +444,12 @@ const PurchaseRFQForm = ({
         );
 
         setEmailSendingStatus({
-          sending: true,
           progress: 0,
           totalSuppliers: supplierIDs.length,
           completedSuppliers: 0,
         });
+
+        setTimeout(() => {setSending(false);}, 1000); 
 
         const toastId = toast.info(
           `Sending RFQ to ${supplierIDs.length} suppliers. This may take some time...`,
@@ -527,7 +530,6 @@ const PurchaseRFQForm = ({
         }
 
         setEmailSendingStatus({
-          sending: false,
           progress: 100,
           totalSuppliers: supplierIDs.length,
           completedSuppliers: supplierIDs.length,
@@ -543,7 +545,6 @@ const PurchaseRFQForm = ({
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
       setEmailSendingStatus({
-        sending: false,
         progress: 0,
         totalSuppliers: 0,
         completedSuppliers: 0,
@@ -745,7 +746,7 @@ const PurchaseRFQForm = ({
       loading={loading}
       readOnly={true}
     >
-      {emailSendingStatus.sending && (
+      {sending && (
         <Box
           sx={{
             width: "100%",
