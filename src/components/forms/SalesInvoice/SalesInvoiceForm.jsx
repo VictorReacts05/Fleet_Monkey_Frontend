@@ -373,7 +373,7 @@ const SalesInvoiceForm = ({
   };
 
   const handleRefreshApprovals = () => {
-    fetchSalesInvoiceById(); // Re-fetch data, including approvalStatus
+    fetchSalesInvoice(); // Re-fetch data, including approvalStatus
   };
 
   const fetchSuppliers = async () => {

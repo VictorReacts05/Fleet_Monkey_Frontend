@@ -197,7 +197,7 @@ export const getCityById = async (id) => {
 export const fetchCountries = async () => {
   try {
     const user = getUserFromLocalStorage();
-    const url = `${APIBASEURL}/country-of-origin`;
+    const url = `${APIBASEURL}/country-of-origin?pageSize=500`;
     const response = await axios.get(url, getAxiosConfig());
     return response.data;
   } catch (error) {

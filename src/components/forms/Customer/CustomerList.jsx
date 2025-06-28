@@ -197,7 +197,7 @@ const CustomerList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete customer ${itemToDelete?.customerName}?`}
+        message={<>Are you sure you want to delete customer <strong>{itemToDelete?.customerName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

@@ -203,9 +203,9 @@ const VehicleList = (props) => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete vehicle ${
+        message={<>Are you sure you want to delete vehicle <strong>{
           itemToDelete?.truckNumberPlate || ""
-        }?`}
+        }</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

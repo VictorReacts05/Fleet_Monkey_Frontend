@@ -78,7 +78,7 @@ export const fetchFormRoleApprovers = async (
 // Fetch all form roles for dropdown
 export const fetchFormRoles = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/formRole`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/formRole?pageSize=500`, getAxiosConfig());
     return Array.isArray(response.data.data)
       ? response.data.data
       : response.data.data || [];
@@ -95,7 +95,7 @@ export const fetchFormRoles = async () => {
 // Fetch all persons for dropdown
 export const fetchPersons = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/persons`, getAxiosConfig());
+    const response = await axios.get(`${APIBASEURL}/persons?pageSize=500`, getAxiosConfig());
     return Array.isArray(response.data.data)
       ? response.data.data
       : response.data.data || [];
