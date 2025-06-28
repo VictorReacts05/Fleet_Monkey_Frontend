@@ -1,12 +1,12 @@
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button
-} from '@mui/material';
+  Button,
+} from "@mui/material";
 
 const ConfirmDialog = ({ open, title, message, onConfirm, onCancel }) => {
   return (

@@ -24,17 +24,17 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 
 // Styled Components
 const LoginContainer = styled(Box)(({ theme }) => ({
-  minHeight: "100vh", // Allow growth for vertical scrolling
-  width: "100%", // Use 100% to respect parent container (body) width
-  maxWidth: "100vw", // Prevent exceeding viewport width
+  minHeight: "100vh", 
+  width: "100%", 
+  maxWidth: "100vw",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  flexDirection: "column", // Stack content vertically
-  overflowY: "auto", // Enable vertical scrolling
-  overflowX: "hidden", // Explicitly disable horizontal scrolling
-  boxSizing: "border-box", // Ensure padding/margins are included in width
+  flexDirection: "column", 
+  overflowY: "auto", 
+  overflowX: "hidden",
+  boxSizing: "border-box", 
 }));
 
 const LoginPaper = styled(Paper)(({ theme }) => ({
@@ -43,8 +43,8 @@ const LoginPaper = styled(Paper)(({ theme }) => ({
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
   width: "100%",
   maxWidth: 450,
-  margin: theme.spacing(2), // Add margin for spacing
-  boxSizing: "border-box", // Ensure width includes padding
+  margin: theme.spacing(2),
+  boxSizing: "border-box", 
 }));
 
 const LogoBox = styled(Box)(({ theme }) => ({
@@ -74,16 +74,16 @@ const TruckIcon = styled(LocalShippingIcon)(({ theme }) => ({
 // Custom TextField with autofill background fix
 const CustomTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
-    backgroundColor: theme.palette.mode === "dark" ? "#2c2c2c" : "#fff", // Default background
+    backgroundColor: theme.palette.mode === "dark" ? "#2c2c2c" : "#fff",
     "& input:-webkit-autofill": {
-      boxShadow: "none !important", // Remove any autofill background
-      backgroundColor: "transparent !important", // Ensure no background color
+      boxShadow: "none !important", 
+      backgroundColor: "transparent !important", 
       WebkitTextFillColor: `${
         theme.palette.mode === "dark"
           ? theme.palette.common.white
           : theme.palette.text.primary
-      } !important`, // Maintain text color
-      transition: "background-color 9999s ease-out 0s", // Prevent autofill animation
+      } !important`, 
+      transition: "background-color 9999s ease-out 0s", 
     },
   },
 }));
@@ -113,7 +113,6 @@ const Login = () => {
         setError(result.error);
       }
     } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
