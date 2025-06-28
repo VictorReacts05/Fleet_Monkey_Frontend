@@ -122,7 +122,7 @@ export const fetchPurchaseInvoices = async (
       ? { Authorization: `Bearer ${user.token}` }
       : {};
 
-    let url = `${APIBASEURL}/purchase-invoice?pageNumber=${page}&pageSize=${pageSize}`;
+    let url = `${APIBASEURL}/purchase-Invoice?pageNumber=${page}&pageSize=${pageSize}`;
     if (fromDate) url += `&fromDate=${fromDate}`;
     if (toDate) url += `&toDate=${toDate}`;
     if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
@@ -169,10 +169,10 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Fetching Purchase Invoice ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoice/${purchaseInvoiceId}`
+      `Fetching Purchase Invoice ID ${purchaseInvoiceId} from: ${APIBASEURL}/purchase-Invoice/${purchaseInvoiceId}`
     );
     const response = await axios.get(
-      `${APIBASEURL}/purchase-invoice/${purchaseInvoiceId}`,
+      `${APIBASEURL}/purchase-Invoice/${purchaseInvoiceId}`,
       {
         headers,
       }
@@ -598,10 +598,10 @@ export const createPurchaseInvoice = async (POID, user) => {
   try {
     const { headers } = getAuthHeader(user);
     console.log(
-      `Creating Purchase Invoice for PO ${POID} at: ${APIBASEURL}/pInvoice`
+      `Creating Purchase Invoice for PO ${POID} at: ${APIBASEURL}/purchase-invoice`
     );
     const response = await axios.post(
-      `${APIBASEURL}/pInvoice`,
+      `${APIBASEURL}/purchase-invoice`,
       { poid: parseInt(POID, 10) },
       { headers }
     );

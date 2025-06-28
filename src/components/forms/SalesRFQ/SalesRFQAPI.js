@@ -517,7 +517,7 @@ export const fetchCompanies = async () => {
 export const fetchCustomers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/customers`, { headers });
+    const response = await axios.get(`${APIBASEURL}/customers?pageSize=500`, { headers });
     const data = response.data.data || response.data || [];
     console.log("Fetched customers:", data);
     return data.map((customer) => ({
@@ -534,7 +534,7 @@ export const fetchCustomers = async () => {
 export const fetchSuppliers = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/suppliers`, { headers });
+    const response = await axios.get(`${APIBASEURL}/suppliers?pageSize=500`, { headers });
     const data = response.data.data || response.data || [];
     console.log("Fetched suppliers:", data);
     return data.map((supplier) => ({
@@ -551,7 +551,7 @@ export const fetchSuppliers = async () => {
 export const fetchServiceTypes = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/service-types`, {
+    const response = await axios.get(`${APIBASEURL}/service-types?pageSize=500`, {
       headers,
     });
     const data = response.data.data || response.data || [];
@@ -570,7 +570,7 @@ export const fetchServiceTypes = async () => {
 export const fetchAddresses = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/addresses`, { headers });
+    const response = await axios.get(`${APIBASEURL}/addresses?pageSize=500`, { headers });
     const data = response.data.data || response.data || [];
     console.log("Fetched addresses:", data);
     return data.map((address) => ({
@@ -590,7 +590,7 @@ export const fetchAddresses = async () => {
 export const fetchMailingPriorities = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/mailing-priorities`, {
+    const response = await axios.get(`${APIBASEURL}/mailing-priorities?pageSize=500`, {
       headers,
     });
     const data = response.data.data || response.data || [];
@@ -610,7 +610,7 @@ export const fetchMailingPriorities = async () => {
 export const fetchCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/currencies`, { headers });
+    const response = await axios.get(`${APIBASEURL}/currencies?pageSize=500`, { headers });
     const data = response.data.data || response.data || [];
     console.log("Fetched currencies:", data);
     return data.map((currency) => ({

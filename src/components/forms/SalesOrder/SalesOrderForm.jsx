@@ -83,6 +83,10 @@ const SalesOrderForm = ({ onClose }) => {
     CollectionAddress: "",
     DestinationAddressID: "",
     DestinationAddress: "",
+    DestinationWarehouse: "",
+    DestinationWarehouseAddressID: "",
+    OriginWarehouse: "",
+    OriginWarehouseAddressID: "",
     ShippingPriorityID: "",
     ShippingPriorityName: "",
     Terms: "",
@@ -322,6 +326,10 @@ const SalesOrderForm = ({ onClose }) => {
             )?.label ||
             order.DestinationAddressTitle ||
             "",
+          DestinationWarehouse: "",
+          DestinationWarehouseAddressID: String(order.DestinationWarehouseAddressID || ""),
+          OriginWarehouse: "",
+          OriginWarehouseAddressID: String(order.OriginWarehouseAddressID || ""),
           ShippingPriorityID: String(order.ShippingPriorityID || ""),
           ShippingPriorityName: order.ShippingPriorityID
             ? `Priority ID: ${order.ShippingPriorityID}`
@@ -344,6 +352,57 @@ const SalesOrderForm = ({ onClose }) => {
           DeliveryStatus: order.DeliveryStatus || "Pending",
           Notes: order.Notes || "",
         };
+
+        // Fetch Destination Warehouse
+        if (order.DestinationWarehouseAddressID) {
+          try {
+            const destinationWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${order.DestinationWarehouseAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
+                },
+              }
+            );
+            if (destinationWarehouseResponse.data?.data) {
+              const warehouseData = destinationWarehouseResponse.data.data;
+              newFormData.DestinationWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Destination Warehouse:", error);
+            newFormData.DestinationWarehouse = "-";
+          }
+        }
+
+        // Fetch Origin Warehouse
+        if (order.OriginWarehouseAddressID) {
+          try {
+            const originWarehouseResponse = await axios.get(
+              `${APIBASEURL}/addresses/${order.OriginWarehouseAddressID}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${
+                    JSON.parse(localStorage.getItem("user"))?.personId
+                  }`,
+                },
+              }
+            );
+            if (originWarehouseResponse.data?.data) {
+              const warehouseData = originWarehouseResponse.data.data;
+              newFormData.OriginWarehouse = `${
+                warehouseData.AddressLine1 || ""
+              }, ${warehouseData.City || ""}`.trim() || "-";
+            }
+          } catch (error) {
+            console.error("Error fetching Origin Warehouse:", error);
+            newFormData.OriginWarehouse = "-";
+          }
+        }
+
         setFormData(newFormData);
         setDataLoaded(true);
         console.log("Sales Orders data:", newFormData);
@@ -394,7 +453,6 @@ const SalesOrderForm = ({ onClose }) => {
     addresses,
     currencies,
   ]);
-  
 
   useEffect(() => {
     console.log("useEffect for fetchData check:", {
@@ -443,6 +501,7 @@ const SalesOrderForm = ({ onClose }) => {
       loadSalesOrderStatus();
     }
   }, [salesOrderId, dropdownsLoaded, loadSalesOrderStatus]);
+
   const handleRefreshApprovals = () => {
     fetchSalesOrder(); // Re-fetch data, including approvalStatus
   };
@@ -468,9 +527,17 @@ const SalesOrderForm = ({ onClose }) => {
       const { headers } = getAuthHeader();
       console.log("Creating Purchase Order for SalesOrderID:", salesOrderId);
 
-      const payload = { salesOrderID: Number(salesOrderId) };
+      const payload = {
+        salesOrderID: Number(salesOrderId),
+        OriginWarehouseAddressID: formData.OriginWarehouseAddressID
+          ? Number(formData.OriginWarehouseAddressID)
+          : null,
+        DestinationWarehouseAddressID: formData.DestinationWarehouseAddressID
+          ? Number(formData.DestinationWarehouseAddressID)
+          : null,
+      };
       const response = await axios.post(
-        `${APIBASEURL}/po`,
+        `${APIBASEURL}/purchase-Order`,
         payload,
         { headers }
       );
@@ -637,7 +704,6 @@ const SalesOrderForm = ({ onClose }) => {
               onClick={handleCreatePurchaseOrder}
               disabled={
                 isCreatingPO ||
-                // status !== "Approved" ||
                 !salesOrderId ||
                 isNaN(parseInt(salesOrderId, 10))
               }
@@ -668,9 +734,6 @@ const SalesOrderForm = ({ onClose }) => {
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {/* <Grid xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField label="Series" value={formData.Series} />
-        </Grid> */}
         <Grid xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField label="Company Name" value={formData.CompanyName} />
         </Grid>
@@ -717,6 +780,18 @@ const SalesOrderForm = ({ onClose }) => {
           <ReadOnlyField
             label="Destination Address"
             value={formData.DestinationAddress}
+          />
+        </Grid>
+        <Grid xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Origin Warehouse"
+            value={formData.OriginWarehouse}
+          />
+        </Grid>
+        <Grid xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Warehouse"
+            value={formData.DestinationWarehouse}
           />
         </Grid>
         <Grid xs={12} md={3} sx={{ width: "24%" }}>
