@@ -2,20 +2,22 @@ import { createContext, useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { setLoginDetails, setLogoutNull } from "../redux/actions/login/loginActions";
+import {
+  setLoginDetails,
+  setLogoutNull,
+} from "../redux/actions/login/loginActions";
 import APIBASEURL from "../utils/apiBaseUrl";
+import { setAccessMenuDetails } from "../redux/actions/accessMenu/accessMenuActions";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
-  const loginState = useSelector(state => state.loginReducer?.loginDetails);
+
+  const loginState = useSelector((state) => state.loginReducer?.loginDetails);
   const [isAuthenticated, setIsAuthenticated] = useState(!!loginState);
-  // Add the missing user state
-  const [user, setUser] = useState(null);
-  
+
   useEffect(() => {
     setIsAuthenticated(!!loginState);
   }, [loginState]);
@@ -26,18 +28,16 @@ export const AuthProvider = ({ children }) => {
         LoginID: loginId,
         Password: password,
       });
-      
+
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
-        
-        setUser(response.data.user);
-        setIsAuthenticated(true);   
-        
+
+        setIsAuthenticated(true);
+        handleFetchAccessMenuList();
+
         dispatch(setLoginDetails(response.data));
-        
-        navigate("/dashboard");
-        
+
         return { success: true };
       } else {
         return { success: false, error: "Invalid credentials" };
@@ -49,12 +49,32 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.message || "Authentication failed",
       };
     }
-};
+  };
+
+  const handleFetchAccessMenuList = async () => {
+    try {
+      const response = await axios.get(`${APIBASEURL}/tableAccess`);
+
+      const finalResponse = response.data.data;
+      if (
+        finalResponse.masterTables.length > 0 ||
+        finalResponse.tables.length > 0
+      ) {
+        dispatch(setAccessMenuDetails(finalResponse));
+
+        navigate("/dashboard");
+
+        return { success: true };
+      }
+    } catch (error) {
+      console.error("error:", error);
+    }
+  };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     dispatch(setLogoutNull());
     setIsAuthenticated(false);
     navigate("/");

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -20,32 +20,37 @@ import {
   DialogActions,
   Snackbar,
   Alert,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
-import { connect } from 'react-redux';
-import axios from 'axios';
-import FormInput from '../common/FormInput';
-import FormSelect from '../common/FormSelect';
-import APIBASEURL from '../../utils/apiBaseUrl';
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+// import NotificationsIcon from '@mui/icons-material/Notifications';
+import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import { useSelector } from "react-redux";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
+// import { connect } from "react-redux";
+import axios from "axios";
+import FormInput from "../common/FormInput";
+import FormSelect from "../common/FormSelect";
+import APIBASEURL from "../../utils/apiBaseUrl";
 
-const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
+const Header = ({ isMobile, onDrawerToggle }) => {
+  const userDetails = useSelector(
+    (state) => state.loginReducer?.loginDetails?.user
+  );
+
   const { logout, isAuthenticated } = useAuth();
   const theme = useTheme();
-  const mode = theme?.mode || 'light';
-  const toggleTheme = theme?.toggleTheme || (() => console.log('Theme toggle not available'));
+  const mode = theme?.mode || "light";
+  const toggleTheme =
+    theme?.toggleTheme || (() => console.log("Theme toggle not available"));
   const muiTheme = useMuiTheme();
   const navigate = useNavigate();
-  const isMobileView = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const isMobileView = useMediaQuery(muiTheme.breakpoints.down("md"));
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -56,18 +61,18 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success',
+    message: "",
+    severity: "success",
   });
   const [newUser, setNewUser] = useState({
-    firstName: '',
-    lastName: '',
-    middleName: '',
-    emailId: '',
-    loginId: '',
-    password: '',
-    role: '',
-    companyName: 'Dung Beetle Logistics',
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    emailId: "",
+    loginId: "",
+    password: "",
+    role: "",
+    companyName: "Dung Beetle Logistics",
     companyId: 48,
   });
 
@@ -80,28 +85,31 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${APIBASEURL}/roles?pageNumber=1&pageSize=50`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await axios.get(
+        `${APIBASEURL}/roles?pageNumber=1&pageSize=50`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       if (response.data?.data && Array.isArray(response.data.data)) {
         setRoles(response.data.data);
       } else {
-        console.error('Unexpected roles data format:', response.data);
+        console.error("Unexpected roles data format:", response.data);
         setSnackbar({
           open: true,
-          message: 'Unexpected roles data format',
-          severity: 'warning',
+          message: "Unexpected roles data format",
+          severity: "warning",
         });
         setRoles([]);
       }
     } catch (error) {
-      console.error('Error fetching roles:', error);
+      console.error("Error fetching roles:", error);
       setSnackbar({
         open: true,
-        message: 'Failed to fetch roles',
-        severity: 'error',
+        message: "Failed to fetch roles",
+        severity: "error",
       });
       setRoles([]);
     }
@@ -111,26 +119,26 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
     try {
       const response = await axios.get(`${APIBASEURL}/persons`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
       if (response.data?.data && Array.isArray(response.data.data)) {
         setUsers(response.data.data);
       } else {
-        console.error('Unexpected users data format:', response.data);
+        console.error("Unexpected users data format:", response.data);
         setSnackbar({
           open: true,
-          message: 'Unexpected users data format',
-          severity: 'warning',
+          message: "Unexpected users data format",
+          severity: "warning",
         });
         setUsers([]);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
       setSnackbar({
         open: true,
-        message: 'Failed to fetch users',
-        severity: 'error',
+        message: "Failed to fetch users",
+        severity: "error",
       });
       setUsers([]);
     }
@@ -144,14 +152,14 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   const handleCloseUserModal = () => {
     setOpenUserModal(false);
     setNewUser({
-      firstName: '',
-      lastName: '',
-      middleName: '',
-      emailId: '',
-      loginId: '',
-      password: '',
-      role: '',
-      companyName: 'Dung Beetle Logistics',
+      firstName: "",
+      lastName: "",
+      middleName: "",
+      emailId: "",
+      loginId: "",
+      password: "",
+      role: "",
+      companyName: "Dung Beetle Logistics",
       companyId: 48,
     });
   };
@@ -164,7 +172,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
     }));
   };
 
-  const showNotification = (message, severity = 'success') => {
+  const showNotification = (message, severity = "success") => {
     setSnackbar({
       open: true,
       message,
@@ -173,7 +181,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   };
 
   const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') {
+    if (reason === "clickaway") {
       return;
     }
     setSnackbar({ ...snackbar, open: false });
@@ -270,7 +278,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
 
   const handleSettings = () => {
     handleMenuClose();
-    navigate('/settings');
+    navigate("/settings");
   };
 
   return (
@@ -279,13 +287,13 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          backdropFilter: 'blur(8px)',
-          transition: 'all 0.3s ease',
+          backgroundColor: "background.paper",
+          color: "text.primary",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          backdropFilter: "blur(8px)",
+          transition: "all 0.3s ease",
         }}
         elevation={0}
       >
@@ -300,48 +308,47 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               <MenuIcon />
             </IconButton>
           )}
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
             <LocalShippingIcon color="primary" sx={{ mr: 1, fontSize: 28 }} />
             <Typography
               variant="h6"
               component="div"
-              sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}
+              sx={{ fontWeight: "bold", display: { xs: "none", sm: "block" } }}
             >
               Fleet Monkeys
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
           {isAuthenticated && (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
               <Button
                 variant="contained"
                 color="primary"
                 sx={{
                   mr: 1,
-                  textTransform: 'none',
+                  textTransform: "none",
                   fontSize: {
-                    xs: '0.75rem', // Smaller font on mobile
-                    sm: '0.875rem', // Default font on small screens
-                    md: '1rem', // Larger font on medium screens
+                    xs: "0.75rem", // Smaller font on mobile
+                    sm: "0.875rem", // Default font on small screens
+                    md: "1rem", // Larger font on medium screens
                   },
                   padding: {
-                    
-                    xs: '2px 4px', // Compact padding on mobile
-                    sm: '6px 12px', // Default padding
-                    md: '8px 16px', // Larger padding on desktop
+                    xs: "2px 4px", // Compact padding on mobile
+                    sm: "6px 12px", // Default padding
+                    md: "8px 16px", // Larger padding on desktop
                   },
                   minWidth: {
-                    xs: '100px', // Minimum width for mobile
-                    sm: '120px',
-                    md: '140px',
+                    xs: "100px", // Minimum width for mobile
+                    sm: "120px",
+                    md: "140px",
                   },
                   height: {
-                    xs: '30px', 
-                    sm: '36px',
-                    md: '40px',
+                    xs: "30px",
+                    sm: "36px",
+                    md: "40px",
                   },
-                  
-                  borderRadius: '8px', // Consistent border radius
+
+                  borderRadius: "8px", // Consistent border radius
                 }}
                 onClick={handleOpenUserModal}
               >
@@ -349,11 +356,13 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Button>
               <Tooltip
                 title={
-                  mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'
+                  mode === "dark"
+                    ? "Switch to Light Mode"
+                    : "Switch to Dark Mode"
                 }
               >
                 <IconButton onClick={toggleTheme} sx={{ ml: 1 }}>
-                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                  {mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
                 </IconButton>
               </Tooltip>
               {/* <Tooltip title="Notifications">
@@ -365,7 +374,9 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Tooltip> */}
               <Tooltip title="Account">
                 <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 1 }}>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                  <Avatar
+                    sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+                  >
                     <AccountCircleIcon />
                   </Avatar>
                 </IconButton>
@@ -382,31 +393,31 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
                 minWidth: 200,
                 mt: 1.5,
                 borderRadius: 2,
-                overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
-                '&:before': {
+                overflow: "visible",
+                filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.15))",
+                "&:before": {
                   content: '""',
-                  display: 'block',
-                  position: 'absolute',
+                  display: "block",
+                  position: "absolute",
                   top: 0,
                   right: 14,
                   width: 10,
                   height: 10,
-                  bgcolor: 'background.paper',
-                  transform: 'translateY(-50%) rotate(45deg)',
+                  bgcolor: "background.paper",
+                  transform: "translateY(-50%) rotate(45deg)",
                   zIndex: 0,
                 },
               },
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           >
             <Box sx={{ px: 2, py: 1.5 }}>
               <Typography variant="subtitle1" fontWeight="bold">
-                {userInfo?.loginId || 'User'}
+                {userDetails?.loginID}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {userInfo?.role || 'Administrator'}
+                {userDetails?.roleName}
               </Typography>
             </Box>
             <Divider />
@@ -435,24 +446,24 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
                 maxWidth: 350,
                 mt: 1.5,
                 borderRadius: 2,
-                overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.15))',
-                '&:before': {
+                overflow: "visible",
+                filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.15))",
+                "&:before": {
                   content: '""',
-                  display: 'block',
-                  position: 'absolute',
+                  display: "block",
+                  position: "absolute",
                   top: 0,
                   right: 14,
                   width: 10,
                   height: 10,
-                  bgcolor: 'background.paper',
-                  transform: 'translateY(-50%) rotate(45deg)',
+                  bgcolor: "background.paper",
+                  transform: "translateY(-50%) rotate(45deg)",
                   zIndex: 0,
                 },
               },
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           >
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1" fontWeight="bold">
@@ -461,7 +472,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
             </Box>
             <Divider />
             <MenuItem onClick={handleNotificationMenuClose}>
-              <Box sx={{ width: '100%' }}>
+              <Box sx={{ width: "100%" }}>
                 <Typography variant="body2" fontWeight="medium">
                   New order received
                 </Typography>
@@ -471,7 +482,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Box>
             </MenuItem>
             <MenuItem onClick={handleNotificationMenuClose}>
-              <Box sx={{ width: '100%' }}>
+              <Box sx={{ width: "100%" }}>
                 <Typography variant="body2" fontWeight="medium">
                   Vehicle maintenance due
                 </Typography>
@@ -481,7 +492,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Box>
             </MenuItem>
             <MenuItem onClick={handleNotificationMenuClose}>
-              <Box sx={{ width: '100%' }}>
+              <Box sx={{ width: "100%" }}>
                 <Typography variant="body2" fontWeight="medium">
                   Inventory alert: Low stock
                 </Typography>
@@ -491,8 +502,12 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               </Box>
             </MenuItem>
             <Divider />
-            <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
-              <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
+            <Box sx={{ p: 1, display: "flex", justifyContent: "center" }}>
+              <Typography
+                variant="body2"
+                color="primary"
+                sx={{ cursor: "pointer" }}
+              >
                 View all notifications
               </Typography>
             </Box>
@@ -509,8 +524,8 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         <DialogContent>
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
               gap: 2,
               mt: 2,
             }}
@@ -523,8 +538,8 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               required
               error={
                 formSubmitted &&
-                newUser.firstName === '' &&
-                'First Name is required'
+                newUser.firstName === "" &&
+                "First Name is required"
               }
             />
             <FormInput
@@ -535,8 +550,8 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               required
               error={
                 formSubmitted &&
-                newUser.lastName === '' &&
-                'Last Name is required'
+                newUser.lastName === "" &&
+                "Last Name is required"
               }
             />
             <FormInput
@@ -555,7 +570,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               error={
                 newUser.emailId &&
                 !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.emailId) &&
-                'Invalid email format'
+                "Invalid email format"
               }
             />
             <FormInput
@@ -566,8 +581,8 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               required
               error={
                 formSubmitted &&
-                newUser.loginId === '' &&
-                'Login ID is required'
+                newUser.loginId === "" &&
+                "Login ID is required"
               }
             />
             <FormInput
@@ -581,7 +596,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
                 formSubmitted &&
                 newUser.password &&
                 newUser.password.length < 8 &&
-                'Password must be at least 8 characters'
+                "Password must be at least 8 characters"
               }
             />
             <FormSelect
@@ -598,13 +613,13 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
                   : []
               }
               required
-              error={formSubmitted && newUser.role === '' && 'Role is required'}
+              error={formSubmitted && newUser.role === "" && "Role is required"}
               MenuProps={{
                 PaperProps: {
                   sx: {
                     maxHeight: 200,
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
+                    overflowY: "auto",
+                    overflowX: "hidden",
                   },
                 },
               }}
@@ -613,7 +628,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
               name="companyName"
               label="Company"
               value={newUser.companyId}
-              options={[{ value: 48, label: 'Dung Beetle Logistics' }]}
+              options={[{ value: 48, label: "Dung Beetle Logistics" }]}
               disabled
               readOnly
             />
@@ -629,7 +644,7 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
             color="primary"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating...' : 'Create User'}
+            {isSubmitting ? "Creating..." : "Create User"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -637,12 +652,12 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
           onClose={handleSnackbarClose}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           {snackbar.message}
         </Alert>
@@ -651,20 +666,4 @@ const Header = ({ isMobile, onDrawerToggle, userInfo }) => {
   );
 };
 
-const mapStateToProps = (state) => {
-  const loginDetails = state.loginReducer?.loginDetails || {};
-  const userData = loginDetails.user || {};
-
-  console.log('Redux state loginDetails:', loginDetails);
-
-  return {
-    userInfo: {
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
-      loginId: userData.loginID || 'User',
-      role: userData.role || 'Administrator',
-    },
-  };
-};
-
-export default connect(mapStateToProps)(Header);
+export default Header;
