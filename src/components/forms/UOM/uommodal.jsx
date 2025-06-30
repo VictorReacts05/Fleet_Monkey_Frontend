@@ -10,8 +10,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { toast } from 'react-toastify';
-// import { getUOMById, createUOM, updateUOM } from './UOMAPI';
-import { getUOMById, createUOM, updateUOM, deleteUOM } from "./UOMAPI";
+import { getUOMById, createUOM, updateUOM } from "./UOMAPI";
 
 const UOMModal = ({ open, onClose, uomId, onSave }) => {
   const [formData, setFormData] = useState({

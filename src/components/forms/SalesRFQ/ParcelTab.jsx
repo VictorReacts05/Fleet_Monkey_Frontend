@@ -34,7 +34,7 @@ import ApprovalTab from "../../Common/ApprovalTab";
 // Function to fetch items from API
 const fetchItems = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/items`);
+    const response = await axios.get(`${APIBASEURL}/items?pageSize=500`);
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching items:", error);
@@ -45,7 +45,7 @@ const fetchItems = async () => {
 // Function to fetch UOMs from API
 const fetchUOMs = async () => {
   try {
-    const response = await axios.get(`${APIBASEURL}/uoms`);
+    const response = await axios.get(`${APIBASEURL}/uoms?pageSize=500`);
     if (response.data && response.data.data) {
       return response.data.data;
     } else if (Array.isArray(response.data)) {
@@ -60,7 +60,7 @@ const fetchUOMs = async () => {
   }
 };
 
-const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
+const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshApprovals}) => {
   const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
@@ -724,7 +724,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false }) => {
           )
         ) : (
           salesRFQId && (
-            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} />
+            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} refreshTrigger={refreshApprovals}  />
           )
         )}
       </Box>

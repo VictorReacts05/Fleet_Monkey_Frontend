@@ -205,7 +205,7 @@ const handleDeleteConfirm = async () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Delete Company"
-        message={`Are you sure you want to delete ${itemToDelete?.companyName}?`}
+        message={<>Are you sure you want to delete <strong>{itemToDelete?.companyName}</strong> ?</>}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteDialogOpen(false)}
         maxWidth="sm"

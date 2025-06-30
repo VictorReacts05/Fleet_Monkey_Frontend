@@ -24,6 +24,8 @@ const getTokenFromRedux = () => {
   }
 };
 
+
+
 export const getAuthHeader = () => {
   try {
     const user = JSON.parse(localStorage.getItem("user"));

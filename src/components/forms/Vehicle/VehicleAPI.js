@@ -229,7 +229,7 @@ export const fetchCompanies = async () => {
   try {
     const { headers } = getAuthHeader();
     const response = await axios.get(
-      `${APIBASEURL}/companies`,
+      `${APIBASEURL}/companies?pageSize=500`,
       { headers }
     );
     return response.data;

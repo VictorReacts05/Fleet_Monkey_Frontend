@@ -130,6 +130,10 @@ const SalesInvoiceForm = ({
     CollectionAddress: "",
     DestinationAddressID: "",
     DestinationAddress: "",
+    DestinationWarehouse: "", // Added
+    DestinationWarehouseAddressID: "", // Added
+    OriginWarehouse: "", // Added
+    OriginWarehouseAddressID: "", // Added
     ShippingPriorityID: "",
     ShippingPriorityName: "",
     Terms: "",
@@ -184,6 +188,10 @@ const SalesInvoiceForm = ({
             ? new Date(response.DateReceived)
             : null,
           ServiceType: "Unknown Service Type",
+          DestinationWarehouse: "", // Added
+          DestinationWarehouseAddressID: response.DestinationWarehouseAddressID || "", // Added
+          OriginWarehouse: "", // Added
+          OriginWarehouseAddressID: response.OriginWarehouseAddressID || "", // Added
         };
 
         // Fetch additional data
@@ -204,7 +212,7 @@ const SalesInvoiceForm = ({
               const addressData = collectionAddressResponse.data.data;
               formattedData.CollectionAddress = `${
                 addressData.AddressLine1 || ""
-              }, ${addressData.City || ""}`;
+              }, ${addressData.City || ""}`.trim() || "-";
             }
           }
 
@@ -224,7 +232,57 @@ const SalesInvoiceForm = ({
               const addressData = destinationAddressResponse.data.data;
               formattedData.DestinationAddress = `${
                 addressData.AddressLine1 || ""
-              }, ${addressData.City || ""}`;
+              }, ${addressData.City || ""}`.trim() || "-";
+            }
+          }
+
+          // Fetch Destination Warehouse
+          if (response.DestinationWarehouseAddressID) {
+            try {
+              const destinationWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${response.DestinationWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (destinationWarehouseResponse.data?.data) {
+                const warehouseData = destinationWarehouseResponse.data.data;
+                formattedData.DestinationWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Destination Warehouse:", error);
+              formattedData.DestinationWarehouse = "-";
+            }
+          }
+
+          // Fetch Origin Warehouse
+          if (response.OriginWarehouseAddressID) {
+            try {
+              const originWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${response.OriginWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (originWarehouseResponse.data?.data) {
+                const warehouseData = originWarehouseResponse.data.data;
+                formattedData.OriginWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Origin Warehouse:", error);
+              formattedData.OriginWarehouse = "-";
             }
           }
 
@@ -350,6 +408,10 @@ const SalesInvoiceForm = ({
     setItems(updatedItems);
   };
 
+  const handleRefreshApprovals = () => {
+    fetchSalesInvoice(); // Re-fetch data, including approvalStatus
+  };
+
   const fetchSuppliers = async () => {
     try {
       setLoadingSuppliers(true);
@@ -426,7 +488,7 @@ const SalesInvoiceForm = ({
       setLoading(true);
       if (confirmAction === "approve") {
         const response = await axios.post(
-          `${APIBASEURL}/sales-invoice/approve`,
+          `${APIBASEURL}/salesInvoice/approve`,
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
@@ -445,7 +507,7 @@ const SalesInvoiceForm = ({
         }
       } else if (confirmAction === "disapprove") {
         const response = await axios.post(
-          `${APIBASEURL}/sales-invoice/disapprove`,
+          `${APIBASEURL}/salesInvoice/disapprove`,
           { SalesInvoiceID: parseInt(salesInvoiceId, 10) },
           {
             headers: {
@@ -755,6 +817,18 @@ const SalesInvoiceForm = ({
         </Grid>
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
+            label="Origin Warehouse"
+            value={formData.OriginWarehouse}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Warehouse"
+            value={formData.DestinationWarehouse}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
             label="Shipping Priority"
             value={formData.ShippingPriorityName}
           />
@@ -963,6 +1037,7 @@ const SalesInvoiceForm = ({
         salesInvoiceId={salesInvoiceId}
         onItemsChange={handleItemsChange}
         readOnly={readOnly}
+        refreshApprovals={handleRefreshApprovals}
       />
     </FormPage>
   );

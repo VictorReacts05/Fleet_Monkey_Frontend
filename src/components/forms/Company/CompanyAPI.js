@@ -136,7 +136,7 @@ export const getCompanyById = async (id) => {
 export const fetchAllCurrencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/currencies`, { headers });
+    const response = await axios.get(`${APIBASEURL}/currencies?pageSize=500`, { headers });
     return (
       response.data.data || response.data.currencies || response.data || []
     );

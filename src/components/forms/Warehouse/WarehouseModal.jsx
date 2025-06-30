@@ -1,76 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box } from '@mui/material';
-import FormInput from '../../Common/FormInput';
-import { createWarehouse, updateWarehouse, fetchWarehouses } from './WarehouseAPI';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
+import FormInput from "../../Common/FormInput";
+import {
+  createWarehouse,
+  updateWarehouse,
+  fetchWarehouses,
+  fetchAddresses,
+} from "./WarehouseAPI";
+import { toast } from "react-toastify";
 
-// Remove this line
-// import { getAuthHeader } from './WarehouseAPI';
-
-const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => {
+const WarehouseModal = ({
+  open,
+  onClose,
+  warehouseId,
+  onSave,
+  initialData,
+}) => {
   const [formData, setFormData] = useState({
-    warehouseName: '',
-    warehouseAddressId: 1, // <-- Add this line (default value for testing)
+    warehouseName: "",
+    warehouseAddressId: "",
   });
   const [errors, setErrors] = useState({
-    warehouseName: '',
+    warehouseName: "",
+    warehouseAddressId: "",
   });
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
-    const loadWarehouse = async () => {
-      if (!warehouseId) {
-        setFormData({ warehouseName: '', warehouseAddressId: 1 }); // Ensure both fields are set
-        setErrors({ warehouseName: '' });
-        return;
-      }
-
+    const loadData = async () => {
       try {
         setLoading(true);
-        if (initialData) {
+
+        // Load addresses
+        const addressResponse = await fetchAddresses();
+        const addressData = Array.isArray(addressResponse.data)
+          ? addressResponse.data
+          : [addressResponse.data].filter(Boolean);
+        setAddresses(addressData);
+
+        // Load warehouse if editing
+        if (warehouseId && initialData) {
           setFormData({
-            warehouseName: initialData.warehouseName || '',
-            warehouseAddressId: initialData.warehouseAddressId || 1, // Ensure this is set from initialData if available
+            warehouseName: initialData.warehouseName || "",
+            warehouseAddressId: initialData.address?.AddressID || "",
           });
         } else {
-          const response = await fetchWarehouses(1, 100);
-          const warehouses = response.data || [];
-          const warehouse = warehouses.find(w => w.WarehouseID === warehouseId);
-
-          if (warehouse) {
-            setFormData({
-              warehouseName: warehouse.WarehouseName || '',
-              warehouseAddressId: warehouse.WarehouseAddressID || 1, // Ensure this is set from warehouse data
-            });
-          } else {
-            console.log('Warehouse not found');
-          }
+          setFormData({
+            warehouseName: "",
+            warehouseAddressId: addressData[0]?.AddressID || "",
+          });
         }
       } catch (error) {
-        console.error('Error loading warehouse:', error);
-        console.log('Failed to load warehouse details');
+        console.error("Error loading data:", error);
+        toast.error("Failed to load data: " + error.message);
       } finally {
         setLoading(false);
       }
     };
 
     if (open) {
-      loadWarehouse();
+      loadData();
     }
   }, [warehouseId, open, initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: name === "warehouseAddressId" ? Number(value) : value, // Always store as number
+      [name]: name === "warehouseAddressId" ? Number(value) : value,
     }));
 
     if (errors[name]) {
-      setErrors(prevState => ({
+      setErrors((prevState) => ({
         ...prevState,
-        [name]: '',
+        [name]: "",
       }));
     }
   };
@@ -79,9 +95,14 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
     const newErrors = {};
 
     if (!formData.warehouseName.trim()) {
-      newErrors.warehouseName = 'Warehouse Name is required';
+      newErrors.warehouseName = "Warehouse Name is required";
     } else if (formData.warehouseName.length < 3) {
-      newErrors.warehouseName = 'Warehouse Name must be at least 3 characters long';
+      newErrors.warehouseName =
+        "Warehouse Name must be at least 3 characters long";
+    }
+
+    if (!formData.warehouseAddressId) {
+      newErrors.warehouseAddressId = "Please select an address";
     }
 
     setErrors(newErrors);
@@ -92,60 +113,46 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
     e.preventDefault();
     setIsSubmitted(true);
 
-    console.log('Form data on submit:', formData);
-
     if (!validateForm()) {
-      console.log('Validation failed, errors:', errors);
-      console.log('Please fix the form errors');
+      toast.error("Please fix the form errors");
       return;
     }
 
-    // Check for user authentication
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const personId = user?.personId || user?.id || user?.userId;
-    
+
     if (!personId) {
-      console.log('You must be logged in to save a warehouse');
+      toast.error("You must be logged in to save a warehouse");
       return;
     }
-
-    // TODO: Replace 1 with the actual selected address ID from your form
-    // const warehouseAddressId = 1; // <-- REMOVE this line, use formData.warehouseAddressId instead
-
-    console.log('Validation passed, proceeding with API call');
 
     try {
       setLoading(true);
+      const warehouseData = {
+        warehouseName: formData.warehouseName,
+        warehouseAddressId: formData.warehouseAddressId,
+        createdById: Number(personId),
+      };
+
       if (warehouseId) {
-        const updateData = {
-          warehouseName: formData.warehouseName,
-          warehouseAddressId: formData.warehouseAddressId,
-          createdById: Number(personId)
-        };
-        console.log('Updating warehouse with data:', updateData);
-        await updateWarehouse(warehouseId, updateData);
-        toast.success('Warehouse updated successfully');
+        await updateWarehouse(warehouseId, warehouseData);
+        toast.success("Warehouse updated successfully");
       } else {
-        const createData = {
-          warehouseName: formData.warehouseName,
-          warehouseAddressId: formData.warehouseAddressId,
-          createdById: Number(personId)
-        };
-        console.log('Creating warehouse with data:', createData);
-        await createWarehouse(createData);
-        toast.success('Warehouse created successfully');
+        await createWarehouse(warehouseData);
+        toast.success("Warehouse created successfully");
       }
 
       setLoading(false);
       onClose();
       setTimeout(() => onSave(), 300);
     } catch (error) {
-      console.error('Error saving warehouse:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-      if (errorMessage.toLowerCase().includes('warehouse name')) {
+      console.error("Error saving warehouse:", error);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Unknown error";
+      if (errorMessage.toLowerCase().includes("warehouse name")) {
         setErrors({ warehouseName: errorMessage });
       } else {
-        console.log('Failed to save warehouse: ' + errorMessage);
+        toast.error("Failed to save warehouse: " + errorMessage);
       }
       setLoading(false);
     }
@@ -153,7 +160,9 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{warehouseId ? 'Edit Warehouse' : 'Add Warehouse'}</DialogTitle>
+      <DialogTitle>
+        {warehouseId ? "Edit Warehouse" : "Add Warehouse"}
+      </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
@@ -167,12 +176,45 @@ const WarehouseModal = ({ open, onClose, warehouseId, onSave, initialData }) => 
               error={isSubmitted && !!errors.warehouseName}
               helperText={isSubmitted && errors.warehouseName}
             />
+            <FormControl
+              fullWidth
+              sx={{ mt: 2 }}
+              error={isSubmitted && !!errors.warehouseAddressId}
+            >
+              <InputLabel id="address-select-label">Address</InputLabel>
+              <Select
+                labelId="address-select-label"
+                name="warehouseAddressId"
+                value={formData.warehouseAddressId}
+                onChange={handleChange}
+                disabled={loading}
+                label="Address"
+              >
+                {addresses.map((address) => (
+                  <MenuItem key={address.AddressID} value={address.AddressID}>
+                    {`${address.AddressName} - ${address.AddressLine1}, ${address.AddressLine2}`}
+                  </MenuItem>
+                ))}
+              </Select>
+              {isSubmitted && errors.warehouseAddressId && (
+                <Box sx={{ color: "error.main", fontSize: "0.75rem", mt: 0.5 }}>
+                  {errors.warehouseAddressId}
+                </Box>
+              )}
+            </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={loading}>Cancel</Button>
-          <Button type="submit" variant="contained" color="primary" disabled={loading}>
-            {warehouseId ? 'Update' : 'Create'}
+          <Button onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+          >
+            {warehouseId ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </form>

@@ -115,6 +115,7 @@ const PurchaseRFQForm = ({
     Series: "",
     SalesRFQID: "",
     CompanyID: DEFAULT_COMPANY.value,
+    CompanyName: DEFAULT_COMPANY.label,
     CustomerID: "",
     SupplierID: "",
     SupplierName: "",
@@ -126,7 +127,13 @@ const PurchaseRFQForm = ({
     ServiceTypeID: "",
     ServiceType: "",
     CollectionAddressID: "",
+    CollectionAddress: "",
     DestinationAddressID: "",
+    DestinationAddress: "",
+    DestinationWarehouse: "",
+    DestinationWarehouseAddressID: "",
+    OriginWarehouse: "",
+    OriginWarehouseAddressID: "",
     ShippingPriorityID: "",
     ShippingPriorityName: "",
     Terms: "",
@@ -155,11 +162,11 @@ const PurchaseRFQForm = ({
   const [confirmMessage, setConfirmMessage] = useState("");
   const [parcelLoading, setParcelLoading] = useState(false);
   const [emailSendingStatus, setEmailSendingStatus] = useState({
-    sending: false,
     progress: 0,
     totalSuppliers: 0,
     completedSuppliers: 0,
   });
+  const [sending, setSending] = useState(false);
 
   const loadPurchaseRFQData = useCallback(async () => {
     if (!purchaseRFQId) return;
@@ -176,6 +183,7 @@ const PurchaseRFQForm = ({
           Series: rfqData.Series
             ? rfqData.Series.replace("Pur-RFQ", "Quot-Request")
             : rfqData.Series || "-",
+          CompanyName: DEFAULT_COMPANY.label,
           DeliveryDate: rfqData.DeliveryDate
             ? new Date(rfqData.DeliveryDate)
             : null,
@@ -190,6 +198,10 @@ const PurchaseRFQForm = ({
             : null,
           SalesRFQID: rfqData.SalesRFQID ? rfqData.SalesRFQID.toString() : "",
           ServiceType: "Unknown Service Type", // Default
+          CollectionAddress: rfqData.CollectionAddress || "-",
+          DestinationAddress: rfqData.DestinationAddress || "-",
+          DestinationWarehouse: rfqData.DestinationWarehouse || "-",
+          OriginWarehouse: rfqData.OriginWarehouse || "-",
         };
 
         try {
@@ -209,8 +221,7 @@ const PurchaseRFQForm = ({
               const addressData = collectionAddressResponse.data.data;
               formattedData.CollectionAddress = `${
                 addressData.AddressLine1 || ""
-              },
-            ${addressData.City || ""}`;
+              }, ${addressData.City || ""}`.trim() || "-";
             }
           }
 
@@ -230,7 +241,57 @@ const PurchaseRFQForm = ({
               const addressData = destinationAddressResponse.data.data;
               formattedData.DestinationAddress = `${
                 addressData.AddressLine1 || ""
-              }, ${addressData.City || ""}`;
+              }, ${addressData.City || ""}`.trim() || "-";
+            }
+          }
+
+          // Fetch Destination Warehouse
+          if (rfqData.DestinationWarehouseAddressID) {
+            try {
+              const destinationWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${rfqData.DestinationWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (destinationWarehouseResponse.data?.data) {
+                const warehouseData = destinationWarehouseResponse.data.data;
+                formattedData.DestinationWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Destination Warehouse:", error);
+              formattedData.DestinationWarehouse = "-";
+            }
+          }
+
+          // Fetch Origin Warehouse
+          if (rfqData.OriginWarehouseAddressID) {
+            try {
+              const originWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${rfqData.OriginWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (originWarehouseResponse.data?.data) {
+                const warehouseData = originWarehouseResponse.data.data;
+                formattedData.OriginWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Origin Warehouse:", error);
+              formattedData.OriginWarehouse = "-";
             }
           }
 
@@ -254,7 +315,7 @@ const PurchaseRFQForm = ({
                 "Failed to fetch shipping priority:",
                 priorityError
               );
-              formattedData.ShippingPriorityName = `Error: Failed to fetch priority`;
+              formattedData.ShippingPriorityName = "Error: Failed to fetch priority";
             }
           }
 
@@ -294,6 +355,7 @@ const PurchaseRFQForm = ({
                 `Unknown Currency (${rfqData.CurrencyID})`;
             } catch (currencyError) {
               console.error("Failed to fetch currency:", currencyError);
+              formattedData.CurrencyName = `Error: Failed to fetch currency`;
             }
           }
         } catch (fetchError) {
@@ -310,7 +372,6 @@ const PurchaseRFQForm = ({
       if (salesRFQsData && Array.isArray(salesRFQsData)) {
         const formattedSalesRFQs = salesRFQsData.map((rfq) => ({
           value: rfq.SalesRFQID.toString(),
-          // label: rfq.Series || `Sales RFQ #${rfq.SalesRFQID}`,
           label: rfq.Series
             ? rfq.Series.replace("Sales-RFQ", "Inquiry")
             : `Inquiry #${rfq.SalesRFQID}`,
@@ -340,7 +401,7 @@ const PurchaseRFQForm = ({
     if (!purchaseRFQId) return;
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      if (!user?.personId) {
+      if (!user?.personIdWal) {
         throw new Error("No user found in localStorage");
       }
 
@@ -412,6 +473,8 @@ const PurchaseRFQForm = ({
           throw new Error(response.message || "Disapproval failed");
         }
       } else if (confirmAction === "send") {
+      setSending(true);
+
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
         const supplierIDs = selectedSuppliers.map(
@@ -419,11 +482,12 @@ const PurchaseRFQForm = ({
         );
 
         setEmailSendingStatus({
-          sending: true,
           progress: 0,
           totalSuppliers: supplierIDs.length,
           completedSuppliers: 0,
         });
+
+        setTimeout(() => {setSending(false);}, 1000); 
 
         const toastId = toast.info(
           `Sending RFQ to ${supplierIDs.length} suppliers. This may take some time...`,
@@ -504,7 +568,6 @@ const PurchaseRFQForm = ({
         }
 
         setEmailSendingStatus({
-          sending: false,
           progress: 100,
           totalSuppliers: supplierIDs.length,
           completedSuppliers: supplierIDs.length,
@@ -520,7 +583,6 @@ const PurchaseRFQForm = ({
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
       setEmailSendingStatus({
-        sending: false,
         progress: 0,
         totalSuppliers: 0,
         completedSuppliers: 0,
@@ -723,7 +785,7 @@ const PurchaseRFQForm = ({
       loading={loading}
       readOnly={true}
     >
-      {emailSendingStatus.sending && (
+      {sending && (
         <Box
           sx={{
             width: "100%",
@@ -802,7 +864,7 @@ const PurchaseRFQForm = ({
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Customer Name"
-            value={formData.CustomerName || "-"}
+            value={"Dung Beetle Logistics" || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
@@ -854,13 +916,25 @@ const PurchaseRFQForm = ({
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Collection Address"
-            value={formData.CollectionAddressID || "-"}
+            value={formData.CollectionAddress || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
           <ReadOnlyField
             label="Destination Address"
-            value={formData.DestinationAddressID || "-"}
+            value={formData.DestinationAddress || "-"}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Origin Warehouse"
+            value={formData.OriginWarehouse || "-"}
+          />
+        </Grid>
+        <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+          <ReadOnlyField
+            label="Destination Warehouse"
+            value={formData.DestinationWarehouse || "-"}
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ ...responsiveWidth() }}>
@@ -1013,7 +1087,6 @@ const PurchaseRFQForm = ({
                             }
                           />
                         </ListItem>
-
                         <Divider />
                       </React.Fragment>
                     );

@@ -249,7 +249,7 @@ export const getSubscriptionPlanById = async (id) => {
 export const fetchBillingFrequencies = async () => {
   try {
     const { headers } = getAuthHeader();
-    const response = await axios.get(`${APIBASEURL}/billingFrequency`, {
+    const response = await axios.get(`${APIBASEURL}/billingFrequency?pageSize=500`, {
       headers,
     });
     console.log("Billing frequencies response:", response.data);

@@ -486,7 +486,7 @@ const SalesQuotationList = () => {
     </Box>
   );
 };
-
+// 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
 

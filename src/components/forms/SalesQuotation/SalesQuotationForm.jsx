@@ -25,6 +25,8 @@ import {
   fetchCustomerById,
   sendSalesQuotation,
 } from "./SalesQuotationAPI.js";
+import axios from "axios";
+import APIBASEURL from "../../../utils/apiBaseUrl"; // Added for address fetching
 
 const ReadOnlyField = ({ label, value }) => {
   let displayValue = value;
@@ -184,6 +186,10 @@ const SalesQuotationForm = ({
             CollectionAddress: quotation.CollectionAddress || "-",
             DestinationAddressID: quotation.DestinationAddressID || "-",
             DestinationAddress: quotation.DestinationAddress || "-",
+            DestinationWarehouse: "", // Added
+            DestinationWarehouseAddressID: quotation.DestinationWarehouseAddressID || "", // Added
+            OriginWarehouse: "", // Added
+            OriginWarehouseAddressID: quotation.OriginWarehouseAddressID || "", // Added
             ShippingPriorityID: quotation.ShippingPriorityID || "-",
             ShippingPriorityName: quotation.ShippingPriorityName || "-",
             Terms: quotation.Terms || "-",
@@ -198,6 +204,57 @@ const SalesQuotationForm = ({
             Profit: parseFloat(quotation.Profit) || 0,
             CustomerEmail: quotation.CustomerEmail || null,
           };
+
+          // Fetch Destination Warehouse
+          if (quotation.DestinationWarehouseAddressID) {
+            try {
+              const destinationWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${quotation.DestinationWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (destinationWarehouseResponse.data?.data) {
+                const warehouseData = destinationWarehouseResponse.data.data;
+                formData.DestinationWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Destination Warehouse:", error);
+              formData.DestinationWarehouse = "-";
+            }
+          }
+
+          // Fetch Origin Warehouse
+          if (quotation.OriginWarehouseAddressID) {
+            try {
+              const originWarehouseResponse = await axios.get(
+                `${APIBASEURL}/addresses/${quotation.OriginWarehouseAddressID}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${
+                      JSON.parse(localStorage.getItem("user"))?.personId
+                    }`,
+                  },
+                }
+              );
+              if (originWarehouseResponse.data?.data) {
+                const warehouseData = originWarehouseResponse.data.data;
+                formData.OriginWarehouse = `${
+                  warehouseData.AddressLine1 || ""
+                }, ${warehouseData.City || ""}`.trim() || "-";
+              }
+            } catch (error) {
+              console.error("Error fetching Origin Warehouse:", error);
+              formData.OriginWarehouse = "-";
+            }
+          }
+
           setFormData(formData);
 
           console.log("CustomerEmail from quotation:", quotation.CustomerEmail);
@@ -255,6 +312,10 @@ const SalesQuotationForm = ({
             CollectionAddress: quotation.CollectionAddress || "-",
             DestinationAddressID: quotation.DestinationAddressID || "-",
             DestinationAddress: quotation.DestinationAddress || "-",
+            DestinationWarehouse: "", // Added
+            DestinationWarehouseAddressID: quotation.DestinationWarehouseAddressID || "", // Added
+            OriginWarehouse: "", // Added
+            OriginWarehouseAddressID: quotation.OriginWarehouseAddressID || "", // Added
             ShippingPriorityID: quotation.ShippingPriorityID || "-",
             ShippingPriorityName: quotation.ShippingPriorityName || "-",
             Terms: quotation.Terms || "-",
@@ -301,6 +362,10 @@ const SalesQuotationForm = ({
       return parcel;
     });
     setParcels(updatedParcels);
+  };
+
+  const handleRefreshApprovals = () => {
+    fetchSalesQuotationStatus(); // Re-fetch data, including approvalStatus
   };
 
   const handleSave = async () => {
@@ -360,7 +425,7 @@ const SalesQuotationForm = ({
       console.log("Calling sendSalesQuotation with ID:", salesQuotationId);
       const response = await sendSalesQuotation(salesQuotationId);
       console.log("sendSalesQuotation response:", response);
-      toast.success(response.message || "Sales quotation sent successfully");
+      toast.success("Sales quotation sent successfully");
     } catch (error) {
       const errorMessage =
         error.message || "Failed to send sales quotation email";
@@ -420,7 +485,7 @@ const SalesQuotationForm = ({
     console.log("customerEmail updated:", customerEmail);
   }, [customerEmail]);
 
-  if (loading||!formData) {
+  if (loading || !formData) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
@@ -441,7 +506,6 @@ const SalesQuotationForm = ({
     );
   }
 
- 
   console.log("Rendering SalesQuotationForm with formData:", formData);
   console.log("Passing to FormPage:", {
     isEdit,
@@ -467,8 +531,8 @@ const SalesQuotationForm = ({
                     width:"fit-content",
                     display: "flex",
                     alignItems: "center",
-                  backgroundColor:
-                    theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
+                    backgroundColor:
+                      theme.palette.mode === "dark" ? "#90caf9" : "#1976d2",
                     borderRadius: "4px",
                     paddingRight: "10px",
                     height: "37px",
@@ -514,7 +578,7 @@ const SalesQuotationForm = ({
                   startIcon={
                     sending ? <CircularProgress size={24} /> : <EmailIcon />
                   }
-                  sx={{ width:{xs:"12rem",sm:"97px"}, pointerEvents: "auto" }}
+                  sx={{  pointerEvents: "auto" }}
                 >
                   Send
                 </Button>
@@ -592,6 +656,18 @@ const SalesQuotationForm = ({
           </Grid>
           <Grid item xs={12} md={3} sx={{  ...responsiveWidth() }}>
             <ReadOnlyField
+              label="Origin Warehouse"
+              value={formData.OriginWarehouse}
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
+              label="Destination Warehouse"
+              value={formData.DestinationWarehouse}
+            />
+          </Grid>
+          <Grid item xs={12} md={3} sx={{ width: "24%" }}>
+            <ReadOnlyField
               label="Shipping Priority"
               value={formData.ShippingPriorityName}
             />
@@ -644,6 +720,7 @@ const SalesQuotationForm = ({
           isEdit={isEdit}
           error={parcelError}
           onSalesRateChange={handleSalesRateChange}
+          refreshApprovals={handleRefreshApprovals}
         />
       </FormPage>
     );

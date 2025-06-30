@@ -214,7 +214,7 @@ export const fetchSalesInvoiceById = async (id) => {
 export const deleteSalesInvoice = async (id) => {
   try {
     const response = await axios.delete(
-      `${APIBASEURL}/sales-invoice/${id}`,
+      `${APIBASEURL}/salesInvoice/${id}`,
       getAuthHeader()
     );
     return { success: true, data: response.data };

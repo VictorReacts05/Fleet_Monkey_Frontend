@@ -220,7 +220,7 @@ const RolesList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete the role "${itemToDelete?.roleName}"?`}
+        message={<>Are you sure you want to delete the role <strong>{itemToDelete?.roleName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

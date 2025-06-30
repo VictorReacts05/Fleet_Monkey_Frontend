@@ -6,6 +6,7 @@ import {
   Tooltip, 
   IconButton
 } from '@mui/material';
+import moment from "moment";
 import DataTable from '../../Common/DataTable';
 import FormModal from './FormModal';
 import ConfirmDialog from '../../Common/ConfirmDialog';
@@ -29,22 +30,15 @@ const FormList = () => {
   const columns = [
     { field: "formName", headerName: "Form Name", flex: 1 },
     { 
-      field: "createdDateTime", 
-      headerName: "Created Date", 
-      flex: 1,
-      valueFormatter: (params) => {
-        if (!params.value) return "N/A";
-        const date = new Date(params.value);
-        return date.toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-    }
+  field: "createdDateTime", 
+  headerName: "Created Date", 
+  flex: 1,
+  valueFormatter: (params) => {
+      console.log("params:", params); // Debug log
+      if (!params.value) return "-";
+      return moment(params.value).format("DD-MM-YYYY") || "-";
+    },
+},
   ];
 
   const loadForms = async () => {
@@ -188,7 +182,7 @@ const FormList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete the form "${itemToDelete?.formName}"?`}
+        message={<>Are you sure you want to delete the form <strong>{itemToDelete?.formName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

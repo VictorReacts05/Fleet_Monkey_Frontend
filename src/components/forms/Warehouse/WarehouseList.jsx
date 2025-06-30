@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Typography, Box, Button, Stack } from '@mui/material';
-import DataTable from '../../Common/DataTable';
-import WarehouseModal from './WarehouseModal';
-import ConfirmDialog from '../../Common/ConfirmDialog';
-import FormDatePicker from '../../Common/FormDatePicker';
-import { fetchWarehouses, deleteWarehouse } from './WarehouseAPI';
-import { toast } from 'react-toastify';
-import dayjs from 'dayjs';
+import React, { useState, useEffect } from "react";
+import { Typography, Box, Button, Stack } from "@mui/material";
+import DataTable from "../../Common/DataTable";
+import WarehouseModal from "./WarehouseModal";
+import ConfirmDialog from "../../Common/ConfirmDialog";
+import FormDatePicker from "../../Common/FormDatePicker";
+import { fetchWarehouses, deleteWarehouse } from "./WarehouseAPI";
+import { toast } from "react-toastify";
+import dayjs from "dayjs";
 import { Add } from "@mui/icons-material";
 import { Tooltip, IconButton } from "@mui/material";
 import SearchBar from "../../Common/SearchBar";
-import { showToast } from '../../toastNotification';
 
 const WarehouseList = () => {
   const [rows, setRows] = useState([]);
@@ -26,32 +25,42 @@ const WarehouseList = () => {
   const [toDate, setToDate] = useState(null);
 
   const columns = [
-    { field: 'warehouseName', headerName: 'Warehouse Name', flex: 1 },
+    { field: "warehouseName", headerName: "Warehouse Name", flex: 1 },
+    {
+      field: "address",
+      headerName: "Address",
+      flex: 1,
+      renderCell: (params) => {
+        const address = params.row.address;
+        return address
+          ? `${address.AddressLine1}, ${address.AddressLine2}`
+          : "N/A";
+      },
+    },
   ];
 
   const loadWarehouses = async () => {
     try {
       setLoading(true);
-      const formattedFromDate = fromDate ? dayjs(fromDate).startOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      const formattedToDate = toDate ? dayjs(toDate).endOf('day').format('YYYY-MM-DD HH:mm:ss') : null;
-      
-      // Get current page data
+      const formattedFromDate = fromDate
+        ? dayjs(fromDate).startOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+      const formattedToDate = toDate
+        ? dayjs(toDate).endOf("day").format("YYYY-MM-DD HH:mm:ss")
+        : null;
+
       const response = await fetchWarehouses(
         page + 1,
         rowsPerPage,
         formattedFromDate,
         formattedToDate
       );
-      
+
       const warehouses = response.data || [];
-      
-      // Get total count from backend if available
       let totalCount = response.pagination?.totalRecords;
-      
-      // If backend doesn't provide total count
+
       if (totalCount === undefined) {
         try {
-          // Use the maximum of current rowsPerPage * 5 as a dynamic limit
           const dynamicLimit = Math.max(rowsPerPage * 5, 20);
           const countResponse = await fetchWarehouses(
             1,
@@ -59,36 +68,30 @@ const WarehouseList = () => {
             formattedFromDate,
             formattedToDate
           );
-          
           totalCount = countResponse.data?.length || 0;
-          
-          // If we got exactly the dynamic limit of records, there might be more
           if (countResponse.data?.length === dynamicLimit) {
-            // Add a small buffer to indicate there might be more
             totalCount += rowsPerPage;
           }
         } catch (err) {
-          // Fallback: estimate based on current page
           const hasFullPage = warehouses.length === rowsPerPage;
-          totalCount = (page * rowsPerPage) + warehouses.length;
-          
-          // If we have a full page, there might be more
+          totalCount = page * rowsPerPage + warehouses.length;
           if (hasFullPage) {
-            totalCount += rowsPerPage; // Add one more page worth to enable next page
+            totalCount += rowsPerPage;
           }
         }
       }
-      
+
       const formattedRows = warehouses.map((warehouse) => ({
         id: warehouse.WarehouseID,
         warehouseName: warehouse.WarehouseName || "N/A",
+        address: warehouse.Address || null,
       }));
-  
+
       setRows(formattedRows);
       setTotalRows(totalCount);
     } catch (error) {
-      console.error('Error loading warehouses:', error);
-      console.log('Failed to load warehouses: ' + error.message);
+      console.error("Error loading warehouses:", error);
+      toast.error("Failed to load warehouses: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -109,23 +112,22 @@ const WarehouseList = () => {
   };
 
   const handleDelete = (id) => {
-    const warehouse = rows.find(row => row.id === id);
+    const warehouse = rows.find((row) => row.id === id);
     setItemToDelete(warehouse);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
     try {
-      // Get personId from localStorage
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       const personId = user?.personId || user?.id || user?.userId;
       await deleteWarehouse(itemToDelete.id, personId);
-      toast.success("Warehouse deleted successfully", "success");
+      toast.success("Warehouse deleted successfully");
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       loadWarehouses();
     } catch (error) {
-      console.log('Failed to delete warehouse: ' + error.message);
+      toast.error("Failed to delete warehouse: " + error.message);
     }
   };
 
@@ -137,11 +139,6 @@ const WarehouseList = () => {
   const handleModalClose = () => {
     setModalOpen(false);
     setSelectedWarehouseId(null);
-  };
-
-  const handleSearch = (term) => {
-    setSearchTerm(term);
-    setPage(0);
   };
 
   return (
@@ -157,7 +154,7 @@ const WarehouseList = () => {
         <Typography variant="h5">Warehouse Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
           <SearchBar
-            onSearch={handleSearch}
+            onSearch={(term) => setPage(0)}
             placeholder="Search Text..."
             sx={{
               width: "100%",
@@ -209,7 +206,7 @@ const WarehouseList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={`Are you sure you want to delete warehouse ${itemToDelete?.warehouseName}?`}
+        message={<>Are you sure you want to delete warehouse <strong>{itemToDelete?.warehouseName}</strong> ?</>}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />

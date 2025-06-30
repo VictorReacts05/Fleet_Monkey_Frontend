@@ -18,13 +18,19 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
+import {
+  fetchItems,
+  fetchUOMs,
+  fetchPurchaseInvoiceItems,
+} from "./PurchaseInvoiceAPI";
 import { useNavigate } from "react-router-dom";
+import ApprovalTab from "../../Common/ApprovalTab";
 
 const PurchaseInvoiceParcelsTab = ({
   purchaseInvoiceId,
   onItemsChange,
   readOnly = false,
+  refreshApprovals,
 }) => {
   const navigate = useNavigate();
   const [itemsList, setItemsList] = useState([]);
@@ -38,8 +44,16 @@ const PurchaseInvoiceParcelsTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [activeView, setActiveView] = useState("items");
+
   const theme = useTheme();
   const isMounted = useRef(true);
+
+  useEffect(() => {
+    if (!purchaseInvoiceId) {
+      setActiveView("items");
+    }
+  }, [purchaseInvoiceId, refreshApprovals]);
 
   // Define columns for DataTable
   const columns = [
@@ -416,15 +430,54 @@ const PurchaseInvoiceParcelsTab = ({
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              activeView === "items"
+                ? theme.palette.mode === "dark"
+                  ? "#37474f"
+                  : "#e0f7fa"
+                : theme.palette.mode === "dark"
+                ? "#1f2529"
+                : "#f3f8fd",
             color: theme.palette.text.primary,
             cursor: "pointer",
           }}
+          onClick={() => setActiveView("items")}
         >
           <Typography variant="h6" component="div">
             Items
           </Typography>
         </Box>
+        {purchaseInvoiceId && (
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                activeView === "approvals"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+            }}
+            onClick={() => setActiveView("approvals")}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
+            >
+              Approvals
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Content area */}
@@ -437,178 +490,188 @@ const PurchaseInvoiceParcelsTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
-            <Typography variant="body1">{error}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={error.includes("log in") ? handleLoginRedirect : loadData}
-              sx={{ mt: 2 }}
-            >
-              {error.includes("log in") ? "Log In" : "Retry"}
-            </Button>
-          </Box>
-        ) : itemsList.length === 0 && itemForms.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-            <Typography variant="body1">
-              No items found.{" "}
-              {!readOnly && "Click 'Add Item' to add a new item."}
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {!readOnly && (
+        {activeView === "items" ? (
+          loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
+              <Typography variant="body1">{error}</Typography>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddItem}
-                sx={{ mb: 2 }}
-                disabled={items.length <= 1 || uoms.length <= 1}
-              >
-                Add Item
-              </Button>
-            )}
-
-            {itemForms.map((form) => (
-              <Box
-                key={form.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Item" : "New Item"}
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 2,
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="itemId"
-                      label="Item"
-                      value={form.itemId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={items}
-                      error={!!errors[form.id]?.itemId}
-                      helperText={errors[form.id]?.itemId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="uomId"
-                      label="UOM"
-                      value={form.uomId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={uoms}
-                      error={!!errors[form.id]?.uomId}
-                      helperText={errors[form.id]?.uomId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="quantity"
-                      label="Quantity"
-                      value={form.quantity}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.quantity}
-                      helperText={errors[form.id]?.quantity}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="rate"
-                      label="Rate"
-                      value={form.rate}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.rate}
-                      helperText={errors[form.id]?.rate}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="amount"
-                      label="Amount"
-                      value={form.amount}
-                      error={!!errors[form.id]?.amount}
-                      helperText={errors[form.id]?.amount}
-                      type="number"
-                      disabled
-                    />
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      setItemForms((prev) =>
-                        prev.filter((f) => f.id !== form.id)
-                      )
-                    }
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSave(form.id)}
-                  >
-                    Save Item
-                  </Button>
-                </Box>
-              </Box>
-            ))}
-
-            {itemsList.length > 0 && (
-              <DataTable
-                rows={itemsList}
-                columns={columns}
-                page={page}
-                rowsPerPage={rowsPerPage}
-                onPageChange={(newPage) => setPage(newPage)}
-                onRowsPerPageChange={(newPageSize) =>
-                  setRowsPerPage(newPageSize)
+                color="primary"
+                onClick={
+                  error.includes("log in") ? handleLoginRedirect : loadData
                 }
-                rowsPerPageOptions={[5, 10, 25]}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                autoHeight
-                hideActions={readOnly}
-                onEdit={!readOnly ? handleEditItem : undefined}
-                onDelete={!readOnly ? handleDeleteItem : undefined}
-                totalRows={itemsList.length}
-                isPagination={true}
-              />
-            )}
-          </>
-        )}
+                sx={{ mt: 2 }}
+              >
+                {error.includes("log in") ? "Log In" : "Retry"}
+              </Button>
+            </Box>
+          ) : itemsList.length === 0 && itemForms.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Typography variant="body1">
+                No items found.{" "}
+                {!readOnly && "Click 'Add Item' to add a new item."}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {!readOnly && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddItem}
+                  sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1}
+                >
+                  Add Item
+                </Button>
+              )}
+
+              {itemForms.map((form) => (
+                <Box
+                  key={form.id}
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined ? "Edit Item" : "New Item"}
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="itemId"
+                        label="Item"
+                        value={form.itemId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={items}
+                        error={!!errors[form.id]?.itemId}
+                        helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="uomId"
+                        label="UOM"
+                        value={form.uomId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={uoms}
+                        error={!!errors[form.id]?.uomId}
+                        helperText={errors[form.id]?.uomId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="quantity"
+                        label="Quantity"
+                        value={form.quantity}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.quantity}
+                        helperText={errors[form.id]?.quantity}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="rate"
+                        label="Rate"
+                        value={form.rate}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.rate}
+                        helperText={errors[form.id]?.rate}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="amount"
+                        label="Amount"
+                        value={form.amount}
+                        error={!!errors[form.id]?.amount}
+                        helperText={errors[form.id]?.amount}
+                        type="number"
+                        disabled
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        setItemForms((prev) =>
+                          prev.filter((f) => f.id !== form.id)
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSave(form.id)}
+                    >
+                      Save Item
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+
+              {itemsList.length > 0 && (
+                <DataTable
+                  rows={itemsList}
+                  columns={columns}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  autoHeight
+                  hideActions={readOnly}
+                  onEdit={!readOnly ? handleEditItem : undefined}
+                  onDelete={!readOnly ? handleDeleteItem : undefined}
+                  totalRows={itemsList.length}
+                  isPagination={true}
+                />
+              )}
+            </>
+          )
+        ) : purchaseInvoiceId ? (
+          <ApprovalTab
+            moduleType="purchase-invoice"
+            moduleId={purchaseInvoiceId}
+            refreshTrigger={refreshApprovals}
+          />
+        ) : null}
       </Box>
 
       <Dialog

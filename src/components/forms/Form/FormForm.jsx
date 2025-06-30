@@ -11,7 +11,7 @@ import FormPage from "../../Common/FormPage";
 
 const FormForm = ({ formID, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    FormName: "",
+    FormName: "", 
   });
 
   const [loading, setLoading] = useState(false);

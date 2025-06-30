@@ -10,6 +10,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
+import dayjs from "dayjs"; // Ensure dayjs is imported
 import { useNavigate } from "react-router-dom";
 import DataTable from "../../common/DataTable";
 import SearchBar from "../../common/SearchBar";
@@ -92,6 +93,12 @@ const PurchaseInvoiceList = () => {
           ServiceType: invoice.ServiceType?.ServiceType || "-",
           Status: invoice.Status || "Pending",
           IsPaid: invoice.IsPaid || false,
+          CurrencyName:invoice.CurrencyName||"-",
+          Rate:invoice.Rate||"-",
+          ItemQuantity:invoice.ItemQuantity||'-',
+         ParcelCreatedDateTime: invoice.ParcelCreatedDateTime
+    ? dayjs(invoice.ParcelCreatedDateTime).format("DD-MM-YYYY")
+    : "-",
         };
       });
 
@@ -138,6 +145,30 @@ const PurchaseInvoiceList = () => {
       headerName: "Supplier",
       flex: 1.5,
       valueGetter: (params) => params.row.SupplierName || "-",
+    },
+    {
+      field: "ItemQuantity",
+      headerName: "Item Quantity",
+      flex: 1.5,
+      valueGetter: (params) => params.row.ItemQuantity|| "-"
+    },
+    {
+      field: "Rate",
+      headerName: "Rate",
+      flex: 1.5,
+      
+    },
+    {
+      field: "CurrencyName",
+      headerName: "Currency Name",
+      flex: 1.5,
+      
+    },
+    {
+      field: "ParcelCreatedDateTime",
+      headerName: "Parcel Created Date",
+      flex: 1.5,
+      
     },
     {
       field: "Status",
@@ -252,15 +283,15 @@ const PurchaseInvoiceList = () => {
         rows={filteredPurchaseInvoices}
         columns={[
           ...columns,
-          {
-            field: "id",
-            headerName: "ID",
-            width: 100,
-            valueGetter: (params) => {
-              const idParts = params.row.id.split('-');
-              return idParts[0]; // Display only the PInvoiceID part (e.g., "2252")
-            },
-          },
+          // {
+          //   field: "id",
+          //   headerName: "ID",
+          //   width: 100,
+          //   valueGetter: (params) => {
+          //     const idParts = params.row.id.split('-');
+          //     return idParts[0]; // Display only the PInvoiceID part (e.g., "2252")
+          //   },
+          // },
         ]}
         loading={loading}
         getRowId={(row) => row.id} // Use the unique id with index

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
@@ -21,6 +20,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import { fetchItems, fetchUOMs } from "./SalesInvoiceAPI";
 import { useNavigate } from "react-router-dom";
+import ApprovalTab from "../../Common/ApprovalTab"; // Import ApprovalTab
 
 const getAuthHeader = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -41,6 +41,7 @@ const SalesInvoiceParcelsTab = ({
   salesInvoiceId,
   onItemsChange,
   readOnly = false,
+  refreshApprovals,
 }) => {
   const navigate = useNavigate();
   const [itemsList, setItemsList] = useState([]);
@@ -54,8 +55,16 @@ const SalesInvoiceParcelsTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [activeView, setActiveView] = useState("items"); // State to track active tab
   const theme = useTheme();
   const isMounted = useRef(true);
+
+  // Reset activeView to "items" when in create mode (salesInvoiceId is undefined/null)
+  useEffect(() => {
+    if (!salesInvoiceId) {
+      setActiveView("items");
+    }
+  }, [salesInvoiceId]);
 
   // Define columns for DataTable
   const columns = [
@@ -67,128 +76,138 @@ const SalesInvoiceParcelsTab = ({
   ];
 
   // Fetch sales invoice parcels
- const fetchSalesInvoiceItems = async (salesInvoiceId) => {
-  try {
-    const { headers } = getAuthHeader();
-    console.log("Fetching sales invoice items for SalesInvoiceID:", salesInvoiceId);
-    const response = await axios.get(
-      `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`, // Remove the extra /api/
-      { headers }
-    );
-    console.log("Raw API response in SalesInvoiceParcelsTab:", response.data);
-    return response.data.data || [];
-  } catch (error) {
-    console.error("fetchSalesInvoiceItems error:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-    throw error;
-  }
-};
+  const fetchSalesInvoiceItems = async (salesInvoiceId) => {
+    try {
+      const { headers } = getAuthHeader();
+      console.log(
+        "Fetching sales invoice items for SalesInvoiceID:",
+        salesInvoiceId
+      );
+      const response = await axios.get(
+        `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`,
+        { headers }
+      );
+      console.log("Raw API response in SalesInvoiceParcelsTab:", response.data);
+      return response.data.data || [];
+    } catch (error) {
+      console.error("fetchSalesInvoiceItems error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
+  };
 
   // Load data with caching
- const loadData = useCallback(async () => {
-  console.log("loadData called with salesInvoiceId:", salesInvoiceId);
+  const loadData = useCallback(async () => {
+    console.log("loadData called with salesInvoiceId:", salesInvoiceId);
 
-  if (!salesInvoiceId) {
-    setError("No Sales Invoice ID provided");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError(null);
-
-    // Fetch items and UOMs only if not loaded
-    let itemsData = items.length > 1 ? items : [];
-    let uomsData = uoms.length > 1 ? uoms : [];
-
-    if (!itemsData.length) {
-      const rawItems = await fetchItems();
-      console.log("Fetched items:", rawItems);
-      itemsData = [
-        { value: "", label: "Select an item" },
-        ...rawItems.map((item) => ({
-          value: String(item.ItemID),
-          label: item.ItemName || "Unknown Item",
-        })),
-      ];
-      setItems(itemsData);
+    if (!salesInvoiceId) {
+      setError("No Sales Invoice ID provided");
+      setLoading(false);
+      return;
     }
 
-    if (!uomsData.length) {
-      const rawUoms = await fetchUOMs();
-      console.log("Fetched UOMs:", rawUoms);
-      uomsData = [
-        { value: "", label: "Select a UOM" },
-        ...rawUoms.map((uom) => ({
-          value: String(uom.UOMID),
-          label: uom.UOM || uom.UOMName || "Unknown UOM",
-        })),
-      ];
-      setUOMs(uomsData);
-    }
-
-    // Fetch parcels, handle failure gracefully
-    let parcelData = [];
     try {
-      parcelData = await fetchSalesInvoiceItems(salesInvoiceId);
-    } catch (error) {
-      console.warn("Failed to fetch sales invoice items, defaulting to empty array:", error.message);
-      if (error.response?.status === 404) {
-        setError("Sales Invoice not found. It may have been deleted.");
+      setLoading(true);
+      setError(null);
+
+      // Fetch items and UOMs only if not loaded
+      let itemsData = items.length > 1 ? items : [];
+      let uomsData = uoms.length > 1 ? uoms : [];
+
+      if (!itemsData.length) {
+        const rawItems = await fetchItems();
+        console.log("Fetched items:", rawItems);
+        itemsData = [
+          { value: "", label: "Select an item" },
+          ...rawItems.map((item) => ({
+            value: String(item.ItemID),
+            label: item.ItemName || "Unknown Item",
+          })),
+        ];
+        setItems(itemsData);
       }
-      parcelData = [];
-    }
-    console.log("Parcel data after fetch:", parcelData);
 
-    const formattedItems = parcelData.map((item, index) => {
-      const itemId = String(item.ItemID || "");
-      const uomId = String(item.UOMID || "");
-      const itemOption = itemsData.find((i) => i.value === itemId);
-      const uomOption = uomsData.find((u) => u.value === uomId);
+      if (!uomsData.length) {
+        const rawUoms = await fetchUOMs();
+        console.log("Fetched UOMs:", rawUoms);
+        uomsData = [
+          { value: "", label: "Select a UOM" },
+          ...rawUoms.map((uom) => ({
+            value: String(uom.UOMID),
+            label: uom.UOM || uom.UOMName || "Unknown UOM",
+          })),
+        ];
+        setUOMs(uomsData);
+      }
 
-      return {
-        id: item.SalesInvoiceParcelID || Date.now() + index,
-        itemId,
-        uomId,
-        quantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
-        ItemQuantity: parseFloat(item.ItemQuantity || item.Quantity || "0").toString(),
-        rate: parseFloat(item.Rate || "0").toString(),
-        Rate: parseFloat(item.Rate || "0").toString(),
-        amount: parseFloat(item.Amount || "0").toString(),
-        Amount: parseFloat(item.Amount || "0").toString(),
-        itemName: itemOption?.label || `Item ${itemId}`,
-        uomName: uomOption?.label || `UOM ${uomId}`,
-        srNo: index + 1,
-        SalesInvoiceParcelID: item.SalesInvoiceParcelID,
-        SalesInvoiceID: salesInvoiceId,
-      };
-    });
+      // Fetch parcels, handle failure gracefully
+      let parcelData = [];
+      try {
+        parcelData = await fetchSalesInvoiceItems(salesInvoiceId);
+      } catch (error) {
+        console.warn(
+          "Failed to fetch sales invoice items, defaulting to empty array:",
+          error.message
+        );
+        if (error.response?.status === 404) {
+          setError("Sales Invoice not found. It may have been deleted.");
+        }
+        parcelData = [];
+      }
+      console.log("Parcel data after fetch:", parcelData);
 
-    console.log("Formatted items for DataTable:", formattedItems);
-    setItemsList(formattedItems);
-    if (onItemsChange) {
-      onItemsChange(formattedItems);
+      const formattedItems = parcelData.map((item, index) => {
+        const itemId = String(item.ItemID || "");
+        const uomId = String(item.UOMID || "");
+        const itemOption = itemsData.find((i) => i.value === itemId);
+        const uomOption = uomsData.find((u) => u.value === uomId);
+
+        return {
+          id: item.SalesInvoiceParcelID || Date.now() + index,
+          itemId,
+          uomId,
+          quantity: parseFloat(
+            item.ItemQuantity || item.Quantity || "0"
+          ).toString(),
+          ItemQuantity: parseFloat(
+            item.ItemQuantity || item.Quantity || "0"
+          ).toString(),
+          rate: parseFloat(item.Rate || "0").toString(),
+          Rate: parseFloat(item.Rate || "0").toString(),
+          amount: parseFloat(item.Amount || "0").toString(),
+          Amount: parseFloat(item.Amount || "0").toString(),
+          itemName: itemOption?.label || `Item ${itemId}`,
+          uomName: uomOption?.label || `UOM ${uomId}`,
+          srNo: index + 1,
+          SalesInvoiceParcelID: item.SalesInvoiceParcelID,
+          SalesInvoiceID: salesInvoiceId,
+        };
+      });
+
+      console.log("Formatted items for DataTable:", formattedItems);
+      setItemsList(formattedItems);
+      if (onItemsChange) {
+        onItemsChange(formattedItems);
+      }
+    } catch (error) {
+      console.error("loadData error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      if (error.message.includes("personId")) {
+        setError("Please log in to view items. Click below to log in.");
+      } else if (!error.response?.status === 404) {
+        setError("Failed to load items. Please try again.");
+        console.log("Failed to load items: " + error.message);
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("loadData error:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-    if (error.message.includes("personId")) {
-      setError("Please log in to view items. Click below to log in.");
-    } else if (!error.response?.status === 404) { // Avoid overwriting the 404 error message
-      setError("Failed to load items. Please try again.");
-      console.log("Failed to load items: " + error.message);
-    }
-  } finally {
-    setLoading(false);
-  }
-}, [salesInvoiceId, onItemsChange, items.length, uoms.length]);
+  }, [salesInvoiceId, onItemsChange, items.length, uoms.length]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -197,6 +216,13 @@ const SalesInvoiceParcelsTab = ({
       isMounted.current = false;
     };
   }, [loadData]);
+
+  // Reset activeView to "items" when in create mode
+  useEffect(() => {
+    if (!salesInvoiceId) {
+      setActiveView("items");
+    }
+  }, [salesInvoiceId]);
 
   // Handle adding a new item form
   const handleAddItem = () => {
@@ -334,7 +360,7 @@ const SalesInvoiceParcelsTab = ({
       // Save to backend
       if (form.editIndex !== undefined) {
         await axios.put(
-          `${APIBASEURL}/api/salesInvoiceParcel/${newItem.SalesInvoiceParcelID}`,
+          `${APIBASEURL}/salesInvoiceParcel/${newItem.SalesInvoiceParcelID}`,
           {
             SalesInvoiceID: salesInvoiceId,
             ItemID: newItem.ItemID,
@@ -348,7 +374,7 @@ const SalesInvoiceParcelsTab = ({
         );
       } else {
         await axios.post(
-          `${APIBASEURL}/api/salesInvoiceParcel`,
+          `${APIBASEURL}/salesInvoiceParcel`,
           {
             SalesInvoiceID: salesInvoiceId,
             ItemID: newItem.ItemID,
@@ -399,7 +425,7 @@ const SalesInvoiceParcelsTab = ({
       const itemToDelete = itemsList.find((p) => p.id === deleteItemId);
       if (itemToDelete?.SalesInvoiceParcelID) {
         await axios.delete(
-          `${APIBASEURL}/api/salesInvoiceParcel/${itemToDelete.SalesInvoiceParcelID}`,
+          `${APIBASEURL}/salesInvoiceParcel/${itemToDelete.SalesInvoiceParcelID}`,
           { headers }
         );
       }
@@ -463,15 +489,59 @@ const SalesInvoiceParcelsTab = ({
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              activeView === "items"
+                ? theme.palette.mode === "dark"
+                  ? "#37474f"
+                  : "#e0f7fa"
+                : theme.palette.mode === "dark"
+                ? "#1f2529"
+                : "#f3f8fd",
             color: theme.palette.text.primary,
             cursor: "pointer",
           }}
+          onClick={() => setActiveView("items")}
         >
-          <Typography variant="h6" component="div">
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ cursor: "pointer" }}
+            onClick={() => setActiveView("items")}
+          >
             Items
           </Typography>
         </Box>
+        {salesInvoiceId && (
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                activeView === "approvals"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+            }}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
+              onClick={() => setActiveView("approvals")}
+            >
+              Approvals
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Content area */}
@@ -484,177 +554,185 @@ const SalesInvoiceParcelsTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
-            <Typography variant="body1">{error}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={error.includes("log in") ? handleLoginRedirect : loadData}
-              sx={{ mt: 2 }}
-            >
-              {error.includes("log in") ? "Log In" : "Retry"}
-            </Button>
-          </Box>
-        ) : itemsList.length === 0 && itemForms.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-            <Typography variant="body1">
-              No items found.{" "}
-              {!readOnly && "Click 'Add Item' to add a new item."}
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {!readOnly && (
+        {activeView === "items" ? (
+          loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
+              <Typography variant="body1">{error}</Typography>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddItem}
-                sx={{ mb: 2 }}
-                disabled={items.length <= 1 || uoms.length <= 1}
-              >
-                Add Item
-              </Button>
-            )}
-
-            {itemForms.map((form) => (
-              <Box
-                key={form.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Item" : "New Item"}
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 2,
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="itemId"
-                      label="Item"
-                      value={form.itemId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={items}
-                      error={!!errors[form.id]?.itemId}
-                      helperText={errors[form.id]?.itemId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="uomId"
-                      label="UOM"
-                      value={form.uomId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={uoms}
-                      error={!!errors[form.id]?.uomId}
-                      helperText={errors[form.id]?.uomId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="quantity"
-                      label="Quantity"
-                      value={form.quantity}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.quantity}
-                      helperText={errors[form.id]?.quantity}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="rate"
-                      label="Rate"
-                      value={form.rate}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.rate}
-                      helperText={errors[form.id]?.rate}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="amount"
-                      label="Amount"
-                      value={form.amount}
-                      error={!!errors[form.id]?.amount}
-                      helperText={errors[form.id]?.amount}
-                      type="number"
-                      disabled
-                    />
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      setItemForms((prev) =>
-                        prev.filter((f) => f.id !== form.id)
-                      )
-                    }
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSave(form.id)}
-                  >
-                    Save Item
-                  </Button>
-                </Box>
-              </Box>
-            ))}
-
-            {itemsList.length > 0 && (
-              <DataTable
-                rows={itemsList}
-                columns={columns}
-                page={page}
-                rowsPerPage={rowsPerPage}
-                onPageChange={(newPage) => setPage(newPage)}
-                onRowsPerPageChange={(newPageSize) =>
-                  setRowsPerPage(newPageSize)
+                color="primary"
+                onClick={
+                  error.includes("log in") ? handleLoginRedirect : loadData
                 }
-                rowsPerPageOptions={[5, 10, 25]}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                autoHeight
-                hideActions={readOnly}
-                onEdit={!readOnly ? handleEditItem : undefined}
-                onDelete={!readOnly ? handleDeleteItem : undefined}
-                totalRows={itemsList.length}
-                isPagination={true}
-              />
-            )}
-          </>
+                sx={{ mt: 2 }}
+              >
+                {error.includes("log in") ? "Log In" : "Retry"}
+              </Button>
+            </Box>
+          ) : itemsList.length === 0 && itemForms.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Typography variant="body1">
+                No items found.{" "}
+                {!readOnly && "Click 'Add Item' to add a new item."}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {!readOnly && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddItem}
+                  sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1}
+                >
+                  Add Item
+                </Button>
+              )}
+
+              {itemForms.map((form) => (
+                <Box
+                  key={form.id}
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined ? "Edit Item" : "New Item"}
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="itemId"
+                        label="Item"
+                        value={form.itemId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={items}
+                        error={!!errors[form.id]?.itemId}
+                        helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="uomId"
+                        label="UOM"
+                        value={form.uomId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={uoms}
+                        error={!!errors[form.id]?.uomId}
+                        helperText={errors[form.id]?.uomId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="quantity"
+                        label="Quantity"
+                        value={form.quantity}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.quantity}
+                        helperText={errors[form.id]?.quantity}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="rate"
+                        label="Rate"
+                        value={form.rate}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.rate}
+                        helperText={errors[form.id]?.rate}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="amount"
+                        label="Amount"
+                        value={form.amount}
+                        error={!!errors[form.id]?.amount}
+                        helperText={errors[form.id]?.amount}
+                        type="number"
+                        disabled
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        setItemForms((prev) =>
+                          prev.filter((f) => f.id !== form.id)
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSave(form.id)}
+                    >
+                      Save Item
+                    </Button>
+                  </Box>
+                </Box>
+              ))}
+
+              {itemsList.length > 0 && (
+                <DataTable
+                  rows={itemsList}
+                  columns={columns}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  autoHeight
+                  hideActions={readOnly}
+                  onEdit={!readOnly ? handleEditItem : undefined}
+                  onDelete={!readOnly ? handleDeleteItem : undefined}
+                  totalRows={itemsList.length}
+                  isPagination={true}
+                />
+              )}
+            </>
+          )
+        ) : (
+          salesInvoiceId && (
+            <ApprovalTab moduleType="salesInvoice" moduleId={salesInvoiceId} />
+          )
         )}
       </Box>
 
