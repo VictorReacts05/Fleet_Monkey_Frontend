@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import DataTable from '../../Common/DataTable';
 import ConfirmDialog from '../../Common/ConfirmDialog';
 import FormDatePicker from '../../Common/FormDatePicker';
-import { fetchUOMs, deleteUOM } from "./UOMAPI";
+import { fetchUOMs, deleteUOM } from "./";
 import UOMModal from './UOMModal';
 
 const UOMList = () => {
