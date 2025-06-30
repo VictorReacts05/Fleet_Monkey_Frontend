@@ -124,6 +124,7 @@ const PurchaseRFQParcelTab = ({
   purchaseRFQId,
   onParcelsChange,
   readOnly = false,
+  refreshApprovals,
 }) => {
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
@@ -740,7 +741,11 @@ const PurchaseRFQParcelTab = ({
           )
         ) : (
           purchaseRFQId && (
-            <ApprovalTab moduleType="purchase-rfq" moduleId={purchaseRFQId} />
+            <ApprovalTab
+              moduleType="purchase-rfq"
+              moduleId={purchaseRFQId}
+              refreshTrigger={refreshApprovals}
+            />
           )
         )}
       </Box>

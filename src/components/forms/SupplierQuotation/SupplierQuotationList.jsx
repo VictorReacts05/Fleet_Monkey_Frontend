@@ -45,6 +45,12 @@ const SupplierQuotationList = () => {
       valueGetter: (params) => params.row.CustomerName || "-",
     },
     {
+      field: "PurchaseRFQID",
+      headerName: "PurchaseRFQ ID",
+      flex: 1,
+      valueGetter: (params) => params.row.CustomerName || "-",
+    },
+    {
       field: "CreatedDateTime",
       headerName: "Created Date",
       flex: 1,
