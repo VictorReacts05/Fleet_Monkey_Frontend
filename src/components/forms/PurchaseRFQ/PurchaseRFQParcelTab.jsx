@@ -506,7 +506,7 @@ const PurchaseRFQParcelTab = ({
     >
       {/* Tab header */}
       <Box
-        sx={{
+        sx={{ 
           display: "flex",
           borderTopLeftRadius: 4,
           borderTopRightRadius: 4,
