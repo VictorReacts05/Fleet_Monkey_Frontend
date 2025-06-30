@@ -19,7 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from './SalesQuotationAPI';
+import { getAuthHeader } from "./SalesQuotationAPI";
 import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
 
@@ -65,7 +65,8 @@ class ErrorBoundary extends React.Component {
       return (
         <Box sx={{ textAlign: "center", py: 3 }}>
           <Typography color="error" variant="body1">
-            Error rendering parcels: {this.state.error?.message || "Unknown error"}
+            Error rendering parcels:{" "}
+            {this.state.error?.message || "Unknown error"}
           </Typography>
           <Button
             variant="contained"
@@ -273,8 +274,7 @@ const ParcelTab = ({
       salesAmount: Number(form.salesRate) * Number(form.quantity),
       itemName:
         items.find((i) => i.value === form.itemId)?.label || "Unknown Item",
-      uomName:
-        uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
+      uomName: uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
       srNo: form.originalId
         ? parcels.find((p) => p.id === form.originalId)?.srNo
         : parcels.length + 1,
@@ -358,20 +358,23 @@ const ParcelTab = ({
       field: "salesRate",
       headerName: "Sales Rate",
       flex: 1,
-      renderCell: (params) => (
+      renderCell: (params) =>
         isEdit ? (
           <TextField
             type="number"
             value={params.row.salesRate || ""}
-            onChange={(e) => handleSalesRateChangeLocal(params.row.id, e.target.value)}
+            onChange={(e) =>
+              handleSalesRateChangeLocal(params.row.id, e.target.value)
+            }
             size="small"
             sx={{
               width: "100px",
               textAlign: "center",
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                "-webkit-appearance": "none",
-                margin: 0,
-              },
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
               "& input[type=number]": {
                 "-moz-appearance": "textfield",
               },
@@ -381,8 +384,7 @@ const ParcelTab = ({
           />
         ) : (
           Number(params.row.salesRate).toFixed(6)
-        )
-      ),
+        ),
     },
     {
       field: "salesAmount",
@@ -403,7 +405,11 @@ const ParcelTab = ({
         }}
       >
         <Box
-          sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
+          sx={{
+            display: "flex",
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 4,
+          }}
         >
           <Box
             sx={{
@@ -459,6 +465,35 @@ const ParcelTab = ({
               </Typography>
             </Box>
           )}
+          {salesQuotationId && (
+            <Box
+              sx={{
+                py: 1.5,
+                px: 3,
+                fontWeight: "bold",
+                borderTop: "1px solid #e0e0e0",
+                borderRight: "1px solid #e0e0e0",
+                borderLeft: "1px solid #e0e0e0",
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                backgroundColor:
+                  activeView === "taxes"
+                    ? theme.palette.mode === "dark"
+                      ? "#37474f"
+                      : "#e0f7fa"
+                    : theme.palette.mode === "dark"
+                    ? "#1f2529"
+                    : "#f3f8fd",
+                color: theme.palette.text.primary,
+                cursor: "pointer",
+              }}
+              onClick={() => setActiveView("taxes")}
+            >
+              <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>
+                Taxes & Other Charges
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Box
@@ -511,7 +546,9 @@ const ParcelTab = ({
                   }}
                 >
                   <Typography variant="subtitle1" gutterBottom>
-                    {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                    {form.editIndex !== undefined
+                      ? "Edit Parcel"
+                      : "New Parcel"}
                   </Typography>
                   <Box
                     sx={{
@@ -578,7 +615,9 @@ const ParcelTab = ({
                       />
                     </Box>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}
+                  >
                     <Button
                       variant="outlined"
                       onClick={() =>
@@ -605,7 +644,9 @@ const ParcelTab = ({
                   pageSize={rowsPerPage}
                   page={page}
                   onPageChange={(newPage) => setPage(newPage)}
-                  onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
+                  onPageSizeChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
                   rowsPerPageOptions={[5, 10, 25]}
                   checkboxSelection={false}
                   disableSelectionOnClick
@@ -636,7 +677,8 @@ const ParcelTab = ({
           <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description">
-              Are you sure you want to remove this parcel? This action cannot be undone.
+              Are you sure you want to remove this parcel? This action cannot be
+              undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
