@@ -18,7 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
+import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems, fetchCertifications } from "./PurchaseInvoiceAPI";
 import { useNavigate } from "react-router-dom";
 
 const PurchaseInvoiceParcelsTab = ({
@@ -30,6 +30,7 @@ const PurchaseInvoiceParcelsTab = ({
   const [itemsList, setItemsList] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [itemForms, setItemForms] = useState([]);
@@ -44,6 +45,7 @@ const PurchaseInvoiceParcelsTab = ({
   // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
+    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
     { field: "Rate", headerName: "Rate", flex: 1 },
@@ -64,9 +66,10 @@ const PurchaseInvoiceParcelsTab = ({
       setLoading(true);
       setError(null);
 
-      // Fetch items and UOMs only if not loaded
+      // Fetch items, UOMs, and certifications only if not loaded
       let itemsData = items.length > 1 ? items : [];
       let uomsData = uoms.length > 1 ? uoms : [];
+      let certificationsData = certifications.length > 1 ? certifications : [];
 
       if (!itemsData.length) {
         const rawItems = await fetchItems();
@@ -92,6 +95,18 @@ const PurchaseInvoiceParcelsTab = ({
         setUOMs(uomsData);
       }
 
+      if (!certificationsData.length) {
+        const rawCertifications = await fetchCertifications();
+        certificationsData = [
+          { value: "", label: "Select a certification" },
+          ...rawCertifications.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label: cert.CertificationName || cert.name || "Unknown Certification",
+          })),
+        ];
+        setCertifications(certificationsData);
+      }
+
       // Fetch parcels
       const parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
       console.log("Parcel data after fetch:", parcelData);
@@ -100,13 +115,16 @@ const PurchaseInvoiceParcelsTab = ({
       const formattedItems = parcelData.map((item, index) => {
         const itemId = String(item.ItemID || "");
         const uomId = String(item.UOMID || "");
+        const certificationId = String(item.CertificationID || "");
         const itemOption = itemsData.find((i) => i.value === itemId);
         const uomOption = uomsData.find((u) => u.value === uomId);
+        const certificationOption = certificationsData.find((c) => c.value === certificationId);
 
         return {
           id: item.PInvoiceParcelID || Date.now() + index,
           itemId,
           uomId,
+          certificationId,
           quantity: String(item.ItemQuantity || item.Quantity || "0"),
           ItemQuantity: String(item.ItemQuantity || item.Quantity || "0"),
           rate: String(item.Rate || "0"),
@@ -115,6 +133,7 @@ const PurchaseInvoiceParcelsTab = ({
           Amount: String(item.Amount || "0"),
           itemName: item.ItemName || itemOption?.label || `Item ${itemId}`,
           uomName: item.UOMName || uomOption?.label || `UOM ${uomId}`,
+          certificationName: item.CertificationName || certificationOption?.label || "None",
           srNo: index + 1,
           PurchaseInvoiceItemID: item.PInvoiceParcelID,
           PInvoiceID: purchaseInvoiceId,
@@ -136,12 +155,11 @@ const PurchaseInvoiceParcelsTab = ({
         setError("Please log in to view items. Click below to log in.");
       } else {
         setError("Failed to load items. Please try again.");
-        // console.log("Failed to load items");
       }
     } finally {
       setLoading(false);
     }
-  }, [purchaseInvoiceId, onItemsChange, items.length, uoms.length]);
+  }, [purchaseInvoiceId, onItemsChange, items.length, uoms.length, certifications.length]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -160,6 +178,7 @@ const PurchaseInvoiceParcelsTab = ({
         id: newFormId,
         itemId: "",
         uomId: "",
+        certificationId: "",
         quantity: "",
         rate: "",
         amount: "",
@@ -182,6 +201,7 @@ const PurchaseInvoiceParcelsTab = ({
         id: editFormId,
         itemId: itemToEdit.itemId,
         uomId: itemToEdit.uomId,
+        certificationId: itemToEdit.certificationId,
         quantity: itemToEdit.quantity,
         rate: itemToEdit.rate,
         amount: itemToEdit.amount,
@@ -223,6 +243,7 @@ const PurchaseInvoiceParcelsTab = ({
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
+    // Certification is optional, so no validation unless required
     if (!form.quantity) {
       formErrors.quantity = "Quantity is required";
     } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
@@ -236,7 +257,6 @@ const PurchaseInvoiceParcelsTab = ({
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) < 0) {
       formErrors.amount = "Invalid Amount";
     }
-
     return formErrors;
   };
 
@@ -258,6 +278,7 @@ const PurchaseInvoiceParcelsTab = ({
       const { headers, personId } = getAuthHeader();
       const selectedItem = items.find((i) => i.value === form.itemId);
       const selectedUOM = uoms.find((u) => u.value === form.uomId);
+      const selectedCertification = certifications.find((c) => c.value === form.certificationId);
       const originalItem =
         form.editIndex !== undefined ? itemsList[form.editIndex] : null;
 
@@ -270,6 +291,8 @@ const PurchaseInvoiceParcelsTab = ({
         itemId: form.itemId,
         UOMID: parseInt(form.uomId, 10),
         uomId: form.uomId,
+        CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
+        certificationId: form.certificationId,
         ItemQuantity: parseInt(form.quantity, 10),
         Quantity: parseInt(form.quantity, 10),
         quantity: form.quantity,
@@ -279,6 +302,7 @@ const PurchaseInvoiceParcelsTab = ({
         amount: form.amount,
         itemName: selectedItem ? selectedItem.label : "Unknown Item",
         uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+        certificationName: selectedCertification ? selectedCertification.label : "None",
         srNo: originalItem?.srNo || itemsList.length + 1,
         isModified: true,
         CreatedByID: personId ? parseInt(personId, 10) : null,
@@ -292,6 +316,7 @@ const PurchaseInvoiceParcelsTab = ({
             PInvoiceID: purchaseInvoiceId,
             ItemID: newItem.ItemID,
             UOMID: newItem.UOMID,
+            CertificationID: newItem.CertificationID,
             ItemQuantity: newItem.ItemQuantity,
             Rate: newItem.Rate,
             Amount: newItem.Amount,
@@ -300,12 +325,13 @@ const PurchaseInvoiceParcelsTab = ({
           { headers }
         );
       } else {
-        await axios.post(
+        const response = await axios.post(
           `${APIBASEURL}/pInvoice-parcel`,
           {
             PInvoiceID: purchaseInvoiceId,
             ItemID: newItem.ItemID,
             UOMID: newItem.UOMID,
+            CertificationID: newItem.CertificationID,
             ItemQuantity: newItem.ItemQuantity,
             Rate: newItem.Rate,
             Amount: newItem.Amount,
@@ -313,6 +339,7 @@ const PurchaseInvoiceParcelsTab = ({
           },
           { headers }
         );
+        newItem.PurchaseInvoiceItemID = response.data.id || response.data.PInvoiceParcelID || form.id;
       }
 
       const updatedItems =
@@ -325,6 +352,11 @@ const PurchaseInvoiceParcelsTab = ({
         onItemsChange(updatedItems);
       }
       setItemForms((prev) => prev.filter((f) => f.id !== formId));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[formId];
+        return newErrors;
+      });
       toast.success("Item saved successfully.");
     } catch (error) {
       console.error("handleSave error:", {
@@ -335,7 +367,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to save items. Click below to log in.");
       } else {
-        console.log("Failed to save item.");
+        toast.error("Failed to save item: " + error.message);
       }
     }
   };
@@ -374,7 +406,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to delete items. Click below to log in.");
       } else {
-        console.log("Failed to delete item.");
+        toast.error("Failed to delete item: " + error.message);
       }
     }
   };
@@ -468,7 +500,7 @@ const PurchaseInvoiceParcelsTab = ({
                 startIcon={<AddIcon />}
                 onClick={handleAddItem}
                 sx={{ mb: 2 }}
-                disabled={items.length <= 1 || uoms.length <= 1}
+                disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
               >
                 Add Item
               </Button>
@@ -507,6 +539,18 @@ const PurchaseInvoiceParcelsTab = ({
                       options={items}
                       error={!!errors[form.id]?.itemId}
                       helperText={errors[form.id]?.itemId}
+                    />
+                  </Box>
+
+                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                    <FormSelect
+                      name="certificationId"
+                      label="Certification"
+                      value={form.certificationId}
+                      onChange={(e) => handleChange(e, form.id)}
+                      options={certifications}
+                      error={!!errors[form.id]?.certificationId}
+                      helperText={errors[form.id]?.certificationId}
                     />
                   </Box>
 

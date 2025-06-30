@@ -91,6 +91,27 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
         console.log("Could not fetch items:", err);
       }
 
+      let certificationMap = {};
+      try {
+        const certificationResponse = await axios.get(
+          `${APIBASEURL}/certifications?pageSize=500`,
+          getAuthHeader()
+        );
+        if (certificationResponse.data && certificationResponse.data.data) {
+          certificationMap = certificationResponse.data.data.reduce((acc, cert) => {
+            const certName =
+              cert.CertificationName || cert.Name || cert.Description || `Certification ${cert.CertificationID}`;
+            if (cert.CertificationID && certName) {
+              acc[cert.CertificationID] = certName;
+              acc[String(cert.CertificationID)] = certName;
+            }
+            return acc;
+          }, {});
+        }
+      } catch (err) {
+        console.log("Could not fetch certifications:", err);
+      }
+
       const enhancedParcels = parcels.map((parcel) => {
         if (parcel.ItemID && itemMap[parcel.ItemID]) {
           parcel.ItemName = itemMap[parcel.ItemID];
@@ -100,7 +121,19 @@ export const fetchSalesRFQParcels = async (salesRFQId) => {
           parcel.UOMName = uomMap[parcel.UOMID];
         }
 
-        return parcel;
+        if (parcel.CertificationID && certificationMap[parcel.CertificationID]) {
+          parcel.CertificationName = certificationMap[parcel.CertificationID];
+        } else {
+          parcel.CertificationName = "None";
+        }
+
+        return {
+          ...parcel,
+          certificationId: parcel.CertificationID !== null ? String(parcel.CertificationID) : "",
+          itemId: String(parcel.ItemID),
+          uomId: String(parcel.UOMID),
+          quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
+        };
       });
 
       return enhancedParcels;
@@ -134,7 +167,7 @@ export const getPurchaseRFQById = async (id) => {
       console.log("Found associated SalesRFQ ID:", salesRFQId);
 
       try {
-        const [salesRFQResponse, parcelsResponse, itemsResponse, uomsResponse] =
+        const [salesRFQResponse, parcelsResponse, itemsResponse, uomsResponse, certificationsResponse] =
           await Promise.all([
             axios.get(`${APIBASEURL}/sales-rfq/${salesRFQId}`, getAuthHeader()),
             axios.get(
@@ -143,6 +176,7 @@ export const getPurchaseRFQById = async (id) => {
             ),
             axios.get(`${APIBASEURL}/items`, getAuthHeader()),
             axios.get(`${APIBASEURL}/uoms`, getAuthHeader()),
+            axios.get(`${APIBASEURL}/certifications?pageSize=500`, getAuthHeader()),
           ]);
 
         console.log("Original SalesRFQ data:", salesRFQResponse.data);
@@ -161,6 +195,14 @@ export const getPurchaseRFQById = async (id) => {
           });
         }
 
+        const certificationMap = {};
+        if (certificationsResponse.data && certificationsResponse.data.data) {
+          certificationsResponse.data.data.forEach((cert) => {
+            certificationMap[cert.CertificationID] =
+              cert.CertificationName || cert.Name || cert.Description || `Certification ${cert.CertificationID}`;
+          });
+        }
+
         if (parcelsResponse.data && parcelsResponse.data.data) {
           const parcels = parcelsResponse.data.data.filter(
             (parcel) => String(parcel.SalesRFQID) === String(salesRFQId)
@@ -173,6 +215,7 @@ export const getPurchaseRFQById = async (id) => {
             id: parcel.SalesRFQParcelID || Date.now() + index,
             itemId: String(parcel.ItemID || ""),
             uomId: String(parcel.UOMID || ""),
+            certificationId: String(parcel.CertificationID) ,
             quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
             itemName:
               parcel.ItemID && itemMap[parcel.ItemID]
@@ -182,6 +225,10 @@ export const getPurchaseRFQById = async (id) => {
               parcel.UOMID && uomMap[parcel.UOMID]
                 ? uomMap[parcel.UOMID]
                 : "Unknown Unit",
+            certificationName:
+              parcel.CertificationID && certificationMap[parcel.CertificationID]
+                ? certificationMap[parcel.CertificationID]
+                : "None",
             srNo: index + 1,
           }));
 

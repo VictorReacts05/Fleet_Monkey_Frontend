@@ -389,7 +389,7 @@ const PurchaseRFQForm = ({
     if (purchaseRFQId) {
       loadApprovalStatus();
     }
-  }, [purchaseRFQId, loadApprovalStatus]);
+  }, [purchaseRFQId, loadApprovalStatus,]);
 
   const addSupplier = async (supplierData) => {
     try {

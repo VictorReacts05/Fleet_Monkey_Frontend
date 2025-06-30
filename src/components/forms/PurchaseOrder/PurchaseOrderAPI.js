@@ -482,6 +482,19 @@ export const fetchPurchaseOrder = async (purchaseOrderId, user) => {
   }
 };
 
+
+// Function to fetch certifications
+export const fetchCertifications = async (user) => {
+  try {
+    const { headers } = getAuthHeader(user);
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, { headers });
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
+    throw error;
+  }
+};
+
 export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
   try {
     const { headers } = getAuthHeader(user);
@@ -506,6 +519,7 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
 
       let uomMap = {};
       let itemMap = {};
+      let certificationMap = {};
 
       try {
         if (cache.uoms) {
@@ -577,6 +591,39 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
         );
       }
 
+      try {
+        if (cache.certifications) {
+          console.log("Using cached certifications");
+          certificationMap = cache.certifications;
+        } else {
+          const certResponse = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, {
+            headers,
+          });
+          console.log("Certifications API Raw Response:", certResponse.data);
+          if (certResponse.data?.data) {
+            certificationMap = (
+              Array.isArray(certResponse.data.data)
+                ? certResponse.data.data
+                : [certResponse.data.data]
+            ).reduce((acc, cert) => {
+              const certName = cert.CertificationName || cert.name || "Unknown Certification";
+              if (cert.CertificationID) {
+                acc[cert.CertificationID] = certName;
+                acc[String(cert.CertificationID)] = certName;
+              }
+              return acc;
+            }, {});
+            cache.certifications = certificationMap;
+            console.log("Certification Map:", certificationMap);
+          }
+        }
+      } catch (err) {
+        console.error(
+          "Could not fetch certifications:",
+          err.response?.data || err.message
+        );
+      }
+
       const enhancedParcels = parcels.map((parcel) => {
         console.log("Processing parcel:", parcel);
         parcel.ItemName =
@@ -587,6 +634,10 @@ export const fetchPurchaseOrderParcels = async (purchaseOrderId, user) => {
           parcel.UOMID && uomMap[parcel.UOMID]
             ? uomMap[parcel.UOMID]
             : parcel.UOM || `UOM #${parcel.UOMID}`;
+        parcel.CertificationName =
+          parcel.CertificationID && certificationMap[parcel.CertificationID]
+            ? certificationMap[parcel.CertificationID]
+            : parcel.CertificationName || "None";
         return parcel;
       });
 

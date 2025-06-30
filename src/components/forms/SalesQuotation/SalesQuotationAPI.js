@@ -251,6 +251,28 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
         );
       }
 
+      let certificationMap = {};
+      try {
+        const certResponse = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, { headers });
+        console.log("Certifications API Raw Response:", certResponse.data);
+        if (certResponse.data && certResponse.data.data) {
+          certificationMap = certResponse.data.data.reduce((acc, cert) => {
+            const certName = cert.CertificationName || cert.name || "Unknown Certification";
+            if (cert.CertificationID) {
+              acc[cert.CertificationID] = certName;
+              acc[String(cert.CertificationID)] = certName;
+            }
+            return acc;
+          }, {});
+          console.log("Certification Map:", certificationMap);
+        }
+      } catch (err) {
+        console.error(
+          "Could not fetch certifications:",
+          err.response?.data || err.message
+        );
+      }
+
       const enhancedParcels = parcels.map((parcel) => {
         console.log("Processing parcel:", parcel);
         parcel.ItemName =
@@ -259,6 +281,10 @@ export const fetchSalesQuotationParcels = async (salesQuotationId) => {
             : "Unknown Item";
         parcel.UOMName =
           parcel.UOMID && uomMap[parcel.UOMID] ? uomMap[parcel.UOMID] : "-";
+        parcel.CertificationName =
+          parcel.CertificationID && certificationMap[parcel.CertificationID]
+            ? certificationMap[parcel.CertificationID]
+            : "None";
         parcel.SupplierRate = parseFloat(parcel.SupplierRate) || 0;
         parcel.SupplierAmount = parseFloat(parcel.SupplierAmount) || 0;
         parcel.SalesRate = parseFloat(parcel.SalesRate) || 0;
