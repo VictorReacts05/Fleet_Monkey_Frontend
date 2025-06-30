@@ -135,7 +135,7 @@ const SupplierQuotationForm = ({
   const [serviceTypes, setServiceTypes] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [certifications, setCertifications] = useState([]); // Added for certifications
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastDisplayed, setToastDisplayed] = useState(false);
@@ -586,6 +586,15 @@ const SupplierQuotationForm = ({
       return;
     }
 
+    // Check if any parcel has a Rate of 0
+    const hasZeroRate = parcels.some(
+      (parcel) => !parcel.Rate || parseFloat(parcel.Rate) === 0
+    );
+    if (hasZeroRate) {
+      toast.error("Please enter rate for all parcels");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -777,6 +786,17 @@ const SupplierQuotationForm = ({
   };
 
   const handleStatusChange = (newStatus) => {
+    if (newStatus === "Approved") {
+      // Check if any parcel has a Rate of 0
+      const hasZeroRate = parcels.some(
+        (parcel) => !parcel.Rate || parseFloat(parcel.Rate) === 0
+      );
+      if (hasZeroRate) {
+        toast.error("Please enter rate for all parcels");
+        return;
+      }
+    }
+
     setStatus(newStatus);
     setFormData((prev) => ({
       ...prev,
@@ -846,6 +866,7 @@ const SupplierQuotationForm = ({
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
                     readOnly={status === "Approved"}
+                    parcels={parcels} // Pass parcels to StatusIndicator
                   />
                 </Box>
               </Fade>

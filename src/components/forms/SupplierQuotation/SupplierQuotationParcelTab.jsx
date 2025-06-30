@@ -96,60 +96,14 @@ const SupplierQuotationParcelTab = ({
       id: parcel.SupplierQuotationParcelID || Date.now() + index,
       itemName: parcel.itemName || parcel.ItemName || `Item ${parcel.ItemID}`,
       uomName: parcel.uomName || parcel.UOMName || `UOM ${parcel.UOMID}`,
-      certificationName: parcel.CertificationName || (parcel.CertificationID ? `Certification ${parcel.CertificationID}` : "None"),
+      certificationName: parcel.certificationName || (parcel.CertificationID ? `Certification ${parcel.CertificationID}` : "None"),
       srNo: parcel.srNo || index + 1,
     }));
     setParcels(formattedParcels);
-  }, [initialParcels]);
-
-  const columns = [
-    { id: "itemName", label: "Item" },
-    { id: "certificationName", label: "Certification" },
-    { id: "uomName", label: "UOM" },
-    {
-      id: "ItemQuantity",
-      label: "Quantity",
-      renderCell: ({ value }) => value.toFixed(2),
-    },
-    {
-      id: "Rate",
-      label: "Rate",
-      renderCell: ({ row, value }) =>
-        isEditing ? (
-          <TextField
-            type="number"
-            value={value || ""}
-            onChange={(e) =>
-              handleRateChange(row.SupplierQuotationParcelID, e.target.value)
-            }
-            size="small"
-            sx={{
-              width: "100px",
-              textAlign: "center",
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                {
-                  "-webkit-appearance": "none",
-                  margin: 0,
-                },
-              "& input[type=number]": {
-                "-moz-appearance": "textfield",
-              },
-            }}
-            inputProps={{ min: 0, step: "0.01" }}
-            placeholder="0.00"
-          />
-        ) : value ? (
-          value.toFixed(2)
-        ) : (
-          "-"
-        ),
-    },
-    {
-      id: "Amount",
-      label: "Amount",
-      renderCell: ({ value }) => (value ? value.toFixed(2) : "-"),
-    },
-  ];
+    if (onParcelsChange) {
+      onParcelsChange(formattedParcels);
+    }
+  }, [initialParcels, onParcelsChange]);
 
   // Load dropdown data
   useEffect(() => {
@@ -255,9 +209,11 @@ const SupplierQuotationParcelTab = ({
   const handleChange = (e, formId) => {
     const { name, value } = e.target;
     setParcelForms((prev) =>
-      prev.map((form) =>
-        form.id === formId ? { ...form, [name]: value } : form
-      )
+      prev.map((form) => {
+        if (form.id !== formId) return form;
+        const updatedForm = { ...form, [name]: value };
+        return updatedForm;
+      })
     );
 
     setErrors((prev) => ({
@@ -415,6 +371,55 @@ const SupplierQuotationParcelTab = ({
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
+
+  const columns = [
+    { id: "itemName", label: "Item" },
+    { id: "certificationName", label: "Certification" },
+    { id: "uomName", label: "UOM" },
+    {
+      id: "ItemQuantity",
+      label: "Quantity",
+      renderCell: ({ value }) => value.toFixed(2),
+    },
+    {
+      id: "Rate",
+      label: "Rate",
+      renderCell: ({ row, value }) =>
+        isEditing ? (
+          <TextField
+            type="number"
+            value={value || ""}
+            onChange={(e) =>
+              handleRateChange(row.SupplierQuotationParcelID, e.target.value)
+            }
+            size="small"
+            sx={{
+              width: "100px",
+              textAlign: "center",
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
+              "& input[type=number]": {
+                "-moz-appearance": "textfield",
+              },
+            }
+            inputProps={{ min: 0, step: "0.01" }}
+            placeholder="0.00"
+          />
+        ) : value ? (
+          value.toFixed(2)
+        ) : (
+          "-"
+        ),
+    },
+    {
+      id: "Amount",
+      label: "Amount",
+      renderCell: ({ value }) => (value ? value.toFixed(2) : "-"),
+    },
+  ];
 
   return (
     <Box
