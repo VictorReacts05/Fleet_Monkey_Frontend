@@ -228,25 +228,39 @@ export const deleteSalesInvoice = async (id) => {
   }
 };
 
+
+export const fetchCertifications = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, getAuthHeader());
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
+    throw error;
+  }
+};
+
 export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
   try {
     if (!salesInvoiceId || salesInvoiceId === "undefined") {
       throw new Error("Invalid Sales Invoice ID");
     }
 
+    const { headers } = getAuthHeader();
     const response = await axios.get(
-      `${APIBASEURL}/salesInvoiceParcel?salesinvoiceId=${salesInvoiceId}`,
-      getAuthHeader()
+      `${APIBASEURL}/salesInvoiceParcel?salesInvoiceId=${salesInvoiceId}`,
+      { headers }
     );
 
     if (response.data && response.data.data) {
-      const items = response.data.data;
+      const items = Array.isArray(response.data.data)
+        ? response.data.data
+        : [response.data.data];
 
       let itemMap = {};
       try {
         const itemResponse = await axios.get(
           `${APIBASEURL}/items`,
-          getAuthHeader()
+          { headers }
         );
         if (itemResponse.data && itemResponse.data.data) {
           itemMap = itemResponse.data.data.reduce((acc, item) => {
@@ -263,7 +277,7 @@ export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
       try {
         const uomResponse = await axios.get(
           `${APIBASEURL}/uoms`,
-          getAuthHeader()
+          { headers }
         );
         if (uomResponse.data && uomResponse.data.data) {
           uomMap = uomResponse.data.data.reduce((acc, uom) => {
@@ -280,19 +294,45 @@ export const fetchSalesInvoiceItems = async (salesInvoiceId) => {
         console.error("Could not fetch UOMs:", err);
       }
 
+      let certificationMap = {};
+      try {
+        const certResponse = await axios.get(
+          `${APIBASEURL}/certifications?pageSize=500`,
+          { headers }
+        );
+        if (certResponse.data && certResponse.data.data) {
+          certificationMap = certResponse.data.data.reduce((acc, cert) => {
+            const certName = cert.CertificationName || cert.name || "Unknown Certification";
+            const certId = cert.CertificationID || cert.id;
+            if (certId && certName) {
+              acc[certId] = certName;
+              acc[String(certId)] = certName;
+            }
+            return acc;
+          }, {});
+        }
+      } catch (err) {
+        console.error("Could not fetch certifications:", err);
+      }
+
       const enhancedItems = items.map((item, index) => ({
-        id: item.SalesInvoiceItemID || Date.now() + index,
+        id: item.SalesInvoiceParcelID || Date.now() + index,
         itemId: String(item.ItemID || ""),
         uomId: String(item.UOMID || ""),
+        certificationId: String(item.CertificationID || ""),
         quantity: String(item.Quantity || "0"),
         itemName:
           item.ItemID && itemMap[item.ItemID]
             ? itemMap[item.ItemID]
-            : "Unknown Item",
+            : item.ItemName || "Unknown Item",
         uomName:
           item.UOMID && uomMap[item.UOMID]
             ? uomMap[item.UOMID]
-            : "Unknown Unit",
+            : item.UOMName || "Unknown Unit",
+        certificationName:
+          item.CertificationID && certificationMap[item.CertificationID]
+            ? certificationMap[item.CertificationID]
+            : item.CertificationName || "None",
         srNo: index + 1,
       }));
 

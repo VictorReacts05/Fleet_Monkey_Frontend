@@ -21,7 +21,7 @@ import APIBASEURL from "../../../utils/apiBaseUrl";
 import { getAuthHeader } from "./SupplierQuotationAPI";
 import DataTable from "../../common/DataTable";
 import { useNavigate } from "react-router-dom";
-import ApprovalTab from "../../Common/ApprovalTab"; // Adjusted path as needed
+import ApprovalTab from "../../Common/ApprovalTab";
 
 // Function to fetch items from API
 const fetchItems = async () => {
@@ -31,6 +31,18 @@ const fetchItems = async () => {
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching items:", error);
+    throw error;
+  }
+};
+
+// Function to fetch certifications from API
+const fetchCertifications = async () => {
+  try {
+    const { headers } = getAuthHeader();
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, { headers });
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
     throw error;
   }
 };
@@ -60,6 +72,7 @@ const SupplierQuotationParcelTab = ({
   const [parcels, setParcels] = useState(initialParcels || []);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [parcelForms, setParcelForms] = useState([]);
   const [errors, setErrors] = useState({});
@@ -69,7 +82,7 @@ const SupplierQuotationParcelTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [activeView, setActiveView] = useState("items");
 
-  // Reset activeView to "items" when in create mode (supplierQuotationId is undefined/null)
+  // Reset activeView to "items" when in create mode
   useEffect(() => {
     if (!supplierQuotationId) {
       setActiveView("items");
@@ -78,11 +91,20 @@ const SupplierQuotationParcelTab = ({
 
   // Update parcels when initialParcels changes
   useEffect(() => {
-    setParcels(initialParcels || []);
+    const formattedParcels = (initialParcels || []).map((parcel, index) => ({
+      ...parcel,
+      id: parcel.SupplierQuotationParcelID || Date.now() + index,
+      itemName: parcel.itemName || parcel.ItemName || `Item ${parcel.ItemID}`,
+      uomName: parcel.uomName || parcel.UOMName || `UOM ${parcel.UOMID}`,
+      certificationName: parcel.CertificationName || (parcel.CertificationID ? `Certification ${parcel.CertificationID}` : "None"),
+      srNo: parcel.srNo || index + 1,
+    }));
+    setParcels(formattedParcels);
   }, [initialParcels]);
 
   const columns = [
     { id: "itemName", label: "Item" },
+    { id: "certificationName", label: "Certification" },
     { id: "uomName", label: "UOM" },
     {
       id: "ItemQuantity",
@@ -134,13 +156,17 @@ const SupplierQuotationParcelTab = ({
     const loadDropdownData = async () => {
       try {
         setLoading(true);
-        const [itemsData, uomsData] = await Promise.all([
+        const [itemsData, uomsData, certificationsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.log("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.log("Failed to load UOMs");
+            return [];
+          }),
+          fetchCertifications().catch((err) => {
+            console.log("Failed to load certifications");
             return [];
           }),
         ]);
@@ -161,10 +187,20 @@ const SupplierQuotationParcelTab = ({
           })),
         ];
 
+        const certificationOptions = [
+          { value: "", label: "Select a certification" },
+          ...certificationsData.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label: cert.CertificationName || cert.name || "Unknown Certification",
+          })),
+        ];
+
         setItems(itemOptions);
         setUOMs(uomOptions);
+        setCertifications(certificationOptions);
       } catch (error) {
         console.log("Failed to load dropdown data: " + error.message);
+        toast.error("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -182,6 +218,7 @@ const SupplierQuotationParcelTab = ({
         id: newFormId,
         itemId: "",
         uomId: "",
+        certificationId: "",
         quantity: "",
         rate: "",
       },
@@ -205,6 +242,7 @@ const SupplierQuotationParcelTab = ({
         id: editFormId,
         itemId: String(parcelToEdit.ItemID),
         uomId: String(parcelToEdit.UOMID),
+        certificationId: String(parcelToEdit.CertificationID || ""),
         quantity: String(parcelToEdit.ItemQuantity),
         rate: String(parcelToEdit.Rate || ""),
         editIndex: parcels.findIndex((p) => p.SupplierQuotationParcelID === id),
@@ -269,6 +307,9 @@ const SupplierQuotationParcelTab = ({
 
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
+    const selectedCertification = form.certificationId
+      ? certifications.find((c) => c.value === form.certificationId)
+      : null;
     const quantity = parseFloat(form.quantity);
     const rate = parseFloat(form.rate);
     const amount = quantity * rate;
@@ -280,6 +321,8 @@ const SupplierQuotationParcelTab = ({
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       UOMID: parseInt(form.uomId) || 0,
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+      CertificationID: form.certificationId ? parseInt(form.certificationId) : null,
+      certificationName: selectedCertification ? selectedCertification.label : "None",
       ItemQuantity: quantity,
       Rate: rate,
       Amount: amount,
@@ -472,7 +515,7 @@ const SupplierQuotationParcelTab = ({
                   startIcon={<AddIcon />}
                   onClick={handleAddParcel}
                   sx={{ mb: 2 }}
-                  disabled={items.length <= 1 || uoms.length <= 1}
+                  disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
                 >
                   Add Parcel
                 </Button>
@@ -511,6 +554,17 @@ const SupplierQuotationParcelTab = ({
                         options={items}
                         error={!!errors[form.id]?.itemId}
                         helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+                    <Box sx={{ flex: "1 1 24%", minWidth: "200px" }}>
+                      <FormSelect
+                        name="certificationId"
+                        label="Certification"
+                        value={form.certificationId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={certifications}
+                        error={!!errors[form.id]?.certificationId}
+                        helperText={errors[form.id]?.certificationId}
                       />
                     </Box>
                     <Box sx={{ flex: "1 1 24%", minWidth: "200px" }}>

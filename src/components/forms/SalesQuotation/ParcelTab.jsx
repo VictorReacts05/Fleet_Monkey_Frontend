@@ -19,7 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from "./SalesQuotationAPI";
+import { getAuthHeader,fetchSalesQuotationParcels } from "./SalesQuotationAPI";
 import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
 
@@ -48,6 +48,17 @@ const fetchUOMs = async () => {
     }
   } catch (error) {
     console.error("Error fetching UOMs:", error);
+    throw error;
+  }
+};
+
+// Function to fetch certifications from API
+const fetchCertifications = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
     throw error;
   }
 };
@@ -97,6 +108,7 @@ const ParcelTab = ({
   const [parcels, setParcels] = useState(initialParcels || []);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [parcelForms, setParcelForms] = useState([]);
   const [errors, setErrors] = useState({});
@@ -112,7 +124,7 @@ const ParcelTab = ({
     const loadDropdownData = async () => {
       try {
         setLoading(true);
-        const [itemsData, uomsData] = await Promise.all([
+        const [itemsData, uomsData, certificationsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
             toast.error("Failed to load items");
@@ -121,6 +133,10 @@ const ParcelTab = ({
           fetchUOMs().catch((err) => {
             console.error("Error fetching UOMs:", err);
             toast.error("Failed to load UOMs");
+            return [];
+          }),
+          fetchCertifications().catch((err) => {
+            console.error("Error fetching certifications:", err);
             return [];
           }),
         ]);
@@ -139,9 +155,16 @@ const ParcelTab = ({
             label: uom.UOM || uom.UOMName || uom.Description || "Unknown UOM",
           })),
         ]);
+        setCertifications([
+          { value: "", label: "Select a certification" },
+          ...certificationsData.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label: cert.CertificationName || cert.name || "Unknown Certification",
+          })),
+        ]);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
-        toast.error("Error loading dropdown data");
+        toast.error("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -156,40 +179,52 @@ const ParcelTab = ({
 
       try {
         setLoadingExistingParcels(true);
-        const response = await axios.get(
-          `${APIBASEURL}/sales-Quotation-Parcel/?salesQuotationId=${salesQuotationId}`
-        );
-        const parcelData = response.data?.data || response.data || [];
+        const parcelData = await fetchSalesQuotationParcels(salesQuotationId);
         const formattedParcels = parcelData.map((parcel, index) => ({
           id: parcel.SalesQuotationParcelID || `parcel-${index}`,
           itemId: String(parcel.ItemID || ""),
           uomId: String(parcel.UOMID || ""),
-          quantity: Number(parcel.ItemQuantity) || 0,
+          certificationId: String(parcel.CertificationID || ""),
+          quantity: String(parcel.Quantity || "0"),
           rate: Number(parcel.SupplierRate) || 0,
           amount: Number(parcel.SupplierAmount) || 0,
           salesRate: Number(parcel.SalesRate) || 0,
           salesAmount: Number(parcel.SalesAmount) || 0,
-          itemName:
-            items.find((i) => i.value === String(parcel.ItemID))?.label ||
-            parcel.ItemName ||
-            "Unknown Item",
-          uomName:
-            uoms.find((u) => u.value === String(parcel.UOMID))?.label ||
-            parcel.UOM ||
-            "Unknown UOM",
+          itemName: items.find((i) => i.value === String(parcel.ItemID))?.label || parcel.ItemName || "Unknown Item",
+          uomName: uoms.find((u) => u.value === String(parcel.UOMID))?.label || parcel.UOMName || "Unknown UOM",
+          certificationName: certifications.find((c) => c.value === String(parcel.CertificationID))?.label || parcel.CertificationName || "None",
           srNo: index + 1,
         }));
         setParcels(formattedParcels);
         if (onParcelsChange) onParcelsChange(formattedParcels);
       } catch (error) {
         console.error("Error loading existing parcels:", error);
-        toast.error("Failed to load parcels");
+        toast.error("Failed to load parcels: " + error.message);
       } finally {
         setLoadingExistingParcels(false);
       }
     };
     if (salesQuotationId) loadExistingParcels();
-  }, [salesQuotationId, items, uoms, onParcelsChange]);
+  }, [salesQuotationId, items, uoms, certifications, onParcelsChange]);
+
+  // Handle adding a new parcel form
+  const handleAddParcel = () => {
+    const newFormId = Date.now();
+    setParcelForms((prev) => [
+      ...prev,
+      {
+        id: newFormId,
+        itemId: "",
+        uomId: "",
+        certificationId: "",
+        quantity: "",
+        rate: "",
+        amount: "",
+        salesRate: "",
+        salesAmount: "",
+      },
+    ]);
+  };
 
   // Handle editing an existing parcel
   const handleEditParcel = (id) => {
@@ -229,11 +264,8 @@ const ParcelTab = ({
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
-    if (
-      !form.quantity ||
-      isNaN(Number(form.quantity)) ||
-      Number(form.quantity) <= 0
-    )
+    // Certification is optional, so no validation unless required
+    if (!form.quantity || isNaN(Number(form.quantity)) || Number(form.quantity) <= 0)
       formErrors.quantity = "Quantity must be a positive number";
     if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0)
       formErrors.rate = "Supplier Rate must be a non-negative number";
@@ -263,21 +295,24 @@ const ParcelTab = ({
       return;
     }
 
+    const selectedItem = items.find((i) => i.value === form.itemId);
+    const selectedUOM = uoms.find((u) => u.value === form.uomId);
+    const selectedCertification = certifications.find((c) => c.value === form.certificationId);
+
     const newParcel = {
       id: form.originalId || form.id,
       itemId: form.itemId,
       uomId: form.uomId,
+      certificationId: form.certificationId || "",
       quantity: Number(form.quantity),
       rate: Number(form.rate),
       amount: Number(form.rate) * Number(form.quantity),
       salesRate: Number(form.salesRate),
       salesAmount: Number(form.salesRate) * Number(form.quantity),
-      itemName:
-        items.find((i) => i.value === form.itemId)?.label || "Unknown Item",
-      uomName: uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
-      srNo: form.originalId
-        ? parcels.find((p) => p.id === form.originalId)?.srNo
-        : parcels.length + 1,
+      itemName: selectedItem?.label || "Unknown Item",
+      uomName: selectedUOM?.label || "Unknown UOM",
+      certificationName: selectedCertification?.label || "None",
+      srNo: form.originalId ? parcels.find((p) => p.id === form.originalId)?.srNo : parcels.length + 1,
       CreatedByID: parseInt(personId, 10),
     };
 
@@ -292,6 +327,12 @@ const ParcelTab = ({
     setParcels(updatedParcels);
     if (onParcelsChange) onParcelsChange(updatedParcels);
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[formId];
+      return newErrors;
+    });
+    toast.success(form.editIndex !== undefined ? "Parcel updated successfully" : "Parcel added successfully");
   };
 
   // Handle deleting a parcel
@@ -306,6 +347,7 @@ const ParcelTab = ({
     if (onParcelsChange) onParcelsChange(updatedParcels);
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
+    toast.success("Parcel deleted successfully");
   };
 
   const handleCancelDelete = () => {
@@ -335,6 +377,7 @@ const ParcelTab = ({
   // Define table columns
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
+    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     {
       field: "quantity",
@@ -524,6 +567,17 @@ const ParcelTab = ({
             </Box>
           ) : activeView === "items" ? (
             <>
+              {!readOnly && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddParcel}
+                  sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
+                >
+                  Add Parcel
+                </Button>
+              )}
               {parcels.length === 0 && parcelForms.length === 0 && (
                 <Box
                   sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
@@ -568,6 +622,17 @@ const ParcelTab = ({
                         options={items}
                         error={!!errors[form.id]?.itemId}
                         helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="certificationId"
+                        label="Certification"
+                        value={form.certificationId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={certifications}
+                        error={!!errors[form.id]?.certificationId}
+                        helperText={errors[form.id]?.certificationId}
                       />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
@@ -620,11 +685,7 @@ const ParcelTab = ({
                   >
                     <Button
                       variant="outlined"
-                      onClick={() =>
-                        setParcelForms((prev) =>
-                          prev.filter((f) => f.id !== form.id)
-                        )
-                      }
+                      onClick={() => setParcelForms((prev) => prev.filter((f) => f.id !== form.id))}
                     >
                       Cancel
                     </Button>

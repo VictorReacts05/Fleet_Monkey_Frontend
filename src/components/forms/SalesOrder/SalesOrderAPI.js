@@ -261,6 +261,27 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
         );
       }
 
+      let certificationMap = {};
+      try {
+        const certResponse = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, { headers });
+        if (certResponse.data && certResponse.data.data) {
+          certificationMap = certResponse.data.data.reduce((acc, cert) => {
+            const certName = cert.CertificationName || cert.name || "Unknown Certification";
+            if (cert.CertificationID) {
+              acc[cert.CertificationID] = certName;
+              acc[String(cert.CertificationID)] = certName;
+            }
+            return acc;
+          }, {});
+          console.log("Certification Map:", certificationMap);
+        }
+      } catch (err) {
+        console.error(
+          "Could not fetch certifications:",
+          err.response?.data || err.message
+        );
+      }
+
       const enhancedParcels = parcels.map((parcel) => {
         console.log("Processing parcel:", parcel);
         if (parcel.ItemID && itemMap[parcel.ItemID]) {
@@ -268,6 +289,11 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
         }
         if (parcel.UOMID && uomMap[parcel.UOMID]) {
           parcel.UOMName = uomMap[parcel.UOMID];
+        }
+        if (parcel.CertificationID && certificationMap[parcel.CertificationID]) {
+          parcel.CertificationName = certificationMap[parcel.CertificationID];
+        } else {
+          parcel.CertificationName = "None";
         }
         return parcel;
       });
@@ -284,7 +310,6 @@ export const fetchSalesOrderParcels = async (SalesOrderID) => {
     throw error.response?.data || error;
   }
 };
-
 // Fetch global Sales Order status
 export const fetchSalesOrderStatus = async (SalesOrderID) => {
   try {

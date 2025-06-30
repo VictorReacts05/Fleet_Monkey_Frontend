@@ -1,4 +1,3 @@
-// src/components/forms/PurchaseRFQ/PurchaseRFQParcelTab.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
@@ -19,7 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import ApprovalTab from "../../Common/ApprovalTab"; // Import ApprovalTab
+import ApprovalTab from "../../Common/ApprovalTab";
 
 // Function to fetch items from API
 const fetchItems = async (token) => {
@@ -30,6 +29,23 @@ const fetchItems = async (token) => {
     return response.data.data || [];
   } catch (error) {
     console.error("fetchItems error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw error;
+  }
+};
+
+// Function to fetch certifications from API
+const fetchCertifications = async (token) => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data || [];
+  } catch (error) {
+    console.error("fetchCertifications error:", {
       message: error.message,
       status: error.response?.status,
       data: error.response?.data,
@@ -113,6 +129,7 @@ const PurchaseRFQParcelTab = ({
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [parcelForms, setParcelForms] = useState([]);
@@ -121,13 +138,14 @@ const PurchaseRFQParcelTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
-  const [activeView, setActiveView] = useState("items"); // State to track active tab
+  const [activeView, setActiveView] = useState("items");
   const theme = useTheme();
   const isMounted = useRef(true);
 
   // Define columns for table
   const columns = [
     { field: "itemName", headerName: "Name", flex: 1 },
+    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
   ];
@@ -167,9 +185,10 @@ const PurchaseRFQParcelTab = ({
         return;
       }
 
-      // Fetch items and UOMs only if not loaded
+      // Fetch items, UOMs, and certifications only if not loaded
       let itemsData = items.length > 1 ? items : [];
       let uomsData = uoms.length > 1 ? uoms : [];
+      let certificationsData = certifications.length > 1 ? certifications : [];
 
       if (!itemsData.length) {
         const rawItems = await fetchItems(auth.token);
@@ -195,6 +214,18 @@ const PurchaseRFQParcelTab = ({
         setUOMs(uomsData);
       }
 
+      if (!certificationsData.length) {
+        const rawCertifications = await fetchCertifications(auth.token);
+        certificationsData = [
+          { value: "", label: "Select a certification" },
+          ...rawCertifications.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label: cert.CertificationName || cert.name || "Unknown Certification",
+          })),
+        ];
+        setCertifications(certificationsData);
+      }
+
       // Fetch parcels
       const parcelData = await fetchParcels(salesRFQId, auth.token);
       const filteredParcels = Array.isArray(parcelData)
@@ -206,16 +237,22 @@ const PurchaseRFQParcelTab = ({
       const formattedParcels = filteredParcels.map((item, index) => {
         const itemId = String(item.ItemID || "");
         const uomId = String(item.UOMID || "");
+        const certificationId = item.CertificationID !== null ? String(item.CertificationID) : "";
         const itemOption = itemsData.find((i) => i.value === itemId);
         const uom = uomsData.find((u) => u.value === uomId);
+        const certification = certificationId
+          ? certificationsData.find((c) => c.value === certificationId)
+          : null;
 
         return {
           id: item.SalesRFQParcelID || Date.now() + index,
           itemId,
           uomId,
+          certificationId,
           quantity: String(item.ItemQuantity || item.Quantity || "0"),
           itemName: item.ItemName || itemOption?.label || `Item ${itemId}`,
           uomName: item.UOMName || uom?.label || `UOM ${uomId}`,
+          certificationName: certification?.label || "None",
           srNo: index + 1,
         };
       });
@@ -233,7 +270,7 @@ const PurchaseRFQParcelTab = ({
     } finally {
       setLoading(false);
     }
-  }, [purchaseRFQId, onParcelsChange, items.length, uoms.length]);
+  }, [purchaseRFQId, onParcelsChange, items.length, uoms.length, certifications.length]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -255,7 +292,7 @@ const PurchaseRFQParcelTab = ({
     const newFormId = Date.now();
     setParcelForms((prev) => [
       ...prev,
-      { id: newFormId, itemId: "", uomId: "", quantity: "" },
+      { id: newFormId, itemId: "", uomId: "", certificationId: "", quantity: "" },
     ]);
   };
 
@@ -270,6 +307,7 @@ const PurchaseRFQParcelTab = ({
         id: editFormId,
         itemId: parcel.itemId,
         uomId: parcel.uomId,
+        certificationId: parcel.certificationId,
         quantity: parcel.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
         originalId: parcel.id,
@@ -340,6 +378,9 @@ const PurchaseRFQParcelTab = ({
 
       const selectedItem = items.find((item) => item.value === form.itemId);
       const selectedUOM = uoms.find((u) => u.value === form.uomId);
+      const selectedCertification = form.certificationId
+        ? certifications.find((c) => c.value === form.certificationId)
+        : null;
       const originalParcel =
         form.editIndex !== undefined ? parcels[form.editIndex] : null;
 
@@ -349,10 +390,13 @@ const PurchaseRFQParcelTab = ({
         ItemID: parseInt(form.itemId, 10),
         uomId: form.uomId,
         UOMID: parseInt(form.uomId, 10),
+        certificationId: form.certificationId,
+        CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
         quantity: form.quantity,
-        ItemQuantity: parseInt(form.quantity, 10),
+        ItemQuantity: parseFloat(form.quantity),
         itemName: selectedItem ? selectedItem.label : `Item ${form.itemId}`,
         uomName: selectedUOM ? selectedUOM.label : `UOM ${form.uomId}`,
+        certificationName: selectedCertification ? selectedCertification.label : "None",
         srNo: originalParcel?.srNo || parcels.length + 1,
         isModified: true,
         CreatedByID: auth.personId ? parseInt(auth.personId, 10) : null,
@@ -360,25 +404,28 @@ const PurchaseRFQParcelTab = ({
       };
 
       // Save to backend
+      let response;
       if (form.editIndex !== undefined) {
-        await axios.put(
+        response = await axios.put(
           `${APIBASEURL}/sales-rfq-parcels/${newParcelData.id}`,
           {
             SalesRFQID: newParcelData.SalesRFQID,
             ItemID: newParcelData.ItemID,
             UOMID: newParcelData.UOMID,
+            CertificationID: newParcelData.CertificationID,
             ItemQuantity: newParcelData.ItemQuantity,
             CreatedByID: newParcelData.CreatedByID,
           },
           { headers: { Authorization: `Bearer ${auth.token}` } }
         );
       } else {
-        await axios.post(
+        response = await axios.post(
           `${APIBASEURL}/sales-rfq-parcels`,
           {
             SalesRFQID: newParcelData.SalesRFQID,
             ItemID: newParcelData.ItemID,
             UOMID: newParcelData.UOMID,
+            CertificationID: newParcelData.CertificationID,
             ItemQuantity: newParcelData.ItemQuantity,
             CreatedByID: newParcelData.CreatedByID,
           },
@@ -386,10 +433,11 @@ const PurchaseRFQParcelTab = ({
         );
       }
 
+      const savedParcel = response.data.data || newParcelData;
       const updatedParcels =
         form.editIndex !== undefined
-          ? parcels.map((p, i) => (i === form.editIndex ? newParcelData : p))
-          : [...parcels, newParcelData];
+          ? parcels.map((p, i) => (i === form.editIndex ? savedParcel : p))
+          : [...parcels, savedParcel];
 
       setParcels(updatedParcels);
       onParcelsChange(updatedParcels);
@@ -401,7 +449,8 @@ const PurchaseRFQParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      console.log("Failed to save parcel.");
+      setError("Failed to save parcel.");
+      toast.error("Failed to save parcel: " + error.message);
     }
   };
 
@@ -415,7 +464,8 @@ const PurchaseRFQParcelTab = ({
     try {
       const auth = getAuthHeader();
       if (!auth) {
-        console.log("Please log in to delete parcels.");
+        setError("Please log in to delete parcels.");
+        toast.error("Please log in to delete parcels.");
         return;
       }
 
@@ -435,7 +485,8 @@ const PurchaseRFQParcelTab = ({
         status: error.response?.status,
         data: error.response?.data,
       });
-      console.log("Failed to delete parcel.");
+      setError("Failed to delete parcel.");
+      toast.error("Failed to delete parcel: " + error.message);
     }
   };
 
@@ -456,7 +507,7 @@ const PurchaseRFQParcelTab = ({
     >
       {/* Tab header */}
       <Box
-        sx={{
+        sx={{ 
           display: "flex",
           borderTopLeftRadius: 4,
           borderTopRightRadius: 4,
@@ -566,7 +617,7 @@ const PurchaseRFQParcelTab = ({
                   startIcon={<AddIcon />}
                   onClick={handleAddParcel}
                   sx={{ mb: 2 }}
-                  disabled={items.length <= 1 || uoms.length <= 1}
+                  disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
                 >
                   Add Parcel
                 </Button>
@@ -610,6 +661,17 @@ const PurchaseRFQParcelTab = ({
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                       <FormSelect
+                        name="certificationId"
+                        label="Certification"
+                        value={form.certificationId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={certifications}
+                        error={!!formErrors[form.id]?.certificationId}
+                        helperText={formErrors[form.id]?.certificationId}
+                      />
+                    </Box>
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
                         name="uomId"
                         label="UOM"
                         value={form.uomId}
@@ -648,7 +710,7 @@ const PurchaseRFQParcelTab = ({
                       variant="contained"
                       onClick={() => handleSave(form.id)}
                     >
-                      Save Items
+                      Save
                     </Button>
                   </Box>
                 </Box>
