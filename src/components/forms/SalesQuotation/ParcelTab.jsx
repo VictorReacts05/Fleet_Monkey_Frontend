@@ -5,7 +5,6 @@ import {
   Typography,
   CircularProgress,
   useTheme,
-  alpha,
   TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -77,8 +76,7 @@ class ErrorBoundary extends React.Component {
       return (
         <Box sx={{ textAlign: "center", py: 3 }}>
           <Typography color="error" variant="body1">
-            Error rendering parcels:{" "}
-            {this.state.error?.message || "Unknown error"}
+            Error rendering parcels: {this.state.error?.message || "Unknown error"}
           </Typography>
           <Button
             variant="contained"
@@ -128,10 +126,12 @@ const ParcelTab = ({
         const [itemsData, uomsData, certificationsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
+            toast.error("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Error fetching UOMs:", err);
+            toast.error("Failed to load UOMs");
             return [];
           }),
           fetchCertifications().catch((err) => {
@@ -180,7 +180,7 @@ const ParcelTab = ({
         setLoadingExistingParcels(true);
         const parcelData = await fetchSalesQuotationParcels(salesQuotationId);
         const formattedParcels = parcelData.map((parcel, index) => ({
-          id: parcel.ParcelID || `parcel-${index}`,
+          id: parcel.SalesQuotationParcelID || `parcel-${index}`,
           itemId: String(parcel.ItemID || ""),
           uomId: String(parcel.UOMID || ""),
           certificationId: String(parcel.CertificationID || ""),
@@ -268,7 +268,11 @@ const ParcelTab = ({
       formErrors.quantity = "Quantity must be a positive number";
     if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0)
       formErrors.rate = "Supplier Rate must be a non-negative number";
-    if (!form.salesRate || isNaN(Number(form.salesRate)) || Number(form.salesRate) < 0)
+    if (
+      !form.salesRate ||
+      isNaN(Number(form.salesRate)) ||
+      Number(form.salesRate) < 0
+    )
       formErrors.salesRate = "Sales Rate must be a non-negative number";
     return formErrors;
   };
@@ -350,24 +354,58 @@ const ParcelTab = ({
     setDeleteParcelId(null);
   };
 
+  // Handle sales rate change in the table
+  const handleSalesRateChangeLocal = (parcelId, salesRateValue) => {
+    console.log("handleSalesRateChangeLocal:", { parcelId, salesRateValue });
+    const updatedParcels = parcels.map((parcel) => {
+      if (parcel.id === parcelId) {
+        const newSalesRate = Number(salesRateValue) || 0;
+        return {
+          ...parcel,
+          salesRate: newSalesRate,
+          salesAmount: newSalesRate * parcel.quantity,
+        };
+      }
+      return parcel;
+    });
+    setParcels(updatedParcels);
+    if (onParcelsChange) onParcelsChange(updatedParcels);
+    if (onSalesRateChange) onSalesRateChange(parcelId, salesRateValue);
+  };
+
   // Define table columns
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(2) },
-    { field: "rate", headerName: "Supplier Rate", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
-    { field: "amount", headerName: "Supplier Amount", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
+    {
+      field: "quantity",
+      headerName: "Quantity",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(2),
+    },
+    {
+      field: "rate",
+      headerName: "Supplier Rate",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
+    {
+      field: "amount",
+      headerName: "Supplier Amount",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
     {
       field: "salesRate",
       headerName: "Sales Rate",
       flex: 1,
-      renderCell: (params) =>
+      renderCell: (params) => (
         isEdit ? (
           <TextField
             type="number"
             value={params.row.salesRate || ""}
-            onChange={(e) => onSalesRateChange(params.row.id, e.target.value)}
+            onChange={(e) => handleSalesRateChangeLocal(params.row.id, e.target.value)}
             size="small"
             sx={{
               width: "100px",
@@ -383,15 +421,32 @@ const ParcelTab = ({
             inputProps={{ min: 0, step: "0.01" }}
             placeholder="0.00"
           />
-        ) : Number(params.row.salesRate).toFixed(6),
+        ) : (
+          Number(params.row.salesRate).toFixed(6)
+        )
+      ),
     },
-    { field: "salesAmount", headerName: "Sales Amount", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
+    {
+      field: "salesAmount",
+      headerName: "Sales Amount",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
   ];
 
   return (
     <ErrorBoundary>
-      <Box sx={{ mt: 2, display: "flex", flexDirection: "column", borderRadius: 1 }}>
-        <Box sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 1,
+        }}
+      >
+        <Box
+          sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
+        >
           <Box
             sx={{
               py: 1.5,
@@ -402,7 +457,14 @@ const ParcelTab = ({
               borderLeft: "1px solid #e0e0e0",
               borderTopLeftRadius: 8,
               borderTopRightRadius: 8,
-              backgroundColor: activeView === "items" ? (theme.palette.mode === "dark" ? "#37474f" : "#e0f7fa") : (theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd"),
+              backgroundColor:
+                activeView === "items"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
               color: theme.palette.text.primary,
               cursor: "pointer",
             }}
@@ -421,26 +483,51 @@ const ParcelTab = ({
                 borderLeft: "1px solid #e0e0e0",
                 borderTopLeftRadius: 8,
                 borderTopRightRadius: 8,
-                backgroundColor: activeView === "approvals" ? (theme.palette.mode === "dark" ? "#37474f" : "#e0f7fa") : (theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd"),
+                backgroundColor:
+                  activeView === "approvals"
+                    ? theme.palette.mode === "dark"
+                      ? "#37474f"
+                      : "#e0f7fa"
+                    : theme.palette.mode === "dark"
+                    ? "#1f2529"
+                    : "#f3f8fd",
                 color: theme.palette.text.primary,
                 cursor: "pointer",
               }}
               onClick={() => setActiveView("approvals")}
             >
-              <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>Approvals</Typography>
+              <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>
+                Approvals
+              </Typography>
             </Box>
           )}
         </Box>
 
-        <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderBottomLeftRadius: 4, borderBottomRightRadius: 4, borderTopRightRadius: 4 }}>
+        <Box
+          sx={{
+            p: 2,
+            border: "1px solid #e0e0e0",
+            borderBottomLeftRadius: 4,
+            borderBottomRightRadius: 4,
+            borderTopRightRadius: 4,
+          }}
+        >
           {loading || loadingExistingParcels ? (
             <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
               <CircularProgress />
             </Box>
           ) : error ? (
             <Box sx={{ textAlign: "center", py: 3 }}>
-              <Typography color="error" variant="body1">Error loading parcels: {error}</Typography>
-              <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>Retry</Button>
+              <Typography color="error" variant="body1">
+                Error loading parcels: {error}
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => window.location.reload()}
+                sx={{ mt: 2 }}
+              >
+                Retry
+              </Button>
             </Box>
           ) : activeView === "items" ? (
             <>
@@ -456,14 +543,38 @@ const ParcelTab = ({
                 </Button>
               )}
               {parcels.length === 0 && parcelForms.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                  <Typography variant="body1">No parcels added yet. {!readOnly && "Click 'Add Parcel' to add a new parcel."}</Typography>
+                <Box
+                  sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
+                >
+                  <Typography variant="body1">
+                    No parcels added yet.{" "}
+                    {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                  </Typography>
                 </Box>
               )}
               {parcelForms.map((form) => (
-                <Box key={form.id} sx={{ mt: 2, mb: 2, p: 2, border: "1px solid #e0e0e0", borderRadius: 1 }}>
-                  <Typography variant="subtitle1" gutterBottom>{form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}</Typography>
-                  <Box sx={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Box
+                  key={form.id}
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                       <FormSelect
                         name="itemId"
@@ -563,7 +674,7 @@ const ParcelTab = ({
                   onEdit={!readOnly ? handleEditParcel : undefined}
                   onDelete={!readOnly ? handleDeleteParcel : undefined}
                   totalRows={parcels.length}
-                  pagination={true}
+                  isPagination
                 />
               )}
             </>

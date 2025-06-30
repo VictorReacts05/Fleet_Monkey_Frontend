@@ -118,7 +118,7 @@ const UOMList = () => {
       >
         <Typography variant="h5">Unit of Measurement Management</Typography>
         <Stack direction="row" spacing={1} alignItems="center">
-          {/* <FormDatePicker
+          <FormDatePicker
             label="From Date"
             value={fromDate}
             onChange={(newValue) => setFromDate(newValue)}
@@ -129,7 +129,7 @@ const UOMList = () => {
             value={toDate}
             onChange={(newValue) => setToDate(newValue)}
             sx={{ width: 200 }}
-          /> */}
+          />
           <Tooltip title="Add UOM">
             <IconButton
               onClick={handleCreate}
@@ -175,7 +175,7 @@ const UOMList = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Delete"
-        message={<>Are you sure you want to delete UOM <strong>{itemToDelete?.uom}</strong> ?</>}
+        message={`Are you sure you want to delete UOM ${itemToDelete?.uom}?`}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteDialogOpen(false)}
       />
