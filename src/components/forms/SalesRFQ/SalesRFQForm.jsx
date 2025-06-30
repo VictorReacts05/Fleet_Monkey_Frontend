@@ -736,6 +736,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
               alignItems: "center",
               justifyContent: "space-between",
               width: "100%",
+              gap:2
             }}
           >
             <Typography variant="h6">
@@ -745,7 +746,7 @@ const SalesRFQForm = ({ salesRFQId, onClose, onSave, readOnly = false }) => {
                   : "View Inquiry"
                 : "Create Inquiry"}
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2,flex:1 }}>
               {!isEditing && salesRFQId && (
                 <Fade in={true} timeout={500}>
                   <Box

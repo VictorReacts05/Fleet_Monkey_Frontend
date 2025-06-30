@@ -44,26 +44,25 @@ const CustomSelect = styled(Select)(({ theme }) => ({
     alignItems: "center",
     borderRadius: theme.shape.borderRadius * 1.5,
     "& fieldset": {
-      // Dynamic border color
       borderColor:
         theme.palette.mode === "light"
-          ? theme.palette.grey[400] // Light mode: lighter border
-          : "#8a8a8a", // Dark mode: keep as is
+          ? theme.palette.grey[400]
+          : "#8a8a8a",
     },
     "&:hover fieldset": {
       borderColor:
         theme.palette.mode === "light"
-          ? theme.palette.grey[600] // Light mode: darker on hover
-          : "#a0a0a0", // Dark mode: keep as is
+          ? theme.palette.grey[600]
+          : "#a0a0a0",
     },
     "&.Mui-focused fieldset": {
-      borderColor: theme.palette.primary.main, // Same for both modes
+      borderColor: theme.palette.primary.main,
     },
     "&.Mui-disabled": {
       backgroundColor:
         theme.palette.mode === "light"
-          ? theme.palette.grey[200] // Light mode: disabled background
-          : theme.palette.grey[900], // Dark mode: disabled background
+          ? theme.palette.grey[200]
+          : theme.palette.grey[900],
       opacity: 0.5,
     },
   },
@@ -71,38 +70,35 @@ const CustomSelect = styled(Select)(({ theme }) => ({
     paddingLeft: "14px",
   },
   "& .MuiSelect-icon": {
-    // Dynamic icon color (dropdown arrow)
     color:
       theme.palette.mode === "light"
-        ? theme.palette.text.secondary // Light mode: gray icon
-        : theme.palette.common.white, // Dark mode: white icon
+        ? theme.palette.text.secondary
+        : theme.palette.common.white,
   },
 }));
 
 const CustomInputLabel = styled(InputLabel)(({ theme }) => ({
-  top: "19px", // Adjusted to center vertically within 38px height
+  top: "19px",
   transform: "translate(14px, -50%)",
   fontSize: "0.875rem",
-  // Dynamic label color
   color:
     theme.palette.mode === "light"
-      ? theme.palette.text.secondary // Light mode: gray label
-      : "#dcdcdc", // Dark mode: light grey
+      ? theme.palette.text.secondary
+      : "#dcdcdc",
   "&.MuiInputLabel-shrink": {
     top: 0,
     transform: "translate(14px, -8px) scale(0.75)",
   },
   "&.Mui-focused": {
-    color: theme.palette.primary.main, // Same for both modes
+    color: theme.palette.primary.main,
   },
   "&.Mui-error": {
-    color: theme.palette.error.main, // Same for both modes
+    color: theme.palette.error.main,
   },
 }));
 
 const CustomFormHelperText = styled(FormHelperText)(({ theme }) => ({
   marginTop: 0,
-  // Dynamic helper text color (for errors)
   color: theme.palette.error.main,
 }));
 
@@ -123,7 +119,19 @@ const FormSelect = ({
       sx={{ my: 0.5, ...props.sx }}
     >
       <CustomInputLabel>{label}</CustomInputLabel>
-      <CustomSelect value={value} label={label} onChange={onChange} {...props}>
+      <CustomSelect
+        value={value}
+        label={label}
+        onChange={onChange}
+        MenuProps={{
+          PaperProps: {
+            style: {
+              maxHeight: 364, // 48px * 8 items = 384px
+            },
+          },
+        }}
+        {...props}
+      >
         {options.map((option) => (
           <MenuItem
             key={option.value}

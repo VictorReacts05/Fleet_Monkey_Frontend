@@ -5,6 +5,7 @@ import {
   Typography,
   CircularProgress,
   useTheme,
+  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../Common/DataTable";
@@ -18,7 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from "./SalesOrderAPI"; // Adjusted path as needed
+import { getAuthHeader } from "./SalesOrderAPI";
 import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
 import { fetchSalesOrderParcels } from "./SalesOrderAPI";
@@ -52,8 +53,15 @@ const fetchUOMs = async () => {
   }
 };
 
-const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApprovals }) => {
+const ParcelTab = ({
+  salesOrderId,
+  onParcelsChange,
+  readOnly = false,
+  refreshApprovals,
+  isEdit = false,
+}) => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
@@ -67,27 +75,14 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
   const [activeView, setActiveView] = useState("items");
 
-  const theme = useTheme();
-
-  // Reset activeView to "items" when in create mode (salesOrderId is undefined/null)
+  // Reset activeView to "items" when in create mode
   useEffect(() => {
     if (!salesOrderId) {
       setActiveView("items");
     }
   }, [salesOrderId]);
 
-  // Define columns for DataTable
-  const columns = [
-    { field: "ItemName", headerName: "Item Name", flex: 1 },
-    { field: "UOMName", headerName: "UOM", flex: 1 },
-    { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
-    { field: "SupplierRate", headerName: "Supplier Rate", flex: 1 },
-    { field: "SupplierAmount", headerName: "Supplier Amount", flex: 1 },
-    { field: "SalesRate", headerName: "Sales Rate", flex: 1 },
-    { field: "SalesAmount", headerName: "Sales Amount", flex: 1 },
-  ];
-
-  // Load dropdown data when component mounts
+  // Load dropdown data
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -95,10 +90,12 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
+            toast.error("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Error fetching UOMs:", err);
+            toast.error("Failed to load UOMs");
             return [];
           }),
         ]);
@@ -115,7 +112,12 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
           { value: "", label: "Select a UOM" },
           ...uomsData.map((uom) => ({
             value: String(
-              uom.UOMID || uom.UOMId || uom.uomID || uom.uomId || uom.id || uom.ID
+              uom.UOMID ||
+                uom.UOMId ||
+                uom.uomID ||
+                uom.uomId ||
+                uom.id ||
+                uom.ID
             ),
             label:
               uom.UOM ||
@@ -131,6 +133,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         setUOMs(uomOptions);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
+        toast.error("Error loading dropdown data");
       } finally {
         setLoading(false);
       }
@@ -139,49 +142,50 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
     loadDropdownData();
   }, []);
 
-  // Load existing Sales Order parcels when salesOrderId is provided
+  // Load existing Sales Order parcels
   useEffect(() => {
     const loadExistingSalesOrderParcels = async () => {
-      if (!salesOrderId) {
-        return;
-      }
+      if (!salesOrderId) return;
 
       try {
         setLoadingExistingParcels(true);
         console.log(`Loading parcels for Sales Order ID: ${salesOrderId}`);
-
         const parcelData = await fetchSalesOrderParcels(salesOrderId);
-
         console.log("Sales Order Parcels received:", parcelData);
 
         if (parcelData && parcelData.length > 0) {
           const formattedParcels = parcelData.map((parcel, index) => ({
-            id: parcel.SalesOrderParcelID || parcel.id || Date.now() + index,
+            id: parcel.SalesOrderParcelID || `parcel-${index}`,
             SalesOrderParcelID: parcel.SalesOrderParcelID,
             SalesOrderID: parcel.SalesOrderID,
-            ItemID: parcel.ItemID,
-            UOMID: parcel.UOMID,
-            ItemQuantity: parcel.ItemQuantity,
-            ItemName: parcel.ItemName || "Unknown Item",
-            UOMName: parcel.UOMName || "Unknown UOM",
+            ItemID: String(parcel.ItemID || ""),
+            UOMID: String(parcel.UOMID || ""),
+            ItemQuantity: Number(parcel.ItemQuantity) || 0,
+            SalesRate: Number(parcel.SalesRate) || 0,
+            SalesAmount:
+              Number(parcel.SalesAmount) ||
+              (Number(parcel.SalesRate) || 0) * Number(parcel.ItemQuantity) ||
+              0,
+            ItemName:
+              items.find((i) => i.value === String(parcel.ItemID))?.label ||
+              parcel.ItemName ||
+              "Unknown Item",
+            UOMName:
+              uoms.find((u) => u.value === String(parcel.UOMID))?.label ||
+              parcel.UOM ||
+              "Unknown UOM",
             srNo: index + 1,
-            SupplierRate: parcel.SupplierRate || 0,
-            SupplierAmount: parcel.SupplierAmount || (parcel.SupplierRate * parcel.ItemQuantity) || 0,
-            SalesRate: parcel.SalesRate || 0,
-            SalesAmount: parcel.SalesAmount || (parcel.SalesRate * parcel.ItemQuantity) || 0,
           }));
 
           setParcels(formattedParcels);
-
-          if (onParcelsChange) {
-            onParcelsChange(formattedParcels);
-          }
+          if (onParcelsChange) onParcelsChange(formattedParcels);
         } else {
           console.log("No parcels found for this Sales Order");
           setParcels([]);
         }
       } catch (error) {
         console.error("Error loading Sales Order parcels:", error);
+        toast.error("Failed to load parcels");
       } finally {
         setLoadingExistingParcels(false);
       }
@@ -189,7 +193,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
 
     setParcels([]);
     loadExistingSalesOrderParcels();
-  }, [salesOrderId, onParcelsChange]);
+  }, [salesOrderId, items, uoms, onParcelsChange]);
 
   // Handle adding a new parcel form
   const handleAddParcel = () => {
@@ -201,7 +205,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         itemId: "",
         uomId: "",
         quantity: "",
-        supplierRate: "",
         salesRate: "",
       },
     ]);
@@ -223,7 +226,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         itemId: String(parcelToEdit.ItemID),
         uomId: String(parcelToEdit.UOMID),
         quantity: String(parcelToEdit.ItemQuantity),
-        supplierRate: String(parcelToEdit.SupplierRate),
         salesRate: String(parcelToEdit.SalesRate),
         editIndex: parcels.findIndex((p) => p.id === id),
         originalId: id,
@@ -241,7 +243,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
       )
     );
 
-    // Clear errors when field is changed
     if (errors[formId]?.[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -251,6 +252,24 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         },
       }));
     }
+  };
+
+  // Handle sales rate change in the table
+  const handleSalesRateChangeLocal = (parcelId, salesRateValue) => {
+    console.log("handleSalesRateChangeLocal:", { parcelId, salesRateValue });
+    const updatedParcels = parcels.map((parcel) => {
+      if (parcel.id === parcelId) {
+        const newSalesRate = Number(salesRateValue) || 0;
+        return {
+          ...parcel,
+          SalesRate: newSalesRate,
+          SalesAmount: newSalesRate * parcel.ItemQuantity,
+        };
+      }
+      return parcel;
+    });
+    setParcels(updatedParcels);
+    if (onParcelsChange) onParcelsChange(updatedParcels);
   };
 
   // Validate a parcel form
@@ -263,10 +282,10 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
     } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
       formErrors.quantity = "Quantity must be a positive number";
     }
-    if (form.supplierRate && (isNaN(Number(form.supplierRate)) || Number(form.supplierRate) < 0)) {
-      formErrors.supplierRate = "Supplier Rate must be a non-negative number";
-    }
-    if (form.salesRate && (isNaN(Number(form.salesRate)) || Number(form.salesRate) < 0)) {
+    if (
+      form.salesRate &&
+      (isNaN(Number(form.salesRate)) || Number(form.salesRate) < 0)
+    ) {
       formErrors.salesRate = "Sales Rate must be a non-negative number";
     }
     return formErrors;
@@ -303,10 +322,10 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
           SalesOrderID: parseInt(salesOrderId),
           ItemID: parseInt(form.itemId),
           UOMID: parseInt(form.uomId),
-          ItemQuantity: parseInt(form.quantity),
-          SupplierRate: form.supplierRate ? parseFloat(form.supplierRate) : 0,
+          ItemQuantity: parseFloat(form.quantity),
           SalesRate: form.salesRate ? parseFloat(form.salesRate) : 0,
-        }
+        },
+        { headers: getAuthHeader() }
       );
 
       if (response.data.success || response.status === 200) {
@@ -315,44 +334,42 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
           ...updatedParcels[form.editIndex],
           ItemID: parseInt(form.itemId),
           UOMID: parseInt(form.uomId),
-          ItemQuantity: parseInt(form.quantity),
-          SupplierRate: parseFloat(form.supplierRate) || 0,
-          SupplierAmount: (parseFloat(form.supplierRate) || 0) * parseInt(form.quantity),
+          ItemQuantity: parseFloat(form.quantity),
           SalesRate: parseFloat(form.salesRate) || 0,
-          SalesAmount: (parseFloat(form.salesRate) || 0) * parseInt(form.quantity),
+          SalesAmount:
+            (parseFloat(form.salesRate) || 0) * parseFloat(form.quantity),
           ItemName: selectedItem ? selectedItem.label : "Unknown Item",
           UOMName: selectedUOM ? selectedUOM.label : "Unknown UOM",
         };
         setParcels(updatedParcels);
-
-        if (onParcelsChange) {
-          onParcelsChange(updatedParcels);
-        }
-
+        if (onParcelsChange) onParcelsChange(updatedParcels);
         toast.success("Parcel updated successfully");
       }
     } else {
-      const response = await axios.post(`${APIBASEURL}/sales-Order-Parcel`, {
-        SalesOrderID: parseInt(salesOrderId),
-        ItemID: parseInt(form.itemId),
-        UOMID: parseInt(form.uomId),
-        ItemQuantity: parseInt(form.quantity),
-        SupplierRate: form.supplierRate ? parseFloat(form.supplierRate) : 0,
-        SalesRate: form.salesRate ? parseFloat(form.salesRate) : 0,
-      });
+      const response = await axios.post(
+        `${APIBASEURL}/sales-Order-Parcel`,
+        {
+          SalesOrderID: parseInt(salesOrderId),
+          ItemID: parseInt(form.itemId),
+          UOMID: parseInt(form.uomId),
+          ItemQuantity: parseFloat(form.quantity),
+          SalesRate: form.salesRate ? parseFloat(form.salesRate) : 0,
+        },
+        { headers: getAuthHeader() }
+      );
 
       if (response.data.success || response.status === 201) {
         const newParcel = {
           id: response.data.id || Date.now(),
-          SalesOrderParcelID: response.data.id || response.data.data?.SalesOrderParcelID,
+          SalesOrderParcelID:
+            response.data.id || response.data.data?.SalesOrderParcelID,
           SalesOrderID: parseInt(salesOrderId),
           ItemID: parseInt(form.itemId),
           UOMID: parseInt(form.uomId),
-          ItemQuantity: parseInt(form.quantity),
-          SupplierRate: parseFloat(form.supplierRate) || 0,
-          SupplierAmount: (parseFloat(form.supplierRate) || 0) * parseInt(form.quantity),
+          ItemQuantity: parseFloat(form.quantity),
           SalesRate: parseFloat(form.salesRate) || 0,
-          SalesAmount: (parseFloat(form.salesRate) || 0) * parseInt(form.quantity),
+          SalesAmount:
+            (parseFloat(form.salesRate) || 0) * parseFloat(form.quantity),
           ItemName: selectedItem ? selectedItem.label : "Unknown Item",
           UOMName: selectedUOM ? selectedUOM.label : "Unknown UOM",
           srNo: parcels.length + 1,
@@ -361,11 +378,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
 
         const updatedParcels = [...parcels, newParcel];
         setParcels(updatedParcels);
-
-        if (onParcelsChange) {
-          onParcelsChange(updatedParcels);
-        }
-
+        if (onParcelsChange) onParcelsChange(updatedParcels);
         toast.success("Parcel added successfully");
       }
     }
@@ -394,21 +407,19 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
       }
 
       const response = await axios.delete(
-        `${APIBASEURL}/sales-Order-Parcel/${parcelToDelete.SalesOrderParcelID}`
+        `${APIBASEURL}/sales-Order-Parcel/${parcelToDelete.SalesOrderParcelID}`,
+        { headers: getAuthHeader() }
       );
 
       if (response.data.success || response.status === 200) {
         const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
         setParcels(updatedParcels);
-
-        if (onParcelsChange) {
-          onParcelsChange(updatedParcels);
-        }
-
+        if (onParcelsChange) onParcelsChange(updatedParcels);
         toast.success("Parcel deleted successfully");
       }
     } catch (error) {
       console.error("Error deleting parcel:", error);
+      toast.error("Failed to delete parcel");
     } finally {
       setDeleteConfirmOpen(false);
       setDeleteParcelId(null);
@@ -420,6 +431,56 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
     setDeleteParcelId(null);
   };
 
+  // Define columns for DataTable
+  const columns = [
+    { field: "ItemName", headerName: "Item Name", flex: 1 },
+    { field: "UOMName", headerName: "UOM", flex: 1 },
+    {
+      field: "ItemQuantity",
+      headerName: "Quantity",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(2),
+    },
+    {
+      field: "SalesRate",
+      headerName: "Sales Rate",
+      flex: 1,
+      renderCell: (params) =>
+        isEdit ? (
+          <TextField
+            type="number"
+            value={params.row.SalesRate || ""}
+            onChange={(e) =>
+              handleSalesRateChangeLocal(params.row.id, e.target.value)
+            }
+            size="small"
+            sx={{
+              width: "100px",
+              textAlign: "center",
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
+              "& input[type=number]": {
+                "-moz-appearance": "textfield",
+              },
+            }}
+            inputProps={{ min: 0, step: "0.01" }}
+            placeholder="0.00"
+          />
+        ) : (
+          Number(params.row.SalesRate).toFixed(6)
+        ),
+    },
+    {
+      field: "SalesAmount",
+      headerName: "Sales Amount",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
+  ];
+
   return (
     <Box
       sx={{
@@ -429,7 +490,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         borderRadius: 1,
       }}
     >
-      {/* Tab header */}
       <Box
         sx={{
           display: "flex",
@@ -495,7 +555,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         )}
       </Box>
 
-      {/* Content area */}
       <Box
         sx={{
           p: 2,
@@ -524,7 +583,9 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
               )}
 
               {parcels.length === 0 && parcelForms.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+                <Box
+                  sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
+                >
                   <Typography variant="body1">
                     No parcels added yet.{" "}
                     {!readOnly && "Click 'Add Parcel' to add a new parcel."}
@@ -544,7 +605,9 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
                   }}
                 >
                   <Typography variant="subtitle1" gutterBottom>
-                    {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                    {form.editIndex !== undefined
+                      ? "Edit Parcel"
+                      : "New Parcel"}
                   </Typography>
 
                   <Box
@@ -588,18 +651,6 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
                         onChange={(e) => handleChange(e, form.id)}
                         error={!!errors[form.id]?.quantity}
                         helperText={errors[form.id]?.quantity}
-                        type="number"
-                      />
-                    </Box>
-
-                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput
-                        name="supplierRate"
-                        label="Supplier Rate"
-                        value={form.supplierRate}
-                        onChange={(e) => handleChange(e, form.id)}
-                        error={!!errors[form.id]?.supplierRate}
-                        helperText={errors[form.id]?.supplierRate}
                         type="number"
                       />
                     </Box>
@@ -651,7 +702,9 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
                   pageSize={rowsPerPage}
                   page={page}
                   onPageChange={(newPage) => setPage(newPage)}
-                  onPageSizeChange={(newPageSize) => setRowsPerPage(newPageSize)}
+                  onPageSizeChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
                   rowsPerPageOptions={[5, 10, 25]}
                   checkboxSelection={false}
                   disableSelectionOnClick
@@ -660,13 +713,17 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
                   onEdit={!readOnly ? handleEditParcel : undefined}
                   onDelete={!readOnly ? handleDeleteParcel : undefined}
                   totalRows={parcels.length}
-                  pagination={true}
+                  pagination
                 />
               )}
             </>
           )
         ) : salesOrderId ? (
-          <ApprovalTab moduleType="sales-order" moduleId={salesOrderId} refreshTrigger={refreshApprovals} />
+          <ApprovalTab
+            moduleType="sales-order"
+            moduleId={salesOrderId}
+            refreshTrigger={refreshApprovals}
+          />
         ) : null}
       </Box>
 
@@ -676,7 +733,7 @@ const ParcelTab = ({ salesOrderId, onParcelsChange, readOnly = false, refreshApp
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">{"Confirm Deletion"}</DialogTitle>
+        <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to remove this parcel? This action cannot be

@@ -38,12 +38,25 @@ const SupplierQuotationList = () => {
 
   // Define columns for the data table
   const columns = [
-    // { field: "Series", headerName: "Series", flex: 1 },
     {
-      field: "PurchaseRFQID",
-      headerName: "Quotation Request ID",
+      field: "CustomerName",
+      headerName: "Customer Name",
       flex: 1,
-      valueGetter: (params) => params.row.SupplierName || "-",
+      valueGetter: (params) => params.row.CustomerName || "-",
+    },
+    {
+      field: "CreatedDateTime",
+      headerName: "Created Date",
+      flex: 1,
+      valueFormatter: ({ value }) =>
+        value ? dayjs(value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      field: "SalesAmount",
+      headerName: "Sales Amount",
+      flex: 1,
+      valueGetter: (params) => params.row.SalesAmount || "-",
+      type: "number", // Ensure right alignment for numeric values
     },
     {
       field: "Status",
@@ -97,6 +110,9 @@ const SupplierQuotationList = () => {
           ...quotation,
           id: quotation.SupplierQuotationID,
           Status: quotation.Status || "Pending", // Ensure Status is set
+          CustomerName: quotation.CustomerName || "-", // Ensure CustomerName is set
+          CreatedDateTime: quotation.CreatedDateTime || null, // Ensure CreatedDateTime is set
+          SalesAmount: quotation.SalesAmount || null, // Ensure SalesAmount is set
         };
       });
 
@@ -104,13 +120,13 @@ const SupplierQuotationList = () => {
       setTotalRows(response.totalRecords || quotations.length);
     } catch (error) {
       console.error("Error loading Supplier Quotations:", error);
-      console.log("Failed to load Supplier Quotations");
+      toast.error("Failed to load Supplier Quotations");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load data when component mounts or when page/rowsPerPage changes
+  // Load data when component mounts or when page/rowsPerPage/fromDate/toDate changes
   useEffect(() => {
     fetchQuotations();
   }, [page, rowsPerPage, fromDate, toDate]);
@@ -122,14 +138,26 @@ const SupplierQuotationList = () => {
       return;
     }
 
-    const filteredQuotations = supplierQuotations.filter(
-      (quotation) =>
-        quotation.Series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        quotation.SupplierName?.toLowerCase().includes(
+    const filteredQuotations = supplierQuotations.filter((quotation) => {
+      const formattedCreatedDateTime = quotation.CreatedDateTime
+        ? dayjs(quotation.CreatedDateTime).format("DD-MM-YYYY").toLowerCase()
+        : "";
+      return (
+        (quotation.Series?.toLowerCase() || "").includes(
           searchTerm.toLowerCase()
         ) ||
-        quotation.CustomerName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+        (quotation.SupplierName?.toLowerCase() || "").includes(
+          searchTerm.toLowerCase()
+        ) ||
+        (quotation.CustomerName?.toLowerCase() || "").includes(
+          searchTerm.toLowerCase()
+        ) ||
+        (quotation.SalesAmount?.toString().toLowerCase() || "").includes(
+          searchTerm.toLowerCase()
+        ) ||
+        formattedCreatedDateTime.includes(searchTerm.toLowerCase())
+      );
+    });
 
     setSupplierQuotations(filteredQuotations);
   }, [searchTerm]);
@@ -153,7 +181,7 @@ const SupplierQuotationList = () => {
       navigate(`/supplier-quotation/view/${id}`);
     } else {
       console.error("Invalid Supplier Quotation ID:", id);
-      console.log("Cannot view Supplier Quotation: Invalid ID");
+      toast.error("Cannot view Supplier Quotation: Invalid ID");
     }
   };
 
@@ -163,7 +191,7 @@ const SupplierQuotationList = () => {
       navigate(`/supplier-quotation/edit/${id}`);
     } else {
       console.error("Invalid Supplier Quotation ID:", id);
-      console.log("Cannot edit Supplier Quotation: Invalid ID");
+      toast.error("Cannot edit Supplier Quotation: Invalid ID");
     }
   };
 
@@ -180,7 +208,7 @@ const SupplierQuotationList = () => {
       fetchQuotations();
     } catch (error) {
       console.error("Error deleting Supplier Quotation:", error);
-      console.log("Failed to delete Supplier Quotation");
+      toast.error("Failed to delete Supplier Quotation");
     } finally {
       setLoading(false);
       setDeleteDialogOpen(false);
@@ -211,24 +239,37 @@ const SupplierQuotationList = () => {
             onClear={() => setSearchTerm("")}
             placeholder="Search Text..."
           />
+          {/* <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleCreateNew}
+          >
+            Create New
+          </Button> */}
         </Stack>
       </Box>
+
+      {/* <Box sx={{ mb: 2 }}>
+        <Stack direction="row" spacing={2}>
+          <FormDatePicker
+            label="From Date"
+            value={fromDate}
+            onChange={(newValue) => setFromDate(newValue)}
+          />
+          <FormDatePicker
+            label="To Date"
+            value={toDate}
+            onChange={(newValue) => setToDate(newValue)}
+          />
+        </Stack>
+      </Box> */}
 
       <DataTable
         rows={supplierQuotations.map((row) => ({
           ...row,
           id: row.SupplierQuotationID,
         }))}
-        columns={[
-          ...columns,
-          {
-            field: "id",
-            headerName: "ID",
-            width: 100,
-            valueGetter: (params) =>
-              params.row.SupplierQuotationID || params.row.id || "No ID",
-          },
-        ]}
+        columns={columns}
         loading={loading}
         getRowId={(row) => {
           console.log("DataTable getRowId called with row:", row);

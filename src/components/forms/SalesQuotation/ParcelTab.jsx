@@ -5,7 +5,6 @@ import {
   Typography,
   CircularProgress,
   useTheme,
-  alpha,
   TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -20,7 +19,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import {getAuthHeader} from './SalesQuotationAPI'
+import { getAuthHeader } from './SalesQuotationAPI';
 import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
 
@@ -66,8 +65,7 @@ class ErrorBoundary extends React.Component {
       return (
         <Box sx={{ textAlign: "center", py: 3 }}>
           <Typography color="error" variant="body1">
-            Error rendering parcels:{" "}
-            {this.state.error?.message || "Unknown error"}
+            Error rendering parcels: {this.state.error?.message || "Unknown error"}
           </Typography>
           <Button
             variant="contained"
@@ -116,24 +114,33 @@ const ParcelTab = ({
         const [itemsData, uomsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
+            toast.error("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Error fetching UOMs:", err);
+            toast.error("Failed to load UOMs");
             return [];
           }),
         ]);
 
-        setItems([{ value: "", label: "Select an item" }, ...itemsData.map((item) => ({
-          value: String(item.ItemID),
-          label: item.ItemName,
-        }))]);
-        setUOMs([{ value: "", label: "Select a UOM" }, ...uomsData.map((uom) => ({
-          value: String(uom.UOMID || uom.UOMId || uom.id),
-          label: uom.UOM || uom.UOMName || uom.Description || "Unknown UOM",
-        }))]);
+        setItems([
+          { value: "", label: "Select an item" },
+          ...itemsData.map((item) => ({
+            value: String(item.ItemID),
+            label: item.ItemName,
+          })),
+        ]);
+        setUOMs([
+          { value: "", label: "Select a UOM" },
+          ...uomsData.map((uom) => ({
+            value: String(uom.UOMID || uom.UOMId || uom.id),
+            label: uom.UOM || uom.UOMName || uom.Description || "Unknown UOM",
+          })),
+        ]);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
+        toast.error("Error loading dropdown data");
       } finally {
         setLoading(false);
       }
@@ -148,39 +155,40 @@ const ParcelTab = ({
 
       try {
         setLoadingExistingParcels(true);
-        const response = await axios.get(`${APIBASEURL}/sales-Quotation-Parcel/?salesQuotationId=${salesQuotationId}`);
+        const response = await axios.get(
+          `${APIBASEURL}/sales-Quotation-Parcel/?salesQuotationId=${salesQuotationId}`
+        );
         const parcelData = response.data?.data || response.data || [];
         const formattedParcels = parcelData.map((parcel, index) => ({
-          id: parcel.ParcelID || `parcel-${index}`,
+          id: parcel.SalesQuotationParcelID || `parcel-${index}`,
           itemId: String(parcel.ItemID || ""),
           uomId: String(parcel.UOMID || ""),
-          quantity: String(parcel.Quantity || "0"),
-          rate: Number(parcel.rate) || 0,
-          amount: Number(parcel.amount) || 0,
-          salesRate: Number(parcel.salesRate) || 0,
-          salesAmount: Number(parcel.salesAmount) || 0,
-          itemName: items.find((i) => i.value === String(parcel.ItemID))?.label || "Unknown Item",
-          uomName: uoms.find((u) => u.value === String(parcel.UOMID))?.label || "Unknown UOM",
+          quantity: Number(parcel.ItemQuantity) || 0,
+          rate: Number(parcel.SupplierRate) || 0,
+          amount: Number(parcel.SupplierAmount) || 0,
+          salesRate: Number(parcel.SalesRate) || 0,
+          salesAmount: Number(parcel.SalesAmount) || 0,
+          itemName:
+            items.find((i) => i.value === String(parcel.ItemID))?.label ||
+            parcel.ItemName ||
+            "Unknown Item",
+          uomName:
+            uoms.find((u) => u.value === String(parcel.UOMID))?.label ||
+            parcel.UOM ||
+            "Unknown UOM",
           srNo: index + 1,
         }));
         setParcels(formattedParcels);
+        if (onParcelsChange) onParcelsChange(formattedParcels);
       } catch (error) {
         console.error("Error loading existing parcels:", error);
+        toast.error("Failed to load parcels");
       } finally {
         setLoadingExistingParcels(false);
       }
     };
     if (salesQuotationId) loadExistingParcels();
-  }, [salesQuotationId, items, uoms]);
-
-  // Handle adding a new parcel form
-  const handleAddParcel = () => {
-    const newFormId = Date.now();
-    setParcelForms((prev) => [
-      ...prev,
-      { id: newFormId, itemId: "", uomId: "", quantity: "", rate: "", amount: "", salesRate: "", salesAmount: "" },
-    ]);
-  };
+  }, [salesQuotationId, items, uoms, onParcelsChange]);
 
   // Handle editing an existing parcel
   const handleEditParcel = (id) => {
@@ -190,7 +198,12 @@ const ParcelTab = ({
     const editFormId = Date.now();
     setParcelForms((prev) => [
       ...prev,
-      { ...parcelToEdit, id: editFormId, editIndex: parcels.findIndex((p) => p.id === id), originalId: id },
+      {
+        ...parcelToEdit,
+        id: editFormId,
+        editIndex: parcels.findIndex((p) => p.id === id),
+        originalId: id,
+      },
     ]);
   };
 
@@ -215,11 +228,19 @@ const ParcelTab = ({
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
-    if (!form.quantity || isNaN(Number(form.quantity)) || Number(form.quantity) <= 0)
+    if (
+      !form.quantity ||
+      isNaN(Number(form.quantity)) ||
+      Number(form.quantity) <= 0
+    )
       formErrors.quantity = "Quantity must be a positive number";
     if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0)
       formErrors.rate = "Supplier Rate must be a non-negative number";
-    if (!form.salesRate || isNaN(Number(form.salesRate)) || Number(form.salesRate) < 0)
+    if (
+      !form.salesRate ||
+      isNaN(Number(form.salesRate)) ||
+      Number(form.salesRate) < 0
+    )
       formErrors.salesRate = "Sales Rate must be a non-negative number";
     return formErrors;
   };
@@ -250,9 +271,13 @@ const ParcelTab = ({
       amount: Number(form.rate) * Number(form.quantity),
       salesRate: Number(form.salesRate),
       salesAmount: Number(form.salesRate) * Number(form.quantity),
-      itemName: items.find((i) => i.value === form.itemId)?.label || "Unknown Item",
-      uomName: uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
-      srNo: form.originalId ? parcels.find((p) => p.id === form.originalId)?.srNo : parcels.length + 1,
+      itemName:
+        items.find((i) => i.value === form.itemId)?.label || "Unknown Item",
+      uomName:
+        uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
+      srNo: form.originalId
+        ? parcels.find((p) => p.id === form.originalId)?.srNo
+        : parcels.length + 1,
       CreatedByID: parseInt(personId, 10),
     };
 
@@ -288,32 +313,65 @@ const ParcelTab = ({
     setDeleteParcelId(null);
   };
 
+  // Handle sales rate change in the table
+  const handleSalesRateChangeLocal = (parcelId, salesRateValue) => {
+    console.log("handleSalesRateChangeLocal:", { parcelId, salesRateValue });
+    const updatedParcels = parcels.map((parcel) => {
+      if (parcel.id === parcelId) {
+        const newSalesRate = Number(salesRateValue) || 0;
+        return {
+          ...parcel,
+          salesRate: newSalesRate,
+          salesAmount: newSalesRate * parcel.quantity,
+        };
+      }
+      return parcel;
+    });
+    setParcels(updatedParcels);
+    if (onParcelsChange) onParcelsChange(updatedParcels);
+    if (onSalesRateChange) onSalesRateChange(parcelId, salesRateValue);
+  };
+
   // Define table columns
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(2) },
-    { field: "rate", headerName: "Supplier Rate", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
-    { field: "amount", headerName: "Supplier Amount", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
+    {
+      field: "quantity",
+      headerName: "Quantity",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(2),
+    },
+    {
+      field: "rate",
+      headerName: "Supplier Rate",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
+    {
+      field: "amount",
+      headerName: "Supplier Amount",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
     {
       field: "salesRate",
       headerName: "Sales Rate",
       flex: 1,
-      renderCell: (params) =>
+      renderCell: (params) => (
         isEdit ? (
           <TextField
             type="number"
             value={params.row.salesRate || ""}
-            onChange={(e) => onSalesRateChange(params.row.id, e.target.value)}
+            onChange={(e) => handleSalesRateChangeLocal(params.row.id, e.target.value)}
             size="small"
             sx={{
               width: "100px",
               textAlign: "center",
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                {
-                  "-webkit-appearance": "none",
-                  margin: 0,
-                },
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+                "-webkit-appearance": "none",
+                margin: 0,
+              },
               "& input[type=number]": {
                 "-moz-appearance": "textfield",
               },
@@ -321,15 +379,32 @@ const ParcelTab = ({
             inputProps={{ min: 0, step: "0.01" }}
             placeholder="0.00"
           />
-        ) : Number(params.row.salesRate).toFixed(6),
+        ) : (
+          Number(params.row.salesRate).toFixed(6)
+        )
+      ),
     },
-    { field: "salesAmount", headerName: "Sales Amount", flex: 1, valueFormatter: ({ value }) => Number(value).toFixed(6) },
+    {
+      field: "salesAmount",
+      headerName: "Sales Amount",
+      flex: 1,
+      valueFormatter: ({ value }) => Number(value).toFixed(6),
+    },
   ];
 
   return (
     <ErrorBoundary>
-      <Box sx={{ mt: 2, display: "flex", flexDirection: "column", borderRadius: 1 }}>
-        <Box sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 1,
+        }}
+      >
+        <Box
+          sx={{ display: "flex", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
+        >
           <Box
             sx={{
               py: 1.5,
@@ -340,7 +415,14 @@ const ParcelTab = ({
               borderLeft: "1px solid #e0e0e0",
               borderTopLeftRadius: 8,
               borderTopRightRadius: 8,
-              backgroundColor: activeView === "items" ? (theme.palette.mode === "dark" ? "#37474f" : "#e0f7fa") : (theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd"),
+              backgroundColor:
+                activeView === "items"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
               color: theme.palette.text.primary,
               cursor: "pointer",
             }}
@@ -359,72 +441,160 @@ const ParcelTab = ({
                 borderLeft: "1px solid #e0e0e0",
                 borderTopLeftRadius: 8,
                 borderTopRightRadius: 8,
-                backgroundColor: activeView === "approvals" ? (theme.palette.mode === "dark" ? "#37474f" : "#e0f7fa") : (theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd"),
+                backgroundColor:
+                  activeView === "approvals"
+                    ? theme.palette.mode === "dark"
+                      ? "#37474f"
+                      : "#e0f7fa"
+                    : theme.palette.mode === "dark"
+                    ? "#1f2529"
+                    : "#f3f8fd",
                 color: theme.palette.text.primary,
                 cursor: "pointer",
               }}
               onClick={() => setActiveView("approvals")}
             >
-              <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>Approvals</Typography>
+              <Typography variant="subtitle1" sx={{ fontSize: "1.25rem" }}>
+                Approvals
+              </Typography>
             </Box>
           )}
         </Box>
 
-        <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderBottomLeftRadius: 4, borderBottomRightRadius: 4, borderTopRightRadius: 4 }}>
+        <Box
+          sx={{
+            p: 2,
+            border: "1px solid #e0e0e0",
+            borderBottomLeftRadius: 4,
+            borderBottomRightRadius: 4,
+            borderTopRightRadius: 4,
+          }}
+        >
           {loading || loadingExistingParcels ? (
             <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
               <CircularProgress />
             </Box>
           ) : error ? (
             <Box sx={{ textAlign: "center", py: 3 }}>
-              <Typography color="error" variant="body1">Error loading parcels: {error}</Typography>
-              <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>Retry</Button>
+              <Typography color="error" variant="body1">
+                Error loading parcels: {error}
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => window.location.reload()}
+                sx={{ mt: 2 }}
+              >
+                Retry
+              </Button>
             </Box>
           ) : activeView === "items" ? (
             <>
-              
               {parcels.length === 0 && parcelForms.length === 0 && (
-                <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-                  <Typography variant="body1">No parcels added yet. {!readOnly && "Click 'Add Parcel' to add a new parcel."}</Typography>
+                <Box
+                  sx={{ textAlign: "center", py: 3, color: "text.secondary" }}
+                >
+                  <Typography variant="body1">
+                    No parcels added yet.{" "}
+                    {!readOnly && "Click 'Add Parcel' to add a new parcel."}
+                  </Typography>
                 </Box>
               )}
               {parcelForms.map((form) => (
-                <Box key={form.id} sx={{ mt: 2, mb: 2, p: 2, border: "1px solid #e0e0e0", borderRadius: 1 }}>
-                  <Typography variant="subtitle1" gutterBottom>{form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}</Typography>
-                  <Box sx={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                <Box
+                  key={form.id}
+                  sx={{
+                    mt: 2,
+                    mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined ? "Edit Parcel" : "New Parcel"}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormSelect name="itemId" label="Item" value={form.itemId} onChange={(e) => handleChange(e, form.id)} options={items} error={!!errors[form.id]?.itemId} helperText={errors[form.id]?.itemId} />
+                      <FormSelect
+                        name="itemId"
+                        label="Item"
+                        value={form.itemId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={items}
+                        error={!!errors[form.id]?.itemId}
+                        helperText={errors[form.id]?.itemId}
+                      />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormSelect name="uomId" label="UOM" value={form.uomId} onChange={(e) => handleChange(e, form.id)} options={uoms} error={!!errors[form.id]?.uomId} helperText={errors[form.id]?.uomId} />
+                      <FormSelect
+                        name="uomId"
+                        label="UOM"
+                        value={form.uomId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={uoms}
+                        error={!!errors[form.id]?.uomId}
+                        helperText={errors[form.id]?.uomId}
+                      />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput name="quantity" label="Quantity" value={form.quantity} onChange={(e) => handleChange(e, form.id)} error={!!errors[form.id]?.quantity} helperText={errors[form.id]?.quantity} type="number" />
+                      <FormInput
+                        name="quantity"
+                        label="Quantity"
+                        value={form.quantity}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.quantity}
+                        helperText={errors[form.id]?.quantity}
+                        type="number"
+                      />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput 
-                      name="rate" 
-                      label="Supplier Rate" value={form.rate} 
-                      onChange={(e) => handleChange(e, form.id)} 
-                      error={!!errors[form.id]?.rate} 
-                      helperText={errors[form.id]?.rate}
-                       type="number" />
+                      <FormInput
+                        name="rate"
+                        label="Supplier Rate"
+                        value={form.rate}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.rate}
+                        helperText={errors[form.id]?.rate}
+                        type="number"
+                      />
                     </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                      <FormInput 
-                      name="salesRate" 
-                      label="Sales Rate" 
-                      value={form.salesRate} 
-                      onChange={(e) => handleChange(e, form.id)} 
-                      error={!!errors[form.id]?.salesRate} 
-                      helperText={errors[form.id]?.salesRate}
-                       type="number"
+                      <FormInput
+                        name="salesRate"
+                        label="Sales Rate"
+                        value={form.salesRate}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.salesRate}
+                        helperText={errors[form.id]?.salesRate}
+                        type="number"
                       />
                     </Box>
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                    <Button variant="outlined" onClick={() => setParcelForms((prev) => prev.filter((f) => f.id !== form.id))}>Cancel</Button>
-                    <Button variant="contained" onClick={() => handleSave(form.id)}>Save</Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        setParcelForms((prev) =>
+                          prev.filter((f) => f.id !== form.id)
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSave(form.id)}
+                    >
+                      Save
+                    </Button>
                   </Box>
                 </Box>
               ))}
@@ -440,27 +610,40 @@ const ParcelTab = ({
                   checkboxSelection={false}
                   disableSelectionOnClick
                   autoHeight
-                  hideActions={true}
+                  hideActions={readOnly}
                   onEdit={!readOnly ? handleEditParcel : undefined}
                   onDelete={!readOnly ? handleDeleteParcel : undefined}
                   totalRows={parcels.length}
-                  pagination={true}
+                  isPagination
                 />
               )}
             </>
           ) : salesQuotationId ? (
-            <ApprovalTab moduleType="sales-quotation" moduleId={salesQuotationId} refreshTrigger={refreshApprovals} />
+            <ApprovalTab
+              moduleType="sales-quotation"
+              moduleId={salesQuotationId}
+              refreshTrigger={refreshApprovals}
+            />
           ) : null}
         </Box>
 
-        <Dialog open={deleteConfirmOpen} onClose={handleCancelDelete} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={handleCancelDelete}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
           <DialogTitle id="alert-dialog-title">Confirm Deletion</DialogTitle>
           <DialogContent>
-            <DialogContentText id="alert-dialog-description">Are you sure you want to remove this parcel? This action cannot be undone.</DialogContentText>
+            <DialogContentText id="alert-dialog-description">
+              Are you sure you want to remove this parcel? This action cannot be undone.
+            </DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCancelDelete}>Cancel</Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>Delete</Button>
+            <Button onClick={handleConfirmDelete} color="error" autoFocus>
+              Delete
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>

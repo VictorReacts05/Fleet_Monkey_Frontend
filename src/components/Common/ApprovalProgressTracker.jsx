@@ -189,24 +189,6 @@ const ApprovalProgressTracker = ({ steps, activeStep, completedSteps }) => {
           );
         })}
       </Stepper>
-
-      <Box
-        sx={{
-          textAlign: 'center',
-          p: 3,
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-          borderRadius: '12px',
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-          {completionPercentage === 100 ? '🎉 Process Complete!' : activeStep === 0 ? '🚀 Ready to Start' : '⏳ In Progress'}
-        </Typography>
-        <Typography variant="body2" color={isDarkMode ? 'grey.300' : 'text.secondary'}>
-          {completionPercentage === 100
-            ? 'All steps have been successfully completed'
-            : `Currently on step ${activeStep + 1}: ${steps[activeStep]}`}
-        </Typography>
-      </Box>
     </Paper>
   );
 };
