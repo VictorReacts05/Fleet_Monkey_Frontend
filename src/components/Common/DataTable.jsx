@@ -105,7 +105,7 @@ const DataTable = ({
   };
 
   const renderCellContent = (row, column, rowIndex) => {
-    console.log("renderCellContent called for column:", column.field || column.id, "value:", row[column.field || column.id]); // Debug log
+    // console.log("renderCellContent called for column:", column.field || column.id, "value:", row[column.field || column.id]);
     // If the column has a renderCell function, use it
     if (column.renderCell) {
       return column.renderCell({
