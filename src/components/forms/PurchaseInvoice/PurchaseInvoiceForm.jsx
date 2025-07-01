@@ -46,6 +46,9 @@ const ReadOnlyField = ({ label, value }) => {
     </Box>
   );
 };
+ const handleRefreshApprovals = () => {
+    fetchPurchaseInvoiceItems(); // Re-fetch data, including approvalStatus
+  };
 
 const PurchaseInvoiceForm = ({
   purchaseInvoiceId: propPurchaseInvoiceId,
@@ -555,6 +558,7 @@ const PurchaseInvoiceForm = ({
         purchaseInvoiceId={purchaseInvoiceId}
         onItemsChange={handleItemsChange}
         readOnly={readOnly}
+        refreshApprovals={handleRefreshApprovals}
       />
     </FormPage>
   );

@@ -229,7 +229,7 @@ const DataTable = ({
                     position: "sticky",
                     top: 0,
                     textAlign: isNumericField(column, null) ? "left" : "left",
-                    "&:first-child": {
+                    "&:first-of-type": {
                 paddingLeft: "64px", // Adjust the value as needed
               },
                   }}
@@ -279,7 +279,7 @@ const DataTable = ({
                 ? "left"
                 : "left",
               // Add padding-left to the first child TableCell
-              "&:first-child": {
+              "&:first-of-type": {
                 paddingLeft: "64px", // Adjust the value as needed
               },
             }}

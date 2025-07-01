@@ -334,6 +334,7 @@ const PurchaseRFQParcelTab = ({
     const errors = {};
     if (!formData.itemId) errors.itemId = "Item is required";
     if (!formData.uomId) errors.uomId = "UOM is required";
+    if (!formData.certificationId) errors.certificationId = "certificationId is required";
     if (!formData.quantity) {
       errors.quantity = "Quantity is required";
     } else if (

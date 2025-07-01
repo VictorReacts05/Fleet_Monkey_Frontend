@@ -81,6 +81,7 @@ const SupplierQuotationParcelTab = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [activeView, setActiveView] = useState("items");
+  const [parcelsEdited, setParcelsEdited] = useState(false);
 
   // Reset activeView to "items" when in create mode
   useEffect(() => {
@@ -96,14 +97,60 @@ const SupplierQuotationParcelTab = ({
       id: parcel.SupplierQuotationParcelID || Date.now() + index,
       itemName: parcel.itemName || parcel.ItemName || `Item ${parcel.ItemID}`,
       uomName: parcel.uomName || parcel.UOMName || `UOM ${parcel.UOMID}`,
-      certificationName: parcel.certificationName || (parcel.CertificationID ? `Certification ${parcel.CertificationID}` : "None"),
+      certificationName: parcel.CertificationName || (parcel.CertificationID ? `Certification ${parcel.CertificationID}` : "None"),
       srNo: parcel.srNo || index + 1,
     }));
     setParcels(formattedParcels);
-    if (onParcelsChange) {
-      onParcelsChange(formattedParcels);
-    }
-  }, [initialParcels, onParcelsChange]);
+  }, [initialParcels]);
+
+  const columns = [
+    { id: "itemName", label: "Item" },
+    { id: "certificationName", label: "Certification" },
+    { id: "uomName", label: "UOM" },
+    {
+      id: "ItemQuantity",
+      label: "Quantity",
+      renderCell: ({ value }) => value.toFixed(2),
+    },
+    {
+      id: "Rate",
+      label: "Rate",
+      renderCell: ({ row, value }) =>
+        isEditing ? (
+          <TextField
+            type="number"
+            value={value || ""}
+            onChange={(e) =>
+              handleRateChange(row.SupplierQuotationParcelID, e.target.value)
+            }
+            size="small"
+            sx={{
+              width: "100px",
+              textAlign: "center",
+              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                {
+                  "-webkit-appearance": "none",
+                  margin: 0,
+                },
+              "& input[type=number]": {
+                "-moz-appearance": "textfield",
+              },
+            }}
+            inputProps={{ min: 0, step: "0.01" }}
+            placeholder="0.00"
+          />
+        ) : value ? (
+          value.toFixed(2)
+        ) : (
+          "-"
+        ),
+    },
+    {
+      id: "Amount",
+      label: "Amount",
+      renderCell: ({ value }) => (value ? value.toFixed(2) : "-"),
+    },
+  ];
 
   // Load dropdown data
   useEffect(() => {
@@ -209,11 +256,9 @@ const SupplierQuotationParcelTab = ({
   const handleChange = (e, formId) => {
     const { name, value } = e.target;
     setParcelForms((prev) =>
-      prev.map((form) => {
-        if (form.id !== formId) return form;
-        const updatedForm = { ...form, [name]: value };
-        return updatedForm;
-      })
+      prev.map((form) =>
+        form.id === formId ? { ...form, [name]: value } : form
+      )
     );
 
     setErrors((prev) => ({
@@ -234,8 +279,12 @@ const SupplierQuotationParcelTab = ({
     ) {
       formErrors.quantity = "Quantity must be a positive number";
     }
-    if (!form.rate || isNaN(Number(form.rate)) || Number(form.rate) < 0) {
-      formErrors.rate = "Rate must be a non-negative number";
+    if (
+      !form.rate ||
+      isNaN(Number(form.rate)) ||
+      Number(form.rate) <= 0
+    ) {
+      formErrors.rate = "Rate must be a positive number greater than 0";
     }
     return formErrors;
   };
@@ -254,41 +303,19 @@ const SupplierQuotationParcelTab = ({
       return;
     }
 
-    const { personId } = getAuthHeader();
-    if (!personId) {
-      console.log("User authentication data missing. Please log in again.");
-      navigate("/login");
-      return;
-    }
-
-    const selectedItem = items.find((i) => i.value === form.itemId);
-    const selectedUOM = uoms.find((u) => u.value === form.uomId);
-    const selectedCertification = form.certificationId
-      ? certifications.find((c) => c.value === form.certificationId)
-      : null;
-    const quantity = parseFloat(form.quantity);
-    const rate = parseFloat(form.rate);
-    const amount = quantity * rate;
-
     const newParcel = {
       SupplierQuotationParcelID: form.originalId || Date.now(),
       SupplierQuotationID: supplierQuotationId,
       ItemID: parseInt(form.itemId) || 0,
-      itemName: selectedItem ? selectedItem.label : "Unknown Item",
+      ItemName: items.find((i) => i.value === form.itemId)?.label || "Unknown Item",
       UOMID: parseInt(form.uomId) || 0,
-      uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+      UOMName: uoms.find((u) => u.value === form.uomId)?.label || "Unknown UOM",
       CertificationID: form.certificationId ? parseInt(form.certificationId) : null,
-      certificationName: selectedCertification ? selectedCertification.label : "None",
-      ItemQuantity: quantity,
-      Rate: rate,
-      Amount: amount,
-      srNo:
-        form.editIndex !== undefined
-          ? parcels[form.editIndex]?.srNo
-          : parcels.length + 1,
-      CountryOfOriginID: null,
-      CreatedByID: personId ? parseInt(personId) : null,
-      IsDeleted: false,
+      CertificationName: certifications.find((c) => c.value === form.certificationId)?.label || "None",
+      ItemQuantity: parseFloat(form.quantity) || 0,
+      Rate: parseFloat(form.rate) || 0,
+      Amount: parseFloat(form.quantity) * parseFloat(form.rate) || 0,
+      srNo: parcels.length + 1,
       id: form.originalId || Date.now(),
     };
 
@@ -300,16 +327,16 @@ const SupplierQuotationParcelTab = ({
       } else {
         updatedParcels = [...prevParcels, newParcel];
       }
+      console.log("Parcels after save", updatedParcels);
       if (onParcelsChange) {
-        onParcelsChange(updatedParcels);
+        onParcelsChange(updatedParcels, true); // Ensure edited=true is passed
       }
       return updatedParcels;
     });
 
+    setParcelsEdited(true); // Explicitly set parcelsEdited to true
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
-    toast.success(
-      form.originalId ? "Parcel updated locally" : "Parcel added locally"
-    );
+    toast.success(form.originalId ? "Parcel updated locally" : "Parcel added locally");
   };
 
   // Handle deleting a parcel
@@ -324,7 +351,7 @@ const SupplierQuotationParcelTab = ({
         (p) => p.SupplierQuotationParcelID !== deleteParcelId
       );
       if (onParcelsChange) {
-        onParcelsChange(updatedParcels);
+        onParcelsChange(updatedParcels, parcelsEdited); // Maintain parcelsEdited state
       }
       return updatedParcels;
     });
@@ -350,10 +377,11 @@ const SupplierQuotationParcelTab = ({
         return p;
       });
       if (onParcelsChange) {
-        onParcelsChange(updatedParcels);
+        onParcelsChange(updatedParcels, true); // Mark as edited
       }
       return updatedParcels;
     });
+    setParcelsEdited(true); // Mark parcels as edited
   };
 
   // Pagination handlers
@@ -371,55 +399,6 @@ const SupplierQuotationParcelTab = ({
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
-
-  const columns = [
-    { id: "itemName", label: "Item" },
-    { id: "certificationName", label: "Certification" },
-    { id: "uomName", label: "UOM" },
-    {
-      id: "ItemQuantity",
-      label: "Quantity",
-      renderCell: ({ value }) => value.toFixed(2),
-    },
-    {
-      id: "Rate",
-      label: "Rate",
-      renderCell: ({ row, value }) =>
-        isEditing ? (
-          <TextField
-            type="number"
-            value={value || ""}
-            onChange={(e) =>
-              handleRateChange(row.SupplierQuotationParcelID, e.target.value)
-            }
-            size="small"
-            sx={{
-              width: "100px",
-              textAlign: "center",
-              "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
-                {
-                  "-webkit-appearance": "none",
-                  margin: 0,
-                },
-              "& input[type=number]": {
-                "-moz-appearance": "textfield",
-              },
-            }
-            inputProps={{ min: 0, step: "0.01" }}
-            placeholder="0.00"
-          />
-        ) : value ? (
-          value.toFixed(2)
-        ) : (
-          "-"
-        ),
-    },
-    {
-      id: "Amount",
-      label: "Amount",
-      renderCell: ({ value }) => (value ? value.toFixed(2) : "-"),
-    },
-  ];
 
   return (
     <Box

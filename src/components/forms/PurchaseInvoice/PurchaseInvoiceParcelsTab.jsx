@@ -18,19 +18,35 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems, fetchCertifications } from "./PurchaseInvoiceAPI";
+import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
 import { useNavigate } from "react-router-dom";
+import ApprovalTab from "../../Common/ApprovalTab";
+
+const getAuthHeader = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const personId = user?.personId;
+  if (!personId) {
+    throw new Error("No personId found in localStorage");
+  }
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${personId}`,
+    },
+    personId,
+  };
+};
 
 const PurchaseInvoiceParcelsTab = ({
   purchaseInvoiceId,
   onItemsChange,
   readOnly = false,
+  refreshApprovals,
 }) => {
   const navigate = useNavigate();
   const [itemsList, setItemsList] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
-  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [itemForms, setItemForms] = useState([]);
@@ -39,13 +55,20 @@ const PurchaseInvoiceParcelsTab = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [activeView, setActiveView] = useState("items");
   const theme = useTheme();
   const isMounted = useRef(true);
+
+  // Reset activeView to "items" when in create mode
+  useEffect(() => {
+    if (!purchaseInvoiceId) {
+      setActiveView("items");
+    }
+  }, [purchaseInvoiceId]);
 
   // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
-    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "ItemQuantity", headerName: "Quantity", flex: 1 },
     { field: "Rate", headerName: "Rate", flex: 1 },
@@ -66,10 +89,9 @@ const PurchaseInvoiceParcelsTab = ({
       setLoading(true);
       setError(null);
 
-      // Fetch items, UOMs, and certifications only if not loaded
+      // Fetch items and UOMs only if not loaded
       let itemsData = items.length > 1 ? items : [];
       let uomsData = uoms.length > 1 ? uoms : [];
-      let certificationsData = certifications.length > 1 ? certifications : [];
 
       if (!itemsData.length) {
         const rawItems = await fetchItems();
@@ -95,36 +117,32 @@ const PurchaseInvoiceParcelsTab = ({
         setUOMs(uomsData);
       }
 
-      if (!certificationsData.length) {
-        const rawCertifications = await fetchCertifications();
-        certificationsData = [
-          { value: "", label: "Select a certification" },
-          ...rawCertifications.map((cert) => ({
-            value: String(cert.CertificationID || cert.id),
-            label: cert.CertificationName || cert.name || "Unknown Certification",
-          })),
-        ];
-        setCertifications(certificationsData);
-      }
-
       // Fetch parcels
-      const parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+      let parcelData = [];
+      try {
+        parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+      } catch (error) {
+        console.warn(
+          "Failed to fetch purchase invoice items, defaulting to empty array:",
+          error.message
+        );
+        if (error.response?.status === 404) {
+          setError("Purchase Invoice not found. It may have been deleted.");
+        }
+        parcelData = [];
+      }
       console.log("Parcel data after fetch:", parcelData);
 
-      // No need to filter since fetchPurchaseInvoiceItems ensures the data matches purchaseInvoiceId
       const formattedItems = parcelData.map((item, index) => {
         const itemId = String(item.ItemID || "");
         const uomId = String(item.UOMID || "");
-        const certificationId = String(item.CertificationID || "");
         const itemOption = itemsData.find((i) => i.value === itemId);
         const uomOption = uomsData.find((u) => u.value === uomId);
-        const certificationOption = certificationsData.find((c) => c.value === certificationId);
 
         return {
           id: item.PInvoiceParcelID || Date.now() + index,
           itemId,
           uomId,
-          certificationId,
           quantity: String(item.ItemQuantity || item.Quantity || "0"),
           ItemQuantity: String(item.ItemQuantity || item.Quantity || "0"),
           rate: String(item.Rate || "0"),
@@ -133,7 +151,6 @@ const PurchaseInvoiceParcelsTab = ({
           Amount: String(item.Amount || "0"),
           itemName: item.ItemName || itemOption?.label || `Item ${itemId}`,
           uomName: item.UOMName || uomOption?.label || `UOM ${uomId}`,
-          certificationName: item.CertificationName || certificationOption?.label || "None",
           srNo: index + 1,
           PurchaseInvoiceItemID: item.PInvoiceParcelID,
           PInvoiceID: purchaseInvoiceId,
@@ -159,7 +176,7 @@ const PurchaseInvoiceParcelsTab = ({
     } finally {
       setLoading(false);
     }
-  }, [purchaseInvoiceId, onItemsChange, items.length, uoms.length, certifications.length]);
+  }, [purchaseInvoiceId, onItemsChange, items.length, uoms.length]);
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -178,7 +195,6 @@ const PurchaseInvoiceParcelsTab = ({
         id: newFormId,
         itemId: "",
         uomId: "",
-        certificationId: "",
         quantity: "",
         rate: "",
         amount: "",
@@ -201,7 +217,6 @@ const PurchaseInvoiceParcelsTab = ({
         id: editFormId,
         itemId: itemToEdit.itemId,
         uomId: itemToEdit.uomId,
-        certificationId: itemToEdit.certificationId,
         quantity: itemToEdit.quantity,
         rate: itemToEdit.rate,
         amount: itemToEdit.amount,
@@ -243,7 +258,6 @@ const PurchaseInvoiceParcelsTab = ({
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
-    // Certification is optional, so no validation unless required
     if (!form.quantity) {
       formErrors.quantity = "Quantity is required";
     } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
@@ -278,7 +292,6 @@ const PurchaseInvoiceParcelsTab = ({
       const { headers, personId } = getAuthHeader();
       const selectedItem = items.find((i) => i.value === form.itemId);
       const selectedUOM = uoms.find((u) => u.value === form.uomId);
-      const selectedCertification = certifications.find((c) => c.value === form.certificationId);
       const originalItem =
         form.editIndex !== undefined ? itemsList[form.editIndex] : null;
 
@@ -291,10 +304,8 @@ const PurchaseInvoiceParcelsTab = ({
         itemId: form.itemId,
         UOMID: parseInt(form.uomId, 10),
         uomId: form.uomId,
-        CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
-        certificationId: form.certificationId,
-        ItemQuantity: parseInt(form.quantity, 10),
-        Quantity: parseInt(form.quantity, 10),
+        ItemQuantity: parseFloat(form.quantity),
+        Quantity: parseFloat(form.quantity),
         quantity: form.quantity,
         Rate: parseFloat(form.rate),
         rate: form.rate,
@@ -302,7 +313,6 @@ const PurchaseInvoiceParcelsTab = ({
         amount: form.amount,
         itemName: selectedItem ? selectedItem.label : "Unknown Item",
         uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
-        certificationName: selectedCertification ? selectedCertification.label : "None",
         srNo: originalItem?.srNo || itemsList.length + 1,
         isModified: true,
         CreatedByID: personId ? parseInt(personId, 10) : null,
@@ -316,7 +326,6 @@ const PurchaseInvoiceParcelsTab = ({
             PInvoiceID: purchaseInvoiceId,
             ItemID: newItem.ItemID,
             UOMID: newItem.UOMID,
-            CertificationID: newItem.CertificationID,
             ItemQuantity: newItem.ItemQuantity,
             Rate: newItem.Rate,
             Amount: newItem.Amount,
@@ -331,7 +340,6 @@ const PurchaseInvoiceParcelsTab = ({
             PInvoiceID: purchaseInvoiceId,
             ItemID: newItem.ItemID,
             UOMID: newItem.UOMID,
-            CertificationID: newItem.CertificationID,
             ItemQuantity: newItem.ItemQuantity,
             Rate: newItem.Rate,
             Amount: newItem.Amount,
@@ -420,6 +428,13 @@ const PurchaseInvoiceParcelsTab = ({
     navigate("/login");
   };
 
+  // Handle status change from ApprovalTab
+  const handleStatusChange = () => {
+    if (refreshApprovals) {
+      refreshApprovals();
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -448,15 +463,54 @@ const PurchaseInvoiceParcelsTab = ({
             borderTopLeftRadius: 8,
             borderTopRightRadius: 8,
             backgroundColor:
-              theme.palette.mode === "dark" ? "#1f2529" : "#f3f8fd",
+              activeView === "items"
+                ? theme.palette.mode === "dark"
+                  ? "#37474f"
+                  : "#e0f7fa"
+                : theme.palette.mode === "dark"
+                ? "#1f2529"
+                : "#f3f8fd",
             color: theme.palette.text.primary,
             cursor: "pointer",
           }}
+          onClick={() => setActiveView("items")}
         >
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" sx={{ cursor: "pointer" }}>
             Items
           </Typography>
         </Box>
+        {purchaseInvoiceId && (
+          <Box
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontWeight: "bold",
+              borderTop: "1px solid #e0e0e0",
+              borderRight: "1px solid #e0e0e0",
+              borderLeft: "1px solid #e0e0e0",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              backgroundColor:
+                activeView === "approvals"
+                  ? theme.palette.mode === "dark"
+                    ? "#37474f"
+                    : "#e0f7fa"
+                  : theme.palette.mode === "dark"
+                  ? "#1f2529"
+                  : "#f3f8fd",
+              color: theme.palette.text.primary,
+              cursor: "pointer",
+            }}
+            onClick={() => setActiveView("approvals")}
+          >
+            <Typography
+              variant="subtitle1"
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
+            >
+              Approvals
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Content area */}
@@ -469,189 +523,189 @@ const PurchaseInvoiceParcelsTab = ({
           borderTopRightRadius: 4,
         }}
       >
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
-            <Typography variant="body1">{error}</Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={error.includes("log in") ? handleLoginRedirect : loadData}
-              sx={{ mt: 2 }}
-            >
-              {error.includes("log in") ? "Log In" : "Retry"}
-            </Button>
-          </Box>
-        ) : itemsList.length === 0 && itemForms.length === 0 ? (
-          <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
-            <Typography variant="body1">
-              No items found.{" "}
-              {!readOnly && "Click 'Add Item' to add a new item."}
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {!readOnly && (
+        {activeView === "items" ? (
+          loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "error.main" }}>
+              <Typography variant="body1">{error}</Typography>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleAddItem}
-                sx={{ mb: 2 }}
-                disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
+                color="primary"
+                onClick={error.includes("log in") ? handleLoginRedirect : loadData}
+                sx={{ mt: 2 }}
               >
-                Add Item
+                {error.includes("log in") ? "Log In" : "Retry"}
               </Button>
-            )}
+            </Box>
+          ) : itemsList.length === 0 && itemForms.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 3, color: "text.secondary" }}>
+              <Typography variant="body1">
+                No items found.{" "}
+                {!readOnly && "Click 'Add Item' to add a new item."}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {!readOnly && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddItem}
+                  sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1}
+                >
+                  Add Item
+                </Button>
+              )}
 
-            {itemForms.map((form) => (
-              <Box
-                key={form.id}
-                sx={{
-                  mt: 2,
-                  mb: 2,
-                  p: 2,
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 1,
-                }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  {form.editIndex !== undefined ? "Edit Item" : "New Item"}
-                </Typography>
-
+              {itemForms.map((form) => (
                 <Box
+                  key={form.id}
                   sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 2,
+                    mt: 2,
                     mb: 2,
+                    p: 2,
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
                   }}
                 >
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="itemId"
-                      label="Item"
-                      value={form.itemId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={items}
-                      error={!!errors[form.id]?.itemId}
-                      helperText={errors[form.id]?.itemId}
-                    />
+                  <Typography variant="subtitle1" gutterBottom>
+                    {form.editIndex !== undefined ? "Edit Item" : "New Item"}
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="itemId"
+                        label="Item"
+                        value={form.itemId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={items}
+                        error={!!errors[form.id]?.itemId}
+                        helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="uomId"
+                        label="UOM"
+                        value={form.uomId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={uoms}
+                        error={!!errors[form.id]?.uomId}
+                        helperText={errors[form.id]?.uomId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="quantity"
+                        label="Quantity"
+                        value={form.quantity}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.quantity}
+                        helperText={errors[form.id]?.quantity}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="rate"
+                        label="Rate"
+                        value={form.rate}
+                        onChange={(e) => handleChange(e, form.id)}
+                        error={!!errors[form.id]?.rate}
+                        helperText={errors[form.id]?.rate}
+                        type="number"
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormInput
+                        name="amount"
+                        label="Amount"
+                        value={form.amount}
+                        error={!!errors[form.id]?.amount}
+                        helperText={errors[form.id]?.amount}
+                        type="number"
+                        disabled
+                      />
+                    </Box>
                   </Box>
 
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="certificationId"
-                      label="Certification"
-                      value={form.certificationId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={certifications}
-                      error={!!errors[form.id]?.certificationId}
-                      helperText={errors[form.id]?.certificationId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormSelect
-                      name="uomId"
-                      label="UOM"
-                      value={form.uomId}
-                      onChange={(e) => handleChange(e, form.id)}
-                      options={uoms}
-                      error={!!errors[form.id]?.uomId}
-                      helperText={errors[form.id]?.uomId}
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="quantity"
-                      label="Quantity"
-                      value={form.quantity}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.quantity}
-                      helperText={errors[form.id]?.quantity}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="rate"
-                      label="Rate"
-                      value={form.rate}
-                      onChange={(e) => handleChange(e, form.id)}
-                      error={!!errors[form.id]?.rate}
-                      helperText={errors[form.id]?.rate}
-                      type="number"
-                    />
-                  </Box>
-
-                  <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
-                    <FormInput
-                      name="amount"
-                      label="Amount"
-                      value={form.amount}
-                      error={!!errors[form.id]?.amount}
-                      helperText={errors[form.id]?.amount}
-                      type="number"
-                      disabled
-                    />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        setItemForms((prev) =>
+                          prev.filter((f) => f.id !== form.id)
+                        )
+                      }
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSave(form.id)}
+                    >
+                      Save Item
+                    </Button>
                   </Box>
                 </Box>
+              ))}
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() =>
-                      setItemForms((prev) =>
-                        prev.filter((f) => f.id !== form.id)
-                      )
-                    }
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleSave(form.id)}
-                  >
-                    Save Item
-                  </Button>
-                </Box>
-              </Box>
-            ))}
-
-            {itemsList.length > 0 && (
-              <DataTable
-                rows={itemsList}
-                columns={columns}
-                page={page}
-                rowsPerPage={rowsPerPage}
-                onPageChange={(newPage) => setPage(newPage)}
-                onRowsPerPageChange={(newPageSize) =>
-                  setRowsPerPage(newPageSize)
-                }
-                rowsPerPageOptions={[5, 10, 25]}
-                checkboxSelection={false}
-                disableSelectionOnClick
-                autoHeight
-                hideActions={readOnly}
-                onEdit={!readOnly ? handleEditItem : undefined}
-                onDelete={!readOnly ? handleDeleteItem : undefined}
-                totalRows={itemsList.length}
-                isPagination={true}
-              />
-            )}
-          </>
+              {itemsList.length > 0 && (
+                <DataTable
+                  rows={itemsList}
+                  columns={columns}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={(newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(newPageSize) =>
+                    setRowsPerPage(newPageSize)
+                  }
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick
+                  autoHeight
+                  hideActions={readOnly}
+                  onEdit={!readOnly ? handleEditItem : undefined}
+                  onDelete={!readOnly ? handleDeleteItem : undefined}
+                  totalRows={itemsList.length}
+                  isPagination={true}
+                />
+              )}
+            </>
+          )
+        ) : (
+          purchaseInvoiceId && (
+            <ApprovalTab
+              moduleType="purchase-Invoice"
+              moduleId={purchaseInvoiceId}
+              readOnly={readOnly}
+              refreshTrigger={refreshApprovals}
+              onStatusChange={handleStatusChange}
+            />
+          )
         )}
       </Box>
 

@@ -109,14 +109,11 @@ const PurchaseRFQForm = ({
   const [salesRFQs, setSalesRFQs] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
-  // Supplier selection state
   const [suppliersDialogOpen, setSuppliersDialogOpen] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState([]);
   const [supplierSearchTerm, setSupplierSearchTerm] = useState("");
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
-
   const [approvalStatus, setApprovalStatus] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -129,6 +126,7 @@ const PurchaseRFQForm = ({
     completedSuppliers: 0,
   });
   const [sending, setSending] = useState(false);
+  const [approvalRefreshTrigger, setApprovalRefreshTrigger] = useState(0);
 
   const loadPurchaseRFQData = useCallback(async () => {
     if (!purchaseRFQId) return;
@@ -159,7 +157,7 @@ const PurchaseRFQForm = ({
             ? new Date(rfqData.DateReceived)
             : null,
           SalesRFQID: rfqData.SalesRFQID ? rfqData.SalesRFQID.toString() : "",
-          ServiceType: "Unknown Service Type", // Default
+          ServiceType: "Unknown Service Type",
           CollectionAddress: rfqData.CollectionAddress || "-",
           DestinationAddress: rfqData.DestinationAddress || "-",
           DestinationWarehouse: rfqData.DestinationWarehouse || "-",
@@ -167,7 +165,6 @@ const PurchaseRFQForm = ({
         };
 
         try {
-          // Fetch Collection Address
           if (rfqData.CollectionAddressID) {
             const collectionAddressResponse = await axios.get(
               `${APIBASEURL}/addresses/${rfqData.CollectionAddressID}`,
@@ -187,7 +184,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch Destination Address
           if (rfqData.DestinationAddressID) {
             const destinationAddressResponse = await axios.get(
               `${APIBASEURL}/addresses/${rfqData.DestinationAddressID}`,
@@ -207,7 +203,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch Destination Warehouse
           if (rfqData.DestinationWarehouseAddressID) {
             try {
               const destinationWarehouseResponse = await axios.get(
@@ -232,7 +227,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch Origin Warehouse
           if (rfqData.OriginWarehouseAddressID) {
             try {
               const originWarehouseResponse = await axios.get(
@@ -257,7 +251,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch Shipping Priority
           if (rfqData.ShippingPriorityID) {
             try {
               const prioritiesResponse = await fetchShippingPriorities();
@@ -273,25 +266,19 @@ const PurchaseRFQForm = ({
                 matchingPriority?.PriorityName ||
                 `Unknown Priority (${rfqData.ShippingPriorityID})`;
             } catch (priorityError) {
-              console.error(
-                "Failed to fetch shipping priority:",
-                priorityError
-              );
+              console.error("Failed to fetch shipping priority:", priorityError);
               formattedData.ShippingPriorityName = "Error: Failed to fetch priority";
             }
           }
 
-          // Fetch Service Type
           if (rfqData.ServiceTypeID) {
             try {
               const serviceTypesResponse = await fetchServiceTypes();
-              console.log("Service Types Response:", serviceTypesResponse);
               const serviceTypes = Array.isArray(serviceTypesResponse)
                 ? serviceTypesResponse
                 : serviceTypesResponse.data || [];
               const matchingServiceType = serviceTypes.find(
-                (s) =>
-                  parseInt(s.ServiceTypeID) === parseInt(rfqData.ServiceTypeID)
+                (s) => parseInt(s.ServiceTypeID) === parseInt(rfqData.ServiceTypeID)
               );
               formattedData.ServiceType =
                 matchingServiceType?.ServiceType ||
@@ -302,7 +289,6 @@ const PurchaseRFQForm = ({
             }
           }
 
-          // Fetch Currency
           if (rfqData.CurrencyID) {
             try {
               const currenciesResponse = await fetchCurrencies();
@@ -342,7 +328,7 @@ const PurchaseRFQForm = ({
       }
     } catch (error) {
       console.error("Error loading Purchase RFQ data:", error);
-      console.log("Failed to load Purchase RFQ data");
+      toast.error("Failed to load Purchase RFQ data");
     } finally {
       setLoading(false);
       setParcelLoading(false);
@@ -355,15 +341,11 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId, loadPurchaseRFQData]);
 
-  useEffect(() => {
-    handleConfirmAction();
-  }, [confirmAction]);
-
   const loadApprovalStatus = useCallback(async () => {
     if (!purchaseRFQId) return;
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      if (!user?.personIdWal) {
+      if (!user?.personId) {
         throw new Error("No user found in localStorage");
       }
 
@@ -385,11 +367,17 @@ const PurchaseRFQForm = ({
     }
   }, [purchaseRFQId]);
 
+  const handleRefreshApprovals = useCallback(() => {
+    loadPurchaseRFQData();
+    loadApprovalStatus();
+    setApprovalRefreshTrigger((prev) => prev + 1); // Trigger refresh in child components
+  }, [loadPurchaseRFQData, loadApprovalStatus]);
+
   useEffect(() => {
     if (purchaseRFQId) {
       loadApprovalStatus();
     }
-  }, [purchaseRFQId, loadApprovalStatus,]);
+  }, [purchaseRFQId, loadApprovalStatus]);
 
   const addSupplier = async (supplierData) => {
     try {
@@ -408,7 +396,7 @@ const PurchaseRFQForm = ({
       return response.data.data;
     } catch (error) {
       console.error("Error adding supplier:", error);
-      console.log("Failed to add supplier: " + error.message);
+      toast.error("Failed to add supplier: " + error.message);
       throw error;
     }
   };
@@ -421,7 +409,7 @@ const PurchaseRFQForm = ({
         if (response.success) {
           toast.success("Purchase RFQ approved successfully");
           setApprovalStatus("approved");
-          await loadApprovalStatus(); // Refresh approval status
+          handleRefreshApprovals(); // Refresh both form and approval data
         } else {
           throw new Error(response.message || "Approval failed");
         }
@@ -430,12 +418,12 @@ const PurchaseRFQForm = ({
         if (response.success) {
           toast.success("Purchase RFQ disapproved successfully");
           setApprovalStatus("disapproved");
-          await loadApprovalStatus(); // Refresh approval status
+          handleRefreshApprovals(); // Refresh both form and approval data
         } else {
           throw new Error(response.message || "Disapproval failed");
         }
       } else if (confirmAction === "send") {
-      setSending(true);
+        setSending(true);
 
         const user = JSON.parse(localStorage.getItem("user"));
         const createdByID = user?.personId || 1;
@@ -449,7 +437,9 @@ const PurchaseRFQForm = ({
           completedSuppliers: 0,
         });
 
-        setTimeout(() => {setSending(false);}, 1000); 
+        setTimeout(() => {
+          setSending(false);
+        }, 1000);
 
         const toastId = toast.info(
           `Sending RFQ to ${supplierIDs.length} suppliers. This may take some time...`,
@@ -478,7 +468,6 @@ const PurchaseRFQForm = ({
           autoClose: 5000,
         });
 
-        const results = [];
         let successCount = 0;
         let failCount = 0;
 
@@ -500,16 +489,6 @@ const PurchaseRFQForm = ({
               failCount++;
               toast.warning(`Failed for ${supplierName}: ${result.message}`);
             }
-
-            results.push({
-              supplierID: result.supplierID,
-              supplierName: supplierName,
-              success: result.success,
-              message: result.message,
-              supplierQuotationID: result.supplierQuotationID,
-              emailSent: result.success,
-              emailMessage: result.message,
-            });
           });
 
           if (successCount > 0) {
@@ -541,7 +520,7 @@ const PurchaseRFQForm = ({
         response: error.response?.data,
         status: error.response?.status,
       });
-      console.log(
+      toast.error(
         `An error occurred: ${error.response?.data?.message || error.message}`
       );
       setEmailSendingStatus({
@@ -564,6 +543,7 @@ const PurchaseRFQForm = ({
       ...prev,
       Status: newStatus,
     }));
+    handleRefreshApprovals(); // Trigger refresh when status changes
   };
 
   const fetchSuppliers = async () => {
@@ -581,7 +561,7 @@ const PurchaseRFQForm = ({
       }
     } catch (error) {
       console.error("Error fetching suppliers:", error);
-      console.log("Failed to load suppliers");
+      toast.error("Failed to load suppliers");
     } finally {
       setLoadingSuppliers(false);
     }
@@ -633,7 +613,7 @@ const PurchaseRFQForm = ({
       setConfirmDialogOpen(true);
     } catch (error) {
       console.error("Error preparing to send Purchase RFQ:", error);
-      console.log("Failed to prepare sending: " + error.message);
+      toast.error("Failed to prepare sending: " + error.message);
     }
   };
 
@@ -722,7 +702,7 @@ const PurchaseRFQForm = ({
                 position: "relative",
               }}
             >
-              {emailSendingStatus.sending ? (
+              {sending ? (
                 <>
                   <CircularProgress
                     size={24}
@@ -771,7 +751,7 @@ const PurchaseRFQForm = ({
               size={24}
               sx={{ mr: 2 }}
             />
-            <Typography variant="body2" sx={{textAlign: "center", width: "100%"}}>
+            <Typography variant="body2" sx={{ textAlign: "center", width: "100%" }}>
               Please wait while we process your request. Do not close this page.
             </Typography>
           </Box>
@@ -801,17 +781,13 @@ const PurchaseRFQForm = ({
           <ReadOnlyField
             label="Inquiry"
             value={
-              salesRFQs.find((s) => s.value === formData.SalesRFQID?.toString())
-                ?.label ||
+              salesRFQs.find((s) => s.value === formData.SalesRFQID?.toString())?.label ||
               (formData.SalesRFQID ? `Sales RFQ #${formData.SalesRFQID}` : "-")
             }
           />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField
-            label="Service Type"
-            value={formData.ServiceType || "-"}
-          />
+          <ReadOnlyField label="Service Type" value={formData.ServiceType || "-"} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
@@ -899,10 +875,7 @@ const PurchaseRFQForm = ({
           <ReadOnlyField label="Terms" value={formData.Terms || "-"} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
-          <ReadOnlyField
-            label="Currency"
-            value={formData.CurrencyName || "-"}
-          />
+          <ReadOnlyField label="Currency" value={formData.CurrencyName || "-"} />
         </Grid>
         <Grid item xs={12} md={3} sx={{ width: "24%" }}>
           <ReadOnlyField
@@ -928,6 +901,8 @@ const PurchaseRFQForm = ({
         purchaseRFQId={purchaseRFQId}
         onParcelsChange={handleParcelsChange}
         readOnly={readOnly || formData.Status === "Approved"}
+        refreshApprovals={handleRefreshApprovals}
+        approvalRefreshTrigger={approvalRefreshTrigger}
       />
 
       <Dialog

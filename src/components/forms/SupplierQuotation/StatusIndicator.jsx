@@ -13,7 +13,7 @@ import {
   fetchUserApprovalStatus,
 } from "./SupplierQuotationAPI";
 
-const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
+const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly, parcels, parcelsEdited }) => {
   const [status, setStatus] = useState("Pending");
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -25,8 +25,10 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
       supplierQuotationId,
       readOnly,
       status,
+      parcels,
+      parcelsEdited,
     });
-  }, [supplierQuotationId, readOnly, status]);
+  }, [supplierQuotationId, readOnly, status, parcels, parcelsEdited]);
 
   // Fetch user approval status
   useEffect(() => {
@@ -71,8 +73,31 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
     loadStatus();
   }, [supplierQuotationId]);
 
+  const validateApproval = () => {
+    // Check if any parcel has an invalid rate (empty or <= 0)
+    const hasInvalidRate = parcels.some(
+      (parcel) => !parcel.Rate || parseFloat(parcel.Rate) <= 0
+    );
+    if (hasInvalidRate) {
+      toast.error("Cannot approve: All parcels must have a valid rate greater than 0.");
+      return false;
+    }
+    // Check if parcels have been edited and saved
+    if (!parcelsEdited) {
+      toast.error("Cannot approve: Please edit and save at least one parcel.");
+      return false;
+    }
+    return true;
+  };
+
   const handleApprove = async () => {
     console.log("handleApprove triggered for ID:", supplierQuotationId);
+    if (!validateApproval()) {
+      setLoading(false);
+      setAnchorEl(null);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await approveSupplierQuotation(supplierQuotationId);
@@ -146,17 +171,7 @@ const StatusIndicator = ({ supplierQuotationId, onStatusChange, readOnly }) => {
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        /* sx={{
-          "& .MuiMenuItem-root": {
-            fontSize: 12,
-            minHeight: 24,
-            px: 1,
-          },
-        }} */
       >
-        {/* <MenuItem onClick={handleApprove} disabled={loading}>
-          Approve
-        </MenuItem> */}
         {validStatus !== "Approved" && (
           <MenuItem onClick={handleApprove} disabled={loading}>
             {loading ? (

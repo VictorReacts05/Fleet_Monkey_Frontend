@@ -429,6 +429,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false, refreshAppro
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
+    if (!form.certificationId) formErrors.certificationId = "certificationId is required";
     // Certification is optional, so no validation error for empty certificationId
     if (!form.quantity) {
       formErrors.quantity = "Quantity is required";

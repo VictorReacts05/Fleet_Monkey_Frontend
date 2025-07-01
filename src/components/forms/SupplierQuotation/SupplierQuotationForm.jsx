@@ -143,6 +143,7 @@ const SupplierQuotationForm = ({
   const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
   const [errors, setErrors] = useState({});
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [parcelsEdited, setParcelsEdited] = useState(false);
 
   const calculateTotals = useCallback(
     (updatedParcels) => {
@@ -487,7 +488,7 @@ const SupplierQuotationForm = ({
       });
 
       console.log("Formatted parcels:", formattedParcels);
-
+      setParcelsEdited(false); // Reset before setting new parcels
       setFormData(formattedData);
       setOriginalParcels(formattedParcels);
       setParcels(formattedParcels);
@@ -709,8 +710,8 @@ const SupplierQuotationForm = ({
       if (onSave) onSave({ ...apiData, parcels });
       setDataLoaded(false);
       setOriginalParcels([...parcels]);
+      setParcelsEdited(false); // Reset parcelsEdited after saving
       await loadSupplierQuotationData();
-      navigate("/supplier-quotation");
     } catch (error) {
       console.error(
         `Failed to save: ${error.response?.data?.message || error.message}`
@@ -787,16 +788,20 @@ const SupplierQuotationForm = ({
 
   const handleStatusChange = (newStatus) => {
     if (newStatus === "Approved") {
-      // Check if any parcel has a Rate of 0
-      const hasZeroRate = parcels.some(
-        (parcel) => !parcel.Rate || parseFloat(parcel.Rate) === 0
+      // Check if any parcel has an invalid rate (empty or <= 0)
+      const hasInvalidRate = parcels.some(
+        (parcel) => !parcel.Rate || !parcel.Rate.trim() || parseFloat(parcel.Rate) <= 0
       );
-      if (hasZeroRate) {
-        toast.error("Please enter rate for all parcels");
+      if (hasInvalidRate) {
+        toast.error("Cannot approve: All parcels must have a valid rate greater than 0.");
+        return;
+      }
+      // Check if parcels have been edited and saved
+      if (!parcelsEdited) {
+        toast.error("Cannot approve: Please edit and save at least one parcel.");
         return;
       }
     }
-
     setStatus(newStatus);
     setFormData((prev) => ({
       ...prev,
@@ -805,12 +810,17 @@ const SupplierQuotationForm = ({
   };
 
   const handleParcelsChange = useCallback(
-    (updatedParcels) => {
+    (updatedParcels, edited = false) => {
       setParcels(updatedParcels);
+      setParcelsEdited(edited || parcelsEdited); // Preserve existing edits or set true if edited
       calculateTotals(updatedParcels);
     },
-    [calculateTotals]
+    [calculateTotals, parcelsEdited]
   );
+
+  useEffect(() => {
+    console.log("Parcels updated:", parcels, "parcelsEdited:", parcelsEdited);
+  }, [parcels, parcelsEdited]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -866,7 +876,8 @@ const SupplierQuotationForm = ({
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
                     readOnly={status === "Approved"}
-                    parcels={parcels} // Pass parcels to StatusIndicator
+                    parcels={parcels} // Pass parcels
+                    parcelsEdited={parcelsEdited} // Pass parcelsEdited
                   />
                 </Box>
               </Fade>
