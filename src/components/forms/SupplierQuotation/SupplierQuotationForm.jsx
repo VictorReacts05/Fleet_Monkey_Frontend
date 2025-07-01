@@ -111,10 +111,10 @@ const SupplierQuotationForm = ({
     CollectionAddress: "",
     DestinationAddressID: "",
     DestinationAddress: "",
-    DestinationWarehouse: "", // Added
-    DestinationWarehouseAddressID: "", // Added
-    OriginWarehouse: "", // Added
-    OriginWarehouseAddressID: "", // Added
+    DestinationWarehouse: "",
+    DestinationWarehouseAddressID: "",
+    OriginWarehouse: "",
+    OriginWarehouseAddressID: "",
     PackagingRequiredYN: false,
     ValidTillDate: null,
     QuotationReceivedYN: false,
@@ -135,6 +135,7 @@ const SupplierQuotationForm = ({
   const [serviceTypes, setServiceTypes] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [toastDisplayed, setToastDisplayed] = useState(false);
@@ -142,6 +143,7 @@ const SupplierQuotationForm = ({
   const [dropdownsLoaded, setDropdownsLoaded] = useState(false);
   const [errors, setErrors] = useState({});
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [parcelsEdited, setParcelsEdited] = useState(false);
 
   const calculateTotals = useCallback(
     (updatedParcels) => {
@@ -160,7 +162,7 @@ const SupplierQuotationForm = ({
     [formData.TaxesAndOtherCharges]
   );
 
-  // Load dropdown data
+  // Load dropdown data including certifications
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
@@ -172,6 +174,7 @@ const SupplierQuotationForm = ({
           serviceTypesData,
           addressesData,
           customersData,
+          certificationsData,
         ] = await Promise.all([
           fetchSuppliers().catch((err) => {
             console.log("Failed to load suppliers");
@@ -197,6 +200,13 @@ const SupplierQuotationForm = ({
             console.log("Failed to load customers");
             return [];
           }),
+          axios
+            .get(`${APIBASEURL}/certifications?pageSize=500`, getAuthHeader())
+            .then((res) => res.data.data || [])
+            .catch((err) => {
+              console.log("Failed to load certifications:", err);
+              return [];
+            }),
         ]);
 
         const suppliersOptions = [
@@ -243,6 +253,17 @@ const SupplierQuotationForm = ({
             label: customer.CustomerName || "Unknown",
           })),
         ];
+        const certificationOptions = [
+          { value: "", label: "Select a certification" },
+          ...certificationsData.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label:
+              cert.CertificationName ||
+              cert.Name ||
+              cert.Description ||
+              `Certification ${cert.CertificationID}`,
+          })),
+        ];
 
         setSuppliers(suppliersOptions);
         setPurchaseRFQs(purchaseRFQsOptions);
@@ -250,10 +271,12 @@ const SupplierQuotationForm = ({
         setServiceTypes(serviceTypesOptions);
         setAddresses(addressesOptions);
         setCustomers(customersOptions);
+        setCertifications(certificationOptions);
 
         setDropdownsLoaded(true);
       } catch (error) {
         console.log("Failed to load dropdown data: " + error.message);
+        toast.error("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -266,7 +289,6 @@ const SupplierQuotationForm = ({
   const loadSupplierQuotationData = useCallback(async () => {
     if (!supplierQuotationId || dataLoaded) return;
 
-    // Ensure dropdowns are loaded before proceeding
     if (!dropdownsLoaded) {
       console.log(
         "Dropdowns not loaded yet, delaying loadSupplierQuotationData"
@@ -282,7 +304,8 @@ const SupplierQuotationForm = ({
       const quotationData = response.data?.data?.quotation || {};
       const parcelData = response.data?.data?.parcels || [];
 
-      console.log("API Response quotationData:", quotationData); // Debug log
+      console.log("API Response quotationData:", quotationData);
+      console.log("API Response parcelData:", parcelData);
 
       const displayValue = (value) =>
         value === null || value === undefined ? "" : value;
@@ -346,12 +369,12 @@ const SupplierQuotationForm = ({
               String(a.value) === String(quotationData.DestinationAddressID)
           )?.value || String(quotationData.DestinationAddressID || ""),
         DestinationAddress: displayValue(quotationData.DestinationAddress),
-        DestinationWarehouse: "", // Added
-        DestinationWarehouseAddressID: String( // Added
+        DestinationWarehouse: "",
+        DestinationWarehouseAddressID: String(
           quotationData.DestinationWarehouseAddressID || ""
         ),
-        OriginWarehouse: "", // Added
-        OriginWarehouseAddressID: String( // Added
+        OriginWarehouse: "",
+        OriginWarehouseAddressID: String(
           quotationData.OriginWarehouseAddressID || ""
         ),
         PackagingRequiredYN: Boolean(quotationData.PackagingRequiredYN),
@@ -423,28 +446,50 @@ const SupplierQuotationForm = ({
         }
       }
 
-      console.log("Loaded formData:", formattedData); // Debug log
+      // Create certification map
+      const certificationMap = certifications.reduce((acc, cert) => {
+        acc[cert.value] = cert.label;
+        return acc;
+      }, {});
 
+      // Format parcels
+      const formattedParcels = parcelData.map((parcel, index) => {
+        const certificationId =
+          parcel.CertificationID !== null && parcel.CertificationID !== undefined
+            ? String(parcel.CertificationID)
+            : "";
+        const certificationName = certificationId
+          ? certificationMap[certificationId] || "Unknown Certification"
+          : "None";
+
+        return {
+          SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
+          SupplierQuotationID: supplierQuotationId,
+          ItemID: parseInt(parcel.ItemID) || 0,
+          itemName: parcel.ItemName || "Unknown Item",
+          UOMID: parseInt(parcel.UOMID) || 0,
+          uomName: parcel.UOM || parcel.UOMName || "Unknown UOM",
+          CertificationID:
+            parcel.CertificationID !== null &&
+            parcel.CertificationID !== undefined
+              ? parseInt(parcel.CertificationID)
+              : null,
+          certificationId: certificationId,
+          certificationName: certificationName,
+          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
+          Rate: parseFloat(parcel.Rate) || 0,
+          Amount: parseFloat(parcel.Amount) || 0,
+          srNo: index + 1,
+          CountryOfOriginID: parcel.CountryOfOriginID || null,
+          CreatedByID: parcel.CreatedByID || null,
+          IsDeleted: Boolean(parcel.IsDeleted) || false,
+          id: parcel.SupplierQuotationParcelID,
+        };
+      });
+
+      console.log("Formatted parcels:", formattedParcels);
+      setParcelsEdited(false); // Reset before setting new parcels
       setFormData(formattedData);
-
-      // Format and store parcels
-      const formattedParcels = parcelData.map((parcel, index) => ({
-        SupplierQuotationParcelID: parcel.SupplierQuotationParcelID,
-        SupplierQuotationID: supplierQuotationId,
-        ItemID: parseInt(parcel.ItemID) || 0,
-        itemName: parcel.ItemName || "Unknown Item",
-        UOMID: parseInt(parcel.UOMID) || 0,
-        uomName: parcel.UOM || "Unknown UOM",
-        ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
-        Rate: parseFloat(parcel.Rate) || 0,
-        Amount: parseFloat(parcel.Amount) || 0,
-        srNo: index + 1,
-        CountryOfOriginID: parcel.CountryOfOriginID || null,
-        CreatedByID: parcel.CreatedByID || null,
-        IsDeleted: Boolean(parcel.IsDeleted) || false,
-        id: parcel.SupplierQuotationParcelID,
-      }));
-
       setOriginalParcels(formattedParcels);
       setParcels(formattedParcels);
 
@@ -483,6 +528,7 @@ const SupplierQuotationForm = ({
     serviceTypes,
     addresses,
     customers,
+    certifications,
     dropdownsLoaded,
     dataLoaded,
   ]);
@@ -502,8 +548,6 @@ const SupplierQuotationForm = ({
   const validateForm = () => {
     const newErrors = {};
 
-    // Check required fields
-    // Validate based on SupplierName since SupplierID might not be available
     if (!formData.SupplierName) {
       newErrors.SupplierName = "Supplier is required";
     }
@@ -525,7 +569,6 @@ const SupplierQuotationForm = ({
 
     setErrors(newErrors);
 
-    // Log validation errors for debugging
     if (Object.keys(newErrors).length > 0) {
       console.log("Validation failed. Errors:", newErrors);
       console.log("Current formData:", formData);
@@ -535,7 +578,7 @@ const SupplierQuotationForm = ({
   };
 
   const handleRefreshApprovals = () => {
-    fetchSalesQuotationStatus(); // Re-fetch data, including approvalStatus
+    fetchSalesQuotationStatus();
   };
 
   const handleSave = async () => {
@@ -544,10 +587,18 @@ const SupplierQuotationForm = ({
       return;
     }
 
+    // Check if any parcel has a Rate of 0
+    const hasZeroRate = parcels.some(
+      (parcel) => !parcel.Rate || parseFloat(parcel.Rate) === 0
+    );
+    if (hasZeroRate) {
+      toast.error("Please enter rate for all parcels");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Prepare supplier quotation data
       const apiData = {
         ...formData,
         SupplierQuotationID: parseInt(supplierQuotationId),
@@ -590,16 +641,13 @@ const SupplierQuotationForm = ({
 
       console.log("Data being sent to API:", apiData);
 
-      // Update supplier quotation
       await updateSupplierQuotation(supplierQuotationId, apiData);
 
-      // Update parcels
       const originalParcelIds = originalParcels.map(
         (p) => p.SupplierQuotationParcelID
       );
       const currentParcelIds = parcels.map((p) => p.SupplierQuotationParcelID);
 
-      // Identify deleted parcels
       const deletedParcelIds = originalParcelIds.filter(
         (id) => !currentParcelIds.includes(id)
       );
@@ -618,22 +666,27 @@ const SupplierQuotationForm = ({
         }
       }
 
-      // Update or create parcels
       for (const parcel of parcels) {
         const parcelData = {
           SupplierQuotationID: parseInt(supplierQuotationId),
-          ItemID: parcel.ItemID,
-          UOMID: parcel.UOMID,
-          ItemQuantity: parcel.ItemQuantity,
-          Rate: parcel.Rate,
-          Amount: parcel.Amount,
-          CountryOfOriginID: parcel.CountryOfOriginID,
-          CreatedByID: parcel.CreatedByID,
+          ItemID: parseInt(parcel.ItemID) || 0,
+          UOMID: parseInt(parcel.UOMID) || 0,
+          CertificationID:
+            parcel.CertificationID !== null &&
+            parcel.CertificationID !== undefined
+              ? parseInt(parcel.CertificationID)
+              : null,
+          ItemQuantity: parseFloat(parcel.ItemQuantity) || 0,
+          Rate: parseFloat(parcel.Rate) || 0,
+          Amount: parseFloat(parcel.Amount) || 0,
+          CountryOfOriginID: parcel.CountryOfOriginID || null,
+          CreatedByID: parcel.CreatedByID || null,
           IsDeleted: parcel.IsDeleted ? 1 : 0,
         };
 
+        console.log("Saving parcel:", parcelData);
+
         if (originalParcelIds.includes(parcel.SupplierQuotationParcelID)) {
-          // Update existing parcel
           await updateSupplierQuotationParcel(
             parcel.SupplierQuotationParcelID,
             {
@@ -645,7 +698,6 @@ const SupplierQuotationForm = ({
             `Updated parcel with ID ${parcel.SupplierQuotationParcelID}`
           );
         } else {
-          // Create new parcel
           const response = await createSupplierQuotationParcel(parcelData);
           console.log(
             `Created new parcel with ID ${response.data?.SupplierQuotationParcelID}`
@@ -657,11 +709,14 @@ const SupplierQuotationForm = ({
       setIsEditing(false);
       if (onSave) onSave({ ...apiData, parcels });
       setDataLoaded(false);
-      setOriginalParcels([...parcels]); // Update original parcels after save
+      setOriginalParcels([...parcels]);
+      setParcelsEdited(false); // Reset parcelsEdited after saving
       await loadSupplierQuotationData();
-      navigate("/supplier-quotation");
     } catch (error) {
-      console.log(
+      console.error(
+        `Failed to save: ${error.response?.data?.message || error.message}`
+      );
+      toast.error(
         `Failed to save: ${error.response?.data?.message || error.message}`
       );
     } finally {
@@ -732,6 +787,21 @@ const SupplierQuotationForm = ({
   };
 
   const handleStatusChange = (newStatus) => {
+    if (newStatus === "Approved") {
+      // Check if any parcel has an invalid rate (empty or <= 0)
+      const hasInvalidRate = parcels.some(
+        (parcel) => !parcel.Rate || !parcel.Rate.trim() || parseFloat(parcel.Rate) <= 0
+      );
+      if (hasInvalidRate) {
+        toast.error("Cannot approve: All parcels must have a valid rate greater than 0.");
+        return;
+      }
+      // Check if parcels have been edited and saved
+      if (!parcelsEdited) {
+        toast.error("Cannot approve: Please edit and save at least one parcel.");
+        return;
+      }
+    }
     setStatus(newStatus);
     setFormData((prev) => ({
       ...prev,
@@ -740,12 +810,17 @@ const SupplierQuotationForm = ({
   };
 
   const handleParcelsChange = useCallback(
-    (updatedParcels) => {
+    (updatedParcels, edited = false) => {
       setParcels(updatedParcels);
+      setParcelsEdited(edited || parcelsEdited); // Preserve existing edits or set true if edited
       calculateTotals(updatedParcels);
     },
-    [calculateTotals]
+    [calculateTotals, parcelsEdited]
   );
+
+  useEffect(() => {
+    console.log("Parcels updated:", parcels, "parcelsEdited:", parcelsEdited);
+  }, [parcels, parcelsEdited]);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -801,6 +876,8 @@ const SupplierQuotationForm = ({
                     supplierQuotationId={supplierQuotationId}
                     onStatusChange={handleStatusChange}
                     readOnly={status === "Approved"}
+                    parcels={parcels} // Pass parcels
+                    parcelsEdited={parcelsEdited} // Pass parcelsEdited
                   />
                 </Box>
               </Fade>
@@ -854,21 +931,6 @@ const SupplierQuotationForm = ({
           }}
         >
           <Grid container spacing={1}>
-            {/* <Grid sx={{ width: "24%" }}>
-              {isEditing ? (
-                <ReadOnlyField
-                  name="Series"
-                  label="Series"
-                  value={formData.Series || ""}
-                  onChange={handleChange}
-                  error={!!errors.Series}
-                  helperText={errors.Series}
-                  disabled={true}
-                />
-              ) : (
-                <ReadOnlyField label="Series" value={formData.Series} />
-              )}
-            </Grid> */}
             <Grid sx={{ width: "24%" }}>
               {isEditing ? (
                 <ReadOnlyField

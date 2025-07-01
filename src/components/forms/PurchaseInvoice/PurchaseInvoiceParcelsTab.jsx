@@ -18,13 +18,24 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import {
-  fetchItems,
-  fetchUOMs,
-  fetchPurchaseInvoiceItems,
-} from "./PurchaseInvoiceAPI";
+import { fetchItems, fetchUOMs, fetchPurchaseInvoiceItems } from "./PurchaseInvoiceAPI";
 import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
+
+const getAuthHeader = () => {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const personId = user?.personId;
+  if (!personId) {
+    throw new Error("No personId found in localStorage");
+  }
+  return {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${personId}`,
+    },
+    personId,
+  };
+};
 
 const PurchaseInvoiceParcelsTab = ({
   purchaseInvoiceId,
@@ -45,15 +56,15 @@ const PurchaseInvoiceParcelsTab = ({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [activeView, setActiveView] = useState("items");
-
   const theme = useTheme();
   const isMounted = useRef(true);
 
+  // Reset activeView to "items" when in create mode
   useEffect(() => {
     if (!purchaseInvoiceId) {
       setActiveView("items");
     }
-  }, [purchaseInvoiceId, refreshApprovals]);
+  }, [purchaseInvoiceId]);
 
   // Define columns for DataTable
   const columns = [
@@ -107,10 +118,21 @@ const PurchaseInvoiceParcelsTab = ({
       }
 
       // Fetch parcels
-      const parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+      let parcelData = [];
+      try {
+        parcelData = await fetchPurchaseInvoiceItems(purchaseInvoiceId);
+      } catch (error) {
+        console.warn(
+          "Failed to fetch purchase invoice items, defaulting to empty array:",
+          error.message
+        );
+        if (error.response?.status === 404) {
+          setError("Purchase Invoice not found. It may have been deleted.");
+        }
+        parcelData = [];
+      }
       console.log("Parcel data after fetch:", parcelData);
 
-      // No need to filter since fetchPurchaseInvoiceItems ensures the data matches purchaseInvoiceId
       const formattedItems = parcelData.map((item, index) => {
         const itemId = String(item.ItemID || "");
         const uomId = String(item.UOMID || "");
@@ -150,7 +172,6 @@ const PurchaseInvoiceParcelsTab = ({
         setError("Please log in to view items. Click below to log in.");
       } else {
         setError("Failed to load items. Please try again.");
-        // console.log("Failed to load items");
       }
     } finally {
       setLoading(false);
@@ -250,7 +271,6 @@ const PurchaseInvoiceParcelsTab = ({
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) < 0) {
       formErrors.amount = "Invalid Amount";
     }
-
     return formErrors;
   };
 
@@ -284,8 +304,8 @@ const PurchaseInvoiceParcelsTab = ({
         itemId: form.itemId,
         UOMID: parseInt(form.uomId, 10),
         uomId: form.uomId,
-        ItemQuantity: parseInt(form.quantity, 10),
-        Quantity: parseInt(form.quantity, 10),
+        ItemQuantity: parseFloat(form.quantity),
+        Quantity: parseFloat(form.quantity),
         quantity: form.quantity,
         Rate: parseFloat(form.rate),
         rate: form.rate,
@@ -314,7 +334,7 @@ const PurchaseInvoiceParcelsTab = ({
           { headers }
         );
       } else {
-        await axios.post(
+        const response = await axios.post(
           `${APIBASEURL}/pInvoice-parcel`,
           {
             PInvoiceID: purchaseInvoiceId,
@@ -327,6 +347,7 @@ const PurchaseInvoiceParcelsTab = ({
           },
           { headers }
         );
+        newItem.PurchaseInvoiceItemID = response.data.id || response.data.PInvoiceParcelID || form.id;
       }
 
       const updatedItems =
@@ -339,6 +360,11 @@ const PurchaseInvoiceParcelsTab = ({
         onItemsChange(updatedItems);
       }
       setItemForms((prev) => prev.filter((f) => f.id !== formId));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[formId];
+        return newErrors;
+      });
       toast.success("Item saved successfully.");
     } catch (error) {
       console.error("handleSave error:", {
@@ -349,7 +375,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to save items. Click below to log in.");
       } else {
-        console.log("Failed to save item.");
+        toast.error("Failed to save item: " + error.message);
       }
     }
   };
@@ -388,7 +414,7 @@ const PurchaseInvoiceParcelsTab = ({
       if (error.message.includes("personId")) {
         setError("Please log in to delete items. Click below to log in.");
       } else {
-        console.log("Failed to delete item.");
+        toast.error("Failed to delete item: " + error.message);
       }
     }
   };
@@ -400,6 +426,13 @@ const PurchaseInvoiceParcelsTab = ({
 
   const handleLoginRedirect = () => {
     navigate("/login");
+  };
+
+  // Handle status change from ApprovalTab
+  const handleStatusChange = () => {
+    if (refreshApprovals) {
+      refreshApprovals();
+    }
   };
 
   return (
@@ -442,7 +475,7 @@ const PurchaseInvoiceParcelsTab = ({
           }}
           onClick={() => setActiveView("items")}
         >
-          <Typography variant="h6" component="div">
+          <Typography variant="h6" component="div" sx={{ cursor: "pointer" }}>
             Items
           </Typography>
         </Box>
@@ -501,9 +534,7 @@ const PurchaseInvoiceParcelsTab = ({
               <Button
                 variant="contained"
                 color="primary"
-                onClick={
-                  error.includes("log in") ? handleLoginRedirect : loadData
-                }
+                onClick={error.includes("log in") ? handleLoginRedirect : loadData}
                 sx={{ mt: 2 }}
               >
                 {error.includes("log in") ? "Log In" : "Retry"}
@@ -665,13 +696,17 @@ const PurchaseInvoiceParcelsTab = ({
               )}
             </>
           )
-        ) : purchaseInvoiceId ? (
-          <ApprovalTab
-            moduleType="purchase-invoice"
-            moduleId={purchaseInvoiceId}
-            refreshTrigger={refreshApprovals}
-          />
-        ) : null}
+        ) : (
+          purchaseInvoiceId && (
+            <ApprovalTab
+              moduleType="purchase-Invoice"
+              moduleId={purchaseInvoiceId}
+              readOnly={readOnly}
+              refreshTrigger={refreshApprovals}
+              onStatusChange={handleStatusChange}
+            />
+          )
+        )}
       </Box>
 
       <Dialog

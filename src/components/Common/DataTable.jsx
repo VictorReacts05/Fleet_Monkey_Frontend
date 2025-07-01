@@ -105,7 +105,7 @@ const DataTable = ({
   };
 
   const renderCellContent = (row, column, rowIndex) => {
-    console.log("renderCellContent called for column:", column.field || column.id, "value:", row[column.field || column.id]); // Debug log
+    // console.log("renderCellContent called for column:", column.field || column.id, "value:", row[column.field || column.id]);
     // If the column has a renderCell function, use it
     if (column.renderCell) {
       return column.renderCell({
@@ -229,7 +229,7 @@ const DataTable = ({
                     position: "sticky",
                     top: 0,
                     textAlign: isNumericField(column, null) ? "left" : "left",
-                    "&:first-child": {
+                    "&:first-of-type": {
                 paddingLeft: "64px", // Adjust the value as needed
               },
                   }}
@@ -279,7 +279,7 @@ const DataTable = ({
                 ? "left"
                 : "left",
               // Add padding-left to the first child TableCell
-              "&:first-child": {
+              "&:first-of-type": {
                 paddingLeft: "64px", // Adjust the value as needed
               },
             }}

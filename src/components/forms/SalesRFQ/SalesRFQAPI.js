@@ -150,6 +150,7 @@ export const createSalesRFQ = async (salesRFQData) => {
             ItemQuantity: Number(
               parcel.ItemQuantity || parcel.Quantity || parcel.quantity
             ),
+            CertificationID:Number(parcel.CertificationID||parcel.certificationId),
             LineItemNumber: index + 1,
             IsDeleted: 0,
             CreatedByID: Number(personId),

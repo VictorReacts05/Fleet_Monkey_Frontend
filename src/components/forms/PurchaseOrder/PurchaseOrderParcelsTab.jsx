@@ -22,6 +22,7 @@ import {
   fetchPurchaseOrderParcels,
   fetchItems,
   fetchUOMs,
+  fetchCertifications,
 } from "./PurchaseOrderAPI";
 import APIBASEURL from "../../../utils/apiBaseUrl";
 import ApprovalTab from "../../Common/ApprovalTab";
@@ -37,6 +38,7 @@ const PurchaseOrderParcelsTab = ({
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [parcelForms, setParcelForms] = useState([]);
   const [errors, setErrors] = useState({});
@@ -53,15 +55,17 @@ const PurchaseOrderParcelsTab = ({
 
   const memoizedItems = useMemo(() => items, [items]);
   const memoizedUOMs = useMemo(() => uoms, [uoms]);
+  const memoizedCertifications = useMemo(() => certifications, [certifications]);
 
   useEffect(() => {
     if (!purchaseOrderId) {
       setActiveView("items");
     }
-  }, [purchaseOrderId,refreshApprovals]);
+  }, [purchaseOrderId, refreshApprovals]);
 
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
+    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
     { field: "rate", headerName: "Rate", flex: 1 },
@@ -81,7 +85,7 @@ const PurchaseOrderParcelsTab = ({
 
     try {
       setLoading(true);
-      const [itemsData, uomsData] = await Promise.all([
+      const [itemsData, uomsData, certificationsData] = await Promise.all([
         fetchItems(user).catch((err) => {
           console.error("Failed to fetch items:", err);
           console.log("Failed to load items");
@@ -92,10 +96,16 @@ const PurchaseOrderParcelsTab = ({
           console.log("Failed to load UOMs");
           return [];
         }),
+        fetchCertifications(user).catch((err) => {
+          console.error("Failed to fetch certifications:", err);
+          console.log("Failed to load certifications");
+          return [];
+        }),
       ]);
 
       console.log("Fetched items raw:", itemsData);
       console.log("Fetched UOMs raw:", uomsData);
+      console.log("Fetched certifications raw:", certificationsData);
 
       const itemsArray = Array.isArray(itemsData)
         ? itemsData
@@ -132,15 +142,25 @@ const PurchaseOrderParcelsTab = ({
         })),
       ];
 
+      const certificationOptions = [
+        { value: "", label: "Select a certification" },
+        ...certificationsData.map((cert) => ({
+          value: String(cert.CertificationID || cert.id || ""),
+          label: cert.CertificationName || cert.name || "Unknown Certification",
+        })),
+      ];
+
       console.log("Item options:", itemOptions);
       console.log("UOM options:", uomOptions);
+      console.log("Certification options:", certificationOptions);
 
       setItems(itemOptions);
       setUOMs(uomOptions);
+      setCertifications(certificationOptions);
       isDropdownLoaded.current = true;
     } catch (error) {
       console.error("Error loading dropdown data:", error);
-      console.log("Failed to load form data");
+      toast.error("Failed to load form data: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -158,10 +178,7 @@ const PurchaseOrderParcelsTab = ({
 
     try {
       setLoading(true);
-      const parcelResponse = await fetchPurchaseOrderParcels(
-        purchaseOrderId,
-        user
-      );
+      const parcelResponse = await fetchPurchaseOrderParcels(purchaseOrderId, user);
       console.log("Raw parcel response:", parcelResponse);
 
       const parcelData = Array.isArray(parcelResponse)
@@ -172,19 +189,23 @@ const PurchaseOrderParcelsTab = ({
       const formattedParcels = parcelData.map((parcel, index) => {
         const itemId = String(parcel.ItemID || "");
         const uomId = String(parcel.UOMID || "");
+        const certificationId = String(parcel.CertificationID || "");
 
         const item = memoizedItems.find((i) => i.value === itemId);
         const uom = memoizedUOMs.find((u) => u.value === uomId);
+        const certification = memoizedCertifications.find((c) => c.value === certificationId);
 
         return {
           id: parcel.POParcelID ? String(parcel.POParcelID) : `Parcel-${index}`,
           itemId,
           uomId,
+          certificationId,
           quantity: String(parseFloat(parcel.ItemQuantity) || 0),
           rate: String(parseFloat(parcel.Rate) || 0),
           amount: String(parseFloat(parcel.Amount) || 0),
           itemName: item?.label || parcel.ItemName || `Item-${itemId}`,
           uomName: uom?.label || parcel.UOM || `UOM-${uomId}`,
+          certificationName: certification?.label || parcel.CertificationName || "None",
           srNo: index + 1,
           PurchaseOrderParcelID: parcel.POParcelID,
           POID: parseInt(purchaseOrderId, 10),
@@ -199,13 +220,13 @@ const PurchaseOrderParcelsTab = ({
       isParcelsLoaded.current = true;
     } catch (error) {
       console.error("Error loading parcels:", error);
-      console.log("Failed to load parcels");
+      toast.error("Failed to load parcels: " + error.message);
       setParcels([]);
       isParcelsLoaded.current = false;
     } finally {
       setLoading(false);
     }
-  }, [purchaseOrderId, user, memoizedItems, memoizedUOMs, onParcelsChange]);
+  }, [purchaseOrderId, user, memoizedItems, memoizedUOMs, memoizedCertifications, onParcelsChange]);
 
   useEffect(() => {
     if (!purchaseOrderId || !user) {
@@ -224,6 +245,7 @@ const PurchaseOrderParcelsTab = ({
         id: newFormId,
         itemId: "",
         uomId: "",
+        certificationId: "",
         quantity: "",
         rate: "",
         amount: "",
@@ -245,6 +267,7 @@ const PurchaseOrderParcelsTab = ({
         id: editFormId,
         itemId: parcelToEdit.itemId,
         uomId: parcelToEdit.uomId,
+        certificationId: parcelToEdit.certificationId,
         quantity: parcelToEdit.quantity,
         rate: parcelToEdit.rate,
         amount: parcelToEdit.amount,
@@ -288,6 +311,7 @@ const PurchaseOrderParcelsTab = ({
     if (!form.uomId) {
       formErrors.uomId = "UOM is required";
     }
+    // Certification is optional, so no validation unless required
     if (
       !form.quantity ||
       isNaN(Number(form.quantity)) ||
@@ -327,6 +351,7 @@ const PurchaseOrderParcelsTab = ({
 
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
+    const selectedCertification = certifications.find((c) => c.value === form.certificationId);
 
     const originalParcel =
       form.editIndex !== undefined ? parcels[form.editIndex] : null;
@@ -339,6 +364,8 @@ const PurchaseOrderParcelsTab = ({
       itemId: parseInt(form.itemId, 10),
       UOMID: parseInt(form.uomId, 10),
       uomId: parseInt(form.uomId, 10),
+      CertificationID:  parseInt(form.certificationId, 10),
+      certificationId:  parseInt(form.certificationId, 10),
       ItemQuantity: parseFloat(form.quantity),
       Quantity: parseFloat(form.quantity),
       quantity: parseFloat(form.quantity),
@@ -348,6 +375,7 @@ const PurchaseOrderParcelsTab = ({
       amount: parseFloat(form.amount),
       itemName: selectedItem?.label || "Unknown Item",
       uomName: selectedUOM?.label || "Unknown UOM",
+      certificationName: selectedCertification?.label || "None",
       srNo: originalParcel?.srNo || parcels.length + 1,
       isModified: true,
       CreatedByID: user?.personId ? parseInt(user.personId, 10) : null,
@@ -356,6 +384,7 @@ const PurchaseOrderParcelsTab = ({
         POID: parseInt(purchaseOrderId, 10),
         ItemID: parseInt(form.itemId, 10),
         UOMID: parseInt(form.uomId, 10),
+        CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
         ItemQuantity: parseFloat(form.quantity),
         Rate: parseFloat(form.rate),
         Amount: parseFloat(form.amount),
@@ -372,11 +401,12 @@ const PurchaseOrderParcelsTab = ({
           { headers }
         );
       } else {
-        await axios.post(
+        const response = await axios.post(
           `${APIBASEURL}/PO-Parcel`,
           newParcel.PurchaseOrderParcel,
           { headers }
         );
+        newParcel.PurchaseOrderParcelID = response.data.id || response.data.PurchaseOrderParcelID || form.id;
       }
       setParcels((prev) => {
         let updatedParcels;
@@ -395,10 +425,15 @@ const PurchaseOrderParcelsTab = ({
       toast.success("Parcel saved successfully");
     } catch (error) {
       console.error("Error saving parcel:", error);
-      console.log("Failed to save parcel");
+      toast.error("Failed to save parcel: " + error.message);
     }
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[formId];
+      return newErrors;
+    });
   };
 
   const handleDeleteParcel = (id) => {
@@ -427,7 +462,7 @@ const PurchaseOrderParcelsTab = ({
       toast.success("Parcel deleted successfully");
     } catch (error) {
       console.error("Error deleting parcel:", error);
-      console.log("Failed to delete parcel");
+      toast.error("Failed to delete parcel: " + error.message);
     } finally {
       setDeleteConfirmOpen(false);
       setDeleteParcelId(null);
@@ -542,6 +577,7 @@ const PurchaseOrderParcelsTab = ({
                   startIcon={<AddIcon />}
                   onClick={handleAddParcel}
                   sx={{ mb: 2 }}
+                  disabled={items.length <= 1 || uoms.length <= 1 || certifications.length <= 1}
                 >
                   Add Parcel
                 </Button>
@@ -591,6 +627,18 @@ const PurchaseOrderParcelsTab = ({
                         options={items}
                         error={!!errors[form.id]?.itemId}
                         helperText={errors[form.id]?.itemId}
+                      />
+                    </Box>
+
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="certificationId"
+                        label="Certification"
+                        value={form.certificationId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={certifications}
+                        error={!!errors[form.id]?.certificationId}
+                        helperText={errors[form.id]?.certificationId}
                       />
                     </Box>
 
@@ -656,7 +704,7 @@ const PurchaseOrderParcelsTab = ({
                       variant="contained"
                       onClick={() => handleSave(form.id)}
                     >
-                      Save items
+                      Save
                     </Button>
                   </Box>
                 </Box>

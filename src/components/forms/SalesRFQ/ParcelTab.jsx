@@ -4,15 +4,7 @@ import {
   Button,
   Typography,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   useTheme,
-  alpha,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DataTable from "../../Common/DataTable";
@@ -26,9 +18,8 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContentText from "@mui/material/DialogContentText";
 import APIBASEURL from "../../../utils/apiBaseUrl";
-import { getAuthHeader } from "./SalesRFQAPI"; // Adjust the path as needed
-import { useNavigate } from "react-router-dom"; // Added for navigation
-import UOMList from "./../UOM/uomlist";
+import { getAuthHeader } from "./SalesRFQAPI";
+import { useNavigate } from "react-router-dom";
 import ApprovalTab from "../../Common/ApprovalTab";
 
 // Function to fetch items from API
@@ -38,6 +29,17 @@ const fetchItems = async () => {
     return response.data.data || [];
   } catch (error) {
     console.error("Error fetching items:", error);
+    throw error;
+  }
+};
+
+// Function to fetch certifications from API
+const fetchCertifications = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`);
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
     throw error;
   }
 };
@@ -60,11 +62,12 @@ const fetchUOMs = async () => {
   }
 };
 
-const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshApprovals}) => {
+const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false, refreshApprovals }) => {
   const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
   const [items, setItems] = useState([]);
   const [uoms, setUOMs] = useState([]);
+  const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [parcelForms, setParcelForms] = useState([]);
   const [errors, setErrors] = useState({});
@@ -73,12 +76,11 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteParcelId, setDeleteParcelId] = useState(null);
   const [loadingExistingParcels, setLoadingExistingParcels] = useState(false);
-  const [activeTab] = useState("parcels");
-  const [activeView, setActiveView] = useState("items"); // State to track the active view ("items" or "approvals")
+  const [activeView, setActiveView] = useState("items");
 
   const theme = useTheme();
 
-  // Reset activeView to "items" when in create mode (salesRFQId is undefined/null)
+  // Reset activeView to "items" when in create mode
   useEffect(() => {
     if (!salesRFQId) {
       setActiveView("items");
@@ -88,6 +90,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
   // Define columns for DataTable
   const columns = [
     { field: "itemName", headerName: "Item Name", flex: 1 },
+    { field: "certificationName", headerName: "Certification", flex: 1 },
     { field: "uomName", headerName: "UOM", flex: 1 },
     { field: "quantity", headerName: "Quantity", flex: 1 },
   ];
@@ -97,15 +100,20 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
     const loadDropdownData = async () => {
       try {
         setLoading(true);
-        const [itemsData, uomsData] = await Promise.all([
+        const [itemsData, uomsData, certificationsData] = await Promise.all([
           fetchItems().catch((err) => {
             console.error("Failed to fetch items:", err);
-            console.log("Failed to load items");
+            toast.error("Failed to load items");
             return [];
           }),
           fetchUOMs().catch((err) => {
             console.error("Failed to fetch UOMs:", err);
-            console.log("Failed to load UOMs");
+            toast.error("Failed to load UOMs");
+            return [];
+          }),
+          fetchCertifications().catch((err) => {
+            console.error("Failed to fetch certifications:", err);
+            toast.error("Failed to load certifications");
             return [];
           }),
         ]);
@@ -139,11 +147,20 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
           })),
         ];
 
+        const certificationOptions = [
+          { value: "", label: "Select a certification" },
+          ...certificationsData.map((cert) => ({
+            value: String(cert.CertificationID || cert.id),
+            label: cert.CertificationName || cert.name || "Unknown Certification",
+          })),
+        ];
+
         setItems(itemOptions);
         setUOMs(uomOptions);
+        setCertifications(certificationOptions);
       } catch (error) {
         console.error("Error loading dropdown data:", error);
-        console.log("Failed to load form data: " + error.message);
+        toast.error("Failed to load form data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -207,7 +224,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
               parcel.salesrfqid ||
               parcel.SalesRfqId;
 
-            // Convert both to strings for comparison
             return String(parcelSalesRFQId) === String(salesRFQId);
           });
 
@@ -218,6 +234,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
 
           let itemsToUse = items;
           let uomsToUse = uoms;
+          let certificationsToUse = certifications;
 
           if (items.length <= 1) {
             try {
@@ -266,13 +283,31 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
             }
           }
 
+          if (certifications.length <= 1) {
+            try {
+              const certificationsResponse = await fetchCertifications();
+              const certificationsData = certificationsResponse || [];
+              certificationsToUse = [
+                { value: "", label: "Select a certification" },
+                ...certificationsData.map((cert) => ({
+                  value: String(cert.CertificationID || cert.id),
+                  label: cert.CertificationName || cert.name || "Unknown Certification",
+                })),
+              ];
+            } catch (err) {
+              console.error("Failed to fetch certifications directly:", err);
+            }
+          }
+
           const formattedParcels = filteredParcels.map((parcel, index) => {
             let itemName = "Unknown Item";
             let uomName = "Unknown UOM";
+            let certificationName = "None"; // Default to "None" for null CertificationID
 
             try {
               const itemId = String(parcel.ItemID || "");
               const uomId = String(parcel.UOMID || "");
+              const certificationId = String(parcel.CertificationID || "");
 
               const item = itemsToUse.find((i) => i.value === itemId);
               if (item) {
@@ -287,18 +322,28 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
               } else {
                 uomName = `UOM #${uomId}`;
               }
+
+              if (parcel.CertificationID !== null && parcel.CertificationID !== undefined) {
+                const certification = certificationsToUse.find((c) => c.value === certificationId);
+                if (certification) {
+                  certificationName = certification.label;
+                } else {
+                  certificationName = `Certification #${certificationId}`;
+                }
+              }
             } catch (err) {
               console.error("Error formatting parcel data:", err);
             }
 
-            // Add index+1 as srNo for proper numbering
             return {
               id: parcel.SalesRFQParcelID || parcel.id || Date.now() + index,
               itemId: String(parcel.ItemID || ""),
               uomId: String(parcel.UOMID || ""),
+              certificationId: parcel.CertificationID !== null ? String(parcel.CertificationID) : "",
               quantity: String(parcel.ItemQuantity || parcel.Quantity || "0"),
               itemName,
               uomName,
+              certificationName,
               srNo: index + 1,
             };
           });
@@ -317,9 +362,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
     };
 
     setParcels([]);
-
     loadExistingParcels();
-  }, [salesRFQId, items, uoms]);
+  }, [salesRFQId, items, uoms, certifications]);
 
   // Handle adding a new parcel form
   const handleAddParcel = () => {
@@ -330,6 +374,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
         id: newFormId,
         itemId: "",
         uomId: "",
+        certificationId: "",
         quantity: "",
       },
     ]);
@@ -350,6 +395,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
         id: editFormId,
         itemId: parcelToEdit.itemId,
         uomId: parcelToEdit.uomId,
+        certificationId: parcelToEdit.certificationId,
         quantity: parcelToEdit.quantity,
         editIndex: parcels.findIndex((p) => p.id === id),
         originalId: id,
@@ -383,6 +429,8 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
     const formErrors = {};
     if (!form.itemId) formErrors.itemId = "Item is required";
     if (!form.uomId) formErrors.uomId = "UOM is required";
+    if (!form.certificationId) formErrors.certificationId = "certificationId is required";
+    // Certification is optional, so no validation error for empty certificationId
     if (!form.quantity) {
       formErrors.quantity = "Quantity is required";
     } else if (isNaN(Number(form.quantity)) || Number(form.quantity) <= 0) {
@@ -408,13 +456,16 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
 
     const { personId } = getAuthHeader();
     if (!personId) {
-      console.log("User authentication data missing. Please log in again.");
+      toast.error("User authentication data missing. Please log in again.");
       navigate("/login");
       return;
     }
 
     const selectedItem = items.find((i) => i.value === form.itemId);
     const selectedUOM = uoms.find((u) => u.value === form.uomId);
+    const selectedCertification = form.certificationId
+      ? certifications.find((c) => c.value === form.certificationId)
+      : null;
 
     const originalParcel =
       form.editIndex !== undefined ? parcels[form.editIndex] : null;
@@ -427,20 +478,23 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
       itemId: form.itemId,
       UOMID: parseInt(form.uomId, 10),
       uomId: form.uomId,
+      CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
+      certificationId: form.certificationId,
       ItemQuantity: parseInt(form.quantity, 10),
       Quantity: parseInt(form.quantity, 10),
       quantity: form.quantity,
       itemName: selectedItem ? selectedItem.label : "Unknown Item",
       uomName: selectedUOM ? selectedUOM.label : "Unknown UOM",
+      certificationName: selectedCertification ? selectedCertification.label : "None",
       srNo: originalParcel?.srNo || parcels.length + 1,
       isModified: true,
       CreatedByID: personId ? parseInt(personId, 10) : null,
       SalesRFQParcel: {
-        SalesRFQParcelID:
-          originalParcel?.SalesRFQParcelID || originalParcel?.id,
+        SalesRFQParcelID: originalParcel?.SalesRFQParcelID || originalParcel?.id,
         SalesRFQID: salesRFQId,
         ItemID: parseInt(form.itemId, 10),
         UOMID: parseInt(form.uomId, 10),
+        CertificationID: form.certificationId ? parseInt(form.certificationId, 10) : null,
         ItemQuantity: parseInt(form.quantity, 10),
         CreatedByID: personId ? parseInt(personId, 10) : null,
       },
@@ -456,7 +510,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
 
     setParcels(updatedParcels);
     if (onParcelsChange) {
-      onParcelsChange(updatedParcels); // Notify SalesRFQForm.jsx
+      onParcelsChange(updatedParcels);
     }
 
     setParcelForms((prev) => prev.filter((f) => f.id !== formId));
@@ -472,7 +526,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
     const updatedParcels = parcels.filter((p) => p.id !== deleteParcelId);
     setParcels(updatedParcels);
     if (onParcelsChange) {
-      onParcelsChange(updatedParcels); // Notify SalesRFQForm.jsx
+      onParcelsChange(updatedParcels);
     }
     setDeleteConfirmOpen(false);
     setDeleteParcelId(null);
@@ -525,9 +579,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
           <Typography
             variant="h6"
             component="div"
-            sx={{
-              cursor: "pointer",
-            }}
+            sx={{ cursor: "pointer" }}
             onClick={() => setActiveView("items")}
           >
             Items
@@ -558,10 +610,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
           >
             <Typography
               variant="subtitle1"
-              sx={{
-                cursor: "pointer",
-                fontSize: "1.25rem",
-              }}
+              sx={{ cursor: "pointer", fontSize: "1.25rem" }}
               onClick={() => setActiveView("approvals")}
             >
               Approvals
@@ -646,7 +695,17 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
                         helperText={errors[form.id]?.itemId}
                       />
                     </Box>
-
+                    <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
+                      <FormSelect
+                        name="certificationId"
+                        label="Certification"
+                        value={form.certificationId}
+                        onChange={(e) => handleChange(e, form.id)}
+                        options={certifications}
+                        error={!!errors[form.id]?.certificationId}
+                        helperText={errors[form.id]?.certificationId}
+                      />
+                    </Box>
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                       <FormSelect
                         name="uomId"
@@ -658,7 +717,6 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
                         helperText={errors[form.id]?.uomId}
                       />
                     </Box>
-
                     <Box sx={{ flex: "1 1 30%", minWidth: "250px" }}>
                       <FormInput
                         name="quantity"
@@ -693,7 +751,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
                       variant="contained"
                       onClick={() => handleSave(form.id)}
                     >
-                      Save items
+                      Save
                     </Button>
                   </Box>
                 </Box>
@@ -724,7 +782,7 @@ const ParcelTab = ({ salesRFQId, onParcelsChange, readOnly = false ,refreshAppro
           )
         ) : (
           salesRFQId && (
-            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} refreshTrigger={refreshApprovals}  />
+            <ApprovalTab moduleType="sales-rfq" moduleId={salesRFQId} refreshTrigger={refreshApprovals} />
           )
         )}
       </Box>

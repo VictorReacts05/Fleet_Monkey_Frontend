@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Grid, 
-  Box, 
-  Typography 
-} from '@mui/material';
-import { toast } from 'react-toastify';
-import { createUOM, updateUOM, getUOMById } from './UOMAPI';
-import FormInput from '../../Common/FormInput';
-import FormPage from '../../Common/FormPage';
+import React, { useState, useEffect } from "react";
+import { Grid, Box, Typography } from "@mui/material";
+import { toast } from "react-toastify";
+import { createUOM, updateUOM, getUOMById } from "./UOMAPI";
+import FormInput from "../../Common/FormInput";
+import FormPage from "../../Common/FormPage";
 
 const ReadOnlyField = ({ label, value }) => {
   return (
@@ -24,13 +20,13 @@ const ReadOnlyField = ({ label, value }) => {
 
 const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
   const [formData, setFormData] = useState({
-    uom: '',
-    createdByID: '',
+    uom: "",
+    createdByID: "",
     CreatedDateTime: null,
     IsDeleted: false,
     DeletedDateTime: null,
-    DeletedByID: '',
-    RowVersionColumn: '',
+    DeletedByID: "",
+    RowVersionColumn: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -122,11 +118,17 @@ const UOMForm = ({ uomId, onClose, onSave, readOnly = false }) => {
       if (onClose) onClose();
     } catch (error) {
       console.error("Error in handleSubmit:", error);
-      
+
       // Check for duplicate key error
-      if (error.response && error.response.data && error.response.data.message && 
-          error.response.data.message.includes("UNIQUE KEY constraint")) {
-        console.log(`This Unit of Measurement already exists. Please use a different name.`);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message &&
+        error.response.data.message.includes("UNIQUE KEY constraint")
+      ) {
+        console.log(
+          `This Unit of Measurement already exists. Please use a different name.`
+        );
       } else {
         console.log(
           `Failed to ${uomId ? "update" : "create"} UOM: ` +

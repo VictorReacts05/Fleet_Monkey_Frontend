@@ -448,6 +448,16 @@ export const fetchPurchaseInvoice = async (purchaseInvoiceId, user) => {
   }
 };
 
+export const fetchCertifications = async () => {
+  try {
+    const response = await axios.get(`${APIBASEURL}/certifications?pageSize=500`);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Error fetching certifications:", error);
+    throw error;
+  }
+};
+
 export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
   try {
     const { headers } = getAuthHeader(user);
@@ -457,8 +467,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
     }
 
     console.log(
-      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}pInvoiceParcel?pInvoiceId
-      =${purchaseInvoiceId}`
+      `Fetching Purchase Invoice Items for ID ${purchaseInvoiceId} from: ${APIBASEURL}/pInvoiceParcel?pInvoiceId=${purchaseInvoiceId}`
     );
     if (isNaN(parseInt(purchaseInvoiceId, 10))) {
       console.warn(
@@ -485,6 +494,7 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
 
     let uomMap = {};
     let itemMap = {};
+    let certificationMap = {};
 
     try {
       const uomResponse = await axios.get(`${APIBASEURL}/UOMs`, { headers });
@@ -542,10 +552,36 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
       );
     }
 
+    try {
+      const certResponse = await axios.get(`${APIBASEURL}/certifications?pageSize=500`, { headers });
+      console.log("Certifications API Raw Response:", certResponse.data);
+      if (certResponse.data?.data) {
+        const certifications = Array.isArray(certResponse.data.data)
+          ? certResponse.data.data
+          : [certResponse.data.data];
+        certificationMap = certifications.reduce((acc, cert) => {
+          const certName = cert.CertificationName || cert.name || "Unknown Certification";
+          const certId = cert.CertificationID || cert.id;
+          if (certId && certName) {
+            acc[certId] = certName;
+            acc[String(certId)] = certName;
+          }
+          return acc;
+        }, {});
+        console.log("Certification Map:", certificationMap);
+      }
+    } catch (err) {
+      console.error(
+        "Could not fetch certifications:",
+        err.response?.data || err.message
+      );
+    }
+
     const enhancedItems = items.map((item, index) => {
       console.log("Processing item:", item);
       const itemId = String(item.ItemID || "");
       const uomId = String(item.UOMID || "");
+      const certificationId = String(item.CertificationID || "");
       return {
         ...item,
         PurchaseInvoiceItemID:
@@ -553,6 +589,9 @@ export const fetchPurchaseInvoiceItems = async (purchaseInvoiceId, user) => {
         PIID: item.PInvoiceID || purchaseInvoiceId,
         ItemName: itemId && itemMap[itemId] ? itemMap[itemId] : "Unknown Item",
         UOMName: uomId && uomMap[uomId] ? uomMap[uomId] : "Unknown UOM",
+        CertificationName: certificationId && certificationMap[certificationId]
+          ? certificationMap[certificationId]
+          : "None",
         ItemQuantity: String(item.ItemQuantity || item.Quantity || "0"),
         Rate: String(item.Rate || "0"),
         Amount: String(item.Amount || "0"),

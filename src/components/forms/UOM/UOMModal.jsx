@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
   TextField,
   Box,
-  CircularProgress
-} from '@mui/material';
-import { toast } from 'react-toastify';
+  CircularProgress,
+} from "@mui/material";
+import { toast } from "react-toastify";
 // import { getUOMById, createUOM, updateUOM } from './UOMAPI';
 import { getUOMById, createUOM, updateUOM, deleteUOM } from "./UOMAPI";
 
 const UOMModal = ({ open, onClose, uomId, onSave }) => {
   const [formData, setFormData] = useState({
-    UOM: '',
+    UOM: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -33,13 +33,13 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
       setLoading(true);
       const response = await getUOMById(uomId);
       const data = response.data;
-      
+
       setFormData({
-        UOM: data.UOM || '',
+        UOM: data.UOM || "",
       });
     } catch (error) {
-      console.error('Error loading UOM:', error);
-      console.log('Failed to load UOM: ' + (error.message || 'Unknown error'));
+      console.error("Error loading UOM:", error);
+      console.log("Failed to load UOM: " + (error.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -47,20 +47,20 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
 
   const resetForm = () => {
     setFormData({
-      UOM: '',
+      UOM: "",
     });
     setErrors({});
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.UOM.trim()) {
-      newErrors.UOM = 'Unit of Measurement is required';
+      newErrors.UOM = "Unit of Measurement is required";
     } else if (formData.UOM.length > 20) {
-      newErrors.UOM = 'Unit of Measurement must be 20 characters or less';
+      newErrors.UOM = "Unit of Measurement must be 20 characters or less";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,10 +69,10 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       const apiData = {
         UOM: formData.UOM,
         // Include these fields for API consistency
@@ -81,21 +81,21 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
         DeletedDateTime: null,
         DeletedByID: null,
       };
-      
+
       if (uomId) {
         await updateUOM(uomId, apiData);
-        toast.success('UOM updated successfully');
+        toast.success("UOM updated successfully");
       } else {
         await createUOM(apiData);
-        toast.success('UOM created successfully');
+        toast.success("UOM created successfully");
       }
-      
+
       if (onSave) {
         onSave();
       }
     } catch (error) {
-      console.error('Error saving UOM:', error);
-      console.log('Failed to save UOM: ' + (error.message || 'Unknown error'));
+      console.error("Error saving UOM:", error);
+      console.log("Failed to save UOM: " + (error.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -103,16 +103,16 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {uomId ? 'Edit Unit of Measurement' : 'Add Unit of Measurement'}
+        {uomId ? "Edit Unit of Measurement" : "Add Unit of Measurement"}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
@@ -134,13 +134,13 @@ const UOMModal = ({ open, onClose, uomId, onSave }) => {
         <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button 
-          onClick={handleSubmit} 
-          variant="contained" 
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
           color="primary"
           disabled={loading}
         >
-          {loading ? <CircularProgress size={24} /> : 'Save'}
+          {loading ? <CircularProgress size={24} /> : "Save"}
         </Button>
       </DialogActions>
     </Dialog>
